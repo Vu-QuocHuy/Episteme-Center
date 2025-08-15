@@ -1,0 +1,268 @@
+import React, { useState, useEffect } from 'react';
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  TextField,
+  InputAdornment,
+  List,
+  ListItem,
+  ListItemText,
+  Checkbox,
+
+  Box,
+  CircularProgress,
+} from '@mui/material';
+import { Search as SearchIcon } from '@mui/icons-material';
+import { getAllStudentsAPI, enrollStudentAPI, getStudentsInClassAPI } from '../../services/api';
+import NotificationSnackbar from '../../components/common/NotificationSnackbar';
+
+interface Student {
+  id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+}
+
+interface ClassData {
+  id: string;
+  name: string;
+}
+
+interface AddStudentToClassDialogProps {
+  open: boolean;
+  onClose: () => void;
+  classData: ClassData;
+  onUpdate: () => void;
+}
+
+interface NotificationState {
+  open: boolean;
+  message: string;
+  severity: 'success' | 'error' | 'warning' | 'info';
+}
+
+const AddStudentToClassDialog: React.FC<AddStudentToClassDialogProps> = ({ open, onClose, classData, onUpdate }) => {
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [allStudents, setAllStudents] = useState<Student[]>([]);
+  const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
+  const [studentDiscounts, setStudentDiscounts] = useState<Record<string, string>>({});
+  const [existingStudentIds, setExistingStudentIds] = useState<string[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [loadingList, setLoadingList] = useState<boolean>(false);
+  const [notification, setNotification] = useState<NotificationState>({
+    open: false,
+    message: '',
+    severity: 'success',
+  });
+
+  // Fetch existing students in class
+  useEffect(() => {
+    const fetchExistingStudents = async (): Promise<void> => {
+      try {
+        const params = { page: 1, limit: 100 };
+        const res = await getStudentsInClassAPI(classData.id, params);
+        if (res.data && res.data.students) {
+          setExistingStudentIds(res.data.students.map((s: Student) => s.id));
+        } else {
+          setExistingStudentIds([]);
+        }
+      } catch (error) {
+        console.error('Error fetching existing students:', error);
+        setExistingStudentIds([]);
+      }
+    };
+
+    if (open && classData?.id) {
+      fetchExistingStudents();
+    }
+  }, [open, classData?.id]);
+
+  useEffect(() => {
+    const fetchStudents = async (): Promise<void> => {
+      setLoadingList(true);
+      try {
+        const params: any = { limit: 30 };
+        if (searchQuery) params.name = searchQuery;
+        const response = await getAllStudentsAPI(params);
+        // Filter out students who are already in the class
+        const availableStudents = (response.data || []).filter(
+          (student: Student) => !existingStudentIds.includes(student.id)
+        );
+        setAllStudents(availableStudents);
+      } catch (error) {
+        console.error('Error fetching students:', error);
+      } finally {
+        setLoadingList(false);
+      }
+    };
+
+    const debounceFetch = setTimeout(() => {
+      fetchStudents();
+    }, 700); // Debounce search query
+
+    return () => clearTimeout(debounceFetch);
+  }, [searchQuery, existingStudentIds]);
+
+  const handleToggleStudent = (studentId: string): void => {
+    const currentIndex = selectedStudents.indexOf(studentId);
+    const newSelected = [...selectedStudents];
+    const newDiscounts = { ...studentDiscounts };
+
+    if (currentIndex === -1) {
+      newSelected.push(studentId);
+      newDiscounts[studentId] = '';
+    } else {
+      newSelected.splice(currentIndex, 1);
+      delete newDiscounts[studentId];
+    }
+    setSelectedStudents(newSelected);
+    setStudentDiscounts(newDiscounts);
+  };
+
+  const handleDiscountChange = (studentId: string, discount: string): void => {
+    setStudentDiscounts(prev => ({
+      ...prev,
+      [studentId]: discount
+    }));
+  };
+
+  const handleAddStudents = async (): Promise<void> => {
+    if (selectedStudents.length === 0) {
+      setNotification({
+        open: true,
+        message: 'Vui lòng chọn ít nhất một học sinh',
+        severity: 'warning'
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const enrollPromises = selectedStudents.map(studentId => {
+        return enrollStudentAPI(classData.id, [studentId]);
+      });
+
+      await Promise.all(enrollPromises);
+
+      setNotification({
+        open: true,
+        message: `Đã thêm ${selectedStudents.length} học sinh vào lớp thành công!`,
+        severity: 'success'
+      });
+
+      setSelectedStudents([]);
+      setStudentDiscounts({});
+      setSearchQuery('');
+      onUpdate();
+      onClose();
+    } catch (error: any) {
+      console.error('Error adding students:', error);
+      setNotification({
+        open: true,
+        message: error.response?.data?.message || 'Có lỗi xảy ra khi thêm học sinh',
+        severity: 'error'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCloseNotification = (): void => {
+    setNotification(prev => ({ ...prev, open: false }));
+  };
+
+  const filteredStudents = allStudents.filter(student =>
+    student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (student.email && student.email.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
+  return (
+    <>
+      <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+        <DialogTitle>
+          Thêm học sinh vào lớp: {classData?.name}
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ mb: 2 }}>
+            <TextField
+              fullWidth
+              placeholder="Tìm kiếm học sinh theo tên hoặc email..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Box>
+
+          {loadingList ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <List sx={{ maxHeight: 400, overflow: 'auto' }}>
+              {filteredStudents.map((student) => (
+                <ListItem key={student.id} dense>
+                  <Checkbox
+                    edge="start"
+                    checked={selectedStudents.indexOf(student.id) !== -1}
+                    onChange={() => handleToggleStudent(student.id)}
+                  />
+                  <ListItemText
+                    primary={student.name}
+                    secondary={student.email}
+                  />
+                  {selectedStudents.indexOf(student.id) !== -1 && (
+                    <TextField
+                      size="small"
+                      label="Giảm giá (%)"
+                      type="number"
+                      value={studentDiscounts[student.id] || ''}
+                      onChange={(e) => handleDiscountChange(student.id, e.target.value)}
+                      sx={{ width: 120, ml: 1 }}
+                      inputProps={{ min: 0, max: 100 }}
+                    />
+                  )}
+                </ListItem>
+              ))}
+              {filteredStudents.length === 0 && (
+                <ListItem>
+                  <ListItemText
+                    primary="Không tìm thấy học sinh nào"
+                    secondary="Thử tìm kiếm với từ khóa khác"
+                  />
+                </ListItem>
+              )}
+            </List>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={onClose}>Hủy</Button>
+          <Button
+            onClick={handleAddStudents}
+            variant="contained"
+            disabled={loading || selectedStudents.length === 0}
+          >
+            {loading ? <CircularProgress size={20} /> : `Thêm ${selectedStudents.length} học sinh`}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <NotificationSnackbar
+        open={notification.open}
+        onClose={handleCloseNotification}
+        message={notification.message}
+        severity={notification.severity}
+      />
+    </>
+  );
+};
+
+export default AddStudentToClassDialog;

@@ -1,0 +1,245 @@
+export interface ApiEndpoints {
+  AUTH: {
+    USER_LOGIN: string;
+    ADMIN_LOGIN: string;
+    REGISTER: string;
+    LOGOUT: string;
+    REFRESH_TOKEN: string;
+    CHANGE_PASSWORD: string;
+    FORGOT_PASSWORD: string;
+    VERIFY_CODE: string;
+    RESET_PASSWORD: string;
+    VERIFY_EMAIL: string;
+    SEND_VERIFICATION_EMAIL: string;
+  };
+  ADMIN: {
+    CREATE: string;
+    LOGIN: string;
+  };
+  USERS: {
+    GET_ALL: string;
+    GET_BY_ID: (id: string) => string;
+    CREATE: string;
+    UPDATE: (id: string) => string;
+    DELETE: (id: string) => string;
+    UPLOAD_AVATAR: string;
+  };
+  TEACHERS: {
+    GET_ALL: string;
+    GET_BY_ID: (id: string) => string;
+    CREATE: string;
+    UPDATE: (id: string) => string;
+    DELETE: (id: string) => string;
+    GET_MY_CLASSES: string;
+    GET_SCHEDULE: (id: string) => string;
+  };
+  STUDENTS: {
+    GET_ALL: string;
+    GET_BY_ID: (id: string) => string;
+    CREATE: string;
+    UPDATE: (id: string) => string;
+    DELETE: (id: string) => string;
+    MONTHLY_CHANGES: string;
+    SCHEDULE: (id: string) => string;
+    ATTENDANCE: (id: string) => string;
+  };
+  CLASSES: {
+    GET_ALL: string;
+    GET_BY_ID: (id: string) => string;
+    CREATE: string;
+    UPDATE: (id: string) => string;
+    DELETE: (id: string) => string;
+    ASSIGN_TEACHER: string;
+    UNASSIGN_TEACHER: string;
+    GET_AVAILABLE_STUDENTS: (id: string) => string;
+    ADD_STUDENTS: (id: string) => string;
+    REMOVE_STUDENTS: (id: string) => string;
+  };
+  PARENTS: {
+    CREATE: string;
+    GET_ALL: string;
+    GET_BY_ID: (id: string) => string;
+    UPDATE: (id: string) => string;
+    DELETE: (id: string) => string;
+    GET_CHILDREN: (id: string) => string;
+    ADD_CHILD: string;
+    REMOVE_CHILD: string;
+    PAY_TUITION_FEE: string;
+  };
+  SESSIONS: {
+    GET_TODAY: (id: string) => string;
+    UPDATE_ATTENDANCE: (id: string) => string;
+    GET_ALL_BY_CLASS: (id: string) => string;
+    GET_BY_STUDENT: (id: string) => string;
+  };
+  PAYMENTS: {
+    GET_ALL: string;
+    PAY_STUDENT: (id: string) => string;
+    GET_TEACHER_PAYMENTS: string;
+  };
+  SCHEDULES: {
+    GET_STUDENT_SCHEDULE: string;
+  };
+  ANNOUNCEMENTS: {
+    CREATE: string;
+    GET_ALL: string;
+    GET_BY_ID: (id: string) => string;
+    UPDATE: (id: string) => string;
+    DELETE: (id: string) => string;
+  };
+  DASHBOARD: {
+    ADMIN: string;
+    TEACHER: (id: string) => string;
+    PARENT: (id: string) => string;
+    STUDENT: (id: string) => string;
+  };
+  MENUS: {
+    CREATE: string;
+    GET_ALL: string;
+    UPDATE: (id: string) => string;
+    DELETE: (id: string) => string;
+  };
+  TRANSACTIONS: {
+    CREATE: string;
+    GET_ALL: string;
+    GET_BY_ID: (id: string) => string;
+    UPDATE: (id: string) => string;
+    DELETE: (id: string) => string;
+  };
+}
+
+export interface ApiConfig {
+  BASE_URL: string;
+  ENDPOINTS: ApiEndpoints;
+}
+
+export const API_CONFIG: ApiConfig = {
+  BASE_URL: import.meta.env.DEV ? '/api' : (import.meta.env.VITE_API_BASE_URL || 'https://eng-center-nestjs.onrender.com/api/v1'),
+  ENDPOINTS: {
+    // Auth endpoints
+    AUTH: {
+      USER_LOGIN: '/auth/user/login',
+      ADMIN_LOGIN: '/auth/admin/login',
+      REGISTER: '/auth/register',
+      LOGOUT: '/auth/logout',
+      REFRESH_TOKEN: '/auth/refresh',
+      CHANGE_PASSWORD: '/auth/change-password',
+      FORGOT_PASSWORD: '/auth/forgot-password',
+      VERIFY_CODE: '/auth/verify-code',
+      RESET_PASSWORD: '/auth/reset-password',
+      VERIFY_EMAIL: '/auth/verify-email',
+      SEND_VERIFICATION_EMAIL: '/auth/send-verification-email',
+    },
+    // Admin endpoints
+    ADMIN: {
+      CREATE: '/admin',
+      LOGIN: '/auth/admin/login',
+    },
+    // User endpoints
+    USERS: {
+      GET_ALL: '/users',
+      GET_BY_ID: (id: string) => `/users/${id}`,
+      CREATE: '/users',
+      UPDATE: (id: string) => `/users/${id}`,
+      DELETE: (id: string) => `/users/${id}`,
+      UPLOAD_AVATAR: '/users/me/avatar',
+    },
+    // Teacher endpoints
+    TEACHERS: {
+      GET_ALL: '/teachers',
+      GET_BY_ID: (id: string) => `/teachers/${id}`,
+      CREATE: '/teachers',
+      UPDATE: (id: string) => `/teachers/${id}`,
+      DELETE: (id: string) => `/teachers/${id}`,
+      GET_MY_CLASSES: '/teachers/me/classes',
+      GET_SCHEDULE: (id: string) => `/teachers/${id}/schedule`,
+    },
+    // Student endpoints
+    STUDENTS: {
+      GET_ALL: '/students',
+      GET_BY_ID: (id: string) => `/students/${id}`,
+      CREATE: '/students',
+      UPDATE: (id: string) => `/students/${id}`,
+      DELETE: (id: string) => `/students/${id}`,
+      MONTHLY_CHANGES: '/students/monthly-changes',
+      SCHEDULE: (id: string) => `/students/${id}/schedule`,
+      ATTENDANCE: (id: string) => `/students/${id}/attendance`,
+    },
+    // Class endpoints
+    CLASSES: {
+      GET_ALL: '/classes',
+      GET_BY_ID: (id: string) => `/classes/${id}`,
+      CREATE: '/classes',
+      UPDATE: (id: string) => `/classes/${id}`,
+      DELETE: (id: string) => `/classes/${id}`,
+      ASSIGN_TEACHER: '/classes/assign-teacher',
+      UNASSIGN_TEACHER: '/classes/unassign-teacher',
+      GET_AVAILABLE_STUDENTS: (id: string) => `/classes/available-students/${id}`,
+      ADD_STUDENTS: (id: string) => `/classes/add-students/${id}`,
+      REMOVE_STUDENTS: (id: string) => `/classes/remove-students/${id}`,
+    },
+    PARENTS: {
+      CREATE: '/parents',
+      GET_ALL: '/parents',
+      GET_BY_ID: (id: string) => `/parents/${id}`,
+      UPDATE: (id: string) => `/parents/${id}`,
+      DELETE: (id: string) => `/parents/${id}`,
+      GET_CHILDREN: (id: string) => `/parents/${id}/children`,
+      ADD_CHILD: '/parents/add-child',
+      REMOVE_CHILD: '/parents/remove-child',
+      PAY_TUITION_FEE: '/parents/pay-tuition-fee',
+    },
+    // Sessions (Attendance)
+    SESSIONS: {
+      GET_TODAY: (id: string) => `/sessions/today/${id}`,
+      UPDATE_ATTENDANCE: (id: string) => `/sessions/${id}`,
+      GET_ALL_BY_CLASS: (id: string) => `/sessions/all/${id}`,
+      GET_BY_STUDENT: (id: string) => `/sessions/student/${id}`,
+    },
+    PAYMENTS: {
+      GET_ALL: '/payments/all',
+      PAY_STUDENT: (id: string) => `/payments/pay-student/${id}`,
+      GET_TEACHER_PAYMENTS: '/payments/teacher',
+    },
+    SCHEDULES: {
+      GET_STUDENT_SCHEDULE: '/schedules/student/me',
+    },
+      ANNOUNCEMENTS: {
+    CREATE: '/announcements',
+    GET_ALL: '/announcements',
+    GET_BY_ID: (id: string) => `/announcements/${id}`,
+    UPDATE: (id: string) => `/announcements/${id}`,
+    DELETE: (id: string) => `/announcements/${id}`,
+  },
+  HOME_CONTENT: {
+    CREATE: '/home-content',
+    GET_ALL: '/home-content',
+    GET_BY_ID: (id: string) => `/home-content/${id}`,
+    UPDATE: (id: string) => `/home-content/${id}`,
+    DELETE: (id: string) => `/home-content/${id}`,
+    GET_BY_SECTION: (section: string) => `/home-content/section/${section}`,
+    GET_ACTIVE: '/home-content/active',
+  },
+    DASHBOARD: {
+      ADMIN: '/dashboard/admin',
+      TEACHER: (id: string) => `/dashboard/teacher/${id}`,
+      PARENT: (id: string) => `/dashboard/parent/${id}`,
+      STUDENT: (id: string) => `/dashboard/student/${id}`,
+    },
+    // Menu endpoints
+    MENUS: {
+      CREATE: '/menus',
+      GET_ALL: '/menus',
+      UPDATE: (id: string) => `/menus/${id}`,
+      DELETE: (id: string) => `/menus/${id}`,
+    },
+    // Transaction endpoints
+    TRANSACTIONS: {
+      CREATE: '/transactions',
+      GET_ALL: '/transactions',
+      GET_BY_ID: (id: string) => `/transactions/${id}`,
+      UPDATE: (id: string) => `/transactions/${id}`,
+      DELETE: (id: string) => `/transactions/${id}`,
+    },
+  },
+};

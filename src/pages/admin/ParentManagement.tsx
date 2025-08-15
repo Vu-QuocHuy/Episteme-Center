@@ -1,0 +1,140 @@
+import React, { useState, useCallback } from 'react';
+import { Box, Typography, Button } from '@mui/material';
+import { Add as AddIcon } from '@mui/icons-material';
+import { commonStyles } from '../../utils/styles';
+import DashboardLayout from '../../components/layouts/DashboardLayout';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
+import NotificationSnackbar from '../../components/common/NotificationSnackbar';
+import { useParentManagement } from '../../hooks/features/useParentManagement';
+import ParentTable from '../../components/features/parent/ParentTable';
+import ParentFilters from '../../components/features/parent/ParentFilters';
+import { Parent } from '../../types';
+
+interface SnackbarState {
+  open: boolean;
+  message: string;
+  severity: 'success' | 'error' | 'warning' | 'info';
+}
+
+const ParentManagement: React.FC = () => {
+  const [openDeleteDialog, setOpenDeleteDialog] = useState<boolean>(false);
+  const [parentToDelete, setParentToDelete] = useState<Parent | null>(null);
+  const [snackbar, setSnackbar] = useState<SnackbarState>({ open: false, message: '', severity: 'success' });
+
+  // Custom hooks
+  const {
+    parents,
+    loading,
+    loadingTable,
+    page,
+    searchQuery,
+    setSearchQuery,
+    fetchParents,
+    deleteParent,
+    searchStudents,
+  } = useParentManagement();
+
+  // Dialog handlers with useCallback
+  const handleOpenDialog = useCallback((_parent: Parent | null = null): void => {
+    // TODO: Implement form dialog functionality
+    console.log('Open form dialog for parent:', _parent);
+  }, []);
+
+
+
+  const handleOpenDeleteDialog = useCallback((parent: Parent): void => {
+    setParentToDelete(parent);
+    setOpenDeleteDialog(true);
+  }, []);
+
+  const handleCloseDeleteDialog = useCallback((): void => {
+    setParentToDelete(null);
+    setOpenDeleteDialog(false);
+  }, []);
+
+  const handleDeleteParent = useCallback(async (): Promise<void> => {
+    if (!parentToDelete) return;
+
+    const result = await deleteParent(parentToDelete.id);
+
+    if (result.success) {
+      setSnackbar({ open: true, message: result.message, severity: 'success' });
+      handleCloseDeleteDialog();
+    } else {
+      setSnackbar({ open: true, message: result.message, severity: 'error' });
+    }
+  }, [parentToDelete, deleteParent, handleCloseDeleteDialog]);
+
+
+
+
+
+  return (
+    <DashboardLayout role="admin">
+      <Box sx={commonStyles.pageContainer}>
+        <Box sx={commonStyles.contentContainer}>
+          <Box sx={commonStyles.pageHeader}>
+            <Typography sx={commonStyles.pageTitle}>
+              Quản lý phụ huynh
+            </Typography>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => handleOpenDialog()}
+              sx={commonStyles.primaryButton}
+            >
+              Thêm phụ huynh
+            </Button>
+          </Box>
+
+          <ParentFilters
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+          />
+
+                     <ParentTable
+             parents={parents}
+             loading={loadingTable}
+             onEdit={handleOpenDialog}
+             onDelete={(parentId: string) => {
+               const parent = parents.find(p => p.id === parentId);
+               if (parent) handleOpenDeleteDialog(parent);
+             }}
+             onViewDetails={(parent: Parent) => {
+               // TODO: Implement view details functionality
+               console.log('View details for parent:', parent);
+             }}
+             onViewChildren={(parent: Parent) => {
+               console.log('View children for parent:', parent);
+             }}
+             onUpdateParent={() => {
+               // Refresh parent list after updating children
+               fetchParents(page);
+             }}
+             searchStudents={searchStudents}
+           />
+        </Box>
+      </Box>
+
+
+
+      <ConfirmDialog
+        open={openDeleteDialog}
+        onClose={handleCloseDeleteDialog}
+        onConfirm={handleDeleteParent}
+        title="Xác nhận xóa phụ huynh"
+        message={parentToDelete ? `Bạn có chắc chắn muốn xóa phụ huynh "${parentToDelete.name}"? Hành động này không thể hoàn tác.` : ''}
+        loading={loading}
+      />
+
+             <NotificationSnackbar
+         open={snackbar.open}
+         onClose={() => setSnackbar({ ...snackbar, open: false })}
+         message={snackbar.message}
+         severity={snackbar.severity}
+       />
+    </DashboardLayout>
+  );
+};
+
+export default ParentManagement;

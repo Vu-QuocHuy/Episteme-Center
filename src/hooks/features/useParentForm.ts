@@ -1,0 +1,215 @@
+import { useState } from 'react';
+import { createParentAPI, updateParentAPI, addChildAPI, removeChildAPI } from '../../services/api';
+import { validateParent } from '../../validations/parentValidation';
+import { Parent, ParentFormData, ParentValidationErrors } from '../../types';
+
+interface UseParentFormReturn {
+  form: ParentFormData;
+  formErrors: ParentValidationErrors;
+  formLoading: boolean;
+  formError: string;
+  tabValue: number;
+  setTabValue: (value: number) => void;
+  studentSearchQuery: string;
+  setStudentSearchQuery: (query: string) => void;
+  searchResults: any[];
+  setSearchResults: (results: any[]) => void;
+  searchingStudents: boolean;
+  setSearchingStudents: (searching: boolean) => void;
+  handleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  setFormData: (parent?: Parent | null) => void;
+  resetForm: () => void;
+  handleSubmit: (selectedParent?: Parent | null, onSuccess?: () => void) => Promise<{ success: boolean; message?: string }>;
+  handleAddChild: (studentId: string, parentId: string) => Promise<{ success: boolean; message: string }>;
+  handleRemoveChild: (studentId: string, parentId: string) => Promise<{ success: boolean; message: string }>;
+}
+
+export const useParentForm = (): UseParentFormReturn => {
+  const [form, setForm] = useState<ParentFormData>({
+    name: '',
+    email: '',
+    password: '',
+    dayOfBirth: '',
+    phone: '',
+    address: '',
+    gender: 'male',
+    canSeeTeacherInfo: true,
+  });
+  const [formErrors, setFormErrors] = useState<ParentValidationErrors>({});
+  const [formLoading, setFormLoading] = useState<boolean>(false);
+  const [formError, setFormError] = useState<string>('');
+  const [tabValue, setTabValue] = useState<number>(0);
+  const [studentSearchQuery, setStudentSearchQuery] = useState<string>('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchingStudents, setSearchingStudents] = useState<boolean>(false);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    const { name, value, type, checked } = e.target;
+    setForm((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  const setFormData = (parent: Parent | null = null): void => {
+    if (parent) {
+      setForm({
+        name: parent.userId?.name || '',
+        email: parent.userId?.email || '',
+        password: '',
+        dayOfBirth: parent.userId?.dayOfBirth || '',
+        phone: parent.userId?.phone || '',
+        address: parent.userId?.address || '',
+        gender: parent.userId?.gender || 'male',
+        canSeeTeacherInfo: parent.canSeeTeacherInfo !== undefined ? parent.canSeeTeacherInfo : true,
+      });
+    } else {
+      setForm({
+        name: '',
+        email: '',
+        password: '',
+        dayOfBirth: '',
+        phone: '',
+        address: '',
+        gender: 'male',
+        canSeeTeacherInfo: true,
+      });
+    }
+  };
+
+  const resetForm = (): void => {
+    setForm({
+      name: '',
+      email: '',
+      password: '',
+      dayOfBirth: '',
+      phone: '',
+      address: '',
+      gender: 'male',
+      canSeeTeacherInfo: true,
+    });
+    setFormErrors({});
+    setFormError('');
+    setTabValue(0);
+    setStudentSearchQuery('');
+    setSearchResults([]);
+  };
+
+  const handleSubmit = async (selectedParent?: Parent | null, onSuccess?: () => void): Promise<{ success: boolean; message?: string }> => {
+    const errors = validateParent(form);
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return { success: false };
+    }
+
+    setFormErrors({});
+    setFormLoading(true);
+    setFormError('');
+
+    try {
+      const toAPIDateFormat = (dob: string): string => {
+        if (!dob) return '';
+        const [day, month, year] = dob.split('/');
+        return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      };
+
+      let body: any;
+      if (selectedParent) {
+        // Update existing parent
+        body = {
+          userData: {
+            name: form.name,
+            email: form.email,
+            phone: form.phone,
+            dayOfBirth: toAPIDateFormat(form.dayOfBirth),
+            gender: form.gender,
+            address: form.address,
+          },
+          parentData: {
+            canSeeTeacherInfo: form.canSeeTeacherInfo,
+          }
+        };
+      } else {
+        // Create new parent
+        body = {
+          email: form.email,
+          password: form.password,
+          name: form.name,
+          dayOfBirth: toAPIDateFormat(form.dayOfBirth),
+          phone: form.phone,
+          address: form.address,
+          gender: form.gender,
+          canSeeTeacherInfo: form.canSeeTeacherInfo,
+        };
+      }
+
+      if (selectedParent) {
+        await updateParentAPI(selectedParent.id, body);
+      } else {
+        await createParentAPI(body);
+      }
+
+      resetForm();
+      if (onSuccess) {
+        onSuccess();
+      }
+
+      return { success: true };
+    } catch (error: any) {
+      console.error('Error submitting parent:', error);
+      const errorMessage = error.response?.data?.message || 'Có lỗi xảy ra khi lưu phụ huynh';
+      setFormError(errorMessage);
+      return { success: false, message: errorMessage };
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const handleAddChild = async (studentId: string, parentId: string): Promise<{ success: boolean; message: string }> => {
+    try {
+      await addChildAPI(studentId, parentId);
+      return { success: true, message: 'Thêm con thành công!' };
+    } catch (error: any) {
+      console.error('Error adding child:', error);
+      return {
+        success: false,
+        message: error?.response?.data?.message || 'Có lỗi xảy ra khi thêm con'
+      };
+    }
+  };
+
+  const handleRemoveChild = async (studentId: string, parentId: string): Promise<{ success: boolean; message: string }> => {
+    try {
+      await removeChildAPI(studentId, parentId);
+      return { success: true, message: 'Xóa con thành công!' };
+    } catch (error: any) {
+      console.error('Error removing child:', error);
+      return {
+        success: false,
+        message: error?.response?.data?.message || 'Có lỗi xảy ra khi xóa con'
+      };
+    }
+  };
+
+  return {
+    form,
+    formErrors,
+    formLoading,
+    formError,
+    tabValue,
+    setTabValue,
+    studentSearchQuery,
+    setStudentSearchQuery,
+    searchResults,
+    setSearchResults,
+    searchingStudents,
+    setSearchingStudents,
+    handleChange,
+    setFormData,
+    resetForm,
+    handleSubmit,
+    handleAddChild,
+    handleRemoveChild,
+  };
+};
