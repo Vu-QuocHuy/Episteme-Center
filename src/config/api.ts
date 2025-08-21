@@ -87,11 +87,23 @@ export interface ApiEndpoints {
     UPDATE: (id: string) => string;
     DELETE: (id: string) => string;
   };
+  HOME_CONTENT: {
+    CREATE: string;
+    GET_ALL: string;
+    GET_BY_ID: (id: string) => string;
+    UPDATE: (id: string) => string;
+    DELETE: (id: string) => string;
+    GET_BY_SECTION: (section: string) => string;
+    GET_ACTIVE: string;
+  };
   DASHBOARD: {
     ADMIN: string;
     TEACHER: (id: string) => string;
     PARENT: (id: string) => string;
     STUDENT: (id: string) => string;
+  };
+  AUDIT?: {
+    LOGS: string;
   };
   MENUS: {
     CREATE: string;
@@ -225,6 +237,9 @@ export const API_CONFIG: ApiConfig = {
       TEACHER: (id: string) => `/dashboard/teacher/${id}`,
       PARENT: (id: string) => `/dashboard/parent/${id}`,
       STUDENT: (id: string) => `/dashboard/student/${id}`,
+    },
+    AUDIT: {
+      LOGS: '/audit-log',
     },
     // Menu endpoints
     MENUS: {

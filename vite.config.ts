@@ -8,6 +8,19 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@components': path.resolve(__dirname, './src/components'),
+      '@pages': path.resolve(__dirname, './src/pages'),
+      '@utils': path.resolve(__dirname, './src/utils'),
+      '@services': path.resolve(__dirname, './src/services'),
+      '@contexts': path.resolve(__dirname, './src/contexts'),
+      '@hooks': path.resolve(__dirname, './src/hooks'),
+      '@types': path.resolve(__dirname, './src/types'),
+      '@constants': path.resolve(__dirname, './src/constants'),
+      '@lib': path.resolve(__dirname, './src/lib'),
+      '@config': path.resolve(__dirname, './src/config'),
+      '@theme': path.resolve(__dirname, './src/theme'),
+      '@styles': path.resolve(__dirname, './src/styles'),
+      '@assets': path.resolve(__dirname, './src/assets'),
     },
   },
   build: {
@@ -23,26 +36,26 @@ export default defineConfig({
 
           // Feature chunks
           'admin-features': [
-            './src/pages/admin/TeacherManagement.jsx',
-            './src/pages/admin/StudentManagement.jsx',
-            './src/pages/admin/ClassManagement.jsx',
-            './src/pages/admin/ParentManagement.jsx',
+            './src/pages/admin/TeacherManagement.tsx',
+            './src/pages/admin/StudentManagement.tsx',
+            './src/pages/admin/ClassManagement.tsx',
+            './src/pages/admin/ParentManagement.tsx',
           ],
           'teacher-features': [
-            './src/pages/teacher/Dashboard.jsx',
-            './src/pages/teacher/MyClasses.jsx',
-            './src/pages/teacher/Schedule.jsx',
-            './src/pages/teacher/Salary.jsx',
+            './src/pages/teacher/Dashboard.tsx',
+            './src/pages/teacher/MyClasses.tsx',
+            './src/pages/teacher/Schedule.tsx',
+            './src/pages/teacher/Salary.tsx',
           ],
           'student-features': [
-            './src/pages/student/Dashboard.jsx',
-            './src/pages/student/MyClasses.jsx',
-            './src/pages/student/Schedule.jsx',
+            './src/pages/student/Dashboard.tsx',
+            './src/pages/student/MyClasses.tsx',
+            './src/pages/student/Schedule.tsx',
           ],
           'parent-features': [
-            './src/pages/parent/Dashboard.jsx',
-            './src/pages/parent/Children.jsx',
-            './src/pages/parent/Payments.jsx',
+            './src/pages/parent/Dashboard.tsx',
+            './src/pages/parent/Children.tsx',
+            './src/pages/parent/Payments.tsx',
           ],
 
           // Common components
@@ -68,11 +81,11 @@ export default defineConfig({
           'feature-hooks': [
             './src/hooks/features/useTeacherManagement.ts',
             './src/hooks/features/useTeacherForm.ts',
-            './src/hooks/features/useStudentManagement.js',
-            './src/hooks/features/useStudentForm.js',
-            './src/hooks/features/useClassManagement.js',
-            './src/hooks/features/useParentManagement.js',
-            './src/hooks/features/useParentForm.js',
+            './src/hooks/features/useStudentManagement.ts',
+            './src/hooks/features/useStudentForm.ts',
+            './src/hooks/features/useClassManagement.ts',
+            './src/hooks/features/useParentManagement.ts',
+            './src/hooks/features/useParentForm.ts',
           ],
         },
       },

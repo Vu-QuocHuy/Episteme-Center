@@ -6,7 +6,7 @@ import DashboardLayout from '../../components/layouts/DashboardLayout';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import NotificationSnackbar from '../../components/common/NotificationSnackbar';
 import ClassTable from '../../components/features/class/ClassTable';
-import ClassForm from '../../components/features/class/ClassForm';
+import ClassForm from '../../components/features/class/ClassFormUpdated';
 import { useClassManagement } from '../../hooks/features/useClassManagement';
 import { Class } from '../../types';
 import { createClassAPI, updateClassAPI, deleteClassAPI } from '../../services/api';
@@ -86,7 +86,29 @@ const ClassManagement: React.FC = () => {
         await updateClassAPI(selectedClass.id, classData);
         setSnackbar({ open: true, message: 'Cập nhật lớp học thành công!', severity: 'success' });
       } else {
-        await createClassAPI(classData);
+        // Format data for API Create a class
+        const apiData = {
+          name: classData.name,
+          grade: classData.grade,
+          section: classData.section,
+          year: classData.year,
+          description: classData.description,
+          feePerLesson: classData.feePerLesson,
+          status: classData.status,
+          max_student: classData.max_student,
+          room: classData.room,
+          schedule: {
+            start_date: classData.schedule.start_date,
+            end_date: classData.schedule.end_date,
+            days_of_week: classData.schedule.days_of_week,
+            time_slots: {
+              start_time: classData.schedule.time_slots.start_time,
+              end_time: classData.schedule.time_slots.end_time
+            }
+          }
+        };
+
+        await createClassAPI(apiData);
         setSnackbar({ open: true, message: 'Tạo lớp học thành công!', severity: 'success' });
       }
       handleCloseDialog();

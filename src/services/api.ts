@@ -1,5 +1,6 @@
 import axiosInstance from '../utils/axios.customize';
 import { API_CONFIG } from '../config/api';
+import { ClassFormData, HomeContentFormData } from '../types';
 
 // Type definitions for API parameters and responses
 export interface LoginData {
@@ -458,7 +459,7 @@ export const removeChildAPI = (studentId: string, parentId: string) => {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
   });
 };
-export const payTuitionAPI = (data: any) => axiosInstance.patch(API_CONFIG.ENDPOINTS.PARENTS.PAY_TUITION, data);
+export const payTuitionAPI = (data: any) => axiosInstance.patch(API_CONFIG.ENDPOINTS.PARENTS.PAY_TUITION_FEE, data);
 
 // Session APIs (Attendance)
 export const getTodaySessionAPI = (classId: string) => axiosInstance.get(API_CONFIG.ENDPOINTS.SESSIONS.GET_TODAY(classId));
@@ -661,3 +662,45 @@ export const getAdminDashboardAPI = () => axiosInstance.get(API_CONFIG.ENDPOINTS
 export const getTeacherDashboardAPI = (id: string) => axiosInstance.get(API_CONFIG.ENDPOINTS.DASHBOARD.TEACHER(id));
 export const getParentDashboardAPI = (id: string) => axiosInstance.get(API_CONFIG.ENDPOINTS.DASHBOARD.PARENT(id));
 export const getStudentDashboardAPI = (id: string) => axiosInstance.get(API_CONFIG.ENDPOINTS.DASHBOARD.STUDENT(id));
+
+// Audit Log APIs
+export interface AuditLogChange {
+  fieldName: string;
+  oldValue: string | null;
+  newValue: string | null;
+}
+
+export interface AuditLogItem {
+  id: string;
+  entity: string;
+  entityId: string | null;
+  path: string;
+  method: string;
+  user: {
+    id: string;
+    email: string;
+    name: string;
+  };
+  changes: AuditLogChange[];
+}
+
+export interface AuditLogResponse {
+  statusCode: number;
+  message: string;
+  data: {
+    meta: {
+      limit: number;
+      page: number;
+      totalPages: number;
+      totalItems: number;
+    };
+    result: AuditLogItem[];
+  };
+}
+
+export const getAuditLogsAPI = (params: { page?: number; limit?: number } = {}) => {
+  const { page = 1, limit = 10 } = params;
+  return axiosInstance.get<AuditLogResponse>(API_CONFIG.ENDPOINTS.AUDIT!.LOGS, {
+    params: { page, limit },
+  });
+};

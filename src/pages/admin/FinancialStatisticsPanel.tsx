@@ -7,6 +7,8 @@ import { getPaymentsAPI, getTeacherPaymentsAPI, payTeacherAPI, getTotalPaymentsA
 import PaymentHistoryModal from '../../components/common/PaymentHistoryModal';
 import NotificationSnackbar from '../../components/common/NotificationSnackbar';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
+import FormDialog from '../../components/common/forms/FormDialog';
+import { getAllTransactionsAPI, createTransactionAPI } from '../../services/api';
 
 interface StudentPayment {
   id: string;
@@ -86,6 +88,13 @@ const FinancialStatisticsPanel: React.FC = () => {
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
   const [selectedQuarter, setSelectedQuarter] = useState<number>(1);
   const [tab, setTab] = useState<number>(0);
+  // Other transactions (manual revenues/expenses)
+  const [otherTransactions, setOtherTransactions] = useState<any[]>([]);
+  const [otherPage, setOtherPage] = useState<number>(1);
+  const [otherTotalPages, setOtherTotalPages] = useState<number>(1);
+  const [openOtherDialog, setOpenOtherDialog] = useState<boolean>(false);
+  const [otherForm, setOtherForm] = useState<{ amount: string; type: 'revenue' | 'expense'; description: string }>({ amount: '', type: 'expense', description: '' });
+  const [otherLoading, setOtherLoading] = useState<boolean>(false);
   const [customStart, setCustomStart] = useState<string>(new Date().toISOString().split('T')[0].substring(0, 8) + '01');
   const [customEnd, setCustomEnd] = useState<string>(new Date().toISOString().split('T')[0]);
   const [studentPayments, setStudentPayments] = useState<StudentPayment[]>([]);
@@ -126,6 +135,41 @@ const FinancialStatisticsPanel: React.FC = () => {
       case 3: return { startMonth: 7, endMonth: 9 };
       case 4: return { startMonth: 10, endMonth: 12 };
       default: return { startMonth: 1, endMonth: 3 };
+    }
+  };
+
+  // Fetch other transactions
+  const fetchOtherTransactions = async (pageNum = 1): Promise<void> => {
+    try {
+      const res = await getAllTransactionsAPI({ page: pageNum, limit: 10 });
+      const data = (res as any).data || res;
+      setOtherTransactions(Array.isArray(data?.data?.result) ? data.data.result : (data || []));
+      const meta = data?.data?.meta;
+      setOtherTotalPages(meta?.totalPages || 1);
+      setOtherPage(meta?.page || pageNum);
+    } catch (e) {
+      setOtherTransactions([]);
+      setOtherTotalPages(1);
+      setOtherPage(1);
+    }
+  };
+
+  const handleOpenOtherDialog = (): void => setOpenOtherDialog(true);
+  const handleCloseOtherDialog = (): void => setOpenOtherDialog(false);
+  const handleChangeOtherField = (key: 'amount' | 'type' | 'description', value: string) => setOtherForm(prev => ({ ...prev, [key]: value } as any));
+  const handleSubmitOther = async (): Promise<void> => {
+    if (!otherForm.amount || !otherForm.type) return;
+    setOtherLoading(true);
+    try {
+      await createTransactionAPI({ amount: Number(otherForm.amount), type: otherForm.type, description: otherForm.description });
+      setOpenOtherDialog(false);
+      setOtherForm({ amount: '', type: 'expense', description: '' });
+      await fetchOtherTransactions(1);
+      setSnackbar({ open: true, message: 'Tạo thu/chi thành công', severity: 'success' });
+    } catch (e: any) {
+      setSnackbar({ open: true, message: e?.response?.data?.message || 'Tạo thu/chi thất bại', severity: 'error' });
+    } finally {
+      setOtherLoading(false);
     }
   };
 
@@ -430,9 +474,13 @@ const FinancialStatisticsPanel: React.FC = () => {
 
       {/* Tabs bảng chi tiết */}
       <Paper sx={{ mb: 3 }}>
-        <Tabs value={tab} onChange={(_, v) => setTab(v)}>
+        <Tabs value={tab} onChange={(_, v) => {
+          setTab(v);
+          if (v === 2) fetchOtherTransactions(1);
+        }}>
           <Tab label="Chi tiết giáo viên" />
           <Tab label="Chi tiết học sinh" />
+          <Tab label="Thu chi khác" />
         </Tabs>
         <Box sx={{ p: 2 }}>
           {tab === 0 && (
@@ -572,8 +620,88 @@ const FinancialStatisticsPanel: React.FC = () => {
               </Box>
             </>
           )}
+          {tab === 2 && (
+            <>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+                <Button variant="contained" onClick={handleOpenOtherDialog}>Tạo thu/chi</Button>
+              </Box>
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Loại</TableCell>
+                      <TableCell>Mô tả</TableCell>
+                      <TableCell align="right">Số tiền</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {otherTransactions.map((t: any, idx: number) => (
+                      <TableRow key={t.id || idx} hover>
+                        <TableCell>
+                          <Chip label={t.type === 'revenue' ? 'Thu' : 'Chi'} color={t.type === 'revenue' ? 'success' : 'error'} size="small" />
+                        </TableCell>
+                        <TableCell>{t.description || '-'}</TableCell>
+                        <TableCell align="right">{Number(t.amount || 0).toLocaleString()} ₫</TableCell>
+                      </TableRow>
+                    ))}
+                    {otherTransactions.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={3} align="center">Không có dữ liệu</TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                <Pagination count={otherTotalPages} page={otherPage} onChange={(_, p) => fetchOtherTransactions(p)} />
+              </Box>
+            </>
+          )}
         </Box>
       </Paper>
+
+      {/* Dialog tạo thu chi khác */}
+      <FormDialog
+        open={openOtherDialog}
+        onClose={handleCloseOtherDialog}
+        title="Tạo thu/chi khác"
+        subtitle="Nhập thông tin khoản thu/chi (tiền điện, nước, dịch vụ,...)"
+        onSubmit={handleSubmitOther}
+        loading={otherLoading}
+        submitText="Lưu"
+        cancelText="Hủy"
+        maxWidth="sm"
+      >
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              label="Số tiền"
+              type="number"
+              fullWidth
+              value={otherForm.amount}
+              onChange={(e) => handleChangeOtherField('amount', e.target.value)}
+              inputProps={{ min: 0 }}
+              required
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField select fullWidth label="Loại" value={otherForm.type} onChange={(e) => handleChangeOtherField('type', e.target.value)}>
+              <MenuItem value="revenue">Thu</MenuItem>
+              <MenuItem value="expense">Chi</MenuItem>
+            </TextField>
+          </Grid>
+          <Grid item xs={12}>
+            <TextField
+              label="Mô tả"
+              fullWidth
+              multiline
+              minRows={2}
+              value={otherForm.description}
+              onChange={(e) => handleChangeOtherField('description', e.target.value)}
+            />
+          </Grid>
+        </Grid>
+      </FormDialog>
 
              {/* Payment History Modal */}
        {selectedPaymentForHistory && (

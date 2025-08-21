@@ -1,11 +1,36 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getAllTeachersAPI, deleteTeacherAPI } from '../../services/api';
-import { Teacher, UseManagementReturn } from '../../types';
+import { getAllTeachersAPI, deleteTeacherAPI, getTeacherByIdAPI } from '../../services/api';
+import { Teacher } from '../../types';
 
-export const useTeacherManagement = (): UseManagementReturn<Teacher> => {
+interface UseTeacherManagementReturn {
+  data: Teacher[];
+  teachers: Teacher[];
+  selectedTeacher: Teacher | null;
+  loading: boolean;
+  loadingTable: boolean;
+  loadingDetail: boolean;
+  error: string;
+  page: number;
+  totalPages: number;
+  totalRecords: number;
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+  isActiveFilter: string;
+  setIsActiveFilter: (filter: string) => void;
+  fetchData: (pageNum?: number) => Promise<void>;
+  fetchTeachers: (pageNum?: number) => Promise<void>;
+  getTeacherById: (id: string) => Promise<Teacher | null>;
+  deleteItem: (id: string) => Promise<{ success: boolean; message: string }>;
+  deleteTeacher: (id: string) => Promise<{ success: boolean; message: string }>;
+  handlePageChange: (event: any, value: number) => void;
+}
+
+export const useTeacherManagement = (): UseTeacherManagementReturn => {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [loadingTable, setLoadingTable] = useState<boolean>(false);
+  const [loadingDetail, setLoadingDetail] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [page, setPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
@@ -80,6 +105,28 @@ export const useTeacherManagement = (): UseManagementReturn<Teacher> => {
     setPage(value);
   }, []);
 
+  // Get teacher by ID
+  const getTeacherById = useCallback(async (id: string): Promise<Teacher | null> => {
+    setLoadingDetail(true);
+    try {
+      const response = await getTeacherByIdAPI(id);
+      console.log('📊 Teacher Detail API Response:', response);
+      
+      if (response && response.data && response.data.data) {
+        const teacher = response.data.data;
+        setSelectedTeacher(teacher);
+        return teacher;
+      }
+      return null;
+    } catch (error: any) {
+      console.error('❌ Error fetching teacher detail:', error);
+      setError(error.response?.data?.message || 'Không thể tải thông tin giáo viên');
+      return null;
+    } finally {
+      setLoadingDetail(false);
+    }
+  }, []);
+
   // Fetch teachers when dependencies change
   useEffect(() => {
     fetchTeachers(page);
@@ -88,8 +135,10 @@ export const useTeacherManagement = (): UseManagementReturn<Teacher> => {
   return {
     data: teachers,
     teachers,
+    selectedTeacher,
     loading,
     loadingTable,
+    loadingDetail,
     error,
     page,
     totalPages,
@@ -100,6 +149,7 @@ export const useTeacherManagement = (): UseManagementReturn<Teacher> => {
     setIsActiveFilter,
     fetchData: fetchTeachers,
     fetchTeachers,
+    getTeacherById,
     deleteItem: deleteTeacher,
     deleteTeacher,
     handlePageChange,

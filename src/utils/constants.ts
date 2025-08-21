@@ -1,23 +1,19 @@
-// Constants for English Center Application
+// Re-export from new constants location for backward compatibility
+export * from '../constants/index.js';
 
-// Application Info
-export const APP_NAME: string = import.meta.env?.VITE_APP_NAME || 'English Center Management';
-export const APP_VERSION: string = import.meta.env?.VITE_APP_VERSION || '1.0.0';
-export const APP_DESCRIPTION: string = 'Hệ thống quản lý trung tâm tiếng Anh';
+// Type exports
+export type { UserRole } from '../constants/index.js';
 
-// API Configuration
-export const API_BASE_URL: string = import.meta.env?.VITE_API_BASE_URL || 'https://eng-center-nestjs.onrender.com/api/v1';
-export const API_TIMEOUT: number = 30000; // 30 seconds
+// Legacy file - deprecated
+// Please import directly from '../constants' or '@constants' instead
+// This file will be removed in future versions
 
-// User Roles
-export const USER_ROLES = {
-  ADMIN: 'admin',
-  TEACHER: 'teacher',
-  STUDENT: 'student',
-  PARENT: 'parent'
-} as const;
-
-export type UserRole = typeof USER_ROLES[keyof typeof USER_ROLES];
+if (import.meta.env.DEV) {
+  console.warn(
+    '⚠️  utils/constants.ts is deprecated. ' +
+    'Please import from "constants" or "@constants" instead.'
+  );
+}
 
 // Role Labels
 export const ROLE_LABELS: Record<UserRole, string> = {
@@ -31,7 +27,7 @@ export const ROLE_LABELS: Record<UserRole, string> = {
 export const ROUTES = {
   HOME: '/',
   LOGIN: '/login',
-  ADMIN_LOGIN: '/admin/login',
+  ADMIN_LOGIN: '/staff/login',
   ADMIN: {
     DASHBOARD: '/admin/dashboard',
     CLASSES: '/admin/classes',

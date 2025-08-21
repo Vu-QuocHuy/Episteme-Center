@@ -10,6 +10,7 @@ import ClassIcon from '@mui/icons-material/Class';
 import GroupIcon from '@mui/icons-material/Group';
 import CampaignIcon from '@mui/icons-material/Campaign';
 import AssessmentIcon from '@mui/icons-material/Assessment';
+import ListAltIcon from '@mui/icons-material/ListAlt';
 import PaymentIcon from '@mui/icons-material/Payment';
 import FamilyRestroomIcon from '@mui/icons-material/FamilyRestroom';
 import WebIcon from '@mui/icons-material/Web';
@@ -37,6 +38,7 @@ const getMenuItemsByRole = (role: string): MenuItem[] => {
         { text: 'Quản lý phụ huynh', icon: <FamilyRestroomIcon />, path: '/admin/parents' },
         { text: 'Quản lý quảng cáo', icon: <CampaignIcon />, path: '/admin/advertisements' },
         { text: 'Thống kê', icon: <AssessmentIcon />, path: '/admin/statistics' },
+        { text: 'Audit Logs', icon: <ListAltIcon />, path: '/admin/audit-log' },
         { text: 'Quản lý nội dung trang chủ', icon: <WebIcon />, path: '/admin/home-content' },
       ];
     case 'teacher':

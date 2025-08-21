@@ -73,7 +73,7 @@ const UnauthorizedAccess: React.FC = () => {
               <Button
                 variant="outlined"
                 startIcon={<AdminPanelSettings />}
-                onClick={() => navigate('/admin/login')}
+                onClick={() => navigate('/staff/login')}
                 sx={{ minWidth: 180 }}
               >
                 Quản trị & Giáo viên

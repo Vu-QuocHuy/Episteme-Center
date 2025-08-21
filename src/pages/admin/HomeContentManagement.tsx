@@ -65,13 +65,13 @@ function TabPanel(props: TabPanelProps) {
 }
 
 const sectionConfig = [
-  { value: 'hero', label: 'Hero Section', description: 'Phần banner chính của trang chủ' },
-  { value: 'about', label: 'About Section', description: 'Giới thiệu về trung tâm' },
-  { value: 'services', label: 'Services Section', description: 'Các dịch vụ cung cấp' },
-  { value: 'features', label: 'Features Section', description: 'Tính năng nổi bật' },
-  { value: 'testimonials', label: 'Testimonials Section', description: 'Đánh giá từ học viên' },
-  { value: 'contact', label: 'Contact Section', description: 'Thông tin liên hệ' },
-  { value: 'footer', label: 'Footer Section', description: 'Phần chân trang' }
+  { value: 'hero', label: 'Banner chính', description: 'Phần banner chính của trang chủ' },
+  { value: 'about', label: 'Giới thiệu', description: 'Giới thiệu về trung tâm' },
+  { value: 'services', label: 'Dịch vụ', description: 'Các dịch vụ cung cấp' },
+  { value: 'features', label: 'Tính năng', description: 'Tính năng nổi bật' },
+  { value: 'testimonials', label: 'Đánh giá', description: 'Đánh giá từ học viên' },
+  { value: 'contact', label: 'Liên hệ', description: 'Thông tin liên hệ' },
+  { value: 'footer', label: 'Chân trang', description: 'Phần chân trang' }
 ];
 
 const HomeContentManagement: React.FC = () => {

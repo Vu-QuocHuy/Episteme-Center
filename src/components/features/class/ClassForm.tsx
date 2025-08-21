@@ -17,13 +17,15 @@ import {
   Grid,
   Chip,
   Autocomplete,
-  Divider
+  Divider,
+  Paper
 } from '@mui/material';
 import {
   Close as CloseIcon,
   Save as SaveIcon,
   Cancel as CancelIcon,
-  CalendarToday as CalendarIcon
+  CalendarToday as CalendarIcon,
+  Add as AddIcon
 } from '@mui/icons-material';
 
 import { Class, Teacher, ClassFormData, ClassFormErrors } from '../../../types';
@@ -68,12 +70,15 @@ const daysOfWeekOptions = [
   { value: '0', label: 'Chủ nhật' }
 ];
 
-const statusOptions = [
-  { value: 'active', label: 'Đang hoạt động' },
-  { value: 'inactive', label: 'Không hoạt động' },
-  { value: 'closed', label: 'Đã đóng' },
-  { value: 'completed', label: 'Đã kết thúc' },
-  { value: 'cancelled', label: 'Đã hủy' }
+const timeSlotOptions = [
+  { value: '07:00-08:30', label: '07:00 - 08:30' },
+  { value: '08:30-10:00', label: '08:30 - 10:00' },
+  { value: '10:00-11:30', label: '10:00 - 11:30' },
+  { value: '13:30-15:00', label: '13:30 - 15:00' },
+  { value: '15:00-16:30', label: '15:00 - 16:30' },
+  { value: '16:30-18:00', label: '16:30 - 18:00' },
+  { value: '18:00-19:30', label: '18:00 - 19:30' },
+  { value: '19:30-21:00', label: '19:30 - 21:00' }
 ];
 
 const ClassForm: React.FC<ClassFormProps> = ({
@@ -81,9 +86,8 @@ const ClassForm: React.FC<ClassFormProps> = ({
   onClose,
   onSubmit,
   classItem,
-
+  loading = false
 }) => {
-
   const [formData, setFormData] = useState<ClassFormData>(initialFormData);
   const [errors, setErrors] = useState<ClassFormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -157,6 +161,28 @@ const ClassForm: React.FC<ClassFormProps> = ({
     }
   };
 
+  const handleTimeSlotChange = (timeSlot: string) => {
+    const [startTime, endTime] = timeSlot.split('-');
+    setFormData(prev => ({
+      ...prev,
+      schedule: {
+        ...prev.schedule,
+        time_slots: {
+          start_time: startTime,
+          end_time: endTime
+        }
+      }
+    }));
+  };
+
+  const getCurrentTimeSlot = () => {
+    const { start_time, end_time } = formData.schedule.time_slots;
+    if (start_time && end_time) {
+      return `${start_time}-${end_time}`;
+    }
+    return '';
+  };
+
   const validateForm = (): boolean => {
     const newErrors: ClassFormErrors = {};
 
@@ -170,10 +196,6 @@ const ClassForm: React.FC<ClassFormProps> = ({
 
     if (formData.section < 1) {
       newErrors.section = 'Lớp phải lớn hơn 0';
-    }
-
-    if (formData.year < 2020 || formData.year > 2030) {
-      newErrors.year = 'Năm học không hợp lệ';
     }
 
     if (formData.feePerLesson < 0) {
@@ -229,7 +251,28 @@ const ClassForm: React.FC<ClassFormProps> = ({
 
     setIsSubmitting(true);
     try {
-      await onSubmit(formData);
+      // Calculate year from end date
+      const endDate = new Date(formData.schedule.end_date);
+      const year = endDate.getFullYear();
+
+      // Determine status based on dates
+      const now = new Date();
+      const startDate = new Date(formData.schedule.start_date);
+      let status = 'active';
+
+      if (startDate > now) {
+        status = 'upcoming';
+      } else if (endDate < now) {
+        status = 'completed';
+      }
+
+      const submitData = {
+        ...formData,
+        year,
+        status
+      };
+
+      await onSubmit(submitData);
       onClose();
     } catch (error) {
       console.error('Error submitting class form:', error);
@@ -245,70 +288,160 @@ const ClassForm: React.FC<ClassFormProps> = ({
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-      <DialogTitle>
-        <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Typography variant="h6">
+    <Dialog
+      open={open}
+      onClose={handleClose}
+      maxWidth="md"
+      fullWidth
+      PaperProps={{
+        sx: {
+          borderRadius: 3,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+          overflow: 'hidden'
+        }
+      }}
+    >
+      <DialogTitle sx={{
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        color: 'white',
+        py: 3,
+        px: 4,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between'
+      }}>
+        <Box>
+          <Typography variant="h5" sx={{ fontWeight: 600, mb: 0.5 }}>
             {classItem ? 'Chỉnh sửa lớp học' : 'Thêm lớp học mới'}
           </Typography>
-          <IconButton onClick={handleClose} size="small">
-            <CloseIcon />
-          </IconButton>
+          <Typography variant="body2" sx={{ opacity: 0.9 }}>
+            {classItem ? 'Chỉnh sửa thông tin lớp học' : 'Thêm lớp học mới vào hệ thống'}
+          </Typography>
+        </Box>
+        <Box sx={{
+          bgcolor: 'rgba(255,255,255,0.2)',
+          borderRadius: '50%',
+          p: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <AddIcon sx={{ fontSize: 28, color: 'white' }} />
         </Box>
       </DialogTitle>
 
-      <DialogContent dividers>
-        <Box component="form" sx={{ mt: 1 }}>
-          <Grid container spacing={3}>
-            {/* Basic Information */}
-            <Grid item xs={12}>
-              <Typography variant="h6" gutterBottom color="primary">
-                Thông tin cơ bản
+      <DialogContent sx={{ p: 0 }}>
+        <Box sx={{ p: 4 }}>
+          <Paper sx={{
+            p: 3,
+            borderRadius: 2,
+            background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+            border: '1px solid #e0e6ed',
+            mb: 3
+          }}>
+            <Typography variant="h6" gutterBottom sx={{
+              color: '#2c3e50',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              mb: 2
+            }}>
+              <Box sx={{
+                width: 4,
+                height: 20,
+                bgcolor: '#667eea',
+                borderRadius: 2
+              }} />
+              Thông tin lớp học
               </Typography>
-            </Grid>
 
+            <Box sx={{
+              p: 2,
+              bgcolor: 'white',
+              borderRadius: 2,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+            }}>
+              <Grid container spacing={3}>
+                {/* Left Column */}
             <Grid item xs={12} md={6}>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <TextField
+                      fullWidth
+                      label="Khối *"
+                      type="number"
+                      value={formData.grade}
+                      onChange={(e) => handleInputChange('grade', parseInt(e.target.value) || 1)}
+                      error={!!errors.grade}
+                      helperText={errors.grade}
+                      InputProps={{ inputProps: { min: 1, max: 12 } }}
+                      required
+                    />
+
               <TextField
                 fullWidth
-                label="Tên lớp học"
+                      label="Tên lớp *"
                 value={formData.name}
                 onChange={(e) => handleInputChange('name', e.target.value)}
                 error={!!errors.name}
                 helperText={errors.name}
                 required
               />
-            </Grid>
 
-            <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Học phí/buổi *"
+                      type="number"
+                      value={formData.feePerLesson}
+                      onChange={(e) => handleInputChange('feePerLesson', parseInt(e.target.value) || 0)}
+                      error={!!errors.feePerLesson}
+                      helperText={errors.feePerLesson}
+                      InputProps={{ inputProps: { min: 0 } }}
+                      required
+                    />
+
               <TextField
                 fullWidth
-                label="Phòng học"
+                      label="Phòng học *"
                 value={formData.room}
                 onChange={(e) => handleInputChange('room', e.target.value)}
                 error={!!errors.room}
                 helperText={errors.room}
                 required
               />
-            </Grid>
 
-            <Grid item xs={12} md={3}>
               <TextField
                 fullWidth
-                label="Khối"
-                type="number"
-                value={formData.grade}
-                onChange={(e) => handleInputChange('grade', parseInt(e.target.value) || 1)}
-                error={!!errors.grade}
-                helperText={errors.grade}
-                InputProps={{ inputProps: { min: 1, max: 12 } }}
+                      label="Ngày kết thúc *"
+                      type="date"
+                      value={formData.schedule.end_date}
+                      onChange={(e) => handleInputChange('schedule', {
+                        ...formData.schedule,
+                        end_date: e.target.value
+                      })}
+                      error={!!errors.end_date}
+                      helperText={errors.end_date}
+                      InputLabelProps={{ shrink: true }}
                 required
               />
+
+                    <TextField
+                      fullWidth
+                      label="Ngày học trong tuần"
+                      multiline
+                      rows={2}
+                      value={formData.description}
+                      onChange={(e) => handleInputChange('description', e.target.value)}
+                    />
+                  </Box>
             </Grid>
 
-            <Grid item xs={12} md={3}>
+                {/* Right Column */}
+                <Grid item xs={12} md={6}>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <TextField
                 fullWidth
-                label="Lớp"
+                      label="Lớp *"
                 type="number"
                 value={formData.section}
                 onChange={(e) => handleInputChange('section', parseInt(e.target.value) || 1)}
@@ -317,89 +450,37 @@ const ClassForm: React.FC<ClassFormProps> = ({
                 InputProps={{ inputProps: { min: 1 } }}
                 required
               />
-            </Grid>
 
-            <Grid item xs={12} md={3}>
-              <TextField
-                fullWidth
-                label="Năm học"
-                type="number"
-                value={formData.year}
-                onChange={(e) => handleInputChange('year', parseInt(e.target.value) || new Date().getFullYear())}
-                error={!!errors.year}
-                helperText={errors.year}
-                InputProps={{ inputProps: { min: 2020, max: 2030 } }}
-                required
-              />
-            </Grid>
-
-            <Grid item xs={12} md={3}>
               <FormControl fullWidth>
-                <InputLabel>Trạng thái</InputLabel>
+                      <InputLabel>Khung giờ học</InputLabel>
                 <Select
-                  value={formData.status}
-                  onChange={(e) => handleInputChange('status', e.target.value)}
-                  label="Trạng thái"
-                >
-                  {statusOptions.map((option) => (
+                        value={getCurrentTimeSlot()}
+                        onChange={(e) => handleTimeSlotChange(e.target.value)}
+                        label="Khung giờ học"
+                      >
+                        {timeSlotOptions.map((option) => (
                     <MenuItem key={option.value} value={option.value}>
                       {option.label}
                     </MenuItem>
                   ))}
                 </Select>
               </FormControl>
-            </Grid>
 
-            <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label="Học phí mỗi buổi (VND)"
-                type="number"
-                value={formData.feePerLesson}
-                onChange={(e) => handleInputChange('feePerLesson', parseInt(e.target.value) || 0)}
-                error={!!errors.feePerLesson}
-                helperText={errors.feePerLesson}
-                InputProps={{ inputProps: { min: 0 } }}
-              />
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Số học sinh tối đa"
+                      label="Số học sinh tối đa *"
                 type="number"
                 value={formData.max_student}
                 onChange={(e) => handleInputChange('max_student', parseInt(e.target.value) || 30)}
                 error={!!errors.max_student}
                 helperText={errors.max_student}
                 InputProps={{ inputProps: { min: 1 } }}
+                      required
               />
-            </Grid>
 
-            <Grid item xs={12}>
               <TextField
                 fullWidth
-                label="Mô tả"
-                multiline
-                rows={3}
-                value={formData.description}
-                onChange={(e) => handleInputChange('description', e.target.value)}
-              />
-            </Grid>
-
-            {/* Schedule Information */}
-            <Grid item xs={12}>
-              <Divider sx={{ my: 2 }} />
-              <Typography variant="h6" gutterBottom color="primary">
-                <CalendarIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-                Lịch học
-              </Typography>
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Ngày bắt đầu"
+                      label="Ngày bắt đầu *"
                 type="date"
                 value={formData.schedule.start_date}
                 onChange={(e) => handleInputChange('schedule', {
@@ -411,29 +492,7 @@ const ClassForm: React.FC<ClassFormProps> = ({
                 InputLabelProps={{ shrink: true }}
                 required
               />
-            </Grid>
 
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Ngày kết thúc"
-                type="date"
-                value={formData.schedule.end_date}
-                onChange={(e) => handleInputChange('schedule', {
-                  ...formData.schedule,
-                  end_date: e.target.value
-                })}
-                error={!!errors.end_date}
-                helperText={errors.end_date}
-                InputLabelProps={{ shrink: true }}
-                required
-              />
-            </Grid>
-
-            <Grid item xs={12}>
-              <Typography variant="subtitle2" gutterBottom>
-                Ngày trong tuần *
-              </Typography>
               <Autocomplete
                 multiple
                 options={daysOfWeekOptions}
@@ -458,61 +517,58 @@ const ClassForm: React.FC<ClassFormProps> = ({
                 renderInput={(params) => (
                   <TextField
                     {...params}
+                          label="Ngày học trong tuần"
                     placeholder="Chọn ngày trong tuần"
                     error={!!errors.days_of_week}
                     helperText={errors.days_of_week}
                   />
                 )}
               />
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Giờ bắt đầu"
-                type="time"
-                value={formData.schedule.time_slots.start_time}
-                onChange={(e) => handleInputChange('schedule.time_slots.start_time', e.target.value)}
-                error={!!errors.start_time}
-                helperText={errors.start_time}
-                InputLabelProps={{ shrink: true }}
-                required
-              />
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Giờ kết thúc"
-                type="time"
-                value={formData.schedule.time_slots.end_time}
-                onChange={(e) => handleInputChange('schedule.time_slots.end_time', e.target.value)}
-                error={!!errors.end_time}
-                helperText={errors.end_time}
-                InputLabelProps={{ shrink: true }}
-                required
-              />
+                  </Box>
             </Grid>
           </Grid>
+            </Box>
+          </Paper>
         </Box>
       </DialogContent>
 
-      <DialogActions sx={{ p: 2, gap: 1 }}>
+      <DialogActions sx={{ p: 3, bgcolor: '#f8f9fa' }}>
         <Button
           onClick={handleClose}
-          variant="outlined"
-          startIcon={<CancelIcon />}
-          disabled={isSubmitting}
+          sx={{
+            px: 3,
+            py: 1,
+            borderRadius: 2,
+            textTransform: 'none',
+            fontWeight: 600,
+            border: '2px solid #667eea',
+            color: '#667eea',
+            bgcolor: 'white',
+            '&:hover': {
+              bgcolor: '#f0f2ff',
+              borderColor: '#5a6fd8'
+            }
+          }}
         >
           Hủy
         </Button>
         <Button
           onClick={handleSubmit}
-          variant="contained"
-          startIcon={isSubmitting ? <CircularProgress size={20} /> : <SaveIcon />}
-          disabled={isSubmitting}
+          disabled={isSubmitting || loading}
+          sx={{
+            px: 3,
+            py: 1,
+            borderRadius: 2,
+            textTransform: 'none',
+            fontWeight: 600,
+            bgcolor: '#667eea',
+            color: 'white',
+            '&:hover': { bgcolor: '#5a6fd8' },
+            '&:disabled': { bgcolor: '#ccc' }
+          }}
+          startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : <AddIcon />}
         >
-          {isSubmitting ? 'Đang lưu...' : 'Lưu'}
+          {isSubmitting ? 'Đang thêm...' : (classItem ? 'Cập nhật' : 'Thêm mới')}
         </Button>
       </DialogActions>
     </Dialog>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { UserRole } from '../../utils/constants';
+import { UserRole } from '@/constants';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -21,7 +21,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     // Redirect to appropriate login page based on attempted access
     const path = location.pathname;
     if (path.startsWith('/admin') || path.startsWith('/teacher')) {
-      return <Navigate to="/admin/login" state={{ from: location }} replace />;
+      return <Navigate to="/staff/login" state={{ from: location }} replace />;
     }
     return <Navigate to={redirectTo} state={{ from: location }} replace />;
   }

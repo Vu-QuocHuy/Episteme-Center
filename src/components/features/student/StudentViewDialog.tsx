@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -9,11 +9,16 @@ import {
   Typography,
   Paper,
   Grid,
+  CircularProgress,
+  Alert,
 } from '@mui/material';
 import { Visibility as ViewIcon } from '@mui/icons-material';
+import { getStudentByIdAPI } from '../../../services/api';
+import { Student } from '../../../types';
+
 // Helper functions
 const renderParent = (studentId: string, parentDetails: Record<string, string>) => {
-  if (!studentId) return '-';
+  if (!studentId) return 'Không có phụ huynh';
   const parentName = parentDetails[studentId];
   if (parentName) {
     return parentName;
@@ -24,7 +29,16 @@ const renderParent = (studentId: string, parentDetails: Record<string, string>) 
 const formatGender = (gender?: string) => {
   return gender === 'male' ? 'Nam' : gender === 'female' ? 'Nữ' : 'Không xác định';
 };
-import { Student } from '../../../types';
+
+const formatDate = (dateString?: string) => {
+  if (!dateString) return '';
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('vi-VN');
+  } catch {
+    return dateString;
+  }
+};
 
 interface StudentViewDialogProps {
   open: boolean;
@@ -39,12 +53,59 @@ const StudentViewDialog: React.FC<StudentViewDialogProps> = ({
   selectedStudent,
   parentDetails,
 }) => {
+  const [studentData, setStudentData] = useState<Student | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchStudentDetails = async () => {
+      if (!open || !selectedStudent?.id) {
+        setStudentData(null);
+        setError(null);
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await getStudentByIdAPI(selectedStudent.id);
+        // API may return shape { statusCode, message, data: {...} }
+        const payload = (response as any)?.data?.data ?? (response as any)?.data ?? response;
+        if (payload) {
+          // Normalize minimal fields expected by UI
+          const normalized: any = {
+            ...payload,
+            // Ensure classes is an array for mapping
+            classes: Array.isArray(payload.classes) ? payload.classes : [],
+          };
+          setStudentData(normalized as Student);
+        } else {
+          setError('Không thể tải thông tin học sinh');
+        }
+      } catch (err: any) {
+        console.error('Error fetching student details:', err);
+        setError(err.response?.data?.message || 'Có lỗi xảy ra khi tải thông tin học sinh');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStudentDetails();
+  }, [open, selectedStudent?.id]);
+
+  const handleClose = () => {
+    setStudentData(null);
+    setError(null);
+    onClose();
+  };
+
   if (!selectedStudent) return null;
 
   return (
     <Dialog
       open={open}
-      onClose={onClose}
+      onClose={handleClose}
       maxWidth="md"
       fullWidth
       PaperProps={{
@@ -85,185 +146,34 @@ const StudentViewDialog: React.FC<StudentViewDialogProps> = ({
         </Box>
       </DialogTitle>
       <DialogContent sx={{ p: 0 }}>
-        <Box sx={{ p: 4 }}>
-          {/* Main Information Grid */}
-          <Grid container spacing={3}>
-            {/* Left Column - Personal Info */}
-            <Grid item xs={12} md={6}>
-              <Paper sx={{
-                p: 3,
-                borderRadius: 2,
-                background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
-                border: '1px solid #e0e6ed',
-                height: '100%'
-              }}>
-                <Typography variant="h6" gutterBottom sx={{
-                  color: '#2c3e50',
-                  fontWeight: 600,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1,
-                  mb: 2
-                }}>
-                  <Box sx={{
-                    width: 4,
-                    height: 20,
-                    bgcolor: '#667eea',
-                    borderRadius: 2
-                  }} />
-                  Thông tin cá nhân
-                </Typography>
-                <Box sx={{
-                  p: 2,
-                  bgcolor: 'white',
-                  borderRadius: 2,
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
-                }}>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <Box>
-                      <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600, mb: 0.5 }}>
-                        Họ và tên
-                      </Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 500, color: '#667eea' }}>
-                        {selectedStudent.userId?.name}
-                      </Typography>
-                    </Box>
-
-                    <Box>
-                      <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600, mb: 0.5 }}>
-                        Email
-                      </Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                        {selectedStudent.userId?.email}
-                      </Typography>
-                    </Box>
-
-                    <Box>
-                      <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600, mb: 0.5 }}>
-                        Số điện thoại
-                      </Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                        {selectedStudent.userId?.phone}
-                      </Typography>
-                    </Box>
-
-                    <Box>
-                      <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600, mb: 0.5 }}>
-                        Ngày sinh
-                      </Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                        {selectedStudent.userId?.dayOfBirth}
-                      </Typography>
-                    </Box>
-
-                    <Box>
-                      <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600, mb: 0.5 }}>
-                        Giới tính
-                      </Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                        {formatGender(selectedStudent.userId?.gender)}
-                      </Typography>
-                    </Box>
-
-                    <Box>
-                      <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600, mb: 0.5 }}>
-                        Địa chỉ
-                      </Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                        {selectedStudent.userId?.address}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Box>
-              </Paper>
-            </Grid>
-
-            {/* Right Column - Family & Class Info */}
-            <Grid item xs={12} md={6}>
-              <Paper sx={{
-                p: 3,
-                borderRadius: 2,
-                background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
-                border: '1px solid #e0e6ed',
-                height: '100%'
-              }}>
-                <Typography variant="h6" gutterBottom sx={{
-                  color: '#2c3e50',
-                  fontWeight: 600,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1,
-                  mb: 2
-                }}>
-                  <Box sx={{
-                    width: 4,
-                    height: 20,
-                    bgcolor: '#667eea',
-                    borderRadius: 2
-                  }} />
-                  Thông tin gia đình & học tập
-                </Typography>
-                <Box sx={{
-                  p: 2,
-                  bgcolor: 'white',
-                  borderRadius: 2,
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
-                }}>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <Box sx={{
-                      p: 2,
-                      borderRadius: 2,
-                      background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
-                      border: '1px solid #2196f3'
-                    }}>
-                      <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600, mb: 0.5 }}>
-                        Phụ huynh
-                      </Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 500, color: '#1976d2' }}>
-                        {renderParent(selectedStudent.id, parentDetails)}
-                      </Typography>
-                    </Box>
-
-                    <Box sx={{
-                      p: 2,
-                      borderRadius: 2,
-                      background: 'linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%)',
-                      border: '1px solid #9c27b0'
-                    }}>
-                      <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600, mb: 0.5 }}>
-                        Số lớp đang học
-                      </Typography>
-                      <Typography variant="h4" sx={{ fontWeight: 700, color: '#7b1fa2' }}>
-                        {selectedStudent.classes ? selectedStudent.classes.length : 0}
-                      </Typography>
-                    </Box>
-
-                    <Box sx={{
-                      p: 2,
-                      borderRadius: 2,
-                      background: 'linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%)',
-                      border: '1px solid #4caf50'
-                    }}>
-                      <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600, mb: 0.5 }}>
-                        Trạng thái học tập
-                      </Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 500, color: '#2e7d32' }}>
-                        {selectedStudent.classes && selectedStudent.classes.length > 0 ? 'Đang học' : 'Chưa đăng ký lớp'}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Box>
-              </Paper>
-            </Grid>
-
-            {/* Full Width - Class Details */}
-            {selectedStudent.classes && selectedStudent.classes.length > 0 && (
-              <Grid item xs={12}>
+        {loading ? (
+          <Box sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            minHeight: '300px',
+            p: 4
+          }}>
+            <CircularProgress size={60} />
+          </Box>
+        ) : error ? (
+          <Box sx={{ p: 4 }}>
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          </Box>
+        ) : studentData ? (
+          <Box sx={{ p: 4 }}>
+            {/* Main Information Grid */}
+            <Grid container spacing={3}>
+              {/* Left Column - Personal Info */}
+              <Grid item xs={12} md={6}>
                 <Paper sx={{
                   p: 3,
                   borderRadius: 2,
                   background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
-                  border: '1px solid #e0e6ed'
+                  border: '1px solid #e0e6ed',
+                  height: '100%'
                 }}>
                   <Typography variant="h6" gutterBottom sx={{
                     color: '#2c3e50',
@@ -279,7 +189,7 @@ const StudentViewDialog: React.FC<StudentViewDialogProps> = ({
                       bgcolor: '#667eea',
                       borderRadius: 2
                     }} />
-                    Danh sách lớp học
+                    Thông tin cá nhân
                   </Typography>
                   <Box sx={{
                     p: 2,
@@ -287,59 +197,228 @@ const StudentViewDialog: React.FC<StudentViewDialogProps> = ({
                     borderRadius: 2,
                     boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
                   }}>
-                    <Grid container spacing={2}>
-                      {selectedStudent.classes.map((cls, index) => (
-                        <Grid item xs={12} md={4} key={String(cls.classId?.id || cls.classId || `view-class-${index}`)}>
-                          <Box sx={{
-                            p: 2,
-                            borderRadius: 2,
-                            background: cls.status === 'active'
-                              ? 'linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%)'
-                              : 'linear-gradient(135deg, #fff3e0 0%, #ffcc02 100%)',
-                            border: `2px solid ${cls.status === 'active' ? '#4caf50' : '#ff9800'}`,
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                          }}>
-                            <Typography variant="subtitle2" sx={{
-                              fontWeight: 600,
-                              mb: 1,
-                              color: cls.status === 'active' ? '#2e7d32' : '#e65100'
-                            }}>
-                              {cls.classId?.name || `Lớp ${cls.classId?.grade || ''}.${cls.classId?.section || ''}`}
-                            </Typography>
-                            <Typography variant="body2" sx={{
-                              fontWeight: 500,
-                              color: cls.status === 'active' ? '#2e7d32' : '#e65100',
-                              mb: 1
-                            }}>
-                              {cls.status === 'active' ? 'Đang học' : 'Đã nghỉ'}
-                            </Typography>
-                            {cls.discountPercent && (
-                              <Typography variant="caption" sx={{
-                                display: 'inline-block',
-                                px: 1,
-                                py: 0.5,
-                                borderRadius: 1,
-                                bgcolor: 'rgba(102, 126, 234, 0.1)',
-                                color: '#667eea',
-                                fontWeight: 600
-                              }}>
-                                Giảm {cls.discountPercent}%
-                              </Typography>
-                            )}
-                          </Box>
-                        </Grid>
-                      ))}
-                    </Grid>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <Box>
+                        <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600, mb: 0.5 }}>
+                          Họ và tên
+                        </Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 500, color: '#667eea' }}>
+                          {studentData.userId?.name || studentData.name || 'Chưa cập nhật'}
+                        </Typography>
+                      </Box>
+
+                      <Box>
+                        <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600, mb: 0.5 }}>
+                          Email
+                        </Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                          {studentData.userId?.email || studentData.email || 'Chưa cập nhật'}
+                        </Typography>
+                      </Box>
+
+                      <Box>
+                        <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600, mb: 0.5 }}>
+                          Số điện thoại
+                        </Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                          {studentData.userId?.phone || studentData.phone || 'Chưa cập nhật'}
+                        </Typography>
+                      </Box>
+
+                      <Box>
+                        <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600, mb: 0.5 }}>
+                          Ngày sinh
+                        </Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                          {formatDate(studentData.userId?.dayOfBirth || studentData.dayOfBirth) || 'Chưa cập nhật'}
+                        </Typography>
+                      </Box>
+
+                      <Box>
+                        <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600, mb: 0.5 }}>
+                          Giới tính
+                        </Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                          {formatGender(studentData.userId?.gender || studentData.gender) || 'Chưa cập nhật'}
+                        </Typography>
+                      </Box>
+
+                      <Box>
+                        <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600, mb: 0.5 }}>
+                          Địa chỉ
+                        </Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                          {studentData.userId?.address || studentData.address || 'Chưa cập nhật'}
+                        </Typography>
+                      </Box>
+                    </Box>
                   </Box>
                 </Paper>
               </Grid>
-            )}
-          </Grid>
-        </Box>
+
+              {/* Right Column - Family & Class Info */}
+              <Grid item xs={12} md={6}>
+                <Paper sx={{
+                  p: 3,
+                  borderRadius: 2,
+                  background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+                  border: '1px solid #e0e6ed',
+                  height: '100%'
+                }}>
+                  <Typography variant="h6" gutterBottom sx={{
+                    color: '#2c3e50',
+                    fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    mb: 2
+                  }}>
+                    <Box sx={{
+                      width: 4,
+                      height: 20,
+                      bgcolor: '#667eea',
+                      borderRadius: 2
+                    }} />
+                    Thông tin gia đình & học tập
+                  </Typography>
+                  <Box sx={{
+                    p: 2,
+                    bgcolor: 'white',
+                    borderRadius: 2,
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                  }}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <Box sx={{
+                        p: 2,
+                        borderRadius: 2,
+                        background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
+                        border: '1px solid #2196f3'
+                      }}>
+                        <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600, mb: 0.5 }}>
+                          Phụ huynh
+                        </Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 500, color: '#1976d2' }}>
+                          {renderParent(studentData.id, parentDetails)}
+                        </Typography>
+                      </Box>
+
+                      <Box sx={{
+                        p: 2,
+                        borderRadius: 2,
+                        background: 'linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%)',
+                        border: '1px solid #9c27b0'
+                      }}>
+                        <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600, mb: 0.5 }}>
+                          Số lớp đang học
+                        </Typography>
+                        <Typography variant="h4" sx={{ fontWeight: 700, color: '#7b1fa2' }}>
+                          {studentData.classes ? studentData.classes.length : 0}
+                        </Typography>
+                      </Box>
+
+                      <Box sx={{
+                        p: 2,
+                        borderRadius: 2,
+                        background: 'linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%)',
+                        border: '1px solid #4caf50'
+                      }}>
+                        <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600, mb: 0.5 }}>
+                          Trạng thái học tập
+                        </Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 500, color: '#2e7d32' }}>
+                          {studentData.classes && studentData.classes.length > 0 ? 'Đang học' : 'Chưa đăng ký lớp'}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Box>
+                </Paper>
+              </Grid>
+
+              {/* Full Width - Class Details */}
+              {studentData.classes && studentData.classes.length > 0 && (
+                <Grid item xs={12}>
+                  <Paper sx={{
+                    p: 3,
+                    borderRadius: 2,
+                    background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+                    border: '1px solid #e0e6ed'
+                  }}>
+                    <Typography variant="h6" gutterBottom sx={{
+                      color: '#2c3e50',
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      mb: 2
+                    }}>
+                      <Box sx={{
+                        width: 4,
+                        height: 20,
+                        bgcolor: '#667eea',
+                        borderRadius: 2
+                      }} />
+                      Danh sách lớp học
+                    </Typography>
+                    <Box sx={{
+                      p: 2,
+                      bgcolor: 'white',
+                      borderRadius: 2,
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                    }}>
+                      <Grid container spacing={2}>
+                        {studentData.classes.map((cls, index) => (
+                          <Grid item xs={12} md={4} key={String(cls.classId?.id || cls.classId || `view-class-${index}`)}>
+                            <Box sx={{
+                              p: 2,
+                              borderRadius: 2,
+                              background: cls.status === 'active'
+                                ? 'linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%)'
+                                : 'linear-gradient(135deg, #fff3e0 0%, #ffcc02 100%)',
+                              border: `2px solid ${cls.status === 'active' ? '#4caf50' : '#ff9800'}`,
+                              boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                            }}>
+                              <Typography variant="subtitle2" sx={{
+                                fontWeight: 600,
+                                mb: 1,
+                                color: cls.status === 'active' ? '#2e7d32' : '#e65100'
+                              }}>
+                                {cls.classId?.name || cls.name || `${cls.classId?.grade || ''}.${cls.classId?.section || ''}`}
+                              </Typography>
+                              <Typography variant="body2" sx={{
+                                fontWeight: 500,
+                                color: cls.status === 'active' ? '#2e7d32' : '#e65100',
+                                mb: 1
+                              }}>
+                                {cls.status === 'active' ? 'Đang học' : 'Đã nghỉ'}
+                              </Typography>
+                              {(cls.discountPercent || cls.discount) && (
+                                <Typography variant="caption" sx={{
+                                  display: 'inline-block',
+                                  px: 1,
+                                  py: 0.5,
+                                  borderRadius: 1,
+                                  bgcolor: 'rgba(102, 126, 234, 0.1)',
+                                  color: '#667eea',
+                                  fontWeight: 600
+                                }}>
+                                  Giảm {cls.discountPercent || cls.discount}%
+                                </Typography>
+                              )}
+                            </Box>
+                          </Grid>
+                        ))}
+                      </Grid>
+                    </Box>
+                  </Paper>
+                </Grid>
+              )}
+            </Grid>
+          </Box>
+        ) : null}
       </DialogContent>
       <DialogActions sx={{ p: 3, bgcolor: '#f8f9fa' }}>
         <Button
-          onClick={onClose}
+          onClick={handleClose}
           sx={{
             px: 3,
             py: 1,

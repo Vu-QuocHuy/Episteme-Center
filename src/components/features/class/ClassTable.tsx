@@ -12,7 +12,7 @@ import {
   Avatar,
   Box,
   Typography,
-  Tooltip,
+  Grid,
   Menu,
   MenuItem,
   ListItemIcon,
@@ -23,20 +23,18 @@ import {
   DialogActions,
   Button,
   Alert,
-  Snackbar,
-  LinearProgress
+  Snackbar
 } from '@mui/material';
 import {
   Edit as EditIcon,
   Delete as DeleteIcon,
-  MoreVert as MoreVertIcon,
   Visibility as VisibilityIcon,
   People as PeopleIcon,
-  Schedule as ScheduleIcon,
-  School as SchoolIcon
+  Schedule as ScheduleIcon
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { Class } from '../../../types';
+import { getClassByIdAPI } from '../../../services/api';
 
 interface ClassTableProps {
   classes: Class[];
@@ -79,6 +77,7 @@ const ClassTable: React.FC<ClassTableProps> = ({
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedClass, setSelectedClass] = useState<Class | null>(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [detailsLoading, setDetailsLoading] = useState(false);
   const [studentsModalOpen, setStudentsModalOpen] = useState(false);
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -103,10 +102,30 @@ const ClassTable: React.FC<ClassTableProps> = ({
     setSelectedClass(null);
   };
 
+  const openDetailsWithData = (data: any) => {
+    // Normalize response structure: prefer data.data if exists
+    const classData = data?.data?.data ?? data?.data ?? data;
+    setSelectedClass(classData as Class);
+    setDetailsModalOpen(true);
+  };
+
+  const fetchAndOpenDetails = async (classItem: Class) => {
+    try {
+      setDetailsLoading(true);
+      const res = await getClassByIdAPI(classItem.id);
+      openDetailsWithData(res);
+    } catch (e) {
+      // Fallback: show existing item if fetch fails
+      setSelectedClass(classItem);
+      setDetailsModalOpen(true);
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
+
   const handleViewDetails = () => {
     if (selectedClass) {
-      onViewDetails(selectedClass);
-      setDetailsModalOpen(true);
+      fetchAndOpenDetails(selectedClass);
     }
     handleMenuClose();
   };
@@ -253,11 +272,12 @@ const ClassTable: React.FC<ClassTableProps> = ({
         <Table>
           <TableHead>
             <TableRow sx={{ backgroundColor: theme.palette.primary.main }}>
-              <TableCell sx={{ color: 'black', fontWeight: 'bold' }}>Lớp học</TableCell>
+              <TableCell sx={{ color: 'black', fontWeight: 'bold' }}>Tên lớp</TableCell>
               <TableCell sx={{ color: 'black', fontWeight: 'bold' }}>Giáo viên</TableCell>
-              <TableCell sx={{ color: 'black', fontWeight: 'bold' }}>Thông tin học tập</TableCell>
-              <TableCell sx={{ color: 'black', fontWeight: 'bold' }}>Học sinh</TableCell>
+              <TableCell sx={{ color: 'black', fontWeight: 'bold' }}>Năm học</TableCell>
+              <TableCell sx={{ color: 'black', fontWeight: 'bold' }}>Học phí mỗi buổi</TableCell>
               <TableCell sx={{ color: 'black', fontWeight: 'bold' }}>Lịch học</TableCell>
+              <TableCell sx={{ color: 'black', fontWeight: 'bold' }}>Phòng học</TableCell>
               <TableCell sx={{ color: 'black', fontWeight: 'bold' }}>Trạng thái</TableCell>
               <TableCell sx={{ color: 'black', fontWeight: 'bold' }}>Thao tác</TableCell>
             </TableRow>
@@ -266,67 +286,29 @@ const ClassTable: React.FC<ClassTableProps> = ({
             {classes.map((classItem) => (
               <TableRow key={classItem.id} hover>
                 <TableCell>
-                  <Box display="flex" alignItems="center" gap={2}>
-                    <Avatar
-                      sx={{
-                        width: 50,
-                        height: 50,
-                        bgcolor: theme.palette.primary.main
-                      }}
-                    >
-                      <SchoolIcon />
-                    </Avatar>
-                    <Box>
-                      <Typography variant="subtitle1" fontWeight="bold">
-                        {classItem.name}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Lớp {classItem.grade}.{classItem.section} - {classItem.year}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        Phòng: {classItem.room}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </TableCell>
-                <TableCell>
-                  <Box display="flex" alignItems="center" gap={1}>
-                    <Avatar
-                      src={classItem.teacher?.avatar || classItem.teacher?.userId?.avatar}
-                      alt={classItem.teacher?.name || classItem.teacher?.userId?.name}
-                      sx={{ width: 32, height: 32 }}
-                    >
-                      {(classItem.teacher?.name || classItem.teacher?.userId?.name || 'C')?.charAt(0)}
-                    </Avatar>
-                    <Typography variant="body2">
-                      {classItem.teacher?.name || classItem.teacher?.userId?.name || 'Chưa phân công'}
-                    </Typography>
-                  </Box>
+                  <Typography variant="subtitle1" fontWeight="bold">
+                    {classItem.name}
+                  </Typography>
                 </TableCell>
                 <TableCell>
                   <Box>
                     <Typography variant="body2" fontWeight="medium">
-                      {classItem.feePerLesson?.toLocaleString('vi-VN')}₫/buổi
+                      {classItem.teacher?.name || classItem.teacher?.userId?.name || 'Chưa phân công'}
                     </Typography>
-                    <Typography variant="caption" display="block" color="text.secondary" mt={0.5}>
-                      {classItem.description || 'Không có mô tả'}
+                    <Typography variant="caption" color="text.secondary">
+                      {classItem.teacher?.email || classItem.teacher?.userId?.email || ''}
                     </Typography>
                   </Box>
                 </TableCell>
                 <TableCell>
-                  <Box>
-                    <Box display="flex" alignItems="center" gap={1} mb={1}>
-                      <PeopleIcon fontSize="small" color="action" />
-                      <Typography variant="body2">
-                        {getStudentCount(classItem)}/{classItem.max_student || classItem.maxStudents || 0}
-                      </Typography>
-                    </Box>
-                    <LinearProgress
-                      variant="determinate"
-                      value={getCapacityPercentage(classItem)}
-                      sx={{ height: 6, borderRadius: 3 }}
-                    />
-                  </Box>
+                  <Typography variant="body2">
+                    {classItem.year}
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography variant="body2">
+                    {classItem.feePerLesson?.toLocaleString('vi-VN')} VNĐ
+                  </Typography>
                 </TableCell>
                 <TableCell>
                   <Box>
@@ -342,31 +324,45 @@ const ClassTable: React.FC<ClassTableProps> = ({
                         : 'Chưa có thời gian'
                       }
                     </Typography>
-                    <Typography variant="caption" display="block" color="text.secondary">
-                      {classItem.schedule?.start_date && classItem.schedule?.end_date
-                        ? `${new Date(classItem.schedule.start_date).toLocaleDateString('vi-VN')} - ${new Date(classItem.schedule.end_date).toLocaleDateString('vi-VN')}`
-                        : ''
-                      }
-                    </Typography>
                   </Box>
                 </TableCell>
                 <TableCell>
-                  <Chip
-                    label={getStatusText(classItem.status)}
-                    color={getStatusColor(classItem.status) as any}
-                    size="small"
-                    variant="outlined"
-                  />
+                  <Typography variant="body2">
+                    {classItem.room}
+                  </Typography>
                 </TableCell>
                 <TableCell>
-                  <Tooltip title="Thao tác">
+                  <Button
+                    variant="contained"
+                    size="small"
+                    sx={{
+                      backgroundColor: getStatusColor(classItem.status) === 'error' ? '#d32f2f' : '#1976d2',
+                      color: 'white',
+                      '&:hover': {
+                        backgroundColor: getStatusColor(classItem.status) === 'error' ? '#c62828' : '#1565c0'
+                      }
+                    }}
+                  >
+                    {getStatusText(classItem.status)}
+                  </Button>
+                </TableCell>
+                <TableCell>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
                     <IconButton
-                      onClick={(e) => handleMenuOpen(e, classItem)}
                       size="small"
+                      onClick={() => fetchAndOpenDetails(classItem)}
+                      sx={{ color: 'grey.600' }}
                     >
-                      <MoreVertIcon />
+                      <VisibilityIcon />
                     </IconButton>
-                  </Tooltip>
+                    <IconButton
+                      size="small"
+                      onClick={() => onEdit(classItem)}
+                      sx={{ color: 'grey.600' }}
+                    >
+                      <EditIcon />
+                    </IconButton>
+                  </Box>
                 </TableCell>
               </TableRow>
             ))}
@@ -484,97 +480,185 @@ const ClassDetailsModal: React.FC<ClassDetailsModalProps> = ({
 }) => {
   if (!classItem) return null;
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'Không xác định';
     return new Date(dateString).toLocaleDateString('vi-VN');
   };
 
-  const getStatusText = (status: string) => {
+  const formatCurrency = (num?: number) => {
+    return (num ?? 0).toLocaleString('vi-VN') + ' VND';
+  };
+
+  const getStatusText = (status?: string) => {
     const statusMap: { [key: string]: string } = {
       'active': 'Đang hoạt động',
       'inactive': 'Không hoạt động',
       'pending': 'Chờ khai giảng',
-      'completed': 'Đã kết thúc'
+      'completed': 'Đã kết thúc',
+      'closed': 'Đã đóng',
+      'cancelled': 'Đã hủy',
     };
-    return statusMap[status] || status;
+    return status ? (statusMap[status] || status) : 'Không xác định';
   };
 
-  const getLevelColor = (level: string) => {
-    const levelColors: { [key: string]: 'primary' | 'secondary' | 'success' | 'warning' | 'error' } = {
-      'Beginner': 'success',
-      'Intermediate': 'warning',
-      'Advanced': 'error',
-      'Elementary': 'primary',
-      'Pre-Intermediate': 'secondary'
-    };
-    return levelColors[level] || 'default';
+  const getDayLabel = (d: string) => {
+    const map: Record<string, string> = { '0': 'CN', '1': 'T2', '2': 'T3', '3': 'T4', '4': 'T5', '5': 'T6', '6': 'T7' };
+    return map[d] || d;
   };
+
+  const daysText = (classItem.schedule?.days_of_week || []).map(getDayLabel).join(', ');
+  const timeRange = classItem.schedule?.time_slots
+    ? `${classItem.schedule?.time_slots.start_time} - ${classItem.schedule?.time_slots.end_time}`
+    : 'Chưa có thời gian';
+  const studentCount = classItem.students?.length ?? 0;
+  const maxStudents = classItem.max_student ?? classItem.maxStudents ?? 0;
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>
-        <Box display="flex" alignItems="center" gap={2}>
-          <Avatar sx={{ bgcolor: 'primary.main' }}>
-            <SchoolIcon />
+      <DialogTitle sx={{
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        color: 'white',
+        px: 3,
+        py: 2.5,
+        borderBottom: 'none'
+      }}>
+        <Box display="flex" alignItems="center" justifyContent="space-between">
+          <Box>
+            <Typography variant="h6" fontWeight={700}>Chi tiết lớp học</Typography>
+            <Typography variant="body2" sx={{ opacity: 0.9 }}>Thông tin chi tiết về lớp học và học sinh</Typography>
+          </Box>
+          <Avatar sx={{ bgcolor: 'rgba(255,255,255,0.15)' }}>
+            <VisibilityIcon htmlColor="#fff" />
           </Avatar>
-          <Typography variant="h6">Chi tiết lớp học</Typography>
         </Box>
       </DialogTitle>
-      <DialogContent>
-        <Box display="grid" gridTemplateColumns="1fr 1fr" gap={3} mt={2}>
-          <Box>
-            <Typography variant="h6" gutterBottom>Thông tin cơ bản</Typography>
-            <Box display="flex" flexDirection="column" gap={2}>
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">Tên lớp</Typography>
-                <Typography variant="body1">{classItem.name}</Typography>
+      <DialogContent sx={{ bgcolor: 'transparent', pt: 3 }}>
+        <Box display="grid" gridTemplateColumns={{ xs: '1fr', md: '1fr 1fr' }} gap={3}>
+          {/* Thông tin cơ bản */}
+          <Box component={Paper} elevation={0} sx={{ p: 2.5, borderRadius: 3, background: 'linear-gradient(180deg, #edf2ff, #e9eef9)' }}>
+            <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>Thông tin cơ bản</Typography>
+            <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2 }}>
+              <Box display="flex" flexDirection="column" gap={2}>
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary">Tên lớp</Typography>
+                  <Typography variant="body1" fontWeight={600}>{classItem.name}</Typography>
+                </Box>
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary">Giáo viên phụ trách</Typography>
+                  <Typography variant="body1">
+                    {classItem.teacher?.name || classItem.teacher?.userId?.name || 'Chưa phân công'}{classItem.teacher?.email || classItem.teacher?.userId?.email ? ` (${classItem.teacher?.email || classItem.teacher?.userId?.email})` : ''}
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary">Năm học</Typography>
+                  <Typography variant="body1">{classItem.year || '-'}</Typography>
+                </Box>
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary">Khối</Typography>
+                  <Typography variant="body1">{classItem.grade ? `Khối ${classItem.grade}` : '-'}</Typography>
+                </Box>
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary">Phòng học</Typography>
+                  <Typography variant="body1">{classItem.room || '-'}</Typography>
+                </Box>
               </Box>
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">Mô tả</Typography>
-                <Typography variant="body1">{classItem.description || 'Không có mô tả'}</Typography>
-              </Box>
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">Trình độ</Typography>
-                <Chip label={classItem.level || 'Không xác định'} color={getLevelColor(classItem.level || '') as any} size="small" />
-              </Box>
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">Trạng thái</Typography>
-                <Chip
-                  label={getStatusText(classItem.status)}
-                  color={classItem.status === 'active' ? 'success' : 'error'}
-                  size="small"
-                />
-              </Box>
-            </Box>
+            </Paper>
           </Box>
-          <Box>
-            <Typography variant="h6" gutterBottom>Thông tin chi tiết</Typography>
-            <Box display="flex" flexDirection="column" gap={2}>
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">Giáo viên</Typography>
-                <Typography variant="body1">
-                  {classItem.teacher?.name || classItem.teacher?.userId?.name || 'Chưa phân công'}
-                </Typography>
+
+          {/* Thống kê lớp học */}
+          <Box component={Paper} elevation={0} sx={{ p: 2.5, borderRadius: 3, background: 'linear-gradient(180deg, #edf2ff, #e9eef9)' }}>
+            <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>Thống kê lớp học</Typography>
+            <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2 }}>
+              <Box display="flex" flexDirection="column" gap={2}>
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary">Số lượng học sinh</Typography>
+                  <Typography variant="h6" fontWeight={700} color="primary.main">{studentCount}/{maxStudents || 0}</Typography>
+                  <Typography variant="caption" color="text.secondary">Tối đa {maxStudents || 0} học sinh</Typography>
+                </Box>
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary">Học phí mỗi buổi</Typography>
+                  <Typography variant="h6" fontWeight={800} sx={{ color: '#6a1b9a' }}>{formatCurrency(classItem.feePerLesson)}</Typography>
+                </Box>
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary">Thời gian học</Typography>
+                  <Typography variant="body1">{daysText || '-'}</Typography>
+                  <Typography variant="body2" color="text.secondary">{timeRange}</Typography>
+                </Box>
               </Box>
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">Số học sinh</Typography>
-                <Typography variant="body1">
-                  {classItem.students?.length || 0}/{classItem.maxStudents || 0}
-                </Typography>
-              </Box>
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">Ngày tạo</Typography>
-                <Typography variant="body1">{classItem.createdAt ? formatDate(classItem.createdAt) : 'Không xác định'}</Typography>
-              </Box>
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">Ngày cập nhật</Typography>
-                <Typography variant="body1">{classItem.updatedAt ? formatDate(classItem.updatedAt) : 'Không xác định'}</Typography>
-              </Box>
-            </Box>
+            </Paper>
           </Box>
         </Box>
+
+        {/* Trạng thái lớp học */}
+        <Box sx={{ mt: 3 }}>
+          <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 3, borderColor: classItem.status === 'closed' ? 'error.main' : 'primary.main', backgroundColor: '#fff' }}>
+            <Typography variant="h6" fontWeight={700} sx={{ mb: 1 }}>Trạng thái lớp học</Typography>
+            <Chip label={getStatusText(classItem.status)} color={classItem.status === 'closed' ? 'error' : 'success'} sx={{ fontWeight: 700 }} />
+          </Paper>
+        </Box>
+
+        {/* Lịch học chi tiết */}
+        <Box component={Paper} elevation={0} sx={{ p: 2.5, borderRadius: 3, mt: 3, background: 'linear-gradient(180deg, #edf2ff, #e9eef9)' }}>
+          <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>Lịch học chi tiết</Typography>
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={3}>
+              <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, borderColor: '#fb8c00' }}>
+                <Typography variant="subtitle2" color="text.secondary">Ngày bắt đầu</Typography>
+                <Typography variant="h6" sx={{ color: '#fb8c00', fontWeight: 800 }}>{formatDate(classItem.schedule?.start_date)}</Typography>
+              </Paper>
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, borderColor: '#43a047' }}>
+                <Typography variant="subtitle2" color="text.secondary">Ngày kết thúc</Typography>
+                <Typography variant="h6" sx={{ color: '#2e7d32', fontWeight: 800 }}>{formatDate(classItem.schedule?.end_date)}</Typography>
+              </Paper>
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, borderColor: '#64b5f6' }}>
+                <Typography variant="subtitle2" color="text.secondary">Thời gian</Typography>
+                <Typography variant="h6" sx={{ color: '#1976d2', fontWeight: 800 }}>{timeRange}</Typography>
+              </Paper>
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, borderColor: '#ce93d8' }}>
+                <Typography variant="subtitle2" color="text.secondary">Ngày trong tuần</Typography>
+                <Typography variant="h6" sx={{ color: '#7b1fa2', fontWeight: 800 }}>{daysText || '-'}</Typography>
+              </Paper>
+            </Grid>
+          </Grid>
+        </Box>
+
+        {/* Mô tả */}
+        <Box component={Paper} elevation={0} sx={{ p: 2.5, borderRadius: 3, mt: 3, background: 'linear-gradient(180deg, #edf2ff, #e9eef9)' }}>
+          <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>Mô tả lớp học</Typography>
+          <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+            <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>{classItem.description || 'Không có mô tả'}</Typography>
+          </Paper>
+        </Box>
+
+        {/* Danh sách học sinh */}
+        <Box component={Paper} elevation={0} sx={{ p: 2.5, borderRadius: 3, mt: 3, background: 'linear-gradient(180deg, #edf2ff, #e9eef9)' }}>
+          <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>Danh sách học sinh ({studentCount})</Typography>
+          <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+            <Grid container spacing={2}>
+              {(classItem.students || []).map((s: any, idx: number) => (
+                <Grid item xs={12} sm={6} md={4} key={s.id || idx}>
+                  <Paper sx={{ p: 1.5, borderRadius: 2, bgcolor: '#f3f4f6' }} variant="outlined">
+                    <Typography variant="body2" color="primary" fontWeight={600}>{idx + 1}. {s?.name || s?.userId?.name || 'Không tên'}</Typography>
+                  </Paper>
+                </Grid>
+              ))}
+              {studentCount === 0 && (
+                <Grid item xs={12}>
+                  <Typography variant="body2" color="text.secondary">Chưa có học sinh</Typography>
+                </Grid>
+              )}
+            </Grid>
+          </Paper>
+        </Box>
       </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Đóng</Button>
+      <DialogActions sx={{ px: 3, py: 2 }}>
+        <Button onClick={onClose} variant="contained">Đóng</Button>
       </DialogActions>
     </Dialog>
   );

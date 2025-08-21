@@ -46,19 +46,22 @@ const TeacherManagement: React.FC = () => {
   // Teacher management hook
   const {
     teachers,
+    selectedTeacher: teacherDetail,
     loading,
-    loadingTable,
+    loadingDetail,
     totalRecords,
     searchQuery,
     setSearchQuery,
     isActiveFilter,
     setIsActiveFilter,
     fetchTeachers,
+    getTeacherById,
     deleteTeacher
   } = useTeacherManagement();
 
   // Teacher form hook
   const {
+    form,
     loading: formLoading,
     setFormData,
     resetForm,
@@ -69,15 +72,49 @@ const TeacherManagement: React.FC = () => {
   const [openDialog, setOpenDialog] = useState<boolean>(false);
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
   const [openViewDialog, setOpenViewDialog] = useState<boolean>(false);
-  const [selectedTeacherForView, setSelectedTeacherForView] = useState<Teacher | null>(null);
   const [openDeleteDialog, setOpenDeleteDialog] = useState<boolean>(false);
   const [teacherToDelete, setTeacherToDelete] = useState<Teacher | null>(null);
   const [snackbar, setSnackbar] = useState<SnackbarState>({ open: false, message: '', severity: 'success' });
 
   // Dialog handlers
-  const handleOpenDialog = (teacher: Teacher | null = null): void => {
-    setSelectedTeacher(teacher);
-    setFormData(teacher || undefined);
+  const handleOpenDialog = async (teacher: Teacher | null = null): Promise<void> => {
+    if (teacher) {
+      // Gọi API để lấy thông tin chi tiết khi chỉnh sửa
+      const detailData = await getTeacherById(teacher.id);
+      setSelectedTeacher(teacher);
+
+      // Sử dụng dữ liệu từ API response để set form
+      if (detailData) {
+        // Map API response to form structure (sử dụng type assertion vì form cần structure cũ)
+        const formData = {
+          id: detailData.id,
+          userId: {
+            id: detailData.id,
+            name: detailData.name,
+            email: detailData.email,
+            phone: detailData.phone,
+            gender: detailData.gender,
+            dayOfBirth: detailData.dayOfBirth,
+            address: detailData.address,
+            role: 'teacher' as const,
+            avatar: detailData.avatar || undefined,
+          },
+          isActive: detailData.isActive,
+          description: detailData.description,
+          qualifications: detailData.qualifications,
+          specializations: detailData.specializations,
+          salary: detailData.salary,
+          workExperience: detailData.workExperience,
+        } as Teacher;
+        setFormData(formData);
+      } else {
+        setFormData(teacher);
+      }
+    } else {
+      // Tạo mới teacher
+      setSelectedTeacher(null);
+      resetForm();
+    }
     setOpenDialog(true);
   };
 
@@ -89,19 +126,13 @@ const TeacherManagement: React.FC = () => {
     }, 100);
   };
 
-  const handleOpenViewDialog = (teacherData: Teacher): void => {
-    setSelectedTeacherForView(teacherData);
+  const handleOpenViewDialog = async (teacherData: Teacher): Promise<void> => {
+    await getTeacherById(teacherData.id);
     setOpenViewDialog(true);
   };
 
   const handleCloseViewDialog = (): void => {
-    setSelectedTeacherForView(null);
     setOpenViewDialog(false);
-  };
-
-  const handleOpenDeleteDialog = (teacher: Teacher): void => {
-    setTeacherToDelete(teacher);
-    setOpenDeleteDialog(true);
   };
 
   const handleCloseDeleteDialog = (): void => {
@@ -216,32 +247,25 @@ const TeacherManagement: React.FC = () => {
 
             {/* Table */}
             <TeacherTable
-              teachers={teachers || []}
-              loading={loadingTable}
-              onEdit={(teacher: any) => handleOpenDialog(teacher)}
-              onDelete={(teacherId: string) => {
-                const teacher = teachers?.find((t: any) => t.id === teacherId);
-                if (teacher) {
-                  handleOpenDeleteDialog(teacher);
-                }
-              }}
-              onViewDetails={(teacher: any) => handleOpenViewDialog(teacher)}
-              onViewClasses={() => {}}
-            />
-
-            {/* Dialogs */}
+              teachers={teachers}
+              loading={loading}
+              onEdit={handleOpenDialog}
+              onDelete={handleDeleteTeacher}
+              onViewDetails={handleOpenViewDialog}
+            />            {/* Dialogs */}
             <TeacherForm
               open={openDialog}
               onClose={handleCloseDialog}
-              teacher={selectedTeacher as any}
+              teacher={form as any}
               onSubmit={handleFormSubmit}
-              loading={formLoading}
+              loading={formLoading || loadingDetail}
             />
 
             <TeacherViewDialog
               open={openViewDialog}
               onClose={handleCloseViewDialog}
-              teacher={selectedTeacherForView as any}
+              teacher={teacherDetail}
+              loading={loadingDetail}
             />
 
             <ConfirmDialog

@@ -28,7 +28,8 @@ export interface User extends BaseEntity {
 
 // Teacher Types
 export interface Teacher extends BaseEntity {
-  // New API fields - actual API response structure
+  // API response structure
+  teacher_id: string; // Unique teacher identifier
   name: string;
   email: string;
   gender: 'male' | 'female';
@@ -39,7 +40,9 @@ export interface Teacher extends BaseEntity {
   qualifications: string[];
   specializations: string[];
   description: string;
-  salaryPerLesson: number;
+  salary?: number; // Added salary field
+  salaryPerLesson?: number; // Keep for backward compatibility
+  workExperience?: number; // Added work experience field
   isActive: boolean;
   role: {
     id: number;

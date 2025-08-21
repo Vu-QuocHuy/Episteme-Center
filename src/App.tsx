@@ -11,9 +11,9 @@ import ProtectedRoute from './components/common/ProtectedRoute';
 import theme from './theme';
 
 // Pages
-import Home from './pages/Home';
+import Home from './pages/home/index';
 import Login from './pages/auth/Login';
-import AdminLogin from './pages/auth/AdminLogin';
+import StaffLogin from './pages/auth/StaffLogin';
 import ForgotPassword from './pages/auth/ForgotPassword';
 import VerifyEmail from './pages/auth/VerifyEmail';
 import UnauthorizedAccess from './pages/auth/UnauthorizedAccess';
@@ -28,28 +28,29 @@ import ParentManagement from './pages/admin/ParentManagement';
 import Statistics from './pages/admin/Statistics';
 import HomeContentManagement from './pages/admin/HomeContentManagement';
 import MenuManagement from './pages/admin/MenuManagement';
-import AdminProfile from './pages/Profile/AdminProfile';
+import AdminProfile from './pages/profile/AdminProfile';
+import AuditLog from './pages/admin/AuditLog';
 
 // Teacher Pages
 import TeacherDashboard from './pages/teacher/Dashboard';
 import TeacherMyClasses from './pages/teacher/MyClasses';
 import TeacherSchedule from './pages/teacher/Schedule';
-import TeacherProfile from './pages/Profile/TeacherProfile';
+import TeacherProfile from './pages/profile/TeacherProfile';
 import Salary from './pages/teacher/Salary';
 
 // Student Pages
 import StudentDashboard from './pages/student/Dashboard';
 import StudentMyClasses from './pages/student/MyClasses';
 import StudentSchedule from './pages/student/Schedule';
-import StudentProfile from './pages/Profile/StudentProfile';
+import StudentProfile from './pages/profile/StudentProfile';
 
 // Parent Pages
 import ParentDashboard from './pages/parent/Dashboard';
 import ParentChildren from './pages/parent/Children';
 import ParentPayments from './pages/parent/Payments';
-import ParentProfile from './pages/Profile/ParentProfile';
+import ParentProfile from './pages/profile/ParentProfile';
 
-import { USER_ROLES } from './utils/constants';
+import { USER_ROLES } from './constants';
 
 const AppContent: React.FC = () => {
   const { user } = useAuth();
@@ -62,7 +63,8 @@ const AppContent: React.FC = () => {
             {/* Trang chủ chung - hiển thị khác nhau tùy trạng thái đăng nhập */}
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/staff/login" element={<StaffLogin />} />
+            <Route path="/admin/login" element={<Navigate to="/staff/login" replace />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/auth/verify-email" element={<VerifyEmail />} />
             <Route path="/unauthorized" element={<UnauthorizedAccess />} />
@@ -90,6 +92,7 @@ const AppContent: React.FC = () => {
                     <Route path="teachers" element={<TeacherManagement />} />
                     <Route path="parents" element={<ParentManagement />} />
                     <Route path="statistics" element={<Statistics />} />
+                    <Route path="audit-log" element={<AuditLog />} />
                     <Route path="home-content" element={<HomeContentManagement />} />
                     <Route path="menu" element={<MenuManagement />} />
                     <Route path="profile" element={<AdminProfile />} />

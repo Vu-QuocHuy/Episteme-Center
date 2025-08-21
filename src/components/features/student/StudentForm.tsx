@@ -12,23 +12,12 @@ import {
   MenuItem,
   Box,
   Typography,
-
   CircularProgress,
-  Avatar,
-  IconButton,
   Grid,
-  Chip
+  Paper
 } from '@mui/material';
-import {
-  Close as CloseIcon,
-  PhotoCamera as PhotoCameraIcon,
-  Save as SaveIcon,
-  Cancel as CancelIcon,
-  CalendarToday as CalendarIcon
-} from '@mui/icons-material';
-import { useTheme } from '@mui/material/styles';
+import { Save as SaveIcon, Cancel as CancelIcon, Edit as EditIcon } from '@mui/icons-material';
 import { Student, Parent } from '../../../types';
-import { validateStudent } from '../../../validations/studentValidation';
 
 interface StudentFormProps {
   open: boolean;
@@ -46,11 +35,6 @@ interface FormData {
   address: string;
   dateOfBirth: string;
   gender: 'male' | 'female';
-  level: string;
-  schoolName: string;
-  grade: string;
-  parentId: string;
-  isActive: boolean;
 }
 
 interface FormErrors {
@@ -74,39 +58,20 @@ const StudentForm: React.FC<StudentFormProps> = ({
   parents = [],
   loading = false
 }) => {
-  const theme = useTheme();
+  // Removed theme-based avatar UI for edit layout
   const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
     phone: '',
     address: '',
     dateOfBirth: '',
-    gender: 'male',
-    level: '',
-    schoolName: '',
-    grade: '',
-    parentId: '',
-    isActive: true
+    gender: 'male'
   });
   const [errors, setErrors] = useState<FormErrors>({});
-  const [avatar, setAvatar] = useState<string>('');
-  const [, setAvatarFile] = useState<File | null>(null);
+  const [classEdits, setClassEdits] = useState<Array<{ classId?: string; className: string; discountPercent: number; status: 'active' | 'completed'; }>>([]);
+  // Removed avatar editing in this dialog
 
-  const levels = [
-    'Beginner',
-    'Elementary',
-    'Pre-Intermediate',
-    'Intermediate',
-    'Upper-Intermediate',
-    'Advanced'
-  ];
-
-  const grades = [
-    'Lớp 1', 'Lớp 2', 'Lớp 3', 'Lớp 4', 'Lớp 5',
-    'Lớp 6', 'Lớp 7', 'Lớp 8', 'Lớp 9',
-    'Lớp 10', 'Lớp 11', 'Lớp 12',
-    'Đại học', 'Cao đẳng', 'Khác'
-  ];
+  // Removed levels/grades UI for this dialog per design
 
   useEffect(() => {
     if (student) {
@@ -117,14 +82,15 @@ const StudentForm: React.FC<StudentFormProps> = ({
         address: student.address || student.userId?.address || '',
         dateOfBirth: student.dayOfBirth ? new Date(student.dayOfBirth).toISOString().split('T')[0] :
                      student.dateOfBirth ? new Date(student.dateOfBirth).toISOString().split('T')[0] : '',
-        gender: student.gender || 'male',
-        level: student.level || '',
-        schoolName: student.schoolName || '',
-        grade: student.grade?.toString() || '',
-        parentId: student.parentId || '',
-        isActive: student.isActive ?? true
+        gender: student.gender || 'male'
       });
-      setAvatar(student.avatar || student.userId?.avatar || '');
+      const mapped = (student.classes || []).map((cls: any, index: number) => ({
+        classId: typeof cls.classId === 'object' ? cls.classId?.id : cls.classId,
+        className: cls.classId?.name || cls.name || `${cls.classId?.grade || ''}.${cls.classId?.section || ''}` || `Lớp ${index + 1}`,
+        discountPercent: Number(cls.discountPercent || cls.discount || 0),
+        status: (cls.status as 'active' | 'completed') ?? 'active'
+      }));
+      setClassEdits(mapped);
     } else {
       resetForm();
     }
@@ -137,16 +103,10 @@ const StudentForm: React.FC<StudentFormProps> = ({
       phone: '',
       address: '',
       dateOfBirth: '',
-      gender: 'male',
-      level: '',
-      schoolName: '',
-      grade: '',
-      parentId: '',
-      isActive: true
+      gender: 'male'
     });
     setErrors({});
-    setAvatar('');
-    setAvatarFile(null);
+    setClassEdits([]);
   };
 
   const handleInputChange = (field: keyof FormData, value: string | boolean) => {
@@ -164,30 +124,11 @@ const StudentForm: React.FC<StudentFormProps> = ({
     }
   };
 
-  const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setAvatarFile(file);
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setAvatar(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
+  const handleClassChange = (index: number, field: 'className' | 'discountPercent' | 'status', value: any) => {
+    setClassEdits(prev => prev.map((item, i) => i === index ? { ...item, [field]: field === 'discountPercent' ? Number(value) : value } : item));
   };
 
-  const validateForm = (): boolean => {
-    const validationErrors = validateStudent({
-      name: formData.name,
-      email: formData.email,
-      phone: formData.phone,
-      dayOfBirth: formData.dateOfBirth,
-      address: formData.address,
-      gender: formData.gender
-    });
-    setErrors(validationErrors);
-    return Object.keys(validationErrors).length === 0;
-  };
+  const validateForm = (): boolean => true;
 
   const handleSubmit = async () => {
     if (!validateForm()) {
@@ -195,37 +136,33 @@ const StudentForm: React.FC<StudentFormProps> = ({
     }
 
     try {
-      const studentData = {
-        ...(student?.id ? { id: student.id } : {}),
-        // New API structure - direct fields
+      const payload = student?.id
+        ? {
+            userData: {
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
-        address: formData.address,
         dayOfBirth: formData.dateOfBirth,
-        avatar: avatar || undefined,
         gender: formData.gender,
-        password: 'password123', // Default password for new students
-        level: formData.level,
-        schoolName: formData.schoolName,
-        grade: parseInt(formData.grade) || undefined,
-        parentId: formData.parentId || undefined,
-        isActive: formData.isActive,
-
-        // Legacy structure for backward compatibility
-        userId: {
-          ...(student?.userId?.id ? { id: student.userId.id } : {}),
+              address: formData.address,
+            },
+            studentData: classEdits.map(edit => ({
+              classId: edit.classId || edit.className,
+              status: edit.status,
+              discountPercent: edit.discountPercent || 0
+            }))
+          }
+        : {
+            email: formData.email,
+            password: 'password123',
           name: formData.name,
-          email: formData.email,
+            dayOfBirth: formData.dateOfBirth,
           phone: formData.phone,
           address: formData.address,
-          avatar: avatar,
-          role: 'student' as const
-        },
-        dateOfBirth: formData.dateOfBirth
+            gender: formData.gender
       };
 
-      await onSubmit(studentData as any);
+      await onSubmit(payload as any);
       resetForm();
       onClose();
     } catch (error) {
@@ -238,19 +175,19 @@ const StudentForm: React.FC<StudentFormProps> = ({
     onClose();
   };
 
-  const calculateAge = (birthDate: string) => {
-    if (!birthDate) return 0;
-    const today = new Date();
-    const birth = new Date(birthDate);
-    let age = today.getFullYear() - birth.getFullYear();
-    const monthDiff = today.getMonth() - birth.getMonth();
-
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-      age--;
-    }
-
-    return age;
-  };
+  const sectionTitle = (title: string) => (
+    <Typography variant="h6" gutterBottom sx={{
+      color: '#2c3e50',
+      fontWeight: 600,
+      display: 'flex',
+      alignItems: 'center',
+      gap: 1,
+      mb: 2
+    }}>
+      <Box sx={{ width: 4, height: 20, bgcolor: '#667eea', borderRadius: 2 }} />
+      {title}
+    </Typography>
+  );
 
   return (
     <Dialog
@@ -260,71 +197,47 @@ const StudentForm: React.FC<StudentFormProps> = ({
       fullWidth
       PaperProps={{
         sx: {
-          borderRadius: 2,
-          boxShadow: theme.shadows[10]
+          borderRadius: 3,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+          overflow: 'hidden'
         }
       }}
     >
-      <DialogTitle>
-        <Box display="flex" alignItems="center" justifyContent="space-between">
-          <Typography variant="h6" fontWeight="bold">
-            {student ? 'Chỉnh sửa học sinh' : 'Thêm học sinh mới'}
+      <DialogTitle sx={{
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        color: 'white',
+        py: 3,
+        px: 4,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between'
+      }}>
+        <Box>
+          <Typography variant="h5" sx={{ fontWeight: 600, mb: 0.5 }}>
+            {student ? 'Chỉnh sửa thông tin học sinh' : 'Thêm học sinh mới'}
           </Typography>
-          <IconButton onClick={handleClose} size="small">
-            <CloseIcon />
-          </IconButton>
+          <Typography variant="body2" sx={{ opacity: 0.9 }}>
+            Cập nhật thông tin học sinh
+          </Typography>
+        </Box>
+        <Box sx={{
+          bgcolor: 'rgba(255,255,255,0.2)',
+          borderRadius: '50%',
+          p: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <EditIcon sx={{ fontSize: 28, color: 'white' }} />
         </Box>
       </DialogTitle>
 
-      <DialogContent>
-        <Box mt={2}>
-          {/* Avatar Section */}
-          <Box display="flex" justifyContent="center" mb={3}>
-            <Box position="relative">
-              <Avatar
-                src={avatar}
-                alt={formData.name}
-                sx={{
-                  width: 100,
-                  height: 100,
-                  fontSize: '2rem',
-                  border: `3px solid ${theme.palette.primary.main}`
-                }}
-              >
-                {formData.name.charAt(0).toUpperCase()}
-              </Avatar>
-              <IconButton
-                component="label"
-                sx={{
-                  position: 'absolute',
-                  bottom: 0,
-                  right: 0,
-                  bgcolor: theme.palette.primary.main,
-                  color: 'white',
-                  '&:hover': {
-                    bgcolor: theme.palette.primary.dark
-                  }
-                }}
-                size="small"
-              >
-                <PhotoCameraIcon fontSize="small" />
-                <input
-                  type="file"
-                  hidden
-                  accept="image/*"
-                  onChange={handleAvatarChange}
-                />
-              </IconButton>
-            </Box>
-          </Box>
-
+      <DialogContent sx={{ p: 0 }}>
+        <Box sx={{ p: 4 }}>
+          <Paper sx={{ p: 3, borderRadius: 2, background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)', border: '1px solid #e0e6ed' }}>
+            {sectionTitle('Thông tin học sinh')}
+            <Box sx={{ p: 2, bgcolor: 'white', borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
           <Grid container spacing={3}>
-            {/* Personal Information */}
-            <Grid item xs={12}>
-              <Typography variant="h6" gutterBottom color="primary">
-                Thông tin cá nhân
-              </Typography>
-            </Grid>
 
             <Grid item xs={12} md={6}>
               <TextField
@@ -383,11 +296,8 @@ const StudentForm: React.FC<StudentFormProps> = ({
                 value={formData.dateOfBirth}
                 onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
                 error={!!errors.dateOfBirth}
-                helperText={errors.dateOfBirth || (formData.dateOfBirth ? `${calculateAge(formData.dateOfBirth)} tuổi` : '')}
+                helperText={errors.dateOfBirth}
                 required
-                InputProps={{
-                  startAdornment: <CalendarIcon sx={{ mr: 1, color: 'action.active' }} />
-                }}
               />
             </Grid>
 
@@ -410,101 +320,59 @@ const StudentForm: React.FC<StudentFormProps> = ({
               </FormControl>
             </Grid>
 
-            {/* Academic Information */}
-            <Grid item xs={12}>
-              <Typography variant="h6" gutterBottom color="primary" mt={2}>
-                Thông tin học tập
-              </Typography>
+            {/* End personal section */}
             </Grid>
+            </Box>
+          </Paper>
 
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth required error={!!errors.level}>
-                <InputLabel>Trình độ tiếng Anh</InputLabel>
-                <Select
-                  value={formData.level}
-                  onChange={(e) => handleInputChange('level', e.target.value)}
-                  label="Trình độ tiếng Anh"
-                >
-                  {levels.map((level) => (
-                    <MenuItem key={level} value={level}>
-                      {level}
-                    </MenuItem>
-                  ))}
-                </Select>
-                {errors.level && (
-                  <Typography variant="caption" color="error" mt={0.5}>
-                    {errors.level}
-                  </Typography>
-                )}
-              </FormControl>
+          <Box sx={{ mt: 3 }}>
+            <Paper sx={{ p: 3, borderRadius: 2, background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)', border: '1px solid #e0e6ed' }}>
+              {sectionTitle('Danh sách lớp đang học')}
+              <Box sx={{ p: 2, bgcolor: 'white', borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+                <Grid container spacing={2}>
+                  {classEdits.map((item, idx) => (
+                    <React.Fragment key={idx}>
+                      <Grid item xs={12} md={4}>
+                        <TextField
+                          fullWidth
+                          label="Tên lớp"
+                          value={item.className}
+                          onChange={(e) => handleClassChange(idx, 'className', e.target.value)}
+                        />
             </Grid>
-
-            <Grid item xs={12} md={6}>
+                      <Grid item xs={12} md={4}>
               <TextField
                 fullWidth
-                label="Tên trường học"
-                value={formData.schoolName}
-                onChange={(e) => handleInputChange('schoolName', e.target.value)}
-                error={!!errors.schoolName}
-                helperText={errors.schoolName}
-                required
+                          label="Giảm giá (%)"
+                          type="number"
+                          value={item.discountPercent}
+                          onChange={(e) => handleClassChange(idx, 'discountPercent', e.target.value)}
               />
             </Grid>
-
-            <Grid item xs={12} md={6}>
+                      <Grid item xs={12} md={4}>
               <FormControl fullWidth>
-                <InputLabel>Lớp hiện tại</InputLabel>
+                          <InputLabel>Trạng thái</InputLabel>
                 <Select
-                  value={formData.grade}
-                  onChange={(e) => handleInputChange('grade', e.target.value)}
-                  label="Lớp hiện tại"
-                >
-                  {grades.map((grade) => (
-                    <MenuItem key={grade} value={grade}>
-                      {grade}
-                    </MenuItem>
-                  ))}
+                            value={item.status}
+                            label="Trạng thái"
+                            onChange={(e) => handleClassChange(idx, 'status', e.target.value as any)}
+                          >
+                            <MenuItem value="active">Đang học</MenuItem>
+                            <MenuItem value="completed">Đã hoàn thành</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
-
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
-                <InputLabel>Phụ huynh</InputLabel>
-                <Select
-                  value={formData.parentId}
-                  onChange={(e) => handleInputChange('parentId', e.target.value)}
-                  label="Phụ huynh"
-                >
-                  <MenuItem value="">
-                    <em>Không có phụ huynh</em>
-                  </MenuItem>
-                  {parents.map((parent) => (
-                    <MenuItem key={parent.id} value={parent.id}>
-                      {parent.name || parent.userId?.name} - {parent.phone || parent.userId?.phone}
-                    </MenuItem>
+                    </React.Fragment>
                   ))}
-                </Select>
-              </FormControl>
+                  {classEdits.length === 0 && (
+                    <Grid item xs={12}>
+                      <Typography color="text.secondary">Học sinh chưa có lớp nào.</Typography>
+                    </Grid>
+                  )}
             </Grid>
-
-            <Grid item xs={12}>
-              <Box display="flex" alignItems="center" gap={1}>
-                <Chip
-                  label={formData.isActive ? 'Đang học' : 'Đã nghỉ học'}
-                  color={formData.isActive ? 'success' : 'error'}
-                  variant="outlined"
-                />
-                <Button
-                  variant="text"
-                  size="small"
-                  onClick={() => handleInputChange('isActive', !formData.isActive)}
-                >
-                  {formData.isActive ? 'Đánh dấu nghỉ học' : 'Kích hoạt học sinh'}
-                </Button>
               </Box>
-            </Grid>
-          </Grid>
+            </Paper>
+          </Box>
         </Box>
       </DialogContent>
 

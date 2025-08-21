@@ -9,6 +9,7 @@ import { useStudentManagement } from '../../hooks/features/useStudentManagement'
 import { useStudentForm } from '../../hooks/features/useStudentForm';
 import { StudentForm, StudentTable, StudentFilters, StudentViewDialog } from '../../components/features/student';
 import { Student } from '../../types';
+import { getStudentByIdAPI } from '../../services/api';
 
 interface SnackbarState {
   open: boolean;
@@ -54,10 +55,23 @@ const StudentManagement: React.FC = () => {
   } = useStudentForm();
 
   // Dialog handlers
-  const handleOpenDialog = (student: Student | null = null): void => {
-    setSelectedStudent(student);
-    setFormData(student || undefined);
+  const handleOpenDialog = async (student: Student | null = null): Promise<void> => {
     setOpenDialog(true);
+    if (student?.id) {
+      try {
+        const res = await getStudentByIdAPI(student.id);
+        const payload: any = (res as any)?.data?.data ?? (res as any)?.data ?? res;
+        setSelectedStudent(payload);
+        setFormData(payload || undefined);
+      } catch (e) {
+        // Fallback to existing row data if API fails
+        setSelectedStudent(student);
+        setFormData(student || undefined);
+      }
+    } else {
+      setSelectedStudent(null);
+      setFormData(undefined);
+    }
   };
 
   const handleCloseDialog = (): void => {
@@ -113,7 +127,20 @@ const StudentManagement: React.FC = () => {
   };
 
   const handleOpenViewDialog = (studentData: Student): void => {
-    setSelectedStudentForView(studentData);
+    // Chỉ cần truyền ID và thông tin cơ bản để hiển thị loading
+    setSelectedStudentForView({
+      id: studentData.id,
+      name: studentData.name,
+      email: studentData.email,
+      phone: studentData.phone,
+      gender: studentData.gender,
+      dayOfBirth: studentData.dayOfBirth,
+      address: studentData.address,
+      userId: studentData.userId,
+      parentId: studentData.parentId,
+      classes: studentData.classes,
+      role: studentData.role as any,
+    } as unknown as Student);
     setOpenViewDialog(true);
   };
 
@@ -158,7 +185,6 @@ const StudentManagement: React.FC = () => {
               if (student) handleOpenDeleteDialog(student);
             }}
             onViewDetails={handleOpenViewDialog}
-            onViewClasses={() => {}}
           />
         </Box>
       </Box>

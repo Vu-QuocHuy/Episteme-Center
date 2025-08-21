@@ -18,7 +18,7 @@ export default {
   collectCoverageFrom: [
     'src/**/*.{js,jsx,ts,tsx}',
     '!src/**/*.d.ts',
-    '!src/main.jsx',
+    '!src/main.tsx',
     '!src/vite-env.d.ts',
   ],
   coverageDirectory: 'coverage',
