@@ -205,15 +205,10 @@ export const createClassAPI = (data: ClassFormData) => {
 
 export const getAllClassesAPI = (params?: ApiParams) => {
   console.log('📊 Classes API Request:', params);
-
-  // Use helper function to create query params with filters
   const queryParams = createQueryParams(params || {});
-
+  console.log('🔗 Generated URL:', API_CONFIG.ENDPOINTS.CLASSES.GET_ALL);
   return axiosInstance.get(API_CONFIG.ENDPOINTS.CLASSES.GET_ALL, {
-    params: queryParams,
-    headers: {
-      'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-    }
+    params: queryParams
   }).then(response => {
     console.log('✅ Classes API Success:', response);
     return response;
@@ -394,6 +389,9 @@ export const getAllStudentsAPI = (params?: ApiParams) => {
   // Use helper function to create query params with filters
   const queryParams = createQueryParams(params || {});
 
+  console.log('🔗 Generated URL:', API_CONFIG.ENDPOINTS.STUDENTS.GET_ALL);
+
+  // Use axios with properly encoded filters
   return axiosInstance.get(API_CONFIG.ENDPOINTS.STUDENTS.GET_ALL, {
     params: queryParams
   }).then(response => {
@@ -429,11 +427,8 @@ export const createTeacherAPI = (data: TeacherData) => {
 
 export const getAllTeachersAPI = (params?: ApiParams) => {
   console.log('📊 Teachers API Request:', params);
-  console.log('📊 Teachers API URL:', API_CONFIG.ENDPOINTS.TEACHERS.GET_ALL);
-
-  // Use helper function to create query params with filters
   const queryParams = createQueryParams(params || {});
-
+  console.log('🔗 Generated URL:', API_CONFIG.ENDPOINTS.TEACHERS.GET_ALL);
   return axiosInstance.get(API_CONFIG.ENDPOINTS.TEACHERS.GET_ALL, {
     params: queryParams
   }).then(response => {
@@ -489,10 +484,8 @@ export const createParentAPI = (data: ParentData) => {
 
 export const getAllParentsAPI = (params?: ApiParams) => {
   console.log('📊 Parents API Request:', params);
-
-  // Use helper function to create query params with filters
   const queryParams = createQueryParams(params || {});
-
+  console.log('🔗 Generated URL:', API_CONFIG.ENDPOINTS.PARENTS.GET_ALL);
   return axiosInstance.get(API_CONFIG.ENDPOINTS.PARENTS.GET_ALL, {
     params: queryParams
   }).then(response => {
@@ -587,12 +580,8 @@ export const updateAttendanceAPI = (id: string, data: AttendanceData) => updateS
 // Payment APIs
 export const getAllPaymentsAPI = (params?: ApiParams) => {
   console.log('📊 Get All Payments API Request:', params);
-
-  const queryParams: any = {};
-  if (params?.page) queryParams.page = params.page;
-  if (params?.limit) queryParams.limit = params.limit;
-  if (params?.filters) queryParams.filters = params.filters;
-
+  const queryParams = createQueryParams(params || {});
+  console.log('🔗 Generated URL:', API_CONFIG.ENDPOINTS.PAYMENTS.GET_ALL);
   return axiosInstance.get(API_CONFIG.ENDPOINTS.PAYMENTS.GET_ALL, {
     params: queryParams,
     headers: {
@@ -620,12 +609,8 @@ export const payStudentAPI = (paymentId: string, data: PaymentData) => {
 };
 export const getAllTeacherPaymentsAPI = (params?: ApiParams) => {
   console.log('📊 Get All Teacher Payments API Request:', params);
-
-  const queryParams: any = {};
-  if (params?.page) queryParams.page = params.page;
-  if (params?.limit) queryParams.limit = params.limit;
-  if (params?.filters) queryParams.filters = params.filters;
-
+  const queryParams = createQueryParams(params || {});
+  console.log('🔗 Generated URL:', '/teacher-payments/all');
   return axiosInstance.get('/teacher-payments/all', {
     params: queryParams,
     headers: {
@@ -825,12 +810,8 @@ export const createTransactionAPI = (data: TransactionData) => {
 
 export const getAllTransactionsAPI = (params?: ApiParams) => {
   console.log('📊 Get All Transactions API Request:', params);
-
-  const queryParams: any = {};
-  if (params?.page) queryParams.page = params.page;
-  if (params?.limit) queryParams.limit = params.limit;
-  if (params?.filters) queryParams.filters = params.filters;
-
+  const queryParams = createQueryParams(params || {});
+  console.log('🔗 Generated URL:', API_CONFIG.ENDPOINTS.TRANSACTIONS.GET_ALL);
   return axiosInstance.get(API_CONFIG.ENDPOINTS.TRANSACTIONS.GET_ALL, {
     params: queryParams,
     headers: {
