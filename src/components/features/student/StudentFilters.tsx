@@ -1,11 +1,6 @@
 import React from 'react';
-import {
-  Paper,
-  TextField,
-  Grid,
-  InputAdornment,
-} from '@mui/material';
-import { Search as SearchIcon } from '@mui/icons-material';
+import { Paper, Grid } from '@mui/material';
+import { SearchInput } from '../../common';
 
 interface StudentFiltersProps {
   searchQuery: string;
@@ -20,26 +15,10 @@ const StudentFilters: React.FC<StudentFiltersProps> = ({
     <Paper sx={{ p: 3, mb: 3, borderRadius: 2 }}>
       <Grid container spacing={2}>
         <Grid item xs={12}>
-          <TextField
-            fullWidth
-            placeholder="Tìm kiếm học sinh..."
+          <SearchInput
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                borderRadius: 2,
-                '&:hover .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#667eea',
-                },
-              },
-            }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-            }}
+            onChange={setSearchQuery}
+            placeholder="Tìm kiếm học sinh..."
           />
         </Grid>
       </Grid>

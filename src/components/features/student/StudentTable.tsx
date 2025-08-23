@@ -18,6 +18,7 @@ import {
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { Student } from '../../../types';
+import { renderClasses } from '../../../utils/studentHelpers';
 
 interface StudentTableProps {
   students: Student[];
@@ -107,23 +108,13 @@ const StudentTable: React.FC<StudentTableProps> = ({
                   </Typography>
                 </TableCell>
                 <TableCell>
-                  <Box>
-                    {Array.isArray(student.classes) && student.classes.length > 0 ? (
-                      student.classes.map((classItem: any, index: number) => (
-                        <Typography key={classItem?.id || index} variant="body2" sx={{ mb: index < (student.classes?.length || 0) - 1 ? 0.5 : 0 }}>
-                          {classItem?.name} (Giảm {classItem?.discount || 0}%) - {classItem?.status === 'active' ? 'Đang học' : 'Đã nghỉ'}
-                        </Typography>
-                      ))
-                    ) : (
-                      <Typography variant="body2" color="text.secondary">
-                        Chưa đăng ký lớp
-                      </Typography>
-                    )}
-                  </Box>
+                  <Typography variant="body2">
+                    {student.parentId ? 'Có phụ huynh' : 'Không có phụ huynh'}
+                  </Typography>
                 </TableCell>
                 <TableCell>
                   <Typography variant="body2">
-                    {student.parentId ? 'Có phụ huynh' : 'Không có phụ huynh'}
+                    {renderClasses(student.classes || [])}
                   </Typography>
                 </TableCell>
                 <TableCell>

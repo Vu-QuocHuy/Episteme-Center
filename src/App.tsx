@@ -26,6 +26,8 @@ import StudentManagement from './pages/admin/StudentManagement';
 import TeacherManagement from './pages/admin/TeacherManagement';
 import ParentManagement from './pages/admin/ParentManagement';
 import Statistics from './pages/admin/Statistics';
+import FinancialStatistics from './pages/admin/FinancialStatistics';
+import StudentStatistics from './pages/admin/StudentStatistics';
 import HomeContentManagement from './pages/admin/HomeContentManagement';
 import MenuManagement from './pages/admin/MenuManagement';
 import AdminProfile from './pages/profile/AdminProfile';
@@ -88,10 +90,21 @@ const AppContent: React.FC = () => {
                     <Route path="dashboard" element={<AdminDashboard />} />
                       <Route path="advertisements" element={<AdvertisementManagement />} />
                     <Route path="classes" element={<ClassManagement />} />
-                    <Route path="students" element={<StudentManagement />} />
-                    <Route path="teachers" element={<TeacherManagement />} />
-                    <Route path="parents" element={<ParentManagement />} />
+
+                    {/* New user management routes */}
+                    <Route path="users" element={<Navigate to="/admin/users/students" replace />} />
+                    <Route path="users/students" element={<StudentManagement />} />
+                    <Route path="users/teachers" element={<TeacherManagement />} />
+                    <Route path="users/parents" element={<ParentManagement />} />
+
+                    {/* Legacy routes with redirects for backward compatibility */}
+                    <Route path="students" element={<Navigate to="/admin/users/students" replace />} />
+                    <Route path="teachers" element={<Navigate to="/admin/users/teachers" replace />} />
+                    <Route path="parents" element={<Navigate to="/admin/users/parents" replace />} />
+
                     <Route path="statistics" element={<Statistics />} />
+                    <Route path="statistics/financial" element={<FinancialStatistics />} />
+                    <Route path="statistics/students" element={<StudentStatistics />} />
                     <Route path="audit-log" element={<AuditLog />} />
                     <Route path="home-content" element={<HomeContentManagement />} />
                     <Route path="menu" element={<MenuManagement />} />

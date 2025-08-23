@@ -1,14 +1,6 @@
 import React from 'react';
-import {
-  Paper,
-  Grid,
-  TextField,
-  InputAdornment,
-  MenuItem,
-} from '@mui/material';
-import {
-  Search as SearchIcon,
-} from '@mui/icons-material';
+import { Paper, Grid, TextField, MenuItem } from '@mui/material';
+import { SearchInput } from '../../common';
 
 
 interface TeacherFiltersProps {
@@ -28,18 +20,10 @@ const TeacherFilters: React.FC<TeacherFiltersProps> = ({
     <Paper sx={{ p: 2, mb: 3 }}>
       <Grid container spacing={2} alignItems="center">
         <Grid item xs={12} md={8}>
-          <TextField
-            fullWidth
-            placeholder="Tìm kiếm giáo viên..."
+          <SearchInput
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-            }}
+            onChange={setSearchQuery}
+            placeholder="Tìm kiếm giáo viên..."
           />
         </Grid>
         <Grid item xs={12} md={4}>

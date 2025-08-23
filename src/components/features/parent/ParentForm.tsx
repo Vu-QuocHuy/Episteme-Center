@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useDebounce } from '../../../hooks/common/useDebounce';
 import {
   Dialog,
   DialogTitle,
@@ -13,20 +14,24 @@ import {
   Box,
   Typography,
   CircularProgress,
-  Avatar,
-  IconButton,
   Grid,
-  Chip
+  Checkbox,
+  Tabs,
+  Tab,
+  Paper,
+  Autocomplete,
+  List,
+  ListItem,
+  ListItemText
 } from '@mui/material';
 import {
-  Close as CloseIcon,
-  PhotoCamera as PhotoCameraIcon,
   Save as SaveIcon,
-  Cancel as CancelIcon
+  Cancel as CancelIcon,
+  Edit as EditIcon
 } from '@mui/icons-material';
-import { useTheme } from '@mui/material/styles';
-import { Parent } from '../../../types';
-import { validateParent } from '../../../validations/parentValidation';
+import { Parent, Student } from '../../../types';
+import { useParentForm } from '../../../hooks/features/useParentForm';
+import { getAllStudentsAPI } from '../../../services/api';
 
 interface ParentFormProps {
   open: boolean;
@@ -35,193 +40,105 @@ interface ParentFormProps {
   parent?: Parent | null;
   loading?: boolean;
 }
+const ParentForm: React.FC<ParentFormProps> = ({ open, onClose, onSubmit, parent, loading = false }) => {
+  const {
+    form,
+    formErrors,
+    formLoading,
+    handleChange,
+    setFormData,
+    resetForm,
+    handleSubmit,
+    handleAddChild,
+    handleRemoveChild,
+  } = useParentForm();
 
-interface FormData {
-  name: string;
-  email: string;
-  phone: string;
-  address: string;
-  relationship: string;
-  occupation: string;
-  workplace: string;
-  isActive: boolean;
-}
+  const [tab, setTab] = useState<number>(0);
+  const [childrenList, setChildrenList] = useState<Student[]>([]);
+  const [studentQuery, setStudentQuery] = useState<string>('');
+  const [studentOptions, setStudentOptions] = useState<Student[]>([]);
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const busy = loading || formLoading;
 
-interface FormErrors {
-  name?: string;
-  email?: string;
-  phone?: string;
-  address?: string;
-  relationship?: string;
-  occupation?: string;
-  workplace?: string;
-}
-
-const ParentForm: React.FC<ParentFormProps> = ({
-  open,
-  onClose,
-  onSubmit,
-  parent,
-  loading = false
-}) => {
-  const theme = useTheme();
-  const [formData, setFormData] = useState<FormData>({
-    name: '',
-    email: '',
-    phone: '',
-    address: '',
-    relationship: '',
-    occupation: '',
-    workplace: '',
-    isActive: true
-  });
-  const [errors, setErrors] = useState<FormErrors>({});
-  const [avatar, setAvatar] = useState<string>('');
-  const [, setAvatarFile] = useState<File | null>(null);
-
-  const relationships = [
-    'father',
-    'mother',
-    'guardian',
-    'grandfather',
-    'grandmother',
-    'uncle',
-    'aunt'
-  ];
-
-  const relationshipLabels: { [key: string]: string } = {
-    'father': 'Cha',
-    'mother': 'Mẹ',
-    'guardian': 'Người giám hộ',
-    'grandfather': 'Ông',
-    'grandmother': 'Bà',
-    'uncle': 'Chú/Cậu',
-    'aunt': 'Cô/Dì'
-  };
-
-  const occupations = [
-    'Công nhân',
-    'Nhân viên văn phòng',
-    'Giáo viên',
-    'Bác sĩ',
-    'Kỹ sư',
-    'Doanh nhân',
-    'Nông dân',
-    'Công chức',
-    'Tự do',
-    'Khác'
-  ];
+  // Debounce search query
+  const debouncedStudentQuery = useDebounce(studentQuery, 500);
 
   useEffect(() => {
-    if (parent) {
-      setFormData({
-        name: parent.userId.name || '',
-        email: parent.userId.email || '',
-        phone: parent.userId.phone || '',
-        address: parent.userId.address || '',
-        relationship: parent.relationship || '',
-        occupation: parent.occupation || '',
-        workplace: parent.workplace || '',
-        isActive: parent.isActive ?? true
-      });
-      setAvatar(parent.userId.avatar || '');
-    } else {
+    if (parent && open) {
+      setFormData(parent as any);
+      setChildrenList((parent as any)?.students || []);
+    } else if (!open) {
       resetForm();
+      setChildrenList([]);
     }
-  }, [parent, open]);
+  }, [parent, open, setFormData, resetForm]);
 
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      email: '',
-      phone: '',
-      address: '',
-      relationship: '',
-      occupation: '',
-      workplace: '',
-      isActive: true
-    });
-    setErrors({});
-    setAvatar('');
-    setAvatarFile(null);
-  };
+  useEffect(() => {
+    let active = true;
+    const fetch = async () => {
+      if (!debouncedStudentQuery || debouncedStudentQuery.length < 2) {
+        setStudentOptions([]);
+        return;
+      }
+      try {
+        const res = await getAllStudentsAPI({ name: debouncedStudentQuery, limit: 10 });
+        const data = (res as any)?.data?.data?.result || (res as any)?.data || [];
+        if (active) setStudentOptions(data);
+      } catch {
+        if (active) setStudentOptions([]);
+      }
+    };
+    fetch();
+    return () => { active = false; };
+  }, [debouncedStudentQuery]);
 
-  const handleInputChange = (field: keyof FormData, value: string | boolean) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-
-    // Clear error when user starts typing
-    if (errors[field as keyof FormErrors]) {
-      setErrors(prev => ({
-        ...prev,
-        [field]: undefined
-      }));
-    }
-  };
-
-  const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setAvatarFile(file);
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setAvatar(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const validateForm = (): boolean => {
-    const validationErrors = validateParent({
-      name: formData.name,
-      email: formData.email,
-      phone: formData.phone,
-      dayOfBirth: '', // This field is not in the form but required by validation
-      address: formData.address,
-      gender: '' // This field is not in the form but required by validation
-    });
-    setErrors(validationErrors);
-    return Object.keys(validationErrors).length === 0;
-  };
-
-  const handleSubmit = async () => {
-    if (!validateForm()) {
-      return;
-    }
-
+  const toDisplayDate = useMemo(() => (val?: string) => {
+    if (!val) return '';
     try {
-      const parentData = {
-        ...(parent?.id ? { id: parent.id } : {}),
-        userId: {
-          ...(parent?.userId?.id ? { id: parent.userId.id } : {}),
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone,
-          address: formData.address,
-          avatar: avatar,
-          role: 'parent' as const,
-          ...(parent?.userId?.dayOfBirth ? { dayOfBirth: parent.userId.dayOfBirth } : {}),
-          ...(parent?.userId?.gender ? { gender: parent.userId.gender } : {}),
-          ...(parent?.userId?.username ? { username: parent.userId.username } : {})
-        },
-        relationship: formData.relationship,
-        occupation: formData.occupation,
-        workplace: formData.workplace,
-        isActive: formData.isActive
-      };
+      const d = new Date(val);
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    } catch {
+      return val;
+    }
+  }, []);
 
-      await onSubmit(parentData as Partial<Parent>);
-      resetForm();
+  const submit = async () => {
+    const result = await handleSubmit(parent || null, () => {});
+    if (result.success) {
       onClose();
-    } catch (error) {
-      console.error('Error submitting parent form:', error);
+    }
+  };
+
+  const addChild = async () => {
+    if (!parent?.id || !selectedStudent?.id) return;
+    const result = await handleAddChild(String(selectedStudent.id), String(parent.id));
+    if (result.success) {
+      setChildrenList(prev => {
+        const exists = prev.some((s: any) => s.id === selectedStudent.id);
+        return exists ? prev : [...prev, selectedStudent as any];
+      });
+      setSelectedStudent(null);
+      setStudentQuery('');
+    }
+  };
+
+  const removeChild = async (studentId: string) => {
+    if (!parent?.id) return;
+    const result = await handleRemoveChild(String(studentId), String(parent.id));
+    if (result.success) {
+      setChildrenList(prev => prev.filter((s: any) => String(s.id) !== String(studentId)));
     }
   };
 
   const handleClose = () => {
     resetForm();
+    setChildrenList([]);
+    setSelectedStudent(null);
+    setStudentOptions([]);
+    setStudentQuery('');
     onClose();
   };
 
@@ -233,215 +150,251 @@ const ParentForm: React.FC<ParentFormProps> = ({
       fullWidth
       PaperProps={{
         sx: {
-          borderRadius: 2,
-          boxShadow: theme.shadows[10]
+          borderRadius: 3,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+          overflow: 'hidden'
         }
       }}
     >
-      <DialogTitle>
-        <Box display="flex" alignItems="center" justifyContent="space-between">
-          <Typography variant="h6" fontWeight="bold">
-            {parent ? 'Chỉnh sửa phụ huynh' : 'Thêm phụ huynh mới'}
+      <DialogTitle sx={{
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        color: 'white',
+        py: 3,
+        px: 4,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between'
+      }}>
+        <Box>
+          <Typography variant="h5" sx={{ fontWeight: 600, mb: 0.5 }}>
+            {parent ? 'Chỉnh sửa thông tin phụ huynh' : 'Thêm phụ huynh mới'}
           </Typography>
-          <IconButton onClick={handleClose} size="small">
-            <CloseIcon />
-          </IconButton>
+          <Typography variant="body2" sx={{ opacity: 0.9 }}>
+            Cập nhật thông tin phụ huynh
+          </Typography>
+        </Box>
+        <Box sx={{ bgcolor: 'rgba(255,255,255,0.2)', borderRadius: '50%', p: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <EditIcon sx={{ fontSize: 28, color: 'white' }} />
         </Box>
       </DialogTitle>
 
-      <DialogContent>
-        <Box mt={2}>
-          {/* Avatar Section */}
-          <Box display="flex" justifyContent="center" mb={3}>
-            <Box position="relative">
-              <Avatar
-                src={avatar}
-                alt={formData.name}
-                sx={{
-                  width: 100,
-                  height: 100,
-                  fontSize: '2rem',
-                  border: `3px solid ${theme.palette.primary.main}`
-                }}
-              >
-                {formData.name.charAt(0).toUpperCase()}
-              </Avatar>
-              <IconButton
-                component="label"
-                sx={{
-                  position: 'absolute',
-                  bottom: 0,
-                  right: 0,
-                  bgcolor: theme.palette.primary.main,
-                  color: 'white',
-                  '&:hover': {
-                    bgcolor: theme.palette.primary.dark
-                  }
-                }}
-                size="small"
-              >
-                <PhotoCameraIcon fontSize="small" />
-                <input
-                  type="file"
-                  hidden
-                  accept="image/*"
-                  onChange={handleAvatarChange}
-                />
-              </IconButton>
-            </Box>
+      <DialogContent sx={{ p: 0 }}>
+        <Box sx={{ px: 4, pt: 2 }}>
+          <Tabs value={tab} onChange={(_e, v) => setTab(v)} sx={{ mb: 2 }}>
+            <Tab label="Thông tin cơ bản" />
+            <Tab label="Quản lý con cái" />
+          </Tabs>
           </Box>
 
-          <Grid container spacing={3}>
-            {/* Personal Information */}
-            <Grid item xs={12}>
-              <Typography variant="h6" gutterBottom color="primary">
-                Thông tin cá nhân
+        {tab === 0 && (
+          <Box sx={{ p: 4 }}>
+            <Paper sx={{ p: 3, borderRadius: 2, background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)', border: '1px solid #e0e6ed' }}>
+              <Typography variant="h6" gutterBottom sx={{ color: '#2c3e50', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                <Box sx={{ width: 4, height: 20, bgcolor: '#667eea', borderRadius: 2 }} />
+                Thông tin cơ bản
               </Typography>
-            </Grid>
-
+              <Box sx={{ p: 2, bgcolor: 'white', borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+                <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Họ và tên"
-                value={formData.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
-                error={!!errors.name}
-                helperText={errors.name}
-                required
-              />
+                    <TextField fullWidth label="Họ và tên" name="name" value={form.name} onChange={handleChange} required error={!!formErrors.name} helperText={formErrors.name} />
             </Grid>
-
             <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => handleInputChange('email', e.target.value)}
-                error={!!errors.email}
-                helperText={errors.email}
-                required
-              />
+                    <TextField fullWidth label="Email" name="email" type="email" value={form.email} onChange={handleChange} required error={!!formErrors.email} helperText={formErrors.email} />
             </Grid>
-
             <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Số điện thoại"
-                value={formData.phone}
-                onChange={(e) => handleInputChange('phone', e.target.value)}
-                error={!!errors.phone}
-                helperText={errors.phone}
-                required
-              />
+                    <TextField fullWidth label="Ngày sinh" name="dayOfBirth" type="date" value={toDisplayDate(form.dayOfBirth)} onChange={handleChange} InputLabelProps={{ shrink: true }} />
             </Grid>
-
             <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Địa chỉ"
-                value={formData.address}
-                onChange={(e) => handleInputChange('address', e.target.value)}
-                error={!!errors.address}
-                helperText={errors.address}
-                required
-              />
+                    <TextField fullWidth label="Số điện thoại" name="phone" value={form.phone} onChange={handleChange} />
             </Grid>
-
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth required error={!!errors.relationship}>
-                <InputLabel>Mối quan hệ</InputLabel>
-                <Select
-                  value={formData.relationship}
-                  onChange={(e) => handleInputChange('relationship', e.target.value)}
-                  label="Mối quan hệ"
-                >
-                  {relationships.map((relationship) => (
-                    <MenuItem key={relationship} value={relationship}>
-                      {relationshipLabels[relationship]}
-                    </MenuItem>
-                  ))}
-                </Select>
-                {errors.relationship && (
-                  <Typography variant="caption" color="error" mt={0.5}>
-                    {errors.relationship}
-                  </Typography>
-                )}
-              </FormControl>
-            </Grid>
-
-            {/* Work Information */}
-            <Grid item xs={12}>
-              <Typography variant="h6" gutterBottom color="primary" mt={2}>
-                Thông tin công việc
-              </Typography>
-            </Grid>
-
             <Grid item xs={12} md={6}>
               <FormControl fullWidth>
-                <InputLabel>Nghề nghiệp</InputLabel>
-                <Select
-                  value={formData.occupation}
-                  onChange={(e) => handleInputChange('occupation', e.target.value)}
-                  label="Nghề nghiệp"
-                >
-                  {occupations.map((occupation) => (
-                    <MenuItem key={occupation} value={occupation}>
-                      {occupation}
-                    </MenuItem>
-                  ))}
+                      <InputLabel>Giới tính</InputLabel>
+                      <Select name="gender" label="Giới tính" value={form.gender} onChange={(e: any) => handleChange(e as any)}>
+                        <MenuItem value="male">Nam</MenuItem>
+                        <MenuItem value="female">Nữ</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
-
             <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Nơi làm việc"
-                value={formData.workplace}
-                onChange={(e) => handleInputChange('workplace', e.target.value)}
-                error={!!errors.workplace}
-                helperText={errors.workplace}
-                placeholder="Tên công ty, cơ quan..."
-              />
+                    <TextField fullWidth label="Địa chỉ" name="address" value={form.address} onChange={handleChange} />
             </Grid>
-
             <Grid item xs={12}>
               <Box display="flex" alignItems="center" gap={1}>
-                <Chip
-                  label={formData.isActive ? 'Đang hoạt động' : 'Không hoạt động'}
-                  color={formData.isActive ? 'success' : 'error'}
-                  variant="outlined"
-                />
-                <Button
-                  variant="text"
-                  size="small"
-                  onClick={() => handleInputChange('isActive', !formData.isActive)}
-                >
-                  {formData.isActive ? 'Ẩn phụ huynh' : 'Kích hoạt phụ huynh'}
-                </Button>
+                      <Checkbox checked={!!form.canSeeTeacherInfo} onChange={(e) => handleChange({ target: { name: 'canSeeTeacherInfo', value: e.target.checked, type: 'checkbox', checked: e.target.checked } } as any)} />
+                      <Typography>Quyền xem thông tin giáo viên</Typography>
+                    </Box>
+                  </Grid>
+                </Grid>
               </Box>
-            </Grid>
-          </Grid>
-        </Box>
+            </Paper>
+          </Box>
+        )}
+
+        {tab === 1 && (
+          <Box sx={{ p: 4 }}>
+            <Paper sx={{ p: 3, borderRadius: 2, background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)', border: '1px solid #e0e6ed' }}>
+              <Typography variant="h6" gutterBottom sx={{ color: '#2c3e50', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                <Box sx={{ width: 4, height: 20, bgcolor: '#667eea', borderRadius: 2 }} />
+                Quản lý con cái
+              </Typography>
+              <Box sx={{ p: 2, bgcolor: 'white', borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+
+                {/* Danh sách con hiện tại */}
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: '#2c3e50' }}>
+                    Danh sách con hiện tại
+                  </Typography>
+                  {childrenList.length > 0 ? (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      {childrenList.map((child: any) => (
+                        <Box
+                          key={child.id}
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            p: 2,
+                            borderRadius: 2,
+                            border: '1px solid #e0e6ed',
+                            bgcolor: '#f8f9fa',
+                            '&:hover': {
+                              bgcolor: '#f1f3f4'
+                            }
+                          }}
+                        >
+                          <Typography variant="body1" sx={{ fontWeight: 500, color: '#2c3e50' }}>
+                            {child.name}
+                          </Typography>
+                          <Button
+                            variant="outlined"
+                            color="error"
+                            size="small"
+                            onClick={() => removeChild(String(child.id))}
+                            sx={{
+                              borderRadius: 2,
+                              px: 2,
+                              py: 0.5,
+                              borderColor: '#dc3545',
+                              color: '#dc3545',
+                              '&:hover': {
+                                bgcolor: '#dc3545',
+                                color: 'white'
+                              }
+                            }}
+                          >
+                            Xóa
+                          </Button>
+                        </Box>
+                      ))}
+                    </Box>
+                  ) : (
+                    <Box
+                      sx={{
+                        p: 3,
+                        borderRadius: 2,
+                        border: '1px dashed #e0e6ed',
+                        bgcolor: '#f8f9fa',
+                        textAlign: 'center'
+                      }}
+                    >
+                      <Typography variant="body2" color="text.secondary">
+                        Chưa có con nào được thêm
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+
+                {/* Thêm con mới */}
+                <Box>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: '#2c3e50' }}>
+                    Thêm con mới
+                  </Typography>
+                  <Autocomplete
+                    options={studentOptions}
+                    getOptionLabel={(o: any) => o?.name || ''}
+                    value={selectedStudent}
+                    onChange={(_e, v) => setSelectedStudent(v)}
+                    onInputChange={(_e, v) => setStudentQuery(v)}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        placeholder="Tìm kiếm học sinh"
+                        fullWidth
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: 2,
+                            '&:hover .MuiOutlinedInput-notchedOutline': {
+                              borderColor: '#667eea'
+                            },
+                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                              borderColor: '#667eea'
+                            }
+                          }
+                        }}
+                      />
+                    )}
+                    renderOption={(props, option: any) => (
+                      <Box component="li" {...props}>
+                        <Box>
+                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                            {option.name}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {option.email}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    )}
+                    sx={{
+                      '& .MuiAutocomplete-paper': {
+                        borderRadius: 2,
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                      }
+                    }}
+                  />
+                </Box>
+              </Box>
+            </Paper>
+          </Box>
+        )}
       </DialogContent>
 
-      <DialogActions sx={{ p: 3, pt: 0 }}>
+      <DialogActions sx={{ p: 3, bgcolor: '#f8f9fa', gap: 2 }}>
         <Button
           onClick={handleClose}
-          startIcon={<CancelIcon />}
           variant="outlined"
-          disabled={loading}
+          sx={{
+            borderRadius: 2,
+            px: 3,
+            py: 1,
+            borderColor: '#667eea',
+            color: '#667eea',
+            '&:hover': {
+              bgcolor: '#667eea',
+              color: 'white'
+            }
+          }}
+          disabled={busy}
         >
           Hủy
         </Button>
         <Button
-          onClick={handleSubmit}
-          startIcon={loading ? <CircularProgress size={20} /> : <SaveIcon />}
+          onClick={tab === 1 ? handleClose : submit}
           variant="contained"
-          disabled={loading}
+          startIcon={busy ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
+          disabled={busy}
+          sx={{
+            borderRadius: 2,
+            px: 3,
+            py: 1,
+            bgcolor: '#667eea',
+            '&:hover': {
+              bgcolor: '#5a6fd8'
+            }
+          }}
         >
-          {loading ? 'Đang lưu...' : (parent ? 'Cập nhật' : 'Thêm mới')}
+          {tab === 1 ? 'Đóng' : (busy ? 'Đang lưu...' : 'Cập nhật')}
         </Button>
       </DialogActions>
     </Dialog>

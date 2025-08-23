@@ -54,10 +54,12 @@ export const useClassManagement = (): UseClassManagementReturn => {
       const params = {
         page: pageNum,
         limit: 10,
-        ...(debouncedSearch && {
-          filters: JSON.stringify({ name: debouncedSearch })
-        })
       };
+
+      // Handle filters with {} format
+      if (debouncedSearch) {
+        params.name = debouncedSearch;
+      }
 
       console.log('📚 Fetching classes with params:', params);
       const response = await getAllClassesAPI(params);

@@ -8,7 +8,7 @@ import {
 import {
   Add as AddIcon,
 } from '@mui/icons-material';
-import { COLORS } from "../../utils/colors";
+
 import DashboardLayout from '../../components/layouts/DashboardLayout';
 import { commonStyles } from '../../utils/styles';
 import StatCard from '../../components/common/StatCard';
@@ -25,9 +25,6 @@ import TeacherForm from '../../components/features/teacher/TeacherForm';
 import TeacherTable from '../../components/features/teacher/TeacherTable';
 import TeacherFilters from '../../components/features/teacher/TeacherFilters';
 import TeacherViewDialog from '../../components/features/teacher/TeacherViewDialog';
-
-// Utils
-
 
 interface SnackbarState {
   open: boolean;
@@ -122,12 +119,11 @@ const TeacherManagement: React.FC = () => {
     setOpenDialog(false);
     setTimeout(() => {
       setSelectedTeacher(null);
-      resetForm();
-    }, 100);
+    }, 300);
   };
 
-  const handleOpenViewDialog = async (teacherData: Teacher): Promise<void> => {
-    await getTeacherById(teacherData.id);
+  const handleOpenViewDialog = async (teacher: Teacher): Promise<void> => {
+    await getTeacherById(teacher.id);
     setOpenViewDialog(true);
   };
 
@@ -135,14 +131,16 @@ const TeacherManagement: React.FC = () => {
     setOpenViewDialog(false);
   };
 
-  const handleCloseDeleteDialog = (): void => {
-    setTeacherToDelete(null);
-    setOpenDeleteDialog(false);
+  const handleAskDeleteTeacher = (teacher: Teacher): void => {
+    setTeacherToDelete(teacher);
+    setOpenDeleteDialog(true);
   };
 
+  const handleCloseDeleteDialog = (): void => {
+    setOpenDeleteDialog(false);
+    setTeacherToDelete(null);
+  };
 
-
-  // Action handlers
   const handleFormSubmit = async (): Promise<void> => {
     const result = await handleSubmit(selectedTeacher || undefined, () => {
       handleCloseDialog();
@@ -183,109 +181,109 @@ const TeacherManagement: React.FC = () => {
     <DashboardLayout role="admin">
       <Box sx={commonStyles.pageContainer}>
         <Box sx={commonStyles.contentContainer}>
-          <Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-              <Typography variant="h5" component="h1">
-                Quản lý giáo viên
-              </Typography>
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={() => handleOpenDialog()}
-                sx={{ bgcolor: COLORS.primary.main }}
-              >
-                Thêm giáo viên
-              </Button>
-            </Box>
-
-            {/* Stat Cards */}
-            <Grid container spacing={3} sx={{ mb: 4 }}>
-              <Grid item xs={12} sm={6} md={3}>
-                <StatCard
-                  title="Tổng giáo viên"
-                  value={summary.totalTeachers}
-                  icon={<AddIcon sx={{ fontSize: 40 }} />}
-                  color="primary"
-                />
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <StatCard
-                  title="Đang hoạt động"
-                  value={summary.activeTeachers}
-                  icon={<AddIcon sx={{ fontSize: 40 }} />}
-                  color="success"
-                />
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <StatCard
-                  title="Ngừng hoạt động"
-                  value={summary.inactiveTeachers}
-                  icon={<AddIcon sx={{ fontSize: 40 }} />}
-                  color="error"
-                />
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <StatCard
-                  title="Tổng lương"
-                  value={new Intl.NumberFormat('vi-VN', {
-                    style: 'currency',
-                    currency: 'VND'
-                  }).format(summary.totalSalary)}
-                  icon={<AddIcon sx={{ fontSize: 40 }} />}
-                  color="warning"
-                />
-              </Grid>
-            </Grid>
-
-            {/* Filters */}
-            <TeacherFilters
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              isActiveFilter={isActiveFilter || ''}
-              setIsActiveFilter={setIsActiveFilter || (() => {})}
-            />
-
-            {/* Table */}
-            <TeacherTable
-              teachers={teachers}
-              loading={loading}
-              onEdit={handleOpenDialog}
-              onDelete={handleDeleteTeacher}
-              onViewDetails={handleOpenViewDialog}
-            />            {/* Dialogs */}
-            <TeacherForm
-              open={openDialog}
-              onClose={handleCloseDialog}
-              teacher={form as any}
-              onSubmit={handleFormSubmit}
-              loading={formLoading || loadingDetail}
-            />
-
-            <TeacherViewDialog
-              open={openViewDialog}
-              onClose={handleCloseViewDialog}
-              teacher={teacherDetail}
-              loading={loadingDetail}
-            />
-
-            <ConfirmDialog
-              open={openDeleteDialog}
-              onClose={handleCloseDeleteDialog}
-              onConfirm={handleDeleteTeacher}
-              title="Xác nhận xóa giáo viên"
-              message={teacherToDelete ? `Bạn có chắc chắn muốn xóa giáo viên "${teacherToDelete.userId?.name}"? Hành động này không thể hoàn tác.` : ''}
-              loading={loading}
-            />
-
-            <NotificationSnackbar
-              open={snackbar.open}
-              message={snackbar.message}
-              severity={snackbar.severity}
-              onClose={() => setSnackbar({ ...snackbar, open: false })}
-            />
+          <Box sx={commonStyles.pageHeader}>
+            <Typography sx={commonStyles.pageTitle}>
+              Giáo viên
+            </Typography>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => handleOpenDialog()}
+              sx={commonStyles.primaryButton}
+            >
+              Thêm giáo viên
+            </Button>
           </Box>
+
+          {/* Stat Cards */}
+          <Grid container spacing={3} sx={{ mb: 4 }}>
+            <Grid item xs={12} sm={6} md={3}>
+              <StatCard
+                title="Tổng giáo viên"
+                value={summary.totalTeachers}
+                icon={<AddIcon sx={{ fontSize: 40 }} />}
+                color="primary"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <StatCard
+                title="Đang hoạt động"
+                value={summary.activeTeachers}
+                icon={<AddIcon sx={{ fontSize: 40 }} />}
+                color="success"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <StatCard
+                title="Ngừng hoạt động"
+                value={summary.inactiveTeachers}
+                icon={<AddIcon sx={{ fontSize: 40 }} />}
+                color="error"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <StatCard
+                title="Tổng lương"
+                value={new Intl.NumberFormat('vi-VN', {
+                  style: 'currency',
+                  currency: 'VND'
+                }).format(summary.totalSalary)}
+                icon={<AddIcon sx={{ fontSize: 40 }} />}
+                color="warning"
+              />
+            </Grid>
+          </Grid>
+
+          {/* Filters */}
+          <TeacherFilters
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            isActiveFilter={isActiveFilter || ''}
+            setIsActiveFilter={setIsActiveFilter || (() => {})}
+          />
+
+          {/* Table */}
+          <TeacherTable
+            teachers={teachers}
+            loading={loading}
+            onEdit={handleOpenDialog}
+            onDelete={handleAskDeleteTeacher}
+            onViewDetails={handleOpenViewDialog}
+          />
         </Box>
       </Box>
+
+      {/* Dialogs */}
+      <TeacherForm
+        open={openDialog}
+        onClose={handleCloseDialog}
+        teacher={form as any}
+        onSubmit={handleFormSubmit}
+        loading={formLoading || loadingDetail}
+      />
+
+      <TeacherViewDialog
+        open={openViewDialog}
+        onClose={handleCloseViewDialog}
+        teacher={teacherDetail}
+        loading={loadingDetail}
+      />
+
+      <ConfirmDialog
+        open={openDeleteDialog}
+        onClose={handleCloseDeleteDialog}
+        onConfirm={handleDeleteTeacher}
+        title="Xác nhận xóa giáo viên"
+        message={teacherToDelete?.userId?.name ? `Bạn có chắc chắn muốn xóa giáo viên "${teacherToDelete.userId.name}"? Hành động này không thể hoàn tác.` : 'Bạn có chắc chắn muốn xóa giáo viên này? Hành động này không thể hoàn tác.'}
+        loading={loading}
+      />
+
+      <NotificationSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+      />
     </DashboardLayout>
   );
 };

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Drawer, List, ListItem, ListItemIcon, ListItemText, ListItemButton, Divider, Tooltip, Box } from '@mui/material';
 import HomeIcon from '@mui/icons-material/Home';
 import ExploreIcon from '@mui/icons-material/Explore';
@@ -10,12 +10,16 @@ import ClassIcon from '@mui/icons-material/Class';
 import GroupIcon from '@mui/icons-material/Group';
 import CampaignIcon from '@mui/icons-material/Campaign';
 import AssessmentIcon from '@mui/icons-material/Assessment';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ListAltIcon from '@mui/icons-material/ListAlt';
 import PaymentIcon from '@mui/icons-material/Payment';
 import FamilyRestroomIcon from '@mui/icons-material/FamilyRestroom';
 import WebIcon from '@mui/icons-material/Web';
+import PeopleIcon from '@mui/icons-material/People';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useSidebar } from '../../contexts/SidebarContext';
 import { COLORS } from '../../utils/colors';
 
 interface MenuItem {
@@ -24,7 +28,7 @@ interface MenuItem {
   path: string;
 }
 
-const drawerWidth = 220;
+const drawerWidth = 260;
 const miniWidth = 72;
 
 const getMenuItemsByRole = (role: string): MenuItem[] => {
@@ -32,10 +36,8 @@ const getMenuItemsByRole = (role: string): MenuItem[] => {
     case 'admin':
       return [
         { text: 'Dashboard', icon: <HomeIcon />, path: '/admin/dashboard' },
-        { text: 'Quản lý học viên', icon: <SchoolIcon />, path: '/admin/students' },
-        { text: 'Quản lý giáo viên', icon: <GroupIcon />, path: '/admin/teachers' },
+        { text: 'Quản lý người dùng', icon: <PeopleIcon />, path: '/admin/users' },
         { text: 'Quản lý lớp học', icon: <ClassIcon />, path: '/admin/classes' },
-        { text: 'Quản lý phụ huynh', icon: <FamilyRestroomIcon />, path: '/admin/parents' },
         { text: 'Quản lý quảng cáo', icon: <CampaignIcon />, path: '/admin/advertisements' },
         { text: 'Thống kê', icon: <AssessmentIcon />, path: '/admin/statistics' },
         { text: 'Audit Logs', icon: <ListAltIcon />, path: '/admin/audit-log' },
@@ -79,8 +81,19 @@ const Sidebar: React.FC<SidebarProps> = ({ open }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { openSidebar } = useSidebar();
   const role = user?.role || 'student';
   const menuItems = getMenuItemsByRole(role);
+  const [statsOpen, setStatsOpen] = useState<boolean>(location.pathname.startsWith('/admin/statistics'));
+  const [usersOpen, setUsersOpen] = useState<boolean>(location.pathname.startsWith('/admin/users'));
+
+  // Đóng sub-menu khi sidebar đóng
+  React.useEffect(() => {
+    if (!open) {
+      setStatsOpen(false);
+      setUsersOpen(false);
+    }
+  }, [open]);
 
   return (
     <Drawer
@@ -103,7 +116,12 @@ const Sidebar: React.FC<SidebarProps> = ({ open }) => {
     >
       <Box sx={{ mt: 8 }}>
         <List>
-          {menuItems.map((item) => (
+          {menuItems.map((item) => {
+            const isStatistics = item.path === '/admin/statistics';
+            const isUsers = item.path === '/admin/users';
+
+            if (!isStatistics && !isUsers) {
+              return (
             <Tooltip key={item.text} title={!open ? item.text : ''} placement="right" arrow>
               <ListItem disablePadding sx={{ display: 'block' }}>
             <ListItemButton
@@ -119,19 +137,9 @@ const Sidebar: React.FC<SidebarProps> = ({ open }) => {
                 '&.Mui-selected': {
                       bgcolor: '#f5f5f5',
                       color: COLORS.primary.main,
-                      '&:hover': {
-                        bgcolor: '#eeeeee',
-                      }
-                    },
-                '&:hover': {
-                      bgcolor: '#f9f9f9',
-                    },
-                '&:focus': {
-                      bgcolor: 'transparent',
-                    },
-                '&.Mui-focusVisible': {
-                      bgcolor: 'transparent',
-                    },
+                          '&:hover': { bgcolor: '#eeeeee' }
+                        },
+                        '&:hover': { bgcolor: '#f9f9f9' }
               }}
             >
                   <ListItemIcon
@@ -148,7 +156,202 @@ const Sidebar: React.FC<SidebarProps> = ({ open }) => {
                   </ListItemButton>
                 </ListItem>
             </Tooltip>
-              ))}
+              );
+            }
+
+            // Users management item with expandable sub-menu
+            if (isUsers) {
+              return (
+                <Box key={item.text}>
+                  <ListItem disablePadding sx={{ display: 'block' }}>
+                    <ListItemButton
+                      selected={location.pathname.startsWith('/admin/users')}
+                      onClick={() => {
+                        if (!open) {
+                          openSidebar();
+                        }
+                        setUsersOpen((v) => !v);
+                      }}
+                      sx={{
+                        minHeight: 48,
+                        justifyContent: open ? 'initial' : 'center',
+                        px: 2.5,
+                        borderRadius: 2,
+                        my: 0.5,
+                        transition: 'background 0.2s',
+                        '&.Mui-selected': {
+                          bgcolor: '#f5f5f5',
+                          color: COLORS.primary.main,
+                          '&:hover': { bgcolor: '#eeeeee' }
+                        },
+                        '&:hover': { bgcolor: '#f9f9f9' }
+                      }}
+                    >
+                      <ListItemIcon
+                        sx={{
+                          minWidth: 0,
+                          mr: open ? 2 : 'auto',
+                          justifyContent: 'center',
+                          color: location.pathname.startsWith('/admin/users') ? COLORS.primary.main : 'inherit',
+                        }}
+                      >
+                        <PeopleIcon />
+                      </ListItemIcon>
+                      {open && <ListItemText primary={item.text} sx={{ opacity: open ? 1 : 0, mr: 2 }} />}
+                      {open && (usersOpen ? <ExpandLessIcon /> : <ExpandMoreIcon />)}
+                    </ListItemButton>
+                  </ListItem>
+                  {usersOpen && (
+                    <List component="div" disablePadding sx={{ pl: open ? 4 : 0 }}>
+                      <ListItemButton
+                        selected={location.pathname === '/admin/users/students'}
+                        onClick={() => {
+                          if (!open) {
+                            openSidebar();
+                          }
+                          navigate('/admin/users/students');
+                        }}
+                        sx={{
+                          minHeight: 40,
+                          justifyContent: open ? 'initial' : 'center',
+                          px: 2.5,
+                          borderRadius: 2,
+                          ml: open ? 2 : 0,
+                          my: 0.25
+                        }}
+                      >
+                        {open && <ListItemText primary="Học viên" />}
+                      </ListItemButton>
+                      <ListItemButton
+                        selected={location.pathname === '/admin/users/teachers'}
+                        onClick={() => {
+                          if (!open) {
+                            openSidebar();
+                          }
+                          navigate('/admin/users/teachers');
+                        }}
+                        sx={{
+                          minHeight: 40,
+                          justifyContent: open ? 'initial' : 'center',
+                          px: 2.5,
+                          borderRadius: 2,
+                          ml: open ? 2 : 0,
+                          my: 0.25
+                        }}
+                      >
+                        {open && <ListItemText primary="Giáo viên" />}
+                      </ListItemButton>
+                      <ListItemButton
+                        selected={location.pathname === '/admin/users/parents'}
+                        onClick={() => {
+                          if (!open) {
+                            openSidebar();
+                          }
+                          navigate('/admin/users/parents');
+                        }}
+                        sx={{
+                          minHeight: 40,
+                          justifyContent: open ? 'initial' : 'center',
+                          px: 2.5,
+                          borderRadius: 2,
+                          ml: open ? 2 : 0,
+                          my: 0.25
+                        }}
+                      >
+                        {open && <ListItemText primary="Phụ huynh" />}
+                      </ListItemButton>
+                    </List>
+                  )}
+                </Box>
+              );
+            }
+
+            // Statistics item with expandable sub-menu
+            return (
+              <Box key={item.text}>
+                <ListItem disablePadding sx={{ display: 'block' }}>
+                  <ListItemButton
+                    selected={location.pathname.startsWith('/admin/statistics')}
+                    onClick={() => {
+                      if (!open) {
+                        openSidebar();
+                      }
+                      setStatsOpen((v) => !v);
+                    }}
+                    sx={{
+                      minHeight: 48,
+                      justifyContent: open ? 'initial' : 'center',
+                      px: 2.5,
+                      borderRadius: 2,
+                      my: 0.5,
+                      transition: 'background 0.2s',
+                      '&.Mui-selected': {
+                        bgcolor: '#f5f5f5',
+                        color: COLORS.primary.main,
+                        '&:hover': { bgcolor: '#eeeeee' }
+                      },
+                      '&:hover': { bgcolor: '#f9f9f9' }
+                    }}
+                  >
+                    <ListItemIcon
+                      sx={{
+                        minWidth: 0,
+                        mr: open ? 2 : 'auto',
+                        justifyContent: 'center',
+                        color: location.pathname.startsWith('/admin/statistics') ? COLORS.primary.main : 'inherit',
+                      }}
+                    >
+                      <AssessmentIcon />
+                    </ListItemIcon>
+                    {open && <ListItemText primary={item.text} sx={{ opacity: open ? 1 : 0, mr: 2 }} />}
+                    {open && (statsOpen ? <ExpandLessIcon /> : <ExpandMoreIcon />)}
+                  </ListItemButton>
+                </ListItem>
+                {statsOpen && (
+                  <List component="div" disablePadding sx={{ pl: open ? 4 : 0 }}>
+                    <ListItemButton
+                      selected={location.pathname === '/admin/statistics/financial'}
+                      onClick={() => {
+                        if (!open) {
+                          openSidebar();
+                        }
+                        navigate('/admin/statistics/financial');
+                      }}
+                      sx={{
+                        minHeight: 40,
+                        justifyContent: open ? 'initial' : 'center',
+                        px: 2.5,
+                        borderRadius: 2,
+                        ml: open ? 2 : 0,
+                        my: 0.25
+                      }}
+                    >
+                      {open && <ListItemText primary="Thống kê tài chính" />}
+                    </ListItemButton>
+                    <ListItemButton
+                      selected={location.pathname === '/admin/statistics/students'}
+                      onClick={() => {
+                        if (!open) {
+                          openSidebar();
+                        }
+                        navigate('/admin/statistics/students');
+                      }}
+                      sx={{
+                        minHeight: 40,
+                        justifyContent: open ? 'initial' : 'center',
+                        px: 2.5,
+                        borderRadius: 2,
+                        ml: open ? 2 : 0,
+                        my: 0.25
+                      }}
+                    >
+                      {open && <ListItemText primary="Thống kê học sinh" />}
+                    </ListItemButton>
+                  </List>
+                )}
+              </Box>
+            );
+          })}
             </List>
       </Box>
       <Divider />

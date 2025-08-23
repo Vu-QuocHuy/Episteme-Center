@@ -17,7 +17,7 @@ const ParentFilters: React.FC<ParentFiltersProps> = ({
         <Grid item xs={12}>
           <SearchInput
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={setSearchQuery}
             placeholder="Tìm kiếm phụ huynh..."
           />
         </Grid>

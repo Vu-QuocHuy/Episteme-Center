@@ -642,9 +642,16 @@ const ClassDetailsModal: React.FC<ClassDetailsModalProps> = ({
           <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
             <Grid container spacing={2}>
               {(classItem.students || []).map((s: any, idx: number) => (
-                <Grid item xs={12} sm={6} md={4} key={s.id || idx}>
+                <Grid item xs={12} sm={6} md={4} key={s.student?.id || s.id || idx}>
                   <Paper sx={{ p: 1.5, borderRadius: 2, bgcolor: '#f3f4f6' }} variant="outlined">
-                    <Typography variant="body2" color="primary" fontWeight={600}>{idx + 1}. {s?.name || s?.userId?.name || 'Không tên'}</Typography>
+                    <Typography variant="body2" color="primary" fontWeight={600}>
+                      {idx + 1}. {s.student?.name || s?.name || s?.userId?.name || 'Không tên'}
+                    </Typography>
+                    {s.discountPercent && (
+                      <Typography variant="caption" color="text.secondary">
+                        Giảm giá: {s.discountPercent}%
+                      </Typography>
+                    )}
                   </Paper>
                 </Grid>
               ))}

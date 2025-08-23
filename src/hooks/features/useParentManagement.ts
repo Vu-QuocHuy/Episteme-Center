@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getAllParentsAPI, deleteParentAPI, getAllStudentsAPI } from '../../services/api';
+import { getAllParentsAPI, deleteParentAPI, getAllStudentsAPI, getParentByIdAPI } from '../../services/api';
 import { Parent, Student } from '../../types';
 
 interface UseParentManagementReturn {
@@ -13,6 +13,7 @@ interface UseParentManagementReturn {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   fetchParents: (pageNum?: number) => Promise<void>;
+  getParentById: (id: string) => Promise<Parent | null>;
   deleteParent: (parentId: string) => Promise<{ success: boolean; message: string }>;
   searchStudents: (query: string) => Promise<Student[]>;
   handlePageChange: (event: React.SyntheticEvent, value: number) => void;
@@ -89,6 +90,19 @@ export const useParentManagement = (): UseParentManagementReturn => {
     }
   };
 
+  const getParentById = async (id: string): Promise<Parent | null> => {
+    try {
+      const response = await getParentByIdAPI(id);
+      if (response && response.data && response.data.data) {
+        return response.data.data as Parent;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error fetching parent by id:', error);
+      return null;
+    }
+  };
+
   const searchStudents = async (query: string): Promise<Student[]> => {
     if (!query || query.length < 2) {
       return [];
@@ -130,6 +144,7 @@ export const useParentManagement = (): UseParentManagementReturn => {
     searchQuery,
     setSearchQuery,
     fetchParents,
+    getParentById,
     deleteParent,
     searchStudents,
     handlePageChange,

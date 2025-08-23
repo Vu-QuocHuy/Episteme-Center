@@ -159,7 +159,7 @@ const StudentManagement: React.FC = () => {
         <Box sx={commonStyles.contentContainer}>
           <Box sx={commonStyles.pageHeader}>
             <Typography sx={commonStyles.pageTitle}>
-              Quản lý học sinh
+              Học viên
             </Typography>
             <Button
               variant="contained"

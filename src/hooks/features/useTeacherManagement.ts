@@ -50,19 +50,22 @@ export const useTeacherManagement = (): UseTeacherManagementReturn => {
   const fetchTeachers = useCallback(async (pageNum: number = 1): Promise<void> => {
     setLoading(true);
     setLoadingTable(true);
+    setError(''); // Clear previous errors
     try {
       const params: Record<string, any> = {
         page: pageNum,
         limit: 10,
-        // Note: New API doesn't seem to support name or isActive filters based on Postman
-        // ...(debouncedSearch && { name: debouncedSearch }),
-        // ...(isActiveFilter && { isActive: isActiveFilter })
       };
+
+      // Handle filters with {} format
+      if (debouncedSearch) {
+        params.name = debouncedSearch;
+      }
 
       const response = await getAllTeachersAPI(params);
       console.log('📊 Teachers API Response:', response);
 
-      // Handle paginated API response structure similar to students/parents
+      // Handle new paginated API response structure
       if (response && response.data && response.data.data) {
         const { data } = response.data;
         const teachersArray = data.result || [];
@@ -74,10 +77,21 @@ export const useTeacherManagement = (): UseTeacherManagementReturn => {
         setTeachers(response.data);
         setTotalPages(response.data?.totalPages || 1);
         setTotalRecords(response.data?.totalRecords || 0);
+      } else {
+        // Handle empty response
+        setTeachers([]);
+        setTotalPages(1);
+        setTotalRecords(0);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching teachers:', error);
-      setError('Có lỗi xảy ra khi tải danh sách giáo viên');
+      const errorMessage = error?.response?.data?.message ||
+                          error?.message ||
+                          'Có lỗi xảy ra khi tải danh sách giáo viên';
+      setError(errorMessage);
+      setTeachers([]);
+      setTotalPages(1);
+      setTotalRecords(0);
     } finally {
       setLoading(false);
       setLoadingTable(false);
@@ -111,7 +125,7 @@ export const useTeacherManagement = (): UseTeacherManagementReturn => {
     try {
       const response = await getTeacherByIdAPI(id);
       console.log('📊 Teacher Detail API Response:', response);
-      
+
       if (response && response.data && response.data.data) {
         const teacher = response.data.data;
         setSelectedTeacher(teacher);

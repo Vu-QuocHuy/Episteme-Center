@@ -1,24 +1,54 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { TextField, InputAdornment } from '@mui/material';
 import { Search as SearchIcon } from '@mui/icons-material';
-import { SearchInputProps } from '../../types';
+import { useDebounce } from '../../hooks/common/useDebounce';
 
-const SearchInput: React.FC<SearchInputProps> = React.memo(({
+interface SearchInputProps {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  debounceDelay?: number;
+  fullWidth?: boolean;
+  sx?: any;
+}
+
+const SearchInput: React.FC<SearchInputProps> = ({
   value,
   onChange,
   placeholder = "Tìm kiếm...",
+  debounceDelay = 500,
   fullWidth = true,
-  size = "medium",
-  sx = {},
-  ...props
+  sx = {}
 }) => {
+  const [inputValue, setInputValue] = useState(value);
+  const debouncedValue = useDebounce(inputValue, debounceDelay);
+  const isMounted = useRef(false);
+
+  // Update parent when debounced value changes
+  useEffect(() => {
+    // Skip the first render to avoid calling onChange on mount
+    if (isMounted.current) {
+      onChange(debouncedValue);
+    } else {
+      isMounted.current = true;
+    }
+  }, [debouncedValue, onChange]);
+
+  // Update local state when parent value changes
+  useEffect(() => {
+    setInputValue(value);
+  }, [value]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputValue(e.target.value);
+  };
+
   return (
     <TextField
       fullWidth={fullWidth}
-      size={size === 'large' ? 'medium' : size}
       placeholder={placeholder}
-      value={value}
-      onChange={onChange}
+      value={inputValue}
+      onChange={handleInputChange}
       sx={{
         '& .MuiOutlinedInput-root': {
           borderRadius: 2,
@@ -29,7 +59,7 @@ const SearchInput: React.FC<SearchInputProps> = React.memo(({
             borderColor: '#667eea',
           },
         },
-        ...sx,
+        ...sx
       }}
       InputProps={{
         startAdornment: (
@@ -38,11 +68,8 @@ const SearchInput: React.FC<SearchInputProps> = React.memo(({
           </InputAdornment>
         ),
       }}
-      {...props}
     />
   );
-});
-
-SearchInput.displayName = 'SearchInput';
+};
 
 export default SearchInput;

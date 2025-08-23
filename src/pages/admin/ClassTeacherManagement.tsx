@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useDebounce } from '../../hooks/common/useDebounce';
 import {
   Box,
   Typography,
@@ -48,7 +49,9 @@ const ClassTeacherManagement: React.FC<ClassTeacherManagementProps> = ({
   const [allTeachers, setAllTeachers] = useState<Teacher[]>([]);
   const [selectedTeacherId, setSelectedTeacherId] = useState<string>('');
   const [searchTeacher, setSearchTeacher] = useState<string>('');
-  const [debouncedSearchTeacher, setDebouncedSearchTeacher] = useState<string>('');
+
+  // Debounce search query
+  const debouncedSearchTeacher = useDebounce(searchTeacher, 500);
   const [loading, setLoading] = useState<boolean>(false);
   const [notification, setNotification] = useState<NotificationState>({
     open: false,
@@ -76,7 +79,17 @@ const ClassTeacherManagement: React.FC<ClassTeacherManagementProps> = ({
           try {
             const params = { limit: 1000 }; // Lấy tất cả giáo viên để tìm
             const response = await getAllTeachersAPI(params);
-            const foundTeacher = response.data?.find(
+
+            // Handle new paginated API response structure
+            let teachersArray: Teacher[] = [];
+            if (response && response.data && response.data.data) {
+              const { data } = response.data;
+              teachersArray = data.result || [];
+            } else if (response && response.data) {
+              teachersArray = response.data || [];
+            }
+
+            const foundTeacher = teachersArray.find(
               (t: Teacher) => String(t.id || t._id) === classData.teacherId
             );
             if (foundTeacher) {
@@ -97,12 +110,7 @@ const ClassTeacherManagement: React.FC<ClassTeacherManagementProps> = ({
   }, [classData, allTeachers]);
 
   // Debounce search input for teacher
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearchTeacher(searchTeacher);
-    }, 700);
-    return () => clearTimeout(handler);
-  }, [searchTeacher]);
+
 
   useEffect(() => {
     const fetchTeachers = async (): Promise<void> => {
@@ -113,9 +121,19 @@ const ClassTeacherManagement: React.FC<ClassTeacherManagementProps> = ({
         }
         const params = { limit: 20, name: debouncedSearchTeacher };
         const response = await getAllTeachersAPI(params);
-        setAllTeachers(response.data || []);
+
+        // Handle new paginated API response structure
+        if (response && response.data && response.data.data) {
+          const { data } = response.data;
+          setAllTeachers(data.result || []);
+        } else if (response && response.data) {
+          setAllTeachers(response.data || []);
+        } else {
+          setAllTeachers([]);
+        }
       } catch (error) {
         console.error('Error fetching teachers:', error);
+        setAllTeachers([]);
       }
     };
     fetchTeachers();

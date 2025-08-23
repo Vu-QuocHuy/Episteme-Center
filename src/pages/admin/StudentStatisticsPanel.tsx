@@ -161,12 +161,12 @@ const StudentStatisticsPanel: React.FC = () => {
   }
 
   return (
-    <Box>
+    <Box sx={{ p: 3 }}>
       <Typography variant="h5" fontWeight="bold" gutterBottom>
         Thống kê học sinh
       </Typography>
 
-      <Paper sx={{ p: 2, mb: 3, bgcolor: 'grey.50' }}>
+      <Paper sx={{ p: 2, mb: 3, bgcolor: 'grey.50', boxShadow: 'none' }}>
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={12} sm={3}>
             <TextField select fullWidth label="Năm" value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))}>

@@ -8,6 +8,8 @@ import NotificationSnackbar from '../../components/common/NotificationSnackbar';
 import { useParentManagement } from '../../hooks/features/useParentManagement';
 import ParentTable from '../../components/features/parent/ParentTable';
 import ParentFilters from '../../components/features/parent/ParentFilters';
+import ParentViewDialog from '../../components/features/parent/ParentViewDialog';
+import ParentForm from '../../components/features/parent/ParentForm';
 import { Parent } from '../../types';
 
 interface SnackbarState {
@@ -20,24 +22,28 @@ const ParentManagement: React.FC = () => {
   const [openDeleteDialog, setOpenDeleteDialog] = useState<boolean>(false);
   const [parentToDelete, setParentToDelete] = useState<Parent | null>(null);
   const [snackbar, setSnackbar] = useState<SnackbarState>({ open: false, message: '', severity: 'success' });
+  const [openViewDialog, setOpenViewDialog] = useState<boolean>(false);
+  const [selectedParentForView, setSelectedParentForView] = useState<Parent | null>(null);
+  const [openFormDialog, setOpenFormDialog] = useState<boolean>(false);
+  const [selectedParentForEdit, setSelectedParentForEdit] = useState<Parent | null>(null);
 
   // Custom hooks
-  const {
-    parents,
-    loading,
-    loadingTable,
-    page,
-    searchQuery,
-    setSearchQuery,
-    fetchParents,
-    deleteParent,
-    searchStudents,
-  } = useParentManagement();
+  const { parents, loading, loadingTable, searchQuery, setSearchQuery, deleteParent, getParentById } = useParentManagement();
 
   // Dialog handlers with useCallback
-  const handleOpenDialog = useCallback((_parent: Parent | null = null): void => {
-    // TODO: Implement form dialog functionality
-    console.log('Open form dialog for parent:', _parent);
+  const handleOpenDialog = useCallback(async (p: Parent | null = null): Promise<void> => {
+    if (p?.id) {
+      const fresh = await getParentById(p.id);
+      setSelectedParentForEdit((fresh as any) || p);
+    } else {
+      setSelectedParentForEdit(null);
+    }
+    setOpenFormDialog(true);
+  }, [getParentById]);
+
+  const handleCloseFormDialog = useCallback((): void => {
+    setSelectedParentForEdit(null);
+    setOpenFormDialog(false);
   }, []);
 
 
@@ -75,7 +81,7 @@ const ParentManagement: React.FC = () => {
         <Box sx={commonStyles.contentContainer}>
           <Box sx={commonStyles.pageHeader}>
             <Typography sx={commonStyles.pageTitle}>
-              Quản lý phụ huynh
+              Phụ huynh
             </Typography>
             <Button
               variant="contained"
@@ -101,17 +107,10 @@ const ParentManagement: React.FC = () => {
                if (parent) handleOpenDeleteDialog(parent);
              }}
              onViewDetails={(parent: Parent) => {
-               // TODO: Implement view details functionality
-               console.log('View details for parent:', parent);
+               setSelectedParentForView({ id: parent.id, name: parent.name, email: parent.email, phone: parent.phone } as Parent);
+               setOpenViewDialog(true);
              }}
-             onViewChildren={(parent: Parent) => {
-               console.log('View children for parent:', parent);
-             }}
-             onUpdateParent={() => {
-               // Refresh parent list after updating children
-               fetchParents(page);
-             }}
-             searchStudents={searchStudents}
+
            />
         </Box>
       </Box>
@@ -133,6 +132,23 @@ const ParentManagement: React.FC = () => {
          message={snackbar.message}
          severity={snackbar.severity}
        />
+
+      <ParentViewDialog
+        open={openViewDialog}
+        onClose={() => {
+          setOpenViewDialog(false);
+          setSelectedParentForView(null);
+        }}
+        selectedParent={selectedParentForView}
+      />
+
+      <ParentForm
+        open={openFormDialog}
+        onClose={handleCloseFormDialog}
+        parent={selectedParentForEdit as any}
+        loading={false}
+        onSubmit={async () => { setOpenFormDialog(false); }}
+      />
     </DashboardLayout>
   );
 };

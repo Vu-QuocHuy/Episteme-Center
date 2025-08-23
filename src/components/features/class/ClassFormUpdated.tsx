@@ -20,16 +20,25 @@ import {
   Paper,
   Tabs,
   Tab,
-  Divider
+  Divider,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow
 } from '@mui/material';
 import {
   Close as CloseIcon,
   Add as AddIcon,
-  Edit as EditIcon
+  Edit as EditIcon,
+  Delete as DeleteIcon
 } from '@mui/icons-material';
 
 import { Class, ClassFormData, ClassFormErrors } from '../../../types';
-import { getClassByIdAPI } from '../../../services/api';
+import { getClassByIdAPI, addStudentsToClassAPI, removeStudentsFromClassAPI, assignTeacherAPI, unassignTeacherAPI } from '../../../services/api';
+import AddStudentToClassDialog from './AddStudentToClassDialog';
+import AddTeacherToClassDialog from './AddTeacherToClassDialog';
 
 interface ClassFormProps {
   open: boolean;
@@ -83,6 +92,11 @@ const ClassForm: React.FC<ClassFormProps> = ({
   const [activeTab, setActiveTab] = useState(0);
   const [teacherInfo, setTeacherInfo] = useState<any | null>(null);
   const [studentsInfo, setStudentsInfo] = useState<Array<any>>([]);
+  const [openAddStudentDialog, setOpenAddStudentDialog] = useState(false);
+  const [studentToRemove, setStudentToRemove] = useState<any | null>(null);
+  const [openRemoveStudentDialog, setOpenRemoveStudentDialog] = useState(false);
+  const [openAddTeacherDialog, setOpenAddTeacherDialog] = useState(false);
+  const [openRemoveTeacherDialog, setOpenRemoveTeacherDialog] = useState(false);
 
   // Initialize form data when classItem changes
   useEffect(() => {
@@ -120,7 +134,10 @@ const ClassForm: React.FC<ClassFormProps> = ({
       if (classItem && open) {
         try {
           const res = await getClassByIdAPI(classItem.id);
+          console.log('📊 Class API Response:', res);
           const data = res?.data?.data || res?.data;
+          console.log('📊 Class Data:', data);
+          console.log('📊 Students Data:', data?.students);
           if (data) {
             setTeacherInfo(data.teacher || null);
             setStudentsInfo(data.students || []);
@@ -229,6 +246,175 @@ const ClassForm: React.FC<ClassFormProps> = ({
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
+  };
+
+  // Student management functions
+  const handleAddStudent = () => {
+    setOpenAddStudentDialog(true);
+  };
+
+  const handleCloseAddStudentDialog = () => {
+    setOpenAddStudentDialog(false);
+  };
+
+  const handleRemoveStudent = (student: any) => {
+    console.log('Student to remove:', student);
+    setStudentToRemove(student);
+    setOpenRemoveStudentDialog(true);
+  };
+
+  const handleCloseRemoveStudentDialog = () => {
+    setStudentToRemove(null);
+    setOpenRemoveStudentDialog(false);
+  };
+
+  const handleConfirmRemoveStudent = async () => {
+    if (!studentToRemove || !classItem) return;
+
+    try {
+      // Call API to remove student from class
+      console.log('Removing student with ID:', studentToRemove.student?.id);
+      await removeStudentsFromClassAPI(classItem.id, [studentToRemove.student?.id]);
+
+      // Update local state
+      setStudentsInfo(prev => prev.filter(s => s.student?.id !== studentToRemove.student?.id));
+
+      handleCloseRemoveStudentDialog();
+    } catch (error: any) {
+      console.error('Error removing student:', error);
+      console.error('Error details:', error.response?.data);
+    }
+  };
+
+  // Teacher management functions
+  const handleAddTeacher = () => {
+    setOpenAddTeacherDialog(true);
+  };
+
+  const handleCloseAddTeacherDialog = () => {
+    setOpenAddTeacherDialog(false);
+  };
+
+  const handleRemoveTeacher = () => {
+    setOpenRemoveTeacherDialog(true);
+  };
+
+  const handleCloseRemoveTeacherDialog = () => {
+    setOpenRemoveTeacherDialog(false);
+  };
+
+  const handleConfirmRemoveTeacher = async () => {
+    if (!classItem || !teacherInfo) return;
+
+    try {
+      // Call API to unassign teacher from class
+      console.log('Removing teacher from class:', classItem.id, 'Teacher ID:', teacherInfo.id);
+      await unassignTeacherAPI(classItem.id, teacherInfo.id);
+
+      // Update local state
+      setTeacherInfo(null);
+
+      handleCloseRemoveTeacherDialog();
+    } catch (error: any) {
+      console.error('Error removing teacher:', error);
+      console.error('Error details:', error.response?.data);
+    }
+  };
+
+  const handleAddTeacherToClass = async (teacherId: string) => {
+    if (!classItem) return;
+
+    try {
+      console.log('Adding teacher to class:', teacherId);
+
+      // Call API to assign teacher to class
+      await assignTeacherAPI(classItem.id, teacherId);
+
+      // Refresh teacher info
+      const res = await getClassByIdAPI(classItem.id);
+      const data = res?.data?.data || res?.data;
+      if (data) {
+        setTeacherInfo(data.teacher || null);
+      }
+    } catch (error: any) {
+      console.error('Error adding teacher:', error);
+      console.error('Error details:', error.response?.data);
+      throw error;
+    }
+  };
+
+  const handleAddStudentsToClass = async (studentIds: string[], discounts: Record<string, number>) => {
+    if (!classItem) return;
+
+    try {
+      // Prepare data for API
+      const studentsData = studentIds.map(id => ({
+        studentId: id,
+        discountPercent: discounts[id] || 0
+      }));
+
+      console.log('Adding students data:', studentsData);
+      console.log('Class ID:', classItem.id);
+
+      // Call API to add students to class
+      const response = await addStudentsToClassAPI(classItem.id, studentsData);
+      console.log('Add students response:', response);
+
+      // If API call was successful, update local state immediately
+      // Add the new students to the existing list
+      const newStudents = studentIds.map(id => {
+        const discount = discounts[id] || 0;
+        // Create a temporary student object until we refresh from server
+        return {
+          discountPercent: discount,
+          student: {
+            id: id,
+            name: 'Loading...', // Will be updated when we refresh
+            email: '',
+            phone: ''
+          }
+        };
+      });
+
+      // Update local state immediately
+      setStudentsInfo(prev => [...prev, ...newStudents]);
+
+      // Try to refresh from server, but don't fail if it errors
+      try {
+        const res = await getClassByIdAPI(classItem.id);
+        const data = res?.data?.data || res?.data;
+        if (data && data.students) {
+          setStudentsInfo(data.students || []);
+        }
+      } catch (refreshError) {
+        console.warn('Failed to refresh students list, but students were added successfully:', refreshError);
+        // Don't throw error since the main operation was successful
+      }
+
+    } catch (error: any) {
+      console.error('Error adding students:', error);
+      console.error('Error details:', error.response?.data);
+
+      // Check if it's a 500 error but operation might have succeeded
+      if (error.response?.status === 500) {
+        console.log('Got 500 error, but operation might have succeeded. Trying to refresh...');
+
+        // Try to refresh to see if students were actually added
+        try {
+          const res = await getClassByIdAPI(classItem.id);
+          const data = res?.data?.data || res?.data;
+          if (data && data.students) {
+            setStudentsInfo(data.students || []);
+            console.log('Students were actually added successfully despite 500 error');
+            return; // Don't throw error since operation succeeded
+          }
+        } catch (refreshError) {
+          console.error('Failed to refresh after 500 error:', refreshError);
+        }
+      }
+
+      throw error;
+    }
   };
 
   const renderGeneralInfoTab = () => (
@@ -411,52 +597,118 @@ const ClassForm: React.FC<ClassFormProps> = ({
       <Typography variant="h6" gutterBottom>
         Giáo viên phụ trách
       </Typography>
+
       {teacherInfo ? (
-        <Paper sx={{ p: 2 }}>
-          <Grid container spacing={2}>
-            <Grid item xs={12} md={6}>
+        <Box>
+          <Paper sx={{ p: 2, mb: 2 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               <Typography><b>Tên:</b> {teacherInfo.name}</Typography>
               <Typography><b>Email:</b> {teacherInfo.email}</Typography>
-            </Grid>
-            <Grid item xs={12} md={6}>
               <Typography><b>Điện thoại:</b> {teacherInfo.phone}</Typography>
               {teacherInfo.gender && <Typography><b>Giới tính:</b> {teacherInfo.gender}</Typography>}
-            </Grid>
-          </Grid>
-        </Paper>
+            </Box>
+          </Paper>
+
+          <Button
+            variant="outlined"
+            color="error"
+            startIcon={<DeleteIcon />}
+            onClick={handleRemoveTeacher}
+            sx={{ borderRadius: 2 }}
+          >
+            Xóa giáo viên khỏi lớp
+          </Button>
+        </Box>
       ) : (
-        <Typography color="text.secondary">Chưa có giáo viên.</Typography>
+        <Box>
+          <Typography color="text.secondary" sx={{ mb: 2 }}>
+            Chưa có giáo viên phụ trách lớp này.
+          </Typography>
+
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleAddTeacher}
+            sx={{
+              bgcolor: '#667eea',
+              '&:hover': { bgcolor: '#5a6fd8' },
+              borderRadius: 2
+            }}
+          >
+            Thêm giáo viên
+          </Button>
+        </Box>
       )}
     </Box>
   );
 
-  const renderStudentsTab = () => (
-    <Box>
-      <Typography variant="h6" gutterBottom>
-        Danh sách học sinh
-      </Typography>
-      {studentsInfo && studentsInfo.length > 0 ? (
-        <Paper sx={{ p: 2 }}>
-          <Grid container spacing={1} sx={{ fontWeight: 600, mb: 1 }}>
-            <Grid item xs={5}>Họ và tên</Grid>
-            <Grid item xs={3}>Email</Grid>
-            <Grid item xs={2}>SĐT</Grid>
-            <Grid item xs={2}>Giảm giá</Grid>
-          </Grid>
-          {studentsInfo.map((item: any) => (
-            <Grid container spacing={1} key={item.student?.id || Math.random()} sx={{ py: 1, borderTop: '1px solid #eee' }}>
-              <Grid item xs={5}>{item.student?.name}</Grid>
-              <Grid item xs={3}>{item.student?.email}</Grid>
-              <Grid item xs={2}>{item.student?.phone}</Grid>
-              <Grid item xs={2}>{item.discountPercent ? `${item.discountPercent}%` : '-'}</Grid>
-            </Grid>
-          ))}
-        </Paper>
-      ) : (
-        <Typography color="text.secondary">Chưa có học sinh.</Typography>
-      )}
-    </Box>
-  );
+  const renderStudentsTab = () => {
+    console.log('📊 Rendering Students Tab - studentsInfo:', studentsInfo);
+
+    return (
+      <Box>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Typography variant="h6">
+            Danh sách học sinh ({studentsInfo?.length || 0} / {formData.max_student})
+          </Typography>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleAddStudent}
+            sx={{
+              bgcolor: '#667eea',
+              '&:hover': { bgcolor: '#5a6fd8' },
+              borderRadius: 2
+            }}
+          >
+            Thêm học sinh
+          </Button>
+        </Box>
+
+        {studentsInfo && studentsInfo.length > 0 ? (
+          <TableContainer component={Paper} sx={{ maxHeight: 400 }}>
+            <Table stickyHeader>
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 600 }}>Họ và tên</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Email</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Số điện thoại</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Thao tác</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {studentsInfo.map((item: any, index: number) => {
+                  console.log(`📊 Student ${index}:`, item);
+                  console.log(`📊 Student ${index} name:`, item.student?.name);
+                  return (
+                    <TableRow key={item.student?.id || Math.random()} hover>
+                      <TableCell>{item.student?.name || 'Không tên'}</TableCell>
+                      <TableCell>{item.student?.email || '-'}</TableCell>
+                      <TableCell>{item.student?.phone || '-'}</TableCell>
+                      <TableCell>
+                        <IconButton
+                          color="error"
+                          onClick={() => handleRemoveStudent(item)}
+                          title="Xóa học sinh khỏi lớp"
+                          size="small"
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        ) : (
+          <Paper sx={{ p: 3, textAlign: 'center' }}>
+            <Typography color="text.secondary">Chưa có học sinh.</Typography>
+          </Paper>
+        )}
+      </Box>
+    );
+  };
 
   return (
     <Dialog
@@ -622,6 +874,77 @@ const ClassForm: React.FC<ClassFormProps> = ({
           {isSubmitting ? 'Đang lưu...' : (classItem ? 'Cập nhật' : 'Thêm mới')}
         </Button>
       </DialogActions>
+
+      {/* Confirm Remove Student Dialog */}
+      <Dialog
+        open={openRemoveStudentDialog}
+        onClose={handleCloseRemoveStudentDialog}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          <Typography variant="h6">Xác nhận xóa học sinh</Typography>
+        </DialogTitle>
+        <DialogContent>
+          <Typography>
+            Bạn có chắc chắn muốn xóa học sinh "{studentToRemove?.student?.name}" khỏi lớp học này?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseRemoveStudentDialog}>Hủy</Button>
+          <Button
+            onClick={handleConfirmRemoveStudent}
+            color="error"
+            variant="contained"
+          >
+            Xóa
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Add Student Dialog */}
+      <AddStudentToClassDialog
+        open={openAddStudentDialog}
+        onClose={handleCloseAddStudentDialog}
+        onAddStudents={handleAddStudentsToClass}
+        existingStudentIds={studentsInfo.map(s => s.student?.id).filter(Boolean)}
+        loading={false}
+      />
+
+      {/* Confirm Remove Teacher Dialog */}
+      <Dialog
+        open={openRemoveTeacherDialog}
+        onClose={handleCloseRemoveTeacherDialog}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          <Typography variant="h6">Xác nhận xóa giáo viên</Typography>
+        </DialogTitle>
+        <DialogContent>
+          <Typography>
+            Bạn có chắc chắn muốn xóa giáo viên "{teacherInfo?.name}" khỏi lớp học này?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseRemoveTeacherDialog}>Hủy</Button>
+          <Button
+            onClick={handleConfirmRemoveTeacher}
+            color="error"
+            variant="contained"
+          >
+            Xóa
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Add Teacher Dialog */}
+      <AddTeacherToClassDialog
+        open={openAddTeacherDialog}
+        onClose={handleCloseAddTeacherDialog}
+        onAddTeacher={handleAddTeacherToClass}
+        loading={false}
+      />
     </Dialog>
   );
 };

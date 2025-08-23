@@ -47,12 +47,9 @@ export const useStudentManagement = (): UseStudentManagementReturn => {
         limit: 10,
       };
 
-      // Handle filters according to API format
+      // Handle filters with {} format
       if (debouncedSearch) {
-        const filters = {
-          name: debouncedSearch
-        };
-        params.filters = JSON.stringify(filters);
+        params.name = debouncedSearch;
       }
 
       const response = await getAllStudentsAPI(params);

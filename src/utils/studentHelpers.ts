@@ -6,6 +6,12 @@ interface ClassId {
 
 interface StudentClass {
   classId?: ClassId;
+  class?: {
+    id: string;
+    name: string;
+    grade: number;
+    section: number;
+  };
   status?: string;
   discountPercent?: number;
 }
@@ -33,8 +39,8 @@ export const renderClasses = (classes: StudentClass[]): string => {
   if (!classes || classes.length === 0) return 'Chưa đăng ký lớp';
 
   return classes.map(cls => {
-    // Lấy tên lớp trực tiếp từ classId object
-    const className = cls.classId?.name || `Lớp ${cls.classId?.grade || ''}.${cls.classId?.section || ''}`;
+    // Lấy tên lớp từ class object (API response mới)
+    const className = cls.class?.name || cls.classId?.name || `Lớp ${cls.class?.grade || cls.classId?.grade || ''}.${cls.class?.section || cls.classId?.section || ''}`;
     const status = cls.status === 'active' ? 'Đang học' : 'Đã nghỉ';
     const discount = cls.discountPercent ? ` (Giảm ${cls.discountPercent}%)` : '';
     return `${className}${discount} - ${status}`;
@@ -55,7 +61,3 @@ export const getClassStatusColor = (status: string): 'success' | 'warning' => {
 export const getClassStatusLabel = (status: string): string => {
   return status === 'active' ? 'Đang học' : 'Đã nghỉ';
 };
-
-
-
-

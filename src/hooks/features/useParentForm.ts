@@ -54,14 +54,15 @@ export const useParentForm = (): UseParentFormReturn => {
   const setFormData = (parent: Parent | null = null): void => {
     if (parent) {
       setForm({
-        name: parent.userId?.name || '',
-        email: parent.userId?.email || '',
+        name: (parent as any).userId?.name || (parent as any).name || '',
+        email: (parent as any).userId?.email || (parent as any).email || '',
         password: '',
-        dayOfBirth: parent.userId?.dayOfBirth || '',
-        phone: parent.userId?.phone || '',
-        address: parent.userId?.address || '',
-        gender: parent.userId?.gender || 'male',
-        canSeeTeacherInfo: parent.canSeeTeacherInfo !== undefined ? parent.canSeeTeacherInfo : true,
+        dayOfBirth: (parent as any).userId?.dayOfBirth || (parent as any).dayOfBirth || '',
+        phone: (parent as any).userId?.phone || (parent as any).phone || '',
+        address: (parent as any).userId?.address || (parent as any).address || '',
+        gender: (parent as any).userId?.gender || (parent as any).gender || 'male',
+        canSeeTeacherInfo:
+          (parent as any).canSeeTeacherInfo !== undefined ? (parent as any).canSeeTeacherInfo : true,
       });
     } else {
       setForm({
@@ -110,6 +111,11 @@ export const useParentForm = (): UseParentFormReturn => {
     try {
       const toAPIDateFormat = (dob: string): string => {
         if (!dob) return '';
+        // Support both dd/mm/yyyy and yyyy-mm-dd
+        if (dob.includes('-')) {
+          const [year, month, day] = dob.split('-');
+          return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        }
         const [day, month, year] = dob.split('/');
         return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
       };

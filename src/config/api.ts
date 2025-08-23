@@ -118,6 +118,13 @@ export interface ApiEndpoints {
     UPDATE: (id: string) => string;
     DELETE: (id: string) => string;
   };
+  TRANSACTION_CATEGORIES: {
+    CREATE: string;
+    GET_ALL: string;
+    GET_BY_ID: (id: string) => string;
+    UPDATE: (id: string) => string;
+    DELETE: (id: string) => string;
+  };
 }
 
 export interface ApiConfig {
@@ -255,6 +262,14 @@ export const API_CONFIG: ApiConfig = {
       GET_BY_ID: (id: string) => `/transactions/${id}`,
       UPDATE: (id: string) => `/transactions/${id}`,
       DELETE: (id: string) => `/transactions/${id}`,
+    },
+    // Transaction Categories endpoints
+    TRANSACTION_CATEGORIES: {
+      CREATE: '/transactions-category',
+      GET_ALL: '/transactions-category',
+      GET_BY_ID: (id: string) => `/transactions-category/${id}`,
+      UPDATE: (id: string) => `/transactions-category/${id}`,
+      DELETE: (id: string) => `/transactions-category/${id}`,
     },
   },
 };
