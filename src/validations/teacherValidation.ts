@@ -3,14 +3,18 @@ import { validateEmail, validatePhone, validateDayOfBirth, validateAddress, vali
 export interface TeacherFormData {
   name: string;
   email: string;
+  password?: string;
   phone: string;
   dayOfBirth: string;
   address: string;
   gender: string;
-  salaryPerLesson?: string | number;
-  qualifications: string;
-  specialization: string;
   description: string;
+  qualifications: string[];
+  specializations: string[];
+  introduction: string;
+  workExperience: string;
+  salaryPerLesson?: string | number;
+  isActive: boolean;
 }
 
 export interface TeacherUpdateData {
@@ -21,14 +25,17 @@ export interface TeacherUpdateData {
 export interface TeacherValidationErrors {
   name?: string;
   email?: string;
+  password?: string;
   phone?: string;
-  dayOfBirth?: string;
   address?: string;
   gender?: string;
-  salaryPerLesson?: string;
-  qualifications?: string;
-  specialization?: string;
   description?: string;
+  qualifications?: string;
+  specializations?: string;
+  introduction?: string;
+  workExperience?: string;
+  salaryPerLesson?: string;
+  isActive?: string;
 }
 
 export interface TeacherUpdateErrors {
@@ -36,40 +43,65 @@ export interface TeacherUpdateErrors {
   isActive?: string;
 }
 
-// Có thể mở rộng thêm nếu cần validate riêng cho teacher
-
 // Validate toàn bộ form giáo viên
 export function validateTeacher(form: TeacherFormData): TeacherValidationErrors {
   const errors: TeacherValidationErrors = {};
+
+  // Validate required fields
   const nameError = validateName(form.name);
   if (nameError) errors.name = nameError;
+
   const emailError = validateEmail(form.email);
   if (emailError) errors.email = emailError;
+
+  // Password is required for new teachers
+  if (form.password !== undefined) {
+    const passwordError = validatePassword(form.password);
+    if (passwordError) errors.password = passwordError;
+  }
+
   const phoneError = validatePhone(form.phone);
   if (phoneError) errors.phone = phoneError;
-  const dobError = validateDayOfBirth(form.dayOfBirth);
-  if (dobError) errors.dayOfBirth = dobError;
+
+  // Bỏ validation ngày sinh
+  // const dobError = validateDayOfBirth(form.dayOfBirth);
+  // if (dobError) errors.dayOfBirth = dobError;
+
   const addressError = validateAddress(form.address);
   if (addressError) errors.address = addressError;
+
   const genderError = validateGender(form.gender);
   if (genderError) errors.gender = genderError;
 
-  // Validate salaryPerLesson (>=0)
-  if (form.salaryPerLesson === undefined || form.salaryPerLesson === null || form.salaryPerLesson === '') {
-    errors.salaryPerLesson = 'Lương không được để trống';
-  } else if (isNaN(Number(form.salaryPerLesson)) || Number(form.salaryPerLesson) < 0) {
-    errors.salaryPerLesson = 'Lương phải là số lớn hơn hoặc bằng 0';
+  // Validate salaryPerLesson (optional, but if provided must be valid)
+  if (form.salaryPerLesson !== undefined && form.salaryPerLesson !== null && form.salaryPerLesson !== '') {
+    if (isNaN(Number(form.salaryPerLesson)) || Number(form.salaryPerLesson) < 0) {
+      errors.salaryPerLesson = 'Lương phải là số lớn hơn hoặc bằng 0';
+    }
   }
 
-  // Validate qualifications, specialization, description (không được để trống)
-  if (!form.qualifications || form.qualifications.trim() === '') {
-    errors.qualifications = 'Bằng cấp không được để trống';
+  // Validate arrays (qualifications and specializations) - optional
+  // if (!form.qualifications || form.qualifications.length === 0) {
+  //   errors.qualifications = 'Bằng cấp không được để trống';
+  // }
+
+  // if (!form.specializations || form.specializations.length === 0) {
+  //   errors.specializations = 'Chuyên môn không được để trống';
+  // }
+
+  // Validate description (optional)
+  // if (!form.description || form.description.trim() === '') {
+  //   errors.description = 'Mô tả không được để trống';
+  // }
+
+  // Validate introduction (optional)
+  if (form.introduction && form.introduction.trim().length > 1000) {
+    errors.introduction = 'Giới thiệu không được quá 1000 ký tự';
   }
-  if (!form.specialization || form.specialization.trim() === '') {
-    errors.specialization = 'Chuyên môn không được để trống';
-  }
-  if (!form.description || form.description.trim() === '') {
-    errors.description = 'Mô tả không được để trống';
+
+  // Validate workExperience (optional)
+  if (form.workExperience && form.workExperience.trim().length > 1000) {
+    errors.workExperience = 'Kinh nghiệm làm việc không được quá 1000 ký tự';
   }
 
   return errors;
@@ -98,5 +130,5 @@ export {
   validateGender,
   validateName,
   validatePassword,
-  validateChangePassword,
+  validateChangePassword
 };

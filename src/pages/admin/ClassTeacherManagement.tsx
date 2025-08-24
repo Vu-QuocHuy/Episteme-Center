@@ -182,9 +182,19 @@ const ClassTeacherManagement: React.FC<ClassTeacherManagementProps> = ({
   };
 
   const handleUnassignTeacher = async (): Promise<void> => {
+    if (!currentTeacherObj) {
+      setNotification({
+        open: true,
+        message: 'Không có giáo viên để hủy phân công',
+        severity: 'warning'
+      });
+      return;
+    }
+
     setLoading(true);
     try {
-      await unassignTeacherAPI(classData.id);
+      const teacherId = String(currentTeacherObj.id || currentTeacherObj._id);
+      await unassignTeacherAPI(classData.id, teacherId);
       setNotification({
         open: true,
         message: 'Hủy phân công giáo viên thành công!',

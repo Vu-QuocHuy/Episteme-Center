@@ -4,7 +4,7 @@ import {
 } from '@mui/material';
 import { History as HistoryIcon, Visibility as VisibilityIcon, Edit as EditIcon, Delete as DeleteIcon, Add as AddIcon } from '@mui/icons-material';
 // import { getPaymentsAPI, getTeacherPaymentsAPI, payTeacherAPI, getTotalPaymentsAPI, getTeacherByIdAPI } from '../../services/api';
-import { getAllTransactionsAPI, createTransactionAPI, getAllPaymentsAPI, createTransactionCategoryAPI, getAllTransactionCategoriesAPI, deleteTransactionCategoryAPI, updateTransactionCategoryAPI, getAllTeacherPaymentsAPI } from '../../services/api';
+import { getAllTransactionsAPI, createTransactionAPI, updateTransactionAPI, deleteTransactionAPI, getAllPaymentsAPI, createTransactionCategoryAPI, getAllTransactionCategoriesAPI, deleteTransactionCategoryAPI, updateTransactionCategoryAPI, getAllTeacherPaymentsAPI } from '../../services/api';
 import PaymentHistoryModal from '../../components/common/PaymentHistoryModal';
 import NotificationSnackbar from '../../components/common/NotificationSnackbar';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
@@ -89,6 +89,18 @@ interface TeacherPaymentConfirmData {
   paymentData: { amount: number; method: string; note: string; };
 }
 
+interface Transaction {
+  id: string;
+  amount: number;
+  description: string;
+  category: {
+    id: number;
+    name: string;
+    type: 'revenue' | 'expense';
+  };
+  transaction_at: string;
+}
+
 const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
 const months = Array.from({ length: 12 }, (_, i) => i + 1);
 const quarters = [1, 2, 3, 4];
@@ -100,7 +112,7 @@ const FinancialStatisticsPanel: React.FC = () => {
   const [selectedQuarter, setSelectedQuarter] = useState<number>(1);
   const [tab, setTab] = useState<number>(0);
   // Other transactions (manual revenues/expenses)
-  const [otherTransactions, setOtherTransactions] = useState<any[]>([]);
+  const [otherTransactions, setOtherTransactions] = useState<Transaction[]>([]);
   const [otherPage, setOtherPage] = useState<number>(1);
   const [otherTotalPages, setOtherTotalPages] = useState<number>(1);
   const [openOtherDialog, setOpenOtherDialog] = useState<boolean>(false);
@@ -129,6 +141,17 @@ const FinancialStatisticsPanel: React.FC = () => {
   const [openTransactionDialog, setOpenTransactionDialog] = useState<boolean>(false);
   const [transactionForm, setTransactionForm] = useState<{ amount: string; category_id: string; description: string }>({ amount: '', category_id: '', description: '' });
   const [transactionLoading, setTransactionLoading] = useState<boolean>(false);
+
+  // Edit transaction dialog states
+  const [openEditTransactionDialog, setOpenEditTransactionDialog] = useState<boolean>(false);
+  const [transactionToEdit, setTransactionToEdit] = useState<Transaction | null>(null);
+  const [editTransactionForm, setEditTransactionForm] = useState<{ amount: string; category_id: string; description: string }>({ amount: '', category_id: '', description: '' });
+  const [editTransactionLoading, setEditTransactionLoading] = useState<boolean>(false);
+
+  // Delete transaction dialog states
+  const [openDeleteTransactionDialog, setOpenDeleteTransactionDialog] = useState<boolean>(false);
+  const [transactionToDelete, setTransactionToDelete] = useState<Transaction | null>(null);
+  const [deleteTransactionLoading, setDeleteTransactionLoading] = useState<boolean>(false);
   const [categories, setCategories] = useState<any[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState<boolean>(false);
   const [customStart, setCustomStart] = useState<string>(new Date().toISOString().split('T')[0].substring(0, 8) + '01');
@@ -178,12 +201,22 @@ const FinancialStatisticsPanel: React.FC = () => {
   const fetchOtherTransactions = async (pageNum = 1): Promise<void> => {
     try {
       const res = await getAllTransactionsAPI({ page: pageNum, limit: 10 });
-      const data = (res as any).data || res;
-      setOtherTransactions(Array.isArray(data?.data?.result) ? data.data.result : (data || []));
-      const meta = data?.data?.meta;
+      console.log('📊 Get All Transactions API Response:', res);
+
+      const data = res?.data;
+      if (data?.data?.result && Array.isArray(data.data.result)) {
+        setOtherTransactions(data.data.result);
+        const meta = data.data.meta;
       setOtherTotalPages(meta?.totalPages || 1);
       setOtherPage(meta?.page || pageNum);
+      } else {
+        console.warn('⚠️ Unexpected response format:', data);
+        setOtherTransactions([]);
+        setOtherTotalPages(1);
+        setOtherPage(1);
+      }
     } catch (e) {
+      console.error('❌ Error fetching transactions:', e);
       setOtherTransactions([]);
       setOtherTotalPages(1);
       setOtherPage(1);
@@ -307,19 +340,130 @@ const FinancialStatisticsPanel: React.FC = () => {
   };
 
   // Transaction dialog handlers
-  const handleOpenTransactionDialog = (): void => setOpenTransactionDialog(true);
+  const handleOpenTransactionDialog = (): void => {
+    setOpenTransactionDialog(true);
+    fetchCategories(); // Fetch categories when opening dialog
+  };
   const handleCloseTransactionDialog = (): void => setOpenTransactionDialog(false);
-  const handleChangeTransactionField = (key: 'amount' | 'category_id' | 'description', value: string) => setTransactionForm(prev => ({ ...prev, [key]: value }));
+
+  // Edit transaction handlers
+  const handleEditTransaction = (transaction: Transaction): void => {
+    setTransactionToEdit(transaction);
+    setEditTransactionForm({
+      amount: String(transaction.amount),
+      category_id: String(transaction.category.id),
+      description: transaction.description || ''
+    });
+    setOpenEditTransactionDialog(true);
+    fetchCategories(); // Fetch categories when opening dialog
+  };
+
+  const handleCloseEditTransactionDialog = (): void => {
+    setOpenEditTransactionDialog(false);
+    setTransactionToEdit(null);
+    setEditTransactionForm({ amount: '', category_id: '', description: '' });
+  };
+
+  const handleChangeEditTransactionField = (key: 'amount' | 'category_id' | 'description', value: string) => {
+    setEditTransactionForm(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleSubmitEditTransaction = async (): Promise<void> => {
+    if (!transactionToEdit || !editTransactionForm.amount || !editTransactionForm.category_id || editTransactionForm.category_id === '') {
+      setSnackbar({ open: true, message: 'Vui lòng nhập đầy đủ thông tin', severity: 'error' });
+      return;
+    }
+
+    setEditTransactionLoading(true);
+    try {
+      const transactionData = {
+        amount: Number(editTransactionForm.amount),
+        category_id: editTransactionForm.category_id,
+        description: editTransactionForm.description
+      };
+      console.log('📤 Updating transaction data:', transactionData);
+
+      await updateTransactionAPI(transactionToEdit.id, transactionData);
+      handleCloseEditTransactionDialog();
+      await fetchOtherTransactions(otherPage);
+      setSnackbar({ open: true, message: 'Cập nhật hóa đơn thành công', severity: 'success' });
+    } catch (e: any) {
+      console.error('❌ Transaction update error:', e);
+      setSnackbar({ open: true, message: e?.response?.data?.message || 'Cập nhật hóa đơn thất bại', severity: 'error' });
+    } finally {
+      setEditTransactionLoading(false);
+    }
+  };
+
+  // Delete transaction handlers
+  const handleDeleteTransaction = (transaction: Transaction): void => {
+    setTransactionToDelete(transaction);
+    setOpenDeleteTransactionDialog(true);
+  };
+
+  const handleCloseDeleteTransactionDialog = (): void => {
+    setOpenDeleteTransactionDialog(false);
+    setTransactionToDelete(null);
+  };
+
+  const handleConfirmDeleteTransaction = async (): Promise<void> => {
+    if (!transactionToDelete) return;
+
+    setDeleteTransactionLoading(true);
+    try {
+      await deleteTransactionAPI(transactionToDelete.id);
+      setSnackbar({ open: true, message: 'Xóa hóa đơn thành công', severity: 'success' });
+      handleCloseDeleteTransactionDialog();
+      await fetchOtherTransactions(otherPage);
+    } catch (e: any) {
+      console.error('❌ Transaction deletion error:', e);
+      setSnackbar({ open: true, message: e?.response?.data?.message || 'Xóa hóa đơn thất bại', severity: 'error' });
+    } finally {
+      setDeleteTransactionLoading(false);
+    }
+  };
+  const handleChangeTransactionField = (key: 'amount' | 'category_id' | 'description', value: string) => {
+    console.log('🔍 Transaction field change:', { key, value });
+    setTransactionForm(prev => ({ ...prev, [key]: value }));
+  };
   const handleSubmitTransaction = async (): Promise<void> => {
-    if (!transactionForm.amount || !transactionForm.category_id) return;
+    console.log('🔍 Transaction Form Data:', transactionForm);
+    console.log('🔍 Validation Check:', {
+      hasAmount: !!transactionForm.amount,
+      hasCategoryId: !!transactionForm.category_id,
+      amount: transactionForm.amount,
+      category_id: transactionForm.category_id,
+      description: transactionForm.description
+    });
+
+    if (!transactionForm.amount || !transactionForm.category_id || transactionForm.category_id === '') {
+      console.log('❌ Validation failed - missing required fields');
+      console.log('❌ Validation details:', {
+        amount: transactionForm.amount,
+        category_id: transactionForm.category_id,
+        amountValid: !!transactionForm.amount,
+        categoryValid: !!transactionForm.category_id && transactionForm.category_id !== ''
+      });
+      setSnackbar({ open: true, message: 'Vui lòng nhập đầy đủ số tiền và chọn danh mục', severity: 'error' });
+      return;
+    }
+
     setTransactionLoading(true);
     try {
-      await createTransactionAPI({ amount: Number(transactionForm.amount), category_id: transactionForm.category_id, description: transactionForm.description });
+      const transactionData = {
+        amount: Number(transactionForm.amount),
+        category_id: transactionForm.category_id,
+        description: transactionForm.description
+      };
+      console.log('📤 Sending transaction data to API:', transactionData);
+
+      await createTransactionAPI(transactionData);
       setOpenTransactionDialog(false);
       setTransactionForm({ amount: '', category_id: '', description: '' });
       await fetchOtherTransactions(1);
       setSnackbar({ open: true, message: 'Tạo hóa đơn thành công', severity: 'success' });
     } catch (e: any) {
+      console.error('❌ Transaction creation error:', e);
       setSnackbar({ open: true, message: e?.response?.data?.message || 'Tạo hóa đơn thất bại', severity: 'error' });
     } finally {
       setTransactionLoading(false);
@@ -350,6 +494,7 @@ const FinancialStatisticsPanel: React.FC = () => {
       }
 
       console.log('📊 Parsed categories data:', data);
+      console.log('📊 Categories structure:', data.map((cat: any) => ({ id: cat.id, name: cat.name, type: cat.type })));
       setCategories(Array.isArray(data) ? data : []);
     } catch (e) {
       console.error('Error fetching categories:', e);
@@ -367,14 +512,14 @@ const FinancialStatisticsPanel: React.FC = () => {
       const finalAmount = (p.totalAmount ?? 0) - (p.discountAmount ?? 0);
       return total + (finalAmount - (p.paidAmount ?? 0));
     }, 0);
-    const totalTeacherSalary = teacherPayments.reduce((total, p) => total + (p.totalAmount ?? 0), 0);
+      const totalTeacherSalary = teacherPayments.reduce((total, p) => total + (p.totalAmount ?? 0), 0);
 
-    setTotalStatistics({
+      setTotalStatistics({
       totalStudentFees,
       totalPaidAmount,
       totalRemainingAmount,
       totalTeacherSalary
-    });
+      });
   };
 
   const fetchStudentPayments = async (page: number = 1): Promise<void> => {
@@ -415,7 +560,7 @@ const FinancialStatisticsPanel: React.FC = () => {
       if (data && data.result) {
         setStudentPayments(data.result);
         const meta = data.meta;
-        setStudentPagination({
+      setStudentPagination({
           page: meta?.page || page,
           limit: meta?.limit || 10,
           totalPages: meta?.totalPages || 1,
@@ -544,7 +689,7 @@ const FinancialStatisticsPanel: React.FC = () => {
     setSelectedPaymentForHistory(payment);
     setPaymentHistoryModalOpen(true);
     // Skipping teacher info fetch while API under development
-      setTeacherDetailInfo(null);
+        setTeacherDetailInfo(null);
   };
 
   const handleClosePaymentHistory = (): void => {
@@ -971,6 +1116,8 @@ const FinancialStatisticsPanel: React.FC = () => {
           )}
           {tab === 2 && (
             <>
+
+
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
                 <Box sx={{ display: 'flex', gap: 2 }}>
                   <Button
@@ -987,30 +1134,81 @@ const FinancialStatisticsPanel: React.FC = () => {
                   >
                     Tạo hóa đơn
                   </Button>
-                </Box>
               </Box>
-              <TableContainer>
+              </Box>
+              <TableContainer component={Paper} elevation={1}>
                 <Table>
                   <TableHead>
-                    <TableRow>
-                      <TableCell>Loại</TableCell>
-                      <TableCell>Mô tả</TableCell>
-                      <TableCell align="right">Số tiền</TableCell>
+                    <TableRow sx={{ bgcolor: '#f8fafc' }}>
+                      <TableCell sx={{ fontWeight: 600 }}>Danh mục</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>Loại</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>Mô tả</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>Ngày</TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 600 }}>Số tiền</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 600 }}>Thao tác</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {otherTransactions.map((t: any, idx: number) => (
-                      <TableRow key={t.id || idx} hover>
+                    {otherTransactions.map((transaction: Transaction, idx: number) => (
+                      <TableRow key={transaction.id || idx} hover>
                         <TableCell>
-                          <Chip label={t.type === 'revenue' ? 'Thu' : 'Chi'} color={t.type === 'revenue' ? 'success' : 'error'} size="small" />
+                          <Typography variant="body2" fontWeight={500}>
+                            {transaction.category?.name || '-'}
+                          </Typography>
                         </TableCell>
-                        <TableCell>{t.description || '-'}</TableCell>
-                        <TableCell align="right">{Number(t.amount || 0).toLocaleString()} ₫</TableCell>
+                        <TableCell>
+                          <Chip
+                            label={transaction.category?.type === 'revenue' ? 'Thu' : 'Chi'}
+                            color={transaction.category?.type === 'revenue' ? 'success' : 'error'}
+                            size="small"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2">
+                            {transaction.description || '-'}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2" color="text.secondary">
+                            {transaction.transaction_at ? new Date(transaction.transaction_at).toLocaleDateString('vi-VN') : '-'}
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="right">
+                          <Typography variant="body2" fontWeight={600} color={transaction.category?.type === 'revenue' ? 'success.main' : 'error.main'}>
+                            {transaction.amount ? transaction.amount.toLocaleString() : '0'} ₫
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="center">
+                          <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                            <Tooltip title="Chỉnh sửa">
+                              <IconButton
+                                size="small"
+                                onClick={() => handleEditTransaction(transaction)}
+                                sx={{ color: 'primary.main' }}
+                              >
+                                <EditIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Xóa">
+                              <IconButton
+                                size="small"
+                                onClick={() => handleDeleteTransaction(transaction)}
+                                sx={{ color: 'error.main' }}
+                              >
+                                <DeleteIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </Box>
+                        </TableCell>
                       </TableRow>
                     ))}
                     {otherTransactions.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={3} align="center">Không có dữ liệu</TableCell>
+                        <TableCell colSpan={6} align="center">
+                          <Typography variant="body2" color="text.secondary">
+                            Không có dữ liệu
+                          </Typography>
+                        </TableCell>
                       </TableRow>
                     )}
                   </TableBody>
@@ -1478,6 +1676,78 @@ const FinancialStatisticsPanel: React.FC = () => {
           </Grid>
         </Grid>
       </FormDialog>
+
+      {/* Dialog chỉnh sửa hóa đơn */}
+      <FormDialog
+        open={openEditTransactionDialog}
+        onClose={handleCloseEditTransactionDialog}
+        title="Chỉnh sửa hóa đơn"
+        subtitle="Cập nhật thông tin hóa đơn"
+        onSubmit={handleSubmitEditTransaction}
+        loading={editTransactionLoading}
+        submitText="Cập nhật"
+        cancelText="Hủy"
+        maxWidth="sm"
+      >
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              label="Số tiền"
+              type="number"
+              fullWidth
+              value={editTransactionForm.amount}
+              onChange={(e) => handleChangeEditTransactionField('amount', e.target.value)}
+              inputProps={{ min: 0 }}
+              required
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              select
+              fullWidth
+              label="Danh mục"
+              value={editTransactionForm.category_id}
+              onChange={(e) => handleChangeEditTransactionField('category_id', e.target.value)}
+              disabled={categoriesLoading}
+              helperText={categoriesLoading ? 'Đang tải danh mục...' : ''}
+            >
+              {Array.isArray(categories) && categories.length > 0 ? (
+                categories.map((category) => (
+                  <MenuItem key={category.id} value={category.id}>
+                    {category.name} ({category.type === 'revenue' ? 'Thu' : 'Chi'})
+                  </MenuItem>
+                ))
+              ) : (
+                <MenuItem disabled>
+                  {categoriesLoading ? 'Đang tải...' : 'Không có danh mục nào'}
+                </MenuItem>
+              )}
+            </TextField>
+          </Grid>
+          <Grid item xs={12}>
+            <TextField
+              label="Mô tả"
+              fullWidth
+              multiline
+              minRows={2}
+              value={editTransactionForm.description}
+              onChange={(e) => handleChangeEditTransactionField('description', e.target.value)}
+            />
+          </Grid>
+        </Grid>
+      </FormDialog>
+
+      {/* Dialog xác nhận xóa hóa đơn */}
+      <ConfirmDialog
+        open={openDeleteTransactionDialog}
+        onClose={handleCloseDeleteTransactionDialog}
+        onConfirm={handleConfirmDeleteTransaction}
+        title="Xác nhận xóa hóa đơn"
+        message={`Bạn có chắc chắn muốn xóa hóa đơn "${transactionToDelete?.description || 'Không có mô tả'}" với số tiền ${transactionToDelete?.amount ? transactionToDelete.amount.toLocaleString() : '0'} ₫?`}
+        confirmText="Xóa"
+        cancelText="Hủy"
+        loading={deleteTransactionLoading}
+      />
 
       {/* Dialog tạo hóa đơn */}
       <FormDialog

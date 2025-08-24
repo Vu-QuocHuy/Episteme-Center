@@ -19,6 +19,7 @@ import NotificationSnackbar from '../../components/common/NotificationSnackbar';
 import { Teacher } from '../../types';
 import { useTeacherManagement } from '../../hooks/features/useTeacherManagement';
 import { useTeacherForm } from '../../hooks/features/useTeacherForm';
+import { createTeacherAPI, updateTeacherAPI } from '../../services/api';
 
 // Components
 import TeacherForm from '../../components/features/teacher/TeacherForm';
@@ -74,44 +75,45 @@ const TeacherManagement: React.FC = () => {
   const [snackbar, setSnackbar] = useState<SnackbarState>({ open: false, message: '', severity: 'success' });
 
   // Dialog handlers
-  const handleOpenDialog = async (teacher: Teacher | null = null): Promise<void> => {
-    if (teacher) {
-      // Gọi API để lấy thông tin chi tiết khi chỉnh sửa
-      const detailData = await getTeacherById(teacher.id);
-      setSelectedTeacher(teacher);
+  const handleOpenDialog = async (teacher: Teacher): Promise<void> => {
+    // Chỉnh sửa teacher - Gọi API để lấy thông tin chi tiết
+    const detailData = await getTeacherById(teacher.id);
+    setSelectedTeacher(teacher);
 
-      // Sử dụng dữ liệu từ API response để set form
-      if (detailData) {
-        // Map API response to form structure (sử dụng type assertion vì form cần structure cũ)
-        const formData = {
+    // Sử dụng dữ liệu từ API response để set form
+    if (detailData) {
+      // Map API response to form structure (sử dụng type assertion vì form cần structure cũ)
+      const formData = {
+        id: detailData.id,
+        userId: {
           id: detailData.id,
-          userId: {
-            id: detailData.id,
-            name: detailData.name,
-            email: detailData.email,
-            phone: detailData.phone,
-            gender: detailData.gender,
-            dayOfBirth: detailData.dayOfBirth,
-            address: detailData.address,
-            role: 'teacher' as const,
-            avatar: detailData.avatar || undefined,
-          },
-          isActive: detailData.isActive,
-          description: detailData.description,
-          qualifications: detailData.qualifications,
-          specializations: detailData.specializations,
-          salary: detailData.salary,
-          workExperience: detailData.workExperience,
-        } as Teacher;
-        setFormData(formData);
-      } else {
-        setFormData(teacher);
-      }
+          name: detailData.name,
+          email: detailData.email,
+          phone: detailData.phone,
+          gender: detailData.gender,
+          dayOfBirth: detailData.dayOfBirth,
+          address: detailData.address,
+          role: 'teacher' as const,
+          avatar: detailData.avatar || undefined,
+        },
+        isActive: detailData.isActive,
+        description: detailData.description,
+        qualifications: detailData.qualifications,
+        specializations: detailData.specializations,
+        salary: detailData.salary,
+        workExperience: detailData.workExperience,
+      } as Teacher;
+      setFormData(formData);
     } else {
-      // Tạo mới teacher
-      setSelectedTeacher(null);
-      resetForm();
+      setFormData(teacher);
     }
+    setOpenDialog(true);
+  };
+
+  const handleOpenAddDialog = (): void => {
+    // Tạo mới teacher
+    setSelectedTeacher(null);
+    resetForm();
     setOpenDialog(true);
   };
 
@@ -141,18 +143,26 @@ const TeacherManagement: React.FC = () => {
     setTeacherToDelete(null);
   };
 
-  const handleFormSubmit = async (): Promise<void> => {
-    const result = await handleSubmit(selectedTeacher || undefined, () => {
+    const handleFormSubmit = async (teacherData: Partial<Teacher>): Promise<void> => {
+    try {
+      if (selectedTeacher) {
+        // Update existing teacher
+        await updateTeacherAPI(selectedTeacher.id, teacherData as any);
+        setSnackbar({ open: true, message: 'Cập nhật giáo viên thành công!', severity: 'success' });
+      } else {
+        // Create new teacher
+        await createTeacherAPI(teacherData as any);
+        setSnackbar({ open: true, message: 'Tạo giáo viên thành công!', severity: 'success' });
+      }
+
       handleCloseDialog();
       if (fetchTeachers) {
         fetchTeachers();
       }
-    });
-
-    if (result.success) {
-      setSnackbar({ open: true, message: result.message || 'Thành công', severity: 'success' });
-    } else {
-      setSnackbar({ open: true, message: result.message || 'Có lỗi xảy ra', severity: 'error' });
+    } catch (error: any) {
+      console.error('API call failed:', error);
+      const errorMessage = error?.response?.data?.message || 'Có lỗi xảy ra khi lưu giáo viên';
+      setSnackbar({ open: true, message: errorMessage, severity: 'error' });
     }
   };
 
@@ -188,7 +198,7 @@ const TeacherManagement: React.FC = () => {
             <Button
               variant="contained"
               startIcon={<AddIcon />}
-              onClick={() => handleOpenDialog()}
+              onClick={handleOpenAddDialog}
               sx={commonStyles.primaryButton}
             >
               Thêm giáo viên
@@ -257,7 +267,7 @@ const TeacherManagement: React.FC = () => {
       <TeacherForm
         open={openDialog}
         onClose={handleCloseDialog}
-        teacher={form as any}
+        teacher={selectedTeacher}
         onSubmit={handleFormSubmit}
         loading={formLoading || loadingDetail}
       />

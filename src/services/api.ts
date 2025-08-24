@@ -62,6 +62,8 @@ export interface TeacherData {
   description?: string;
   qualifications?: string[];
   specializations?: string[];
+  introduction?: string;
+  workExperience?: string;
   salaryPerLesson?: number;
   isActive?: boolean;
 }
@@ -254,7 +256,7 @@ export const assignTeacherAPI = (classId: string, teacherId: string) => {
     teacherId
   });
 
-  return axiosInstance.patch(API_CONFIG.ENDPOINTS.CLASSES.ASSIGN_TEACHER, null, {
+  return axiosInstance.patch(API_CONFIG.ENDPOINTS.CLASSES.ASSIGN_TEACHER, undefined, {
     params: {
       classId: classId,
       teacherId: teacherId
@@ -281,7 +283,7 @@ export const unassignTeacherAPI = (classId: string, teacherId: string) => {
     teacherId
   });
 
-  return axiosInstance.patch(API_CONFIG.ENDPOINTS.CLASSES.UNASSIGN_TEACHER, null, {
+  return axiosInstance.patch(API_CONFIG.ENDPOINTS.CLASSES.UNASSIGN_TEACHER, undefined, {
     params: {
       classId: classId,
       teacherId: teacherId
@@ -788,8 +790,14 @@ export const createTransactionAPI = (data: TransactionData) => {
 
   const formData = new URLSearchParams();
   formData.append('amount', String(data.amount));
-  if (data.category_id) formData.append('category_id', data.category_id);
+  if (data.category_id) formData.append('categoryId', data.category_id); // Use camelCase as backend expects
   if (data.description) formData.append('description', data.description);
+
+  console.log('📤 Form Data being sent:');
+  console.log('  - amount:', String(data.amount));
+  console.log('  - categoryId:', data.category_id);
+  console.log('  - description:', data.description);
+  console.log('📤 URLSearchParams toString():', formData.toString());
 
   return axiosInstance.post(API_CONFIG.ENDPOINTS.TRANSACTIONS.CREATE, formData, {
     headers: {
@@ -842,7 +850,7 @@ export const updateTransactionAPI = (id: string, data: Partial<TransactionData>)
 
   const formData = new URLSearchParams();
   if (data.amount) formData.append('amount', String(data.amount));
-  if (data.category_id) formData.append('category_id', data.category_id);
+  if (data.category_id) formData.append('categoryId', data.category_id); // Use camelCase as backend expects
   if (data.description) formData.append('description', data.description);
 
   return axiosInstance.patch(API_CONFIG.ENDPOINTS.TRANSACTIONS.UPDATE(id), formData, {

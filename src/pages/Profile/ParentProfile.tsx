@@ -27,12 +27,16 @@ import {
   Phone as PhoneIcon,
   LocationOn as LocationIcon,
   Visibility as VisibilityIcon,
+  Lock as LockIcon,
+  VerifiedUser as VerifiedUserIcon,
+  CameraAlt as CameraIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import { updateUserAPI, updateParentAPI } from '../../services/api';
 import { validateUserUpdate } from '../../validations/commonValidation';
 import { validateParentUpdate } from '../../validations/parentValidation';
 import { commonStyles } from '../../utils/styles';
+import DashboardLayout from '../../components/layouts/DashboardLayout';
 
 interface UserUpdateData {
   name: string;
@@ -130,14 +134,14 @@ const ParentProfile: React.FC = () => {
       setError('');
       setSuccess('');
 
-      // Validate user form data
+      // Validate user data
       const userValidationErrors = validateUserUpdate(userFormData);
       if (Object.keys(userValidationErrors).length > 0) {
         setUserErrors(userValidationErrors);
         return;
       }
 
-      // Validate parent form data
+      // Validate parent data
       const parentValidationErrors = validateParentUpdate(parentFormData);
       if (Object.keys(parentValidationErrors).length > 0) {
         setParentErrors(parentValidationErrors);
@@ -152,19 +156,11 @@ const ParentProfile: React.FC = () => {
       // Update user data
       const userResponse = await updateUserAPI(user.id, userFormData);
 
-      if (!userResponse.data) {
-        setError('Có lỗi xảy ra khi cập nhật thông tin người dùng');
-        return;
-      }
-
-      // Update parent data
-      if (user.parent?.id) {
-        const parentResponse = await updateParentAPI(user.parent.id, parentFormData as any);
-
-        if (!parentResponse.data) {
-          setError('Có lỗi xảy ra khi cập nhật thông tin phụ huynh');
-          return;
-        }
+      // Update parent data if user update is successful
+      if (userResponse.data && user.parent?.id) {
+        await updateParentAPI(user.parent.id, {
+          canSeeTeacherInfo: parentFormData.canSeeTeacherInfo,
+        });
       }
 
       // Update local user data
@@ -174,9 +170,8 @@ const ParentProfile: React.FC = () => {
         gender: userFormData.gender as 'male' | 'female' | undefined,
         parent: {
           ...user.parent,
-          ...parentFormData,
-          userId: user.parent?.userId || user,
-        } as any,
+          canSeeTeacherInfo: parentFormData.canSeeTeacherInfo,
+        },
       });
 
       setSuccess('Cập nhật thông tin thành công!');
@@ -217,18 +212,23 @@ const ParentProfile: React.FC = () => {
 
   if (!user) {
     return (
+      <DashboardLayout role="parent">
       <Box sx={commonStyles.pageContainer}>
         <CircularProgress />
       </Box>
+      </DashboardLayout>
     );
   }
 
   return (
+    <DashboardLayout role="parent">
     <Box sx={commonStyles.pageContainer}>
-      <Box sx={commonStyles.contentWrapper}>
-        <Typography variant="h4" sx={{ mb: 3, fontWeight: 600 }}>
-          Thông tin cá nhân
+        <Box sx={commonStyles.contentContainer}>
+          <Box sx={commonStyles.pageHeader}>
+            <Typography sx={commonStyles.pageTitle}>
+              Trang cá nhân
         </Typography>
+          </Box>
 
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
@@ -242,60 +242,129 @@ const ParentProfile: React.FC = () => {
           </Alert>
         )}
 
-        <Card sx={{ maxWidth: 800, mx: 'auto' }}>
-          <CardContent sx={{ p: 4 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+          <Grid container spacing={3}>
+            {/* Left Panel - Profile Summary */}
+            <Grid item xs={12} md={4}>
+              <Card sx={{
+                height: 'fit-content',
+                borderRadius: 3,
+                boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+                overflow: 'visible'
+              }}>
+                <CardContent sx={{ p: 4, textAlign: 'center' }}>
+                  {/* Profile Picture */}
+                  <Box sx={{ position: 'relative', display: 'inline-block', mb: 3 }}>
               <Avatar
                 sx={{
-                  width: 80,
-                  height: 80,
+                        width: 120,
+                        height: 120,
                   bgcolor: 'primary.main',
-                  fontSize: '2rem',
-                  mr: 3,
+                        fontSize: '3rem',
+                        border: '4px solid white',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
                 }}
               >
                 {getInitials(user.name)}
               </Avatar>
-              <Box sx={{ flex: 1 }}>
-                <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        bottom: 0,
+                        right: 0,
+                        bgcolor: 'primary.main',
+                        borderRadius: '50%',
+                        width: 36,
+                        height: 36,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                        '&:hover': {
+                          bgcolor: 'primary.dark',
+                        }
+                      }}
+                    >
+                      <CameraIcon sx={{ color: 'white', fontSize: 20 }} />
+                    </Box>
+                  </Box>
+
+                  {/* User Name */}
+                  <Typography variant="h5" sx={{ fontWeight: 600, mb: 1, color: '#1e293b' }}>
                   {user.name}
                 </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Typography variant="body1" color="text.secondary">
-                    Phụ huynh
+
+                  {/* User Email */}
+                  <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+                    {user.email}
                   </Typography>
+
+                  {/* Parent Role and Permission */}
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+                    <Chip
+                      label="Phụ huynh"
+                      color="primary"
+                      size="small"
+                    />
                   <Chip
                     label={parentFormData.canSeeTeacherInfo ? 'Có thể xem thông tin giáo viên' : 'Không thể xem thông tin giáo viên'}
                     color={parentFormData.canSeeTeacherInfo ? 'success' : 'default'}
                     size="small"
                   />
                 </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            {/* Right Panel - Profile Details */}
+            <Grid item xs={12} md={8}>
+              <Card sx={{
+                borderRadius: 3,
+                boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+              }}>
+                <CardContent sx={{ p: 4 }}>
+                  <Grid container spacing={3}>
+                    {/* Left Column */}
+                    <Grid item xs={12} sm={6}>
+                      <Box sx={{ mb: 3 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
+                          Email
+                        </Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                          {user.email}
+                        </Typography>
               </Box>
-              {!isEditing && (
-                <Button
-                  variant="outlined"
-                  startIcon={<EditIcon />}
-                  onClick={() => setIsEditing(true)}
-                >
-                  Chỉnh sửa
-                </Button>
-              )}
+
+                      <Box sx={{ mb: 3 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
+                          Quyền xem thông tin giáo viên
+                        </Typography>
+                        <Chip
+                          label={parentFormData.canSeeTeacherInfo ? 'Có thể xem thông tin giáo viên' : 'Không thể xem thông tin giáo viên'}
+                          color={parentFormData.canSeeTeacherInfo ? 'success' : 'default'}
+                          size="small"
+                        />
             </Box>
 
-            <Divider sx={{ my: 3 }} />
-
-            <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-              Thông tin cá nhân
+                      <Box sx={{ mb: 3 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
+                          Trạng thái email
             </Typography>
+                        <Chip
+                          label="Chưa xác thực"
+                          color="warning"
+                          size="small"
+                          icon={<VerifiedUserIcon />}
+                        />
+                      </Box>
+                    </Grid>
 
-            <Grid container spacing={3} sx={{ mb: 4 }}>
+                    {/* Right Column */}
               <Grid item xs={12} sm={6}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <PersonIcon sx={{ mr: 2, color: 'primary.main' }} />
-                  <Typography variant="body2" color="text.secondary">
+                      <Box sx={{ mb: 3 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
                     Họ và tên
                   </Typography>
-                </Box>
                 {isEditing ? (
                   <TextField
                     fullWidth
@@ -306,38 +375,16 @@ const ParentProfile: React.FC = () => {
                     size="small"
                   />
                 ) : (
-                  <Typography variant="body1">{user.name}</Typography>
-                )}
-              </Grid>
-
-              <Grid item xs={12} sm={6}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <EmailIcon sx={{ mr: 2, color: 'primary.main' }} />
-                  <Typography variant="body2" color="text.secondary">
-                    Email
-                  </Typography>
+                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                            {user.name}
+                          </Typography>
+                        )}
                 </Box>
-                {isEditing ? (
-                  <TextField
-                    fullWidth
-                    value={userFormData.email}
-                    onChange={(e) => handleUserInputChange('email', e.target.value)}
-                    error={!!userErrors.email}
-                    helperText={userErrors.email}
-                    size="small"
-                  />
-                ) : (
-                  <Typography variant="body1">{user.email}</Typography>
-                )}
-              </Grid>
 
-              <Grid item xs={12} sm={6}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <PhoneIcon sx={{ mr: 2, color: 'primary.main' }} />
-                  <Typography variant="body2" color="text.secondary">
+                      <Box sx={{ mb: 3 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
                     Số điện thoại
                   </Typography>
-                </Box>
                 {isEditing ? (
                   <TextField
                     fullWidth
@@ -348,17 +395,16 @@ const ParentProfile: React.FC = () => {
                     size="small"
                   />
                 ) : (
-                  <Typography variant="body1">{user.phone}</Typography>
-                )}
-              </Grid>
+                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                            {user.phone || 'Chưa cập nhật'}
+                          </Typography>
+                        )}
+                      </Box>
 
-              <Grid item xs={12} sm={6}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <PersonIcon sx={{ mr: 2, color: 'primary.main' }} />
-                  <Typography variant="body2" color="text.secondary">
+                      <Box sx={{ mb: 3 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
                     Giới tính
                   </Typography>
-                </Box>
                 {isEditing ? (
                   <FormControl fullWidth size="small">
                     <Select
@@ -372,19 +418,30 @@ const ParentProfile: React.FC = () => {
                     </Select>
                   </FormControl>
                 ) : (
-                  <Typography variant="body1">
+                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
                     {userFormData.gender === 'male' ? 'Nam' : userFormData.gender === 'female' ? 'Nữ' : 'Khác'}
                   </Typography>
                 )}
+                      </Box>
+
+                      <Box sx={{ mb: 3 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
+                          Vai trò
+                        </Typography>
+                        <Chip
+                          label="Phụ huynh"
+                          color="primary"
+                          size="small"
+                        />
+                      </Box>
               </Grid>
 
+                    {/* Address Field - Full Width */}
               <Grid item xs={12}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <LocationIcon sx={{ mr: 2, color: 'primary.main' }} />
-                  <Typography variant="body2" color="text.secondary">
+                      <Box sx={{ mb: 3 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
                     Địa chỉ
                   </Typography>
-                </Box>
                 {isEditing ? (
                   <TextField
                     fullWidth
@@ -397,26 +454,20 @@ const ParentProfile: React.FC = () => {
                     size="small"
                   />
                 ) : (
-                  <Typography variant="body1">{user.address || 'Chưa cập nhật'}</Typography>
+                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                            {user.address || 'Chưa cập nhật'}
+                          </Typography>
                 )}
-              </Grid>
+                      </Box>
             </Grid>
 
-            <Divider sx={{ my: 3 }} />
-
-            <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-              Thông tin phụ huynh
-            </Typography>
-
-            <Grid container spacing={3}>
+                    {/* Parent Specific Fields - Full Width */}
+                    {isEditing && (
               <Grid item xs={12}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <VisibilityIcon sx={{ mr: 2, color: 'primary.main' }} />
-                  <Typography variant="body2" color="text.secondary">
+                        <Box sx={{ mb: 3 }}>
+                          <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
                     Quyền xem thông tin giáo viên
                   </Typography>
-                </Box>
-                {isEditing ? (
                   <FormControlLabel
                     control={
                       <Switch
@@ -427,22 +478,102 @@ const ParentProfile: React.FC = () => {
                     }
                     label={parentFormData.canSeeTeacherInfo ? 'Có thể xem thông tin giáo viên' : 'Không thể xem thông tin giáo viên'}
                   />
-                ) : (
-                  <Chip
-                    label={parentFormData.canSeeTeacherInfo ? 'Có thể xem thông tin giáo viên' : 'Không thể xem thông tin giáo viên'}
-                    color={parentFormData.canSeeTeacherInfo ? 'success' : 'default'}
-                  />
+                        </Box>
+                      </Grid>
                 )}
               </Grid>
-            </Grid>
 
-            {isEditing && (
-              <Box sx={{ display: 'flex', gap: 2, mt: 4, justifyContent: 'flex-end' }}>
+                  {/* Action Buttons */}
+                  <Box sx={{ display: 'flex', gap: 2, mt: 4, flexWrap: 'wrap' }}>
+                    <Button
+                      variant="outlined"
+                      startIcon={<VisibilityIcon />}
+                      sx={{
+                        borderRadius: 2,
+                        px: 3,
+                        py: 1,
+                        borderColor: '#3b82f6',
+                        color: '#3b82f6',
+                        '&:hover': {
+                          borderColor: '#2563eb',
+                          bgcolor: '#eff6ff'
+                        }
+                      }}
+                    >
+                      Xem thông tin con
+                    </Button>
+
+                    <Button
+                      variant="outlined"
+                      startIcon={<LockIcon />}
+                      sx={{
+                        borderRadius: 2,
+                        px: 3,
+                        py: 1,
+                        borderColor: '#3b82f6',
+                        color: '#3b82f6',
+                        '&:hover': {
+                          borderColor: '#2563eb',
+                          bgcolor: '#eff6ff'
+                        }
+                      }}
+                    >
+                      Đổi mật khẩu
+                    </Button>
+
+                    <Button
+                      variant="outlined"
+                      startIcon={<VerifiedUserIcon />}
+                      sx={{
+                        borderRadius: 2,
+                        px: 3,
+                        py: 1,
+                        borderColor: '#3b82f6',
+                        color: '#3b82f6',
+                        '&:hover': {
+                          borderColor: '#2563eb',
+                          bgcolor: '#eff6ff'
+                        }
+                      }}
+                    >
+                      Xác thực email
+                    </Button>
+
+                    {!isEditing ? (
+                      <Button
+                        variant="contained"
+                        startIcon={<EditIcon />}
+                        onClick={() => setIsEditing(true)}
+                        sx={{
+                          borderRadius: 2,
+                          px: 3,
+                          py: 1,
+                          bgcolor: '#3b82f6',
+                          '&:hover': {
+                            bgcolor: '#2563eb'
+                          }
+                        }}
+                      >
+                        Chỉnh sửa
+                      </Button>
+                    ) : (
+                      <Box sx={{ display: 'flex', gap: 2 }}>
                 <Button
                   variant="outlined"
                   startIcon={<CancelIcon />}
                   onClick={handleCancel}
                   disabled={loading}
+                          sx={{
+                            borderRadius: 2,
+                            px: 3,
+                            py: 1,
+                            borderColor: '#64748b',
+                            color: '#64748b',
+                            '&:hover': {
+                              borderColor: '#475569',
+                              bgcolor: '#f1f5f9'
+                            }
+                          }}
                 >
                   Hủy
                 </Button>
@@ -451,15 +582,28 @@ const ParentProfile: React.FC = () => {
                   startIcon={loading ? <CircularProgress size={20} /> : <SaveIcon />}
                   onClick={handleSave}
                   disabled={loading}
+                          sx={{
+                            borderRadius: 2,
+                            px: 3,
+                            py: 1,
+                            bgcolor: '#3b82f6',
+                            '&:hover': {
+                              bgcolor: '#2563eb'
+                            }
+                          }}
                 >
                   {loading ? 'Đang lưu...' : 'Lưu thay đổi'}
                 </Button>
               </Box>
             )}
+                  </Box>
           </CardContent>
         </Card>
+            </Grid>
+          </Grid>
+        </Box>
       </Box>
-    </Box>
+    </DashboardLayout>
   );
 };
 
