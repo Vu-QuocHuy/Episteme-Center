@@ -3,10 +3,12 @@ import { validateEmail, validatePhone, validateDayOfBirth, validateAddress, vali
 export interface ParentFormData {
   name: string;
   email: string;
+  password: string;
   phone: string;
   dayOfBirth: string;
   address: string;
   gender: string;
+  canSeeTeacherInfo: boolean;
 }
 
 export interface ParentUpdateData {
@@ -16,10 +18,12 @@ export interface ParentUpdateData {
 export interface ParentValidationErrors {
   name?: string;
   email?: string;
+  password?: string;
   phone?: string;
   dayOfBirth?: string;
   address?: string;
   gender?: string;
+  canSeeTeacherInfo?: string;
 }
 
 export interface ParentUpdateErrors {
@@ -29,20 +33,26 @@ export interface ParentUpdateErrors {
 // Có thể mở rộng thêm nếu cần validate riêng cho parent
 
 // Validate toàn bộ form phụ huynh
-export function validateParent(form: ParentFormData): ParentValidationErrors {
+export function validateParent(form: ParentFormData, isNewParent: boolean = false): ParentValidationErrors {
   const errors: ParentValidationErrors = {};
-  const nameError = validateName(form.name);
-  if (nameError) errors.name = nameError;
-  const emailError = validateEmail(form.email);
-  if (emailError) errors.email = emailError;
-  const phoneError = validatePhone(form.phone);
-  if (phoneError) errors.phone = phoneError;
-  const dobError = validateDayOfBirth(form.dayOfBirth);
-  if (dobError) errors.dayOfBirth = dobError;
-  const addressError = validateAddress(form.address);
-  if (addressError) errors.address = addressError;
-  const genderError = validateGender(form.gender);
-  if (genderError) errors.gender = genderError;
+
+  // Tạm thời bỏ validate khi tạo mới
+  if (!isNewParent) {
+    const nameError = validateName(form.name);
+    if (nameError) errors.name = nameError;
+    const emailError = validateEmail(form.email);
+    if (emailError) errors.email = emailError;
+
+    const phoneError = validatePhone(form.phone);
+    if (phoneError) errors.phone = phoneError;
+    const dobError = validateDayOfBirth(form.dayOfBirth);
+    if (dobError) errors.dayOfBirth = dobError;
+    const addressError = validateAddress(form.address);
+    if (addressError) errors.address = addressError;
+    const genderError = validateGender(form.gender);
+    if (genderError) errors.gender = genderError;
+  }
+
   return errors;
 }
 

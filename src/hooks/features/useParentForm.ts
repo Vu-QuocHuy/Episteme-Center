@@ -97,7 +97,8 @@ export const useParentForm = (): UseParentFormReturn => {
   };
 
   const handleSubmit = async (selectedParent?: Parent | null, onSuccess?: () => void): Promise<{ success: boolean; message?: string }> => {
-    const errors = validateParent(form);
+    const isNewParent = !selectedParent;
+    const errors = validateParent(form, isNewParent);
 
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);

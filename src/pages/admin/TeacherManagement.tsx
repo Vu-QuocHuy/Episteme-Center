@@ -134,6 +134,8 @@ const TeacherManagement: React.FC = () => {
   };
 
   const handleAskDeleteTeacher = (teacher: Teacher): void => {
+    console.log('🔍 Teacher to delete:', teacher);
+    console.log('🔍 Teacher ID:', teacher.id);
     setTeacherToDelete(teacher);
     setOpenDeleteDialog(true);
   };
@@ -143,7 +145,7 @@ const TeacherManagement: React.FC = () => {
     setTeacherToDelete(null);
   };
 
-    const handleFormSubmit = async (teacherData: Partial<Teacher>): Promise<void> => {
+  const handleFormSubmit = async (teacherData: Partial<Teacher>): Promise<void> => {
     try {
       if (selectedTeacher) {
         // Update existing teacher
@@ -169,7 +171,9 @@ const TeacherManagement: React.FC = () => {
   const handleDeleteTeacher = async (): Promise<void> => {
     if (!teacherToDelete || !deleteTeacher) return;
 
-    const result = await deleteTeacher(teacherToDelete.id);
+    const teacherId = teacherToDelete.id || teacherToDelete.teacher_id;
+    console.log('🗑️ Deleting teacher with ID:', teacherId);
+    const result = await deleteTeacher(teacherId);
 
     if (result.success) {
       setSnackbar({ open: true, message: result.message, severity: 'success' });

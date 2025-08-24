@@ -172,9 +172,10 @@ instance.interceptors.response.use(
                             // Normalize role field
                             if (userData.role && typeof userData.role === 'object' && 'id' in userData.role) {
                                 const roleId = (userData.role as any).id;
-                                userData.role = roleId === 1 ? 'admin' :
+                                (userData as any).role = roleId === 1 ? 'admin' :
                                               roleId === 2 ? 'teacher' :
-                                              roleId === 3 ? 'parent' : 'student';
+                                              roleId === 3 ? 'parent' :
+                                              roleId === 4 ? 'student' : 'unknown';
                             }
                             localStorage.setItem('userData', JSON.stringify(userData));
                         }

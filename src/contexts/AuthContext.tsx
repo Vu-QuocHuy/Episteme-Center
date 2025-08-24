@@ -147,9 +147,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Normalize role field on restore from localStorage
         if (user.role && typeof user.role === 'object' && 'id' in user.role) {
           const roleId = (user.role as any).id;
-          user.role = roleId === 1 ? 'admin' :
+          (user as any).role = roleId === 1 ? 'admin' :
                     roleId === 2 ? 'teacher' :
-                    roleId === 3 ? 'student' : 'parent';
+                    roleId === 3 ? 'parent' :
+                    roleId === 4 ? 'student' : 'unknown';
         }
 
         // Nếu là parent và thiếu permissions thì bổ sung mặc định
@@ -187,9 +188,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           // Normalize role field on restore from localStorage
           if (user.role && typeof user.role === 'object' && 'id' in user.role) {
             const roleId = (user.role as any).id;
-            user.role = roleId === 1 ? 'admin' :
+            (user as any).role = roleId === 1 ? 'admin' :
                       roleId === 2 ? 'teacher' :
-                      roleId === 3 ? 'student' : 'parent';
+                      roleId === 3 ? 'parent' :
+                      roleId === 4 ? 'student' : 'unknown';
           }
 
           const response = await refreshTokenAPI(refreshToken);
@@ -338,9 +340,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (userData.role && typeof userData.role === 'object' && 'id' in userData.role) {
         // If role is an object with id, extract the id as the role string
         const roleId = (userData.role as any).id;
-        userData.role = roleId === 1 ? 'admin' :
-                      roleId === 2 ? 'teacher' :
-                      roleId === 3 ? 'student' : 'parent';
+                    (userData as any).role = roleId === 1 ? 'admin' :
+                          roleId === 2 ? 'teacher' :
+                          roleId === 3 ? 'parent' :
+                          roleId === 4 ? 'student' : 'unknown';
       }
 
       console.log('✅ Login successful:', {
@@ -458,9 +461,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           // Normalize role field
           if (userData.role && typeof userData.role === 'object' && 'id' in userData.role) {
             const roleId = (userData.role as any).id;
-            userData.role = roleId === 1 ? 'admin' :
+            (userData as any).role = roleId === 1 ? 'admin' :
                           roleId === 2 ? 'teacher' :
-                          roleId === 3 ? 'parent' : 'student';
+                          roleId === 3 ? 'parent' :
+                          roleId === 4 ? 'student' : 'unknown';
           }
           localStorage.setItem('userData', JSON.stringify(userData));
         }

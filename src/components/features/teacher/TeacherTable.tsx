@@ -23,7 +23,7 @@ import { Teacher } from '../../../types';
 interface TeacherTableProps {
   teachers: Teacher[];
   onEdit: (teacher: Teacher) => void;
-  onDelete: (teacherId: string) => void;
+  onDelete: (teacher: Teacher) => void;
   onViewDetails: (teacher: Teacher) => void;
   loading?: boolean;
 }
@@ -89,7 +89,7 @@ const TeacherTable: React.FC<TeacherTableProps> = ({
           </TableHead>
           <TableBody>
             {teachers && Array.isArray(teachers) && teachers.map((teacher) => (
-              <TableRow key={teacher.id} hover sx={{
+              <TableRow key={teacher.id || teacher.teacher_id} hover sx={{
                 '& .MuiTableCell-root': { color: '#000000 !important' },
                 '& .MuiTypography-root': { color: '#000000 !important' },
                 '& .MuiTableCell-root .MuiTypography-root': { color: '#000000 !important' },
@@ -161,7 +161,7 @@ const TeacherTable: React.FC<TeacherTableProps> = ({
                     </IconButton>
                     <IconButton
                       size="small"
-                      onClick={() => onDelete(teacher.id)}
+                      onClick={() => onDelete(teacher)}
                       sx={{ color: '#f44336' }}
                     >
                       <DeleteIcon />

@@ -3,40 +3,20 @@ import { Box, CircularProgress, Alert } from '@mui/material';
 import dayjs, { Dayjs } from 'dayjs';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
 import ScheduleCalendar from '../../components/common/ScheduleCalendar';
-import { getTeacherScheduleAPI, getMyClassesAPI } from '../../services/api';
+import { getTeacherScheduleAPI, TeacherScheduleClass } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 
-interface Schedule {
-  startDate: string;
-  endDate: string;
-  dayOfWeeks: number[];
-  timeSlots: {
-    startTime: string;
-    endTime: string;
-  };
-}
 
-interface ClassItem {
-  id: string;
-  name: string;
-  room?: string;
-  status: string;
-  grade?: string;
-  section?: string;
-  schedule: Schedule;
-}
 
 interface Lesson {
   date: string;
   className: string;
   time: string;
-  room?: string;
   teacher: string;
   type: string;
   classId: string;
-  status: string;
-  grade?: string;
-  section?: string;
+  grade: number;
+  section: number;
 }
 
 const Schedule: React.FC = () => {
@@ -58,58 +38,36 @@ const Schedule: React.FC = () => {
         setLoading(true);
         setError(null);
 
-        const teacherId = user?.teacherId;
+        const teacherId = user?.id;
         if (!teacherId) {
           throw new Error('No teacher ID available');
         }
 
-        let response = await getTeacherScheduleAPI(teacherId);
+        const response = await getTeacherScheduleAPI(teacherId);
 
-        // Nếu schedule API thất bại, thử getMyClassesAPI
-        if (!response?.data?.classes) {
-          try {
-            const classesResponse = await getMyClassesAPI();
-            if (classesResponse?.data?.classes) {
-              response = {
-                data: {
-                  classes: classesResponse.data.classes
-                },
-                status: 200,
-                statusText: 'OK',
-                headers: {},
-                config: {} as any
-              };
-            }
-          } catch (classesErr) {
-            console.error('getMyClassesAPI also failed:', classesErr);
-          }
-        }
-
-        if (response?.data?.classes) {
-          const classes: ClassItem[] = response.data.classes;
+        if (response?.data?.data) {
+          const classes: TeacherScheduleClass[] = response.data.data;
           const formattedLessons: Lesson[] = [];
 
-          classes.forEach((classItem: ClassItem) => {
+          classes.forEach((classItem: TeacherScheduleClass) => {
             if (classItem.schedule) {
               const { schedule } = classItem;
-              const startDate: Dayjs = dayjs(schedule.startDate);
-              const endDate: Dayjs = dayjs(schedule.endDate);
+              const startDate: Dayjs = dayjs(schedule.start_date);
+              const endDate: Dayjs = dayjs(schedule.end_date);
 
               // Sử dụng cách tiếp cận đơn giản như trang học sinh
               let currentDate: Dayjs = startDate;
               while (currentDate.isBefore(endDate) || currentDate.isSame(endDate, 'day')) {
-                const currentDay: number = currentDate.day(); // 0=Sunday, 1=Monday, ..., 6=Saturday
+                const currentDay: string = currentDate.day().toString(); // 0=Sunday, 1=Monday, ..., 6=Saturday
 
-                if (schedule.dayOfWeeks.includes(currentDay)) {
+                if (schedule.days_of_week.includes(currentDay)) {
                   const lesson: Lesson = {
                     date: currentDate.format('YYYY-MM-DD'),
                     className: classItem.name,
-                    time: `${schedule.timeSlots.startTime} - ${schedule.timeSlots.endTime}`,
-                    room: classItem.room,
+                    time: `${schedule.time_slots.start_time} - ${schedule.time_slots.end_time}`,
                     teacher: user.name,
                     type: 'teacher',
                     classId: classItem.id,
-                    status: classItem.status,
                     grade: classItem.grade,
                     section: classItem.section,
                   };
@@ -152,7 +110,7 @@ const Schedule: React.FC = () => {
     };
 
     fetchTeacherSchedule();
-  }, [user?.teacherId, user?.name]);
+  }, [user?.id, user?.name]);
 
   if (loading) {
     return (

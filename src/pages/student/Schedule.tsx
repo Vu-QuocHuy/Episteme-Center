@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Box, CircularProgress, Alert } from '@mui/material';
 import dayjs from 'dayjs';
 import { useAuth } from '../../contexts/AuthContext';
-import { getStudentScheduleAPI } from '../../services/api';
+import { getStudentScheduleAPI, StudentScheduleClass } from '../../services/api';
 import ScheduleCalendar from '../../components/common/ScheduleCalendar';
-import { Schedule as ScheduleType, ClassItem, Lesson } from '../../types';
+import { Lesson } from '../../types';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
 
 const Schedule: React.FC = () => {
@@ -18,53 +18,74 @@ const Schedule: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      let response;
-      try {
-        response = await getStudentScheduleAPI(user?.id || '');
-      } catch (scheduleError) {
-        console.warn('Student schedule API failed, falling back to classes API:', scheduleError);
-        setLessons([]);
-        return;
-      }
+      const response = await getStudentScheduleAPI(user?.id || '');
+      const lessons: Lesson[] = [];
 
-      if (response.data) {
-        const scheduleData = response.data;
-        const lessons: Lesson[] = [];
+      if (response.data && response.data.data) {
+        console.log('📅 Student schedule response:', response.data);
+        const scheduleData: StudentScheduleClass[] = response.data.data;
 
-        if (scheduleData.classes && Array.isArray(scheduleData.classes)) {
-          scheduleData.classes.forEach((classItem: ClassItem) => {
-            if (classItem.schedule && Array.isArray(classItem.schedule)) {
-              classItem.schedule.forEach((scheduleItem: ScheduleType) => {
-                // Convert schedule to lessons
-                const startDate = dayjs(scheduleItem.startDate);
-                const endDate = dayjs(scheduleItem.endDate);
-                let currentDate = startDate;
+        scheduleData.forEach((item: StudentScheduleClass) => {
+          const classData = item.class;
+          const schedule = classData.schedule;
 
-                while (currentDate.isBefore(endDate) || currentDate.isSame(endDate, 'day')) {
-                  if (scheduleItem.dayOfWeeks.includes(currentDate.day())) {
-                    lessons.push({
-                      date: currentDate.format('YYYY-MM-DD'),
-                      className: classItem.name,
-                      time: `${scheduleItem.timeSlots.startTime} - ${scheduleItem.timeSlots.endTime}`,
-                      room: classItem.room,
-                      teacher: classItem.teacher?.name || 'Chưa phân công',
-                      type: 'regular',
-                      classId: classItem.id,
-                      status: classItem.status,
-                      grade: classItem.grade,
-                      section: classItem.section
-                    });
-                  }
-                  currentDate = currentDate.add(1, 'day');
-                }
-              });
+          if (schedule) {
+            console.log('📅 Processing schedule for class:', classData.name);
+            console.log('📅 Start date:', schedule.start_date);
+            console.log('📅 End date:', schedule.end_date);
+            console.log('📅 Days of week:', schedule.days_of_week);
+
+            // Convert schedule to lessons
+            const startDate = dayjs(schedule.start_date);
+            const endDate = dayjs(schedule.end_date);
+            let currentDate = startDate;
+
+            console.log('📅 Parsed start date:', startDate.format('YYYY-MM-DD'));
+            console.log('📅 Parsed end date:', endDate.format('YYYY-MM-DD'));
+
+            while (currentDate.isBefore(endDate) || currentDate.isSame(endDate, 'day')) {
+              // Convert day of week from string to number (0 = Sunday, 1 = Monday, etc.)
+              const dayOfWeeks = schedule.days_of_week.map(day => parseInt(day));
+              const currentDay = currentDate.day();
+
+              console.log('📅 Checking date:', currentDate.format('YYYY-MM-DD'), 'Day:', currentDay, 'Days of week:', dayOfWeeks);
+
+              if (dayOfWeeks.includes(currentDay)) {
+                console.log('📅 ✅ Adding lesson for date:', currentDate.format('YYYY-MM-DD'));
+                const lessonDate = currentDate.format('YYYY-MM-DD');
+                console.log('📅 Creating lesson:', {
+                  date: lessonDate,
+                  className: classData.name,
+                  type: 'student'
+                });
+
+                lessons.push({
+                  date: lessonDate,
+                  className: classData.name,
+                  time: `${schedule.time_slots.start_time} - ${schedule.time_slots.end_time}`,
+                  room: '', // API không cung cấp room
+                  teacher: 'Chưa phân công', // API không cung cấp teacher info
+                  type: 'student',
+                  classId: classData.id,
+                  status: 'active', // Default status
+                  grade: classData.grade.toString(),
+                  section: classData.section.toString()
+                });
+
+                // Log thông tin giảm giá
+                console.log(`Lớp ${classData.name}: Giảm giá ${item.discountPercent}%`);
+              }
+              currentDate = currentDate.add(1, 'day');
             }
-          });
-        }
+          }
+        });
 
+        console.log('📅 Generated lessons:', lessons);
+        console.log('📅 Number of lessons:', lessons.length);
         setLessons(lessons);
       }
     } catch (error: any) {
+      console.error('Error fetching student schedule:', error);
       setError(error.response?.data?.message || 'Có lỗi xảy ra khi tải lịch học');
     } finally {
       setLoading(false);
@@ -72,10 +93,10 @@ const Schedule: React.FC = () => {
   };
 
   useEffect(() => {
-    if (user?.id || user?.name) {
+    if (user?.id) {
       fetchSchedule();
     }
-  }, [user?.id, user?.name]);
+  }, [user?.id]);
 
   if (loading) {
     return (
@@ -96,6 +117,9 @@ const Schedule: React.FC = () => {
       </DashboardLayout>
     );
   }
+
+  console.log('📅 Rendering ScheduleCalendar with lessons:', lessons);
+  console.log('📅 Lessons count:', lessons.length);
 
   return (
     <DashboardLayout role="student">

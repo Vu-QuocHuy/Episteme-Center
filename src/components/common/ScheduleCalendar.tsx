@@ -252,6 +252,19 @@ const ServerDay: React.FC<ServerDayProps> = ({ day, lessons, userType, selected,
   const hasLesson = lessons.some(l => {
     const isMatchingDay = dayjs(l.date).isSame(day, 'day');
     const isCorrectType = !l.type || l.type === userType;
+
+    // Debug log cho ngày hiện tại
+    if (dayjs().isSame(day, 'day')) {
+      console.log('🔍 ServerDay debug for today:', {
+        lessonDate: l.date,
+        lessonType: l.type,
+        userType: userType,
+        isMatchingDay,
+        isCorrectType,
+        className: l.className
+      });
+    }
+
     return isMatchingDay && isCorrectType;
   });
   const isToday = dayjs().isSame(day, 'day');
@@ -320,6 +333,8 @@ const ServerDay: React.FC<ServerDayProps> = ({ day, lessons, userType, selected,
 };
 
 const ScheduleCalendar: React.FC<ScheduleCalendarProps> = ({ lessons, title, userType }) => {
+  console.log('📅 ScheduleCalendar received:', { lessons, userType, lessonsCount: lessons.length });
+
   const [selectedDate, setSelectedDate] = useState<Dayjs>(dayjs());
   const [lessonsOfDay, setLessonsOfDay] = useState<Lesson[]>([]);
 

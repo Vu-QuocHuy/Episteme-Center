@@ -31,16 +31,17 @@ import {
 } from '@mui/icons-material';
 import { Parent, Student } from '../../../types';
 import { useParentForm } from '../../../hooks/features/useParentForm';
-import { getAllStudentsAPI } from '../../../services/api';
+import { getAllStudentsAPI, getParentByIdAPI } from '../../../services/api';
 
 interface ParentFormProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (parentData: Partial<Parent>) => Promise<void>;
+  onSubmit: () => Promise<void>;
   parent?: Parent | null;
   loading?: boolean;
+  onMessage?: (message: string, type: 'success' | 'error') => void;
 }
-const ParentForm: React.FC<ParentFormProps> = ({ open, onClose, onSubmit, parent, loading = false }) => {
+const ParentForm: React.FC<ParentFormProps> = ({ open, onClose, onSubmit, parent, loading = false, onMessage }) => {
   const {
     form,
     formErrors,
@@ -58,18 +59,28 @@ const ParentForm: React.FC<ParentFormProps> = ({ open, onClose, onSubmit, parent
   const [studentQuery, setStudentQuery] = useState<string>('');
   const [studentOptions, setStudentOptions] = useState<Student[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [refreshKey, setRefreshKey] = useState<number>(0);
   const busy = loading || formLoading;
 
   // Debounce search query
   const debouncedStudentQuery = useDebounce(studentQuery, 500);
 
   useEffect(() => {
+    console.log('🔄 useEffect triggered. parent:', !!parent, 'open:', open, 'tab:', tab);
     if (parent && open) {
+      console.log('📝 Setting up edit mode');
       setFormData(parent as any);
       setChildrenList((parent as any)?.students || []);
+      // Không reset tab khi đã mở dialog
     } else if (!open) {
+      console.log('❌ Dialog closed, resetting');
       resetForm();
       setChildrenList([]);
+      setTab(0); // Reset về tab đầu tiên khi đóng dialog
+    } else if (!parent && open) {
+      console.log('➕ Setting up add mode');
+      // Khi mở dialog thêm mới
+      setTab(0); // Chỉ hiển thị tab thông tin cơ bản
     }
   }, [parent, open, setFormData, resetForm]);
 
@@ -81,7 +92,7 @@ const ParentForm: React.FC<ParentFormProps> = ({ open, onClose, onSubmit, parent
         return;
       }
       try {
-        const res = await getAllStudentsAPI({ name: debouncedStudentQuery, limit: 10 });
+        const res = await getAllStudentsAPI({ name: debouncedStudentQuery, limit: 10, page: 1 });
         const data = (res as any)?.data?.data?.result || (res as any)?.data || [];
         if (active) setStudentOptions(data);
       } catch {
@@ -106,10 +117,7 @@ const ParentForm: React.FC<ParentFormProps> = ({ open, onClose, onSubmit, parent
   }, []);
 
   const submit = async () => {
-    const result = await handleSubmit(parent || null, () => {});
-    if (result.success) {
-      onClose();
-    }
+    await onSubmit();
   };
 
   const addChild = async () => {
@@ -125,11 +133,80 @@ const ParentForm: React.FC<ParentFormProps> = ({ open, onClose, onSubmit, parent
     }
   };
 
+  const addChildFromSearch = async (student: any) => {
+    if (!parent?.id || !student?.id) return;
+    const result = await handleAddChild(String(student.id), String(parent.id));
+    if (result.success) {
+      // Cập nhật danh sách con ngay lập tức
+      setChildrenList(prev => {
+        const exists = prev.some((s: any) => s.id === student.id);
+        return exists ? prev : [...prev, student as any];
+      });
+
+      // Hiển thị thông báo thành công
+      if (onMessage) {
+        onMessage(result.message, 'success');
+      }
+
+      // Refresh lại danh sách con từ API để đảm bảo đồng bộ
+      try {
+        const response = await getParentByIdAPI(parent.id);
+        if (response && response.data && response.data.data) {
+          const updatedParent = response.data.data;
+          setChildrenList(updatedParent.students || []);
+        }
+      } catch (error) {
+        console.error('Error refreshing children list:', error);
+      }
+    } else {
+      // Hiển thị thông báo lỗi
+      if (onMessage) {
+        onMessage(result.message, 'error');
+      }
+    }
+  };
+
   const removeChild = async (studentId: string) => {
     if (!parent?.id) return;
+
+    console.log('🗑️ Removing child:', studentId, 'from parent:', parent.id);
+    console.log('🗑️ Current children list:', childrenList);
+
     const result = await handleRemoveChild(String(studentId), String(parent.id));
+    console.log('🗑️ Remove result:', result);
+
     if (result.success) {
-      setChildrenList(prev => prev.filter((s: any) => String(s.id) !== String(studentId)));
+      // Cập nhật danh sách con ngay lập tức
+      const updatedList = childrenList.filter((s: any) => String(s.id) !== String(studentId));
+      console.log('🗑️ Updated children list:', updatedList);
+      setChildrenList(updatedList);
+
+      // Hiển thị thông báo thành công
+      if (onMessage) {
+        onMessage(result.message, 'success');
+      }
+
+      // Refresh lại danh sách con từ API để đảm bảo đồng bộ
+      try {
+        console.log('🔄 Refreshing children list from API...');
+        const response = await getParentByIdAPI(parent.id);
+        console.log('🔄 API response:', response);
+
+        if (response && response.data && response.data.data) {
+          const updatedParent = response.data.data;
+          const freshChildrenList = updatedParent.students || [];
+          console.log('🔄 Fresh children list from API:', freshChildrenList);
+          setChildrenList(freshChildrenList);
+          setRefreshKey(prev => prev + 1); // Force re-render
+        }
+      } catch (error) {
+        console.error('Error refreshing children list:', error);
+      }
+    } else {
+      // Hiển thị thông báo lỗi
+      if (onMessage) {
+        onMessage(result.message, 'error');
+      }
     }
   };
 
@@ -170,7 +247,7 @@ const ParentForm: React.FC<ParentFormProps> = ({ open, onClose, onSubmit, parent
             {parent ? 'Chỉnh sửa thông tin phụ huynh' : 'Thêm phụ huynh mới'}
           </Typography>
           <Typography variant="body2" sx={{ opacity: 0.9 }}>
-            Cập nhật thông tin phụ huynh
+            {parent ? 'Cập nhật thông tin phụ huynh và quản lý con cái' : 'Nhập thông tin cơ bản của phụ huynh mới'}
           </Typography>
         </Box>
         <Box sx={{ bgcolor: 'rgba(255,255,255,0.2)', borderRadius: '50%', p: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -179,13 +256,19 @@ const ParentForm: React.FC<ParentFormProps> = ({ open, onClose, onSubmit, parent
       </DialogTitle>
 
       <DialogContent sx={{ p: 0 }}>
-        <Box sx={{ px: 4, pt: 2 }}>
-          <Tabs value={tab} onChange={(_e, v) => setTab(v)} sx={{ mb: 2 }}>
-            <Tab label="Thông tin cơ bản" />
-            <Tab label="Quản lý con cái" />
-          </Tabs>
+        {parent && (
+          <Box sx={{ px: 4, pt: 2 }}>
+            <Tabs value={tab} onChange={(_e, v) => {
+              console.log('🔄 Tab changed from', tab, 'to', v);
+              setTab(v);
+            }} sx={{ mb: 2 }}>
+              <Tab label="Thông tin cơ bản" />
+              <Tab label="Quản lý con cái" />
+            </Tabs>
           </Box>
+        )}
 
+        {/* Tab thông tin cơ bản - hiển thị cho cả thêm mới và chỉnh sửa */}
         {tab === 0 && (
           <Box sx={{ p: 4 }}>
             <Paper sx={{ p: 3, borderRadius: 2, background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)', border: '1px solid #e0e6ed' }}>
@@ -196,10 +279,21 @@ const ParentForm: React.FC<ParentFormProps> = ({ open, onClose, onSubmit, parent
               <Box sx={{ p: 2, bgcolor: 'white', borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
                 <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
-                    <TextField fullWidth label="Họ và tên" name="name" value={form.name} onChange={handleChange} required error={!!formErrors.name} helperText={formErrors.name} />
+                    <TextField fullWidth label="Họ và tên" name="name" value={form.name} onChange={handleChange} />
             </Grid>
             <Grid item xs={12} md={6}>
-                    <TextField fullWidth label="Email" name="email" type="email" value={form.email} onChange={handleChange} required error={!!formErrors.email} helperText={formErrors.email} />
+                    <TextField fullWidth label="Email" name="email" type="email" value={form.email} onChange={handleChange} />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                       label="Mật khẩu"
+                       name="password"
+                       type="password"
+                       value={form.password}
+                       onChange={handleChange}
+                       helperText={!parent ? 'Mật khẩu bắt buộc khi tạo mới' : 'Để trống nếu không thay đổi'}
+              />
             </Grid>
             <Grid item xs={12} md={6}>
                     <TextField fullWidth label="Ngày sinh" name="dayOfBirth" type="date" value={toDisplayDate(form.dayOfBirth)} onChange={handleChange} InputLabelProps={{ shrink: true }} />
@@ -223,15 +317,16 @@ const ParentForm: React.FC<ParentFormProps> = ({ open, onClose, onSubmit, parent
               <Box display="flex" alignItems="center" gap={1}>
                       <Checkbox checked={!!form.canSeeTeacherInfo} onChange={(e) => handleChange({ target: { name: 'canSeeTeacherInfo', value: e.target.checked, type: 'checkbox', checked: e.target.checked } } as any)} />
                       <Typography>Quyền xem thông tin giáo viên</Typography>
-                    </Box>
-                  </Grid>
-                </Grid>
               </Box>
+            </Grid>
+          </Grid>
+        </Box>
             </Paper>
           </Box>
         )}
 
-        {tab === 1 && (
+        {/* Tab quản lý con cái - chỉ hiển thị khi chỉnh sửa */}
+        {tab === 1 && parent && (
           <Box sx={{ p: 4 }}>
             <Paper sx={{ p: 3, borderRadius: 2, background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)', border: '1px solid #e0e6ed' }}>
               <Typography variant="h6" gutterBottom sx={{ color: '#2c3e50', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
@@ -243,10 +338,11 @@ const ParentForm: React.FC<ParentFormProps> = ({ open, onClose, onSubmit, parent
                 {/* Danh sách con hiện tại */}
                 <Box sx={{ mb: 3 }}>
                   <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: '#2c3e50' }}>
-                    Danh sách con hiện tại
+                    Danh sách con hiện tại ({childrenList.length} con)
                   </Typography>
+                  {(() => { console.log('👥 Rendering children list:', childrenList, 'refreshKey:', refreshKey); return null; })()}
                   {childrenList.length > 0 ? (
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    <Box key={refreshKey} sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                       {childrenList.map((child: any) => (
                         <Box
                           key={child.id}
@@ -310,49 +406,103 @@ const ParentForm: React.FC<ParentFormProps> = ({ open, onClose, onSubmit, parent
                   <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: '#2c3e50' }}>
                     Thêm con mới
                   </Typography>
-                  <Autocomplete
-                    options={studentOptions}
-                    getOptionLabel={(o: any) => o?.name || ''}
-                    value={selectedStudent}
-                    onChange={(_e, v) => setSelectedStudent(v)}
-                    onInputChange={(_e, v) => setStudentQuery(v)}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        placeholder="Tìm kiếm học sinh"
-                        fullWidth
-                        sx={{
-                          '& .MuiOutlinedInput-root': {
-                            borderRadius: 2,
-                            '&:hover .MuiOutlinedInput-notchedOutline': {
-                              borderColor: '#667eea'
-                            },
-                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                              borderColor: '#667eea'
-                            }
-                          }
-                        }}
-                      />
-                    )}
-                    renderOption={(props, option: any) => (
-                      <Box component="li" {...props}>
-                        <Box>
-                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                            {option.name}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {option.email}
-                          </Typography>
-                        </Box>
-                      </Box>
-                    )}
+
+                  {/* Ô tìm kiếm */}
+                  <TextField
+                    fullWidth
+                    placeholder="Tìm kiếm học sinh"
+                    value={studentQuery}
+                    onChange={(e) => setStudentQuery(e.target.value)}
                     sx={{
-                      '& .MuiAutocomplete-paper': {
+                      mb: 2,
+                      '& .MuiOutlinedInput-root': {
                         borderRadius: 2,
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                        '&:hover .MuiOutlinedInput-notchedOutline': {
+                          borderColor: '#667eea'
+                        },
+                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                          borderColor: '#667eea'
+                        }
                       }
                     }}
                   />
+
+                  {/* Kết quả tìm kiếm */}
+                  {studentQuery && studentQuery.length >= 2 && (
+                    <Box>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1, color: '#2c3e50' }}>
+                        Kết quả tìm kiếm:
+                      </Typography>
+                      {studentOptions.length > 0 ? (
+                        <Box sx={{ maxHeight: 200, overflowY: 'auto', border: '1px solid #e0e6ed', borderRadius: 2 }}>
+                          {studentOptions.map((student: any) => {
+                            // Kiểm tra xem học sinh đã được thêm chưa
+                            const isAlreadyAdded = childrenList.some((child: any) => child.id === student.id);
+
+                            return (
+                              <Box
+                                key={student.id}
+                                sx={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                  p: 2,
+                                  borderBottom: '1px solid #e0e6ed',
+                                  '&:last-child': {
+                                    borderBottom: 'none'
+                                  },
+                                  '&:hover': {
+                                    bgcolor: '#f8f9fa'
+                                  }
+                                }}
+                              >
+                                <Box>
+                                  <Typography variant="body1" sx={{ fontWeight: 500, color: '#2c3e50' }}>
+                                    {student.name}
+                                  </Typography>
+                                  <Typography variant="caption" color="text.secondary">
+                                    {student.email}
+                                  </Typography>
+                                </Box>
+                                <Button
+                                  variant="contained"
+                                  size="small"
+                                  disabled={isAlreadyAdded}
+                                  onClick={() => addChildFromSearch(student)}
+                                  sx={{
+                                    borderRadius: 2,
+                                    px: 2,
+                                    py: 0.5,
+                                    bgcolor: isAlreadyAdded ? '#6c757d' : '#007bff',
+                                    color: 'white',
+                                    '&:hover': {
+                                      bgcolor: isAlreadyAdded ? '#6c757d' : '#0056b3'
+                                    }
+                                  }}
+                                >
+                                  {isAlreadyAdded ? 'Đã thêm' : 'Thêm'}
+                                </Button>
+                              </Box>
+                            );
+                          })}
+                        </Box>
+                      ) : (
+                        <Box
+                          sx={{
+                            p: 2,
+                            borderRadius: 2,
+                            border: '1px dashed #e0e6ed',
+                            bgcolor: '#f8f9fa',
+                            textAlign: 'center'
+                          }}
+                        >
+                          <Typography variant="body2" color="text.secondary">
+                            Không tìm thấy học sinh nào
+                          </Typography>
+                        </Box>
+                      )}
+                    </Box>
+                  )}
                 </Box>
               </Box>
             </Paper>
@@ -380,7 +530,7 @@ const ParentForm: React.FC<ParentFormProps> = ({ open, onClose, onSubmit, parent
           Hủy
         </Button>
         <Button
-          onClick={tab === 1 ? handleClose : submit}
+          onClick={parent && tab === 1 ? handleClose : submit}
           variant="contained"
           startIcon={busy ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
           disabled={busy}
@@ -394,7 +544,7 @@ const ParentForm: React.FC<ParentFormProps> = ({ open, onClose, onSubmit, parent
             }
           }}
         >
-          {tab === 1 ? 'Đóng' : (busy ? 'Đang lưu...' : 'Cập nhật')}
+          {parent && tab === 1 ? 'Đóng' : (busy ? 'Đang lưu...' : (parent ? 'Cập nhật' : 'Thêm mới'))}
         </Button>
       </DialogActions>
     </Dialog>

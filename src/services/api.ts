@@ -68,6 +68,53 @@ export interface TeacherData {
   isActive?: boolean;
 }
 
+export interface TeacherScheduleClass {
+  id: string;
+  name: string;
+  grade: number;
+  section: number;
+  schedule: {
+    start_date: string;
+    end_date: string;
+    days_of_week: string[];
+    time_slots: {
+      start_time: string;
+      end_time: string;
+    };
+  };
+}
+
+export interface TeacherScheduleResponse {
+  statusCode: number;
+  message: string;
+  data: TeacherScheduleClass[];
+}
+
+export interface StudentScheduleClass {
+  discountPercent: number;
+  class: {
+    id: string;
+    name: string;
+    grade: number;
+    section: number;
+    schedule: {
+      start_date: string;
+      end_date: string;
+      days_of_week: string[];
+      time_slots: {
+        start_time: string;
+        end_time: string;
+      };
+    };
+  };
+}
+
+export interface StudentScheduleResponse {
+  statusCode: number;
+  message: string;
+  data: StudentScheduleClass[];
+}
+
 export interface ParentData {
   name: string;
   email?: string;
@@ -458,7 +505,11 @@ export const updateTeacherAPI = (id: string, data: Partial<TeacherData>) => {
   });
 };
 
-export const deleteTeacherAPI = (id: string) => axiosInstance.delete(API_CONFIG.ENDPOINTS.TEACHERS.DELETE(id));
+export const deleteTeacherAPI = (id: string) => {
+  console.log('🔗 deleteTeacherAPI called with ID:', id);
+  console.log('🔗 Endpoint:', API_CONFIG.ENDPOINTS.TEACHERS.DELETE(id));
+  return axiosInstance.delete(API_CONFIG.ENDPOINTS.TEACHERS.DELETE(id));
+};
 
 // Teacher schedule API
 export const getTeacherScheduleAPI = (id: string) => axiosInstance.get(`/teachers/schedule/${id}`);
@@ -503,8 +554,16 @@ export const getAllParentsAPI = (params?: ApiParams) => {
 };
 
 export const getParentByIdAPI = (id: string) => {
+  console.log('🔍 getParentByIdAPI called with ID:', id);
+  console.log('🔍 Endpoint:', API_CONFIG.ENDPOINTS.PARENTS.GET_BY_ID(id));
   return axiosInstance.get(API_CONFIG.ENDPOINTS.PARENTS.GET_BY_ID(id), {
     headers: { 'x-lang': 'vi' }
+  }).then(response => {
+    console.log('✅ getParentByIdAPI success:', response);
+    return response;
+  }).catch(error => {
+    console.error('❌ getParentByIdAPI error:', error);
+    throw error;
   });
 };
 

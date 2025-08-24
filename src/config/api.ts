@@ -181,7 +181,7 @@ export const API_CONFIG: ApiConfig = {
       UPDATE: (id: string) => `/students/${id}`,
       DELETE: (id: string) => `/students/${id}`,
       MONTHLY_CHANGES: '/students/monthly-changes',
-      SCHEDULE: (id: string) => `/students/${id}/schedule`,
+      SCHEDULE: (id: string) => `/students/schedule/${id}`,
       ATTENDANCE: (id: string) => `/students/${id}/attendance`,
     },
     // Class endpoints

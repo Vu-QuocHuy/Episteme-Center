@@ -218,34 +218,34 @@ const TeacherProfile: React.FC = () => {
   if (!user) {
     return (
       <DashboardLayout role="teacher">
-        <Box sx={commonStyles.pageContainer}>
-          <CircularProgress />
-        </Box>
+      <Box sx={commonStyles.pageContainer}>
+        <CircularProgress />
+      </Box>
       </DashboardLayout>
     );
   }
 
   return (
     <DashboardLayout role="teacher">
-      <Box sx={commonStyles.pageContainer}>
+    <Box sx={commonStyles.pageContainer}>
         <Box sx={commonStyles.contentContainer}>
           <Box sx={commonStyles.pageHeader}>
             <Typography sx={commonStyles.pageTitle}>
               Trang cá nhân
-            </Typography>
+        </Typography>
           </Box>
 
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
 
-          {success && (
-            <Alert severity="success" sx={{ mb: 2 }}>
-              {success}
-            </Alert>
-          )}
+        {success && (
+          <Alert severity="success" sx={{ mb: 2 }}>
+            {success}
+          </Alert>
+        )}
 
           <Grid container spacing={3}>
             {/* Left Panel - Profile Summary */}
@@ -259,18 +259,18 @@ const TeacherProfile: React.FC = () => {
                 <CardContent sx={{ p: 4, textAlign: 'center' }}>
                   {/* Profile Picture */}
                   <Box sx={{ position: 'relative', display: 'inline-block', mb: 3 }}>
-                    <Avatar
-                      sx={{
+              <Avatar
+                sx={{
                         width: 120,
                         height: 120,
-                        bgcolor: 'primary.main',
+                  bgcolor: 'primary.main',
                         fontSize: '3rem',
                         border: '4px solid white',
                         boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-                      }}
-                    >
-                      {getInitials(user.name)}
-                    </Avatar>
+                }}
+              >
+                {getInitials(user.name)}
+              </Avatar>
                     <Box
                       sx={{
                         position: 'absolute',
@@ -296,8 +296,8 @@ const TeacherProfile: React.FC = () => {
 
                   {/* User Name */}
                   <Typography variant="h5" sx={{ fontWeight: 600, mb: 1, color: '#1e293b' }}>
-                    {user.name}
-                  </Typography>
+                  {user.name}
+                </Typography>
 
                   {/* User Email */}
                   <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
@@ -311,12 +311,12 @@ const TeacherProfile: React.FC = () => {
                       color="primary"
                       size="small"
                     />
-                    <Chip
-                      label={teacherFormData.isActive ? 'Đang hoạt động' : 'Tạm ngưng'}
-                      color={teacherFormData.isActive ? 'success' : 'default'}
-                      size="small"
-                    />
-                  </Box>
+                  <Chip
+                    label={teacherFormData.isActive ? 'Đang hoạt động' : 'Tạm ngưng'}
+                    color={teacherFormData.isActive ? 'success' : 'default'}
+                    size="small"
+                  />
+                </Box>
                 </CardContent>
               </Card>
             </Grid>
@@ -338,7 +338,7 @@ const TeacherProfile: React.FC = () => {
                         <Typography variant="body1" sx={{ fontWeight: 500 }}>
                           {user.email}
                         </Typography>
-                      </Box>
+              </Box>
 
                       <Box sx={{ mb: 3 }}>
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
@@ -349,12 +349,12 @@ const TeacherProfile: React.FC = () => {
                           color={teacherFormData.isActive ? 'success' : 'default'}
                           size="small"
                         />
-                      </Box>
+            </Box>
 
                       <Box sx={{ mb: 3 }}>
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
                           Trạng thái email
-                        </Typography>
+            </Typography>
                         <Chip
                           label="Chưa xác thực"
                           color="warning"
@@ -365,41 +365,41 @@ const TeacherProfile: React.FC = () => {
                     </Grid>
 
                     {/* Right Column */}
-                    <Grid item xs={12} sm={6}>
+              <Grid item xs={12} sm={6}>
                       <Box sx={{ mb: 3 }}>
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
-                          Họ và tên
-                        </Typography>
-                        {isEditing ? (
-                          <TextField
-                            fullWidth
-                            value={userFormData.name}
-                            onChange={(e) => handleUserInputChange('name', e.target.value)}
-                            error={!!userErrors.name}
-                            helperText={userErrors.name}
-                            size="small"
-                          />
-                        ) : (
+                    Họ và tên
+                  </Typography>
+                {isEditing ? (
+                  <TextField
+                    fullWidth
+                    value={userFormData.name}
+                    onChange={(e) => handleUserInputChange('name', e.target.value)}
+                    error={!!userErrors.name}
+                    helperText={userErrors.name}
+                    size="small"
+                  />
+                ) : (
                           <Typography variant="body1" sx={{ fontWeight: 500 }}>
                             {user.name}
                           </Typography>
                         )}
-                      </Box>
+                </Box>
 
                       <Box sx={{ mb: 3 }}>
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
-                          Số điện thoại
-                        </Typography>
-                        {isEditing ? (
-                          <TextField
-                            fullWidth
-                            value={userFormData.phone}
-                            onChange={(e) => handleUserInputChange('phone', e.target.value)}
-                            error={!!userErrors.phone}
-                            helperText={userErrors.phone}
-                            size="small"
-                          />
-                        ) : (
+                    Số điện thoại
+                  </Typography>
+                {isEditing ? (
+                  <TextField
+                    fullWidth
+                    value={userFormData.phone}
+                    onChange={(e) => handleUserInputChange('phone', e.target.value)}
+                    error={!!userErrors.phone}
+                    helperText={userErrors.phone}
+                    size="small"
+                  />
+                ) : (
                           <Typography variant="body1" sx={{ fontWeight: 500 }}>
                             {user.phone || 'Chưa cập nhật'}
                           </Typography>
@@ -408,25 +408,25 @@ const TeacherProfile: React.FC = () => {
 
                       <Box sx={{ mb: 3 }}>
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
-                          Giới tính
-                        </Typography>
-                        {isEditing ? (
-                          <FormControl fullWidth size="small">
-                            <Select
-                              value={userFormData.gender}
-                              onChange={(e) => handleUserInputChange('gender', e.target.value)}
-                              error={!!userErrors.gender}
-                            >
-                              <MenuItem value="male">Nam</MenuItem>
-                              <MenuItem value="female">Nữ</MenuItem>
-                              <MenuItem value="other">Khác</MenuItem>
-                            </Select>
-                          </FormControl>
-                        ) : (
+                    Giới tính
+                  </Typography>
+                {isEditing ? (
+                  <FormControl fullWidth size="small">
+                    <Select
+                      value={userFormData.gender}
+                      onChange={(e) => handleUserInputChange('gender', e.target.value)}
+                      error={!!userErrors.gender}
+                    >
+                      <MenuItem value="male">Nam</MenuItem>
+                      <MenuItem value="female">Nữ</MenuItem>
+                      <MenuItem value="other">Khác</MenuItem>
+                    </Select>
+                  </FormControl>
+                ) : (
                           <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                            {userFormData.gender === 'male' ? 'Nam' : userFormData.gender === 'female' ? 'Nữ' : 'Khác'}
-                          </Typography>
-                        )}
+                    {userFormData.gender === 'male' ? 'Nam' : userFormData.gender === 'female' ? 'Nữ' : 'Khác'}
+                  </Typography>
+                )}
                       </Box>
 
                       <Box sx={{ mb: 3 }}>
@@ -439,79 +439,79 @@ const TeacherProfile: React.FC = () => {
                           size="small"
                         />
                       </Box>
-                    </Grid>
+              </Grid>
 
                     {/* Address Field - Full Width */}
-                    <Grid item xs={12}>
+              <Grid item xs={12}>
                       <Box sx={{ mb: 3 }}>
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
-                          Địa chỉ
-                        </Typography>
-                        {isEditing ? (
-                          <TextField
-                            fullWidth
-                            multiline
-                            rows={3}
-                            value={userFormData.address}
-                            onChange={(e) => handleUserInputChange('address', e.target.value)}
-                            error={!!userErrors.address}
-                            helperText={userErrors.address}
-                            size="small"
-                          />
-                        ) : (
+                    Địa chỉ
+                  </Typography>
+                {isEditing ? (
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={3}
+                    value={userFormData.address}
+                    onChange={(e) => handleUserInputChange('address', e.target.value)}
+                    error={!!userErrors.address}
+                    helperText={userErrors.address}
+                    size="small"
+                  />
+                ) : (
                           <Typography variant="body1" sx={{ fontWeight: 500 }}>
                             {user.address || 'Chưa cập nhật'}
                           </Typography>
-                        )}
+                )}
                       </Box>
-                    </Grid>
+            </Grid>
 
                     {/* Teacher Specific Fields - Full Width */}
-                    <Grid item xs={12}>
+              <Grid item xs={12}>
                       <Box sx={{ mb: 3 }}>
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
-                          Mô tả
-                        </Typography>
-                        {isEditing ? (
-                          <TextField
-                            fullWidth
-                            multiline
-                            rows={4}
-                            value={teacherFormData.description}
-                            onChange={(e) => handleTeacherInputChange('description', e.target.value)}
-                            error={!!teacherErrors.description}
-                            helperText={teacherErrors.description}
-                            size="small"
-                            placeholder="Mô tả về kinh nghiệm giảng dạy, chuyên môn..."
-                          />
-                        ) : (
+                    Mô tả
+                  </Typography>
+                {isEditing ? (
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={4}
+                    value={teacherFormData.description}
+                    onChange={(e) => handleTeacherInputChange('description', e.target.value)}
+                    error={!!teacherErrors.description}
+                    helperText={teacherErrors.description}
+                    size="small"
+                    placeholder="Mô tả về kinh nghiệm giảng dạy, chuyên môn..."
+                  />
+                ) : (
                           <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                            {user.teacher?.description || 'Chưa cập nhật'}
-                          </Typography>
-                        )}
+                    {user.teacher?.description || 'Chưa cập nhật'}
+                  </Typography>
+                )}
                       </Box>
-                    </Grid>
+              </Grid>
 
                     {/* Teacher Status Field - Full Width when editing */}
                     {isEditing && (
-                      <Grid item xs={12} sm={6}>
+              <Grid item xs={12} sm={6}>
                         <Box sx={{ mb: 3 }}>
                           <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
                             Trạng thái hoạt động
-                          </Typography>
-                          <FormControl fullWidth size="small">
-                            <Select
-                              value={teacherFormData.isActive}
-                              onChange={(e) => handleTeacherInputChange('isActive', e.target.value === 'true')}
-                            >
-                              <MenuItem value="true">Đang hoạt động</MenuItem>
-                              <MenuItem value="false">Tạm ngưng</MenuItem>
-                            </Select>
-                          </FormControl>
+                  </Typography>
+                  <FormControl fullWidth size="small">
+                    <Select
+                      value={teacherFormData.isActive}
+                      onChange={(e) => handleTeacherInputChange('isActive', e.target.value === 'true')}
+                    >
+                      <MenuItem value="true">Đang hoạt động</MenuItem>
+                      <MenuItem value="false">Tạm ngưng</MenuItem>
+                    </Select>
+                  </FormControl>
                         </Box>
                       </Grid>
-                    )}
-                  </Grid>
+                )}
+              </Grid>
 
                   {/* Action Buttons */}
                   <Box sx={{ display: 'flex', gap: 2, mt: 4, flexWrap: 'wrap' }}>
@@ -570,11 +570,11 @@ const TeacherProfile: React.FC = () => {
                       </Button>
                     ) : (
                       <Box sx={{ display: 'flex', gap: 2 }}>
-                        <Button
-                          variant="outlined"
-                          startIcon={<CancelIcon />}
-                          onClick={handleCancel}
-                          disabled={loading}
+                <Button
+                  variant="outlined"
+                  startIcon={<CancelIcon />}
+                  onClick={handleCancel}
+                  disabled={loading}
                           sx={{
                             borderRadius: 2,
                             px: 3,
@@ -586,14 +586,14 @@ const TeacherProfile: React.FC = () => {
                               bgcolor: '#f1f5f9'
                             }
                           }}
-                        >
-                          Hủy
-                        </Button>
-                        <Button
-                          variant="contained"
-                          startIcon={loading ? <CircularProgress size={20} /> : <SaveIcon />}
-                          onClick={handleSave}
-                          disabled={loading}
+                >
+                  Hủy
+                </Button>
+                <Button
+                  variant="contained"
+                  startIcon={loading ? <CircularProgress size={20} /> : <SaveIcon />}
+                  onClick={handleSave}
+                  disabled={loading}
                           sx={{
                             borderRadius: 2,
                             px: 3,
@@ -603,14 +603,14 @@ const TeacherProfile: React.FC = () => {
                               bgcolor: '#2563eb'
                             }
                           }}
-                        >
-                          {loading ? 'Đang lưu...' : 'Lưu thay đổi'}
-                        </Button>
-                      </Box>
-                    )}
+                >
+                  {loading ? 'Đang lưu...' : 'Lưu thay đổi'}
+                </Button>
+              </Box>
+            )}
                   </Box>
-                </CardContent>
-              </Card>
+          </CardContent>
+        </Card>
             </Grid>
           </Grid>
         </Box>

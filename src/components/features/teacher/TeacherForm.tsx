@@ -155,13 +155,13 @@ const TeacherForm: React.FC<TeacherFormProps> = ({
     }
   };
 
-    const validate = (): boolean => {
+  const validate = (): boolean => {
     // Tạm thời bỏ validation để test
     setErrors({});
     return true;
   };
 
-    const handleSubmit = async () => {
+  const handleSubmit = async () => {
     if (!validate()) return;
 
     try {
@@ -213,13 +213,13 @@ const TeacherForm: React.FC<TeacherFormProps> = ({
     >
       <DialogTitle
         sx={{
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white',
-          py: 3,
-          px: 4,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between'
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        color: 'white',
+        py: 3,
+        px: 4,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between'
         }}
       >
         <Box>
@@ -346,7 +346,7 @@ const TeacherForm: React.FC<TeacherFormProps> = ({
                     helperText={errors.description}
                     placeholder="Mô tả về kinh nghiệm giảng dạy, chuyên môn..."
                   />
-                </Grid>
+              </Grid>
                 <Grid item xs={12}>
                   <TextField
                     fullWidth
@@ -379,7 +379,7 @@ const TeacherForm: React.FC<TeacherFormProps> = ({
                     label="Bằng cấp"
                     value={formData.qualifications}
                     onChange={(e) => handleInputChange('qualifications', e.target.value)}
-                    error={!!errors.qualifications}
+                        error={!!errors.qualifications}
                     helperText={errors.qualifications || "Nhập bằng cấp, phân cách bằng dấu phẩy (VD: Bachelor of Arts, CELTA)"}
                     placeholder="Bachelor of Arts, CELTA"
                   />

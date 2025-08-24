@@ -109,7 +109,7 @@ export const useParentManagement = (): UseParentManagementReturn => {
     }
 
     try {
-      const response = await getAllStudentsAPI({ name: query, limit: 10 });
+      const response = await getAllStudentsAPI({ name: query, limit: 10, page: 1 });
 
       // Handle new API response structure
       if (response && response.data && response.data.data) {

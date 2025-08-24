@@ -6,6 +6,7 @@ import DashboardLayout from '../../components/layouts/DashboardLayout';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import NotificationSnackbar from '../../components/common/NotificationSnackbar';
 import { useParentManagement } from '../../hooks/features/useParentManagement';
+import { useParentForm } from '../../hooks/features/useParentForm';
 import ParentTable from '../../components/features/parent/ParentTable';
 import ParentFilters from '../../components/features/parent/ParentFilters';
 import ParentViewDialog from '../../components/features/parent/ParentViewDialog';
@@ -29,6 +30,7 @@ const ParentManagement: React.FC = () => {
 
   // Custom hooks
   const { parents, loading, loadingTable, searchQuery, setSearchQuery, deleteParent, getParentById } = useParentManagement();
+  const { handleSubmit } = useParentForm();
 
   // Dialog handlers with useCallback
   const handleOpenDialog = useCallback(async (p: Parent | null = null): Promise<void> => {
@@ -145,9 +147,28 @@ const ParentManagement: React.FC = () => {
       <ParentForm
         open={openFormDialog}
         onClose={handleCloseFormDialog}
-        parent={selectedParentForEdit as any}
+        parent={selectedParentForEdit}
         loading={false}
-        onSubmit={async () => { setOpenFormDialog(false); }}
+        onMessage={(message: string, type: 'success' | 'error') => {
+          setSnackbar({ open: true, message, severity: type });
+          // Refresh danh sách phụ huynh sau khi có thay đổi
+          if (type === 'success' && fetchParents) {
+            fetchParents();
+          }
+        }}
+        onSubmit={async () => {
+          try {
+            const result = await handleSubmit(selectedParentForEdit);
+            if (result.success) {
+              setSnackbar({ open: true, message: selectedParentForEdit ? 'Cập nhật phụ huynh thành công!' : 'Thêm phụ huynh thành công!', severity: 'success' });
+              handleCloseFormDialog();
+            } else {
+              setSnackbar({ open: true, message: result.message || 'Có lỗi xảy ra', severity: 'error' });
+            }
+          } catch (error: any) {
+            setSnackbar({ open: true, message: error.message || 'Có lỗi xảy ra', severity: 'error' });
+          }
+        }}
       />
     </DashboardLayout>
   );

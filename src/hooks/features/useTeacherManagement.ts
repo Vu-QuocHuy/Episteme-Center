@@ -99,6 +99,7 @@ export const useTeacherManagement = (): UseTeacherManagementReturn => {
   }, [debouncedSearch, isActiveFilter]);
 
   const deleteTeacher = useCallback(async (teacherId: string): Promise<{ success: boolean; message: string }> => {
+    console.log('🚀 deleteTeacher called with ID:', teacherId);
     setLoading(true);
     try {
       await deleteTeacherAPI(teacherId);

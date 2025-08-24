@@ -15,19 +15,32 @@ import PaymentHistoryModal from '../../components/common/PaymentHistoryModal';
 
 interface PaymentInfo {
   id: string;
+  teacherId: string;
   month: number;
   year: number;
+  totalLessons: number;
   totalAmount: number;
   paidAmount: number;
-  status: string;
-  paymentDate?: string;
-  paymentMethod?: string;
-  description?: string;
-  classes?: Array<{
+  discountAmount: number;
+  status: 'pending' | 'paid' | 'overdue';
+  createdAt: string;
+  updatedAt: string;
+  student?: {
     id: string;
     name: string;
-    sessions: number;
+    email: string;
+    phone: string;
+  };
+  class?: {
+    id: string;
+    name: string;
+  };
+  histories?: Array<{
+    id: string;
     amount: number;
+    paymentDate: string;
+    paymentMethod: string;
+    note?: string;
   }>;
 }
 
@@ -70,24 +83,82 @@ const Salary: React.FC = () => {
   }, [user]);
 
   const fetchSalaryData = async (): Promise<void> => {
+    if (!user?.id) {
+      setError('Không tìm thấy thông tin giáo viên');
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
-      const [paymentsResponse, summaryResponse] = await Promise.all([
-        getTeacherPaymentsAPI(),
-        getTotalPaymentsAPI()
-      ]);
+      setError('');
 
-      if (paymentsResponse.data && summaryResponse.data) {
+      // Gọi API với teacherId filter
+      const paymentsResponse = await getTeacherPaymentsAPI({
+        teacherId: user.id,
+        page: 1,
+        limit: 50 // Lấy nhiều records để có đủ dữ liệu
+      });
+
+      console.log('📊 Teacher Payments Response:', paymentsResponse);
+
+      if (paymentsResponse.data?.data) {
+        const payments = paymentsResponse.data.data.result || [];
+        const meta = paymentsResponse.data.data.meta || {};
+
+        // Tính toán summary từ payments
+        const summary = calculateSalarySummary(payments);
+
         setSalaryData({
-          payments: paymentsResponse.data.payments || [],
-          summary: summaryResponse.data
+          payments: payments,
+          summary: summary
+        });
+      } else {
+        setSalaryData({
+          payments: [],
+          summary: {
+            totalEarned: 0,
+            totalPaid: 0,
+            pendingAmount: 0,
+            averageMonthlySalary: 0,
+            totalClasses: 0,
+            totalSessions: 0
+          }
         });
       }
     } catch (error: any) {
+      console.error('❌ Error fetching salary data:', error);
       setError(error.response?.data?.message || 'Có lỗi xảy ra khi tải thông tin lương');
     } finally {
       setLoading(false);
     }
+  };
+
+  const calculateSalarySummary = (payments: PaymentInfo[]): SalarySummary => {
+    const totalEarned = payments.reduce((sum, payment) => sum + (payment.totalAmount || 0), 0);
+    const totalPaid = payments.reduce((sum, payment) => sum + (payment.paidAmount || 0), 0);
+    const pendingAmount = totalEarned - totalPaid;
+
+    // Tính average monthly salary (trung bình 6 tháng gần nhất)
+    const recentPayments = payments
+      .sort((a, b) => new Date(b.createdAt || '').getTime() - new Date(a.createdAt || '').getTime())
+      .slice(0, 6);
+    const averageMonthlySalary = recentPayments.length > 0
+      ? recentPayments.reduce((sum, payment) => sum + (payment.totalAmount || 0), 0) / recentPayments.length
+      : 0;
+
+    // Tính total classes và sessions từ payments
+    const totalClasses = payments.filter(payment => payment.class).length;
+    const totalSessions = payments.reduce((sum, payment) => sum + (payment.totalLessons || 0), 0);
+
+    return {
+      totalEarned,
+      totalPaid,
+      pendingAmount,
+      averageMonthlySalary,
+      totalClasses,
+      totalSessions
+    };
   };
 
   const formatCurrency = (amount: number): string => {
@@ -245,6 +316,9 @@ const Salary: React.FC = () => {
                 <TableHead>
                   <TableRow>
                     <TableCell>Tháng/Năm</TableCell>
+                    <TableCell>Học sinh</TableCell>
+                    <TableCell>Lớp</TableCell>
+                    <TableCell align="right">Số buổi</TableCell>
                     <TableCell align="right">Tổng lương</TableCell>
                     <TableCell align="right">Đã thanh toán</TableCell>
                     <TableCell align="right">Còn lại</TableCell>
@@ -262,6 +336,24 @@ const Salary: React.FC = () => {
                           {payment.month}/{payment.year}
                         </Box>
                       </TableCell>
+                      <TableCell>
+                        <Typography variant="body2">
+                          {payment.student?.name || 'N/A'}
+                        </Typography>
+                        <Typography variant="caption" color="textSecondary">
+                          {payment.student?.email || ''}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2">
+                          {payment.class?.name || 'N/A'}
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="right">
+                        <Typography variant="body2">
+                          {payment.totalLessons}
+                        </Typography>
+                      </TableCell>
                       <TableCell align="right">
                         <Typography variant="body2" fontWeight="bold">
                           {formatCurrency(payment.totalAmount)}
@@ -276,6 +368,11 @@ const Salary: React.FC = () => {
                         <Typography variant="body2" color="warning.main">
                           {formatCurrency(payment.totalAmount - payment.paidAmount)}
                         </Typography>
+                        {payment.discountAmount > 0 && (
+                          <Typography variant="caption" color="error.main">
+                            Giảm: {formatCurrency(payment.discountAmount)}
+                          </Typography>
+                        )}
                       </TableCell>
                       <TableCell>
                         <Chip
@@ -285,7 +382,9 @@ const Salary: React.FC = () => {
                         />
                       </TableCell>
                       <TableCell>
-                        {payment.paymentDate ? formatDate(payment.paymentDate) : '-'}
+                        {payment.histories && payment.histories.length > 0
+                          ? formatDate(payment.histories[0].paymentDate)
+                          : '-'}
                       </TableCell>
                       <TableCell align="center">
                         <Button
@@ -303,11 +402,13 @@ const Salary: React.FC = () => {
             </TableContainer>
 
             {salaryData.payments.length === 0 && (
-              <Box textAlign="center" py={4}>
-                <Typography variant="h6" color="textSecondary">
-                  Chưa có lịch sử thanh toán
-                </Typography>
-              </Box>
+              <TableRow>
+                <TableCell colSpan={10} align="center" sx={{ py: 4 }}>
+                  <Typography variant="h6" color="textSecondary">
+                    Chưa có lịch sử thanh toán
+                  </Typography>
+                </TableCell>
+              </TableRow>
             )}
           </CardContent>
         </Card>
@@ -319,7 +420,7 @@ const Salary: React.FC = () => {
             onClose={handleClosePaymentModal}
             paymentData={{
               teacherInfo: {
-                id: user?.teacherId || '',
+                id: user?.id || '',
                 name: user?.name || '',
                 email: user?.email || ''
               },
@@ -329,16 +430,22 @@ const Salary: React.FC = () => {
                 totalAmount: selectedPayment.totalAmount,
                 paidAmount: selectedPayment.paidAmount,
                 status: selectedPayment.status,
-                paymentDate: selectedPayment.paymentDate,
-                paymentMethod: selectedPayment.paymentMethod,
-                description: selectedPayment.description
+                paymentDate: selectedPayment.histories && selectedPayment.histories.length > 0
+                  ? selectedPayment.histories[0].paymentDate
+                  : undefined,
+                paymentMethod: selectedPayment.histories && selectedPayment.histories.length > 0
+                  ? selectedPayment.histories[0].paymentMethod
+                  : undefined,
+                description: selectedPayment.histories && selectedPayment.histories.length > 0
+                  ? selectedPayment.histories[0].note
+                  : undefined
               },
-              transactions: selectedPayment.classes?.map(cls => ({
-                id: cls.id,
-                className: cls.name,
-                sessions: cls.sessions,
-                amount: cls.amount,
-                date: selectedPayment.paymentDate || ''
+              transactions: selectedPayment.histories?.map(history => ({
+                id: history.id,
+                className: selectedPayment.class?.name || 'N/A',
+                sessions: selectedPayment.totalLessons,
+                amount: history.amount,
+                date: history.paymentDate
               })) || []
             }}
           />
