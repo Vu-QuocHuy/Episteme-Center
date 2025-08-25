@@ -29,7 +29,7 @@ const ParentManagement: React.FC = () => {
   const [selectedParentForEdit, setSelectedParentForEdit] = useState<Parent | null>(null);
 
   // Custom hooks
-  const { parents, loading, loadingTable, searchQuery, setSearchQuery, deleteParent, getParentById } = useParentManagement();
+  const { parents, loading, loadingTable, searchQuery, setSearchQuery, deleteParent, getParentById, fetchParents } = useParentManagement();
   const { handleSubmit } = useParentForm();
 
   // Dialog handlers with useCallback

@@ -610,7 +610,10 @@ export const payTuitionFeeAPI = () => {
 };
 
 // Legacy API for backward compatibility
-export const getParentChildrenAPI = (id: string) => axiosInstance.get(API_CONFIG.ENDPOINTS.PARENTS.GET_CHILDREN(id));
+export const getParentChildrenAPI = (id: string) => {
+  // Use parent detail API and let callers extract data.students
+  return axiosInstance.get(API_CONFIG.ENDPOINTS.PARENTS.GET_BY_ID(id));
+};
 export const addChildAPI = (studentId: string, parentId: string) => {
   const formData = new URLSearchParams();
   formData.append('studentId', studentId);

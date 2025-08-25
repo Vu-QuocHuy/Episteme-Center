@@ -2,9 +2,9 @@ export interface ApiEndpoints {
   AUTH: {
     USER_LOGIN: string;
     ADMIN_LOGIN: string;
+    REFRESH_TOKEN: string;
     REGISTER: string;
     LOGOUT: string;
-    REFRESH_TOKEN: string;
     CHANGE_PASSWORD: string;
     FORGOT_PASSWORD: string;
     VERIFY_CODE: string;
@@ -30,8 +30,8 @@ export interface ApiEndpoints {
     CREATE: string;
     UPDATE: (id: string) => string;
     DELETE: (id: string) => string;
-    GET_MY_CLASSES: string;
     GET_SCHEDULE: (id: string) => string;
+    GET_MY_CLASSES: string;
   };
   STUDENTS: {
     GET_ALL: string;
@@ -39,9 +39,9 @@ export interface ApiEndpoints {
     CREATE: string;
     UPDATE: (id: string) => string;
     DELETE: (id: string) => string;
-    MONTHLY_CHANGES: string;
     SCHEDULE: (id: string) => string;
     ATTENDANCE: (id: string) => string;
+    MONTHLY_CHANGES: string;
   };
   CLASSES: {
     GET_ALL: string;
@@ -61,7 +61,6 @@ export interface ApiEndpoints {
     GET_BY_ID: (id: string) => string;
     UPDATE: (id: string) => string;
     DELETE: (id: string) => string;
-    GET_CHILDREN: (id: string) => string;
     ADD_CHILD: string;
     REMOVE_CHILD: string;
     PAY_TUITION_FEE: string;
@@ -74,6 +73,7 @@ export interface ApiEndpoints {
   };
   PAYMENTS: {
     GET_ALL: string;
+    GET_BY_STUDENT: (id: string) => string;
     PAY_STUDENT: (id: string) => string;
     GET_TEACHER_PAYMENTS: string;
   };
@@ -125,6 +125,13 @@ export interface ApiEndpoints {
     UPDATE: (id: string) => string;
     DELETE: (id: string) => string;
   };
+  REGISTRATIONS: {
+    CREATE: string;
+    GET_ALL: string;
+    GET_BY_ID: (id: string) => string;
+    UPDATE: (id: string) => string;
+    DELETE: (id: string) => string;
+  };
 }
 
 export interface ApiConfig {
@@ -139,9 +146,9 @@ export const API_CONFIG: ApiConfig = {
     AUTH: {
       USER_LOGIN: '/auth/user/login',
       ADMIN_LOGIN: '/auth/admin/login',
+      REFRESH_TOKEN: '/auth/refresh',
       REGISTER: '/auth/register',
       LOGOUT: '/auth/logout',
-      REFRESH_TOKEN: '/auth/refresh',
       CHANGE_PASSWORD: '/auth/change-password',
       FORGOT_PASSWORD: '/auth/forgot-password',
       VERIFY_CODE: '/auth/verify-code',
@@ -170,8 +177,8 @@ export const API_CONFIG: ApiConfig = {
       CREATE: '/teachers',
       UPDATE: (id: string) => `/teachers/${id}`,
       DELETE: (id: string) => `/teachers/${id}`,
+      GET_SCHEDULE: (id: string) => `/teachers/schedule/${id}`,
       GET_MY_CLASSES: '/teachers/me/classes',
-      GET_SCHEDULE: (id: string) => `/teachers/${id}/schedule`,
     },
     // Student endpoints
     STUDENTS: {
@@ -180,9 +187,9 @@ export const API_CONFIG: ApiConfig = {
       CREATE: '/students',
       UPDATE: (id: string) => `/students/${id}`,
       DELETE: (id: string) => `/students/${id}`,
-      MONTHLY_CHANGES: '/students/monthly-changes',
       SCHEDULE: (id: string) => `/students/schedule/${id}`,
       ATTENDANCE: (id: string) => `/students/${id}/attendance`,
+      MONTHLY_CHANGES: '/students/monthly-changes',
     },
     // Class endpoints
     CLASSES: {
@@ -203,7 +210,6 @@ export const API_CONFIG: ApiConfig = {
       GET_BY_ID: (id: string) => `/parents/${id}`,
       UPDATE: (id: string) => `/parents/${id}`,
       DELETE: (id: string) => `/parents/${id}`,
-      GET_CHILDREN: (id: string) => `/parents/${id}/children`,
       ADD_CHILD: '/parents/add-child',
       REMOVE_CHILD: '/parents/remove-child',
       PAY_TUITION_FEE: '/parents/pay-tuition-fee',
@@ -217,28 +223,29 @@ export const API_CONFIG: ApiConfig = {
     },
     PAYMENTS: {
       GET_ALL: '/payments/all',
+      GET_BY_STUDENT: (id: string) => `/payments/students/${id}`,
       PAY_STUDENT: (id: string) => `/payments/pay-student/${id}`,
-      GET_TEACHER_PAYMENTS: '/payments/teacher',
+      GET_TEACHER_PAYMENTS: '/teacher-payments/all',
     },
     SCHEDULES: {
       GET_STUDENT_SCHEDULE: '/schedules/student/me',
     },
-      ANNOUNCEMENTS: {
-    CREATE: '/announcements',
-    GET_ALL: '/announcements',
-    GET_BY_ID: (id: string) => `/announcements/${id}`,
-    UPDATE: (id: string) => `/announcements/${id}`,
-    DELETE: (id: string) => `/announcements/${id}`,
-  },
-  HOME_CONTENT: {
-    CREATE: '/home-content',
-    GET_ALL: '/home-content',
-    GET_BY_ID: (id: string) => `/home-content/${id}`,
-    UPDATE: (id: string) => `/home-content/${id}`,
-    DELETE: (id: string) => `/home-content/${id}`,
-    GET_BY_SECTION: (section: string) => `/home-content/section/${section}`,
-    GET_ACTIVE: '/home-content/active',
-  },
+    ANNOUNCEMENTS: {
+      CREATE: '/announcements',
+      GET_ALL: '/announcements',
+      GET_BY_ID: (id: string) => `/announcements/${id}`,
+      UPDATE: (id: string) => `/announcements/${id}`,
+      DELETE: (id: string) => `/announcements/${id}`,
+    },
+    HOME_CONTENT: {
+      CREATE: '/home-content',
+      GET_ALL: '/home-content',
+      GET_BY_ID: (id: string) => `/home-content/${id}`,
+      UPDATE: (id: string) => `/home-content/${id}`,
+      DELETE: (id: string) => `/home-content/${id}`,
+      GET_BY_SECTION: (section: string) => `/home-content/section/${section}`,
+      GET_ACTIVE: '/home-content/active',
+    },
     DASHBOARD: {
       ADMIN: '/dashboard/admin',
       TEACHER: (id: string) => `/dashboard/teacher/${id}`,
@@ -270,6 +277,14 @@ export const API_CONFIG: ApiConfig = {
       GET_BY_ID: (id: string) => `/transactions-category/${id}`,
       UPDATE: (id: string) => `/transactions-category/${id}`,
       DELETE: (id: string) => `/transactions-category/${id}`,
+    },
+    // Registrations endpoints
+    REGISTRATIONS: {
+      CREATE: '/registrations',
+      GET_ALL: '/registrations',
+      GET_BY_ID: (id: string) => `/registrations/${id}`,
+      UPDATE: (id: string) => `/registrations/${id}`,
+      DELETE: (id: string) => `/registrations/${id}`,
     },
   },
 };

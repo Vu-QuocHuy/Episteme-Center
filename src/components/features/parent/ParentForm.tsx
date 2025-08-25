@@ -31,7 +31,7 @@ import {
 } from '@mui/icons-material';
 import { Parent, Student } from '../../../types';
 import { useParentForm } from '../../../hooks/features/useParentForm';
-import { getAllStudentsAPI, getParentByIdAPI } from '../../../services/api';
+import { getAllStudentsAPI, getParentByIdAPI, getParentChildrenAPI } from '../../../services/api';
 
 interface ParentFormProps {
   open: boolean;
@@ -70,7 +70,6 @@ const ParentForm: React.FC<ParentFormProps> = ({ open, onClose, onSubmit, parent
     if (parent && open) {
       console.log('📝 Setting up edit mode');
       setFormData(parent as any);
-      setChildrenList((parent as any)?.students || []);
       // Không reset tab khi đã mở dialog
     } else if (!open) {
       console.log('❌ Dialog closed, resetting');
@@ -83,6 +82,43 @@ const ParentForm: React.FC<ParentFormProps> = ({ open, onClose, onSubmit, parent
       setTab(0); // Chỉ hiển thị tab thông tin cơ bản
     }
   }, [parent, open, setFormData, resetForm]);
+
+  // Helper: refresh children list from API
+  const refreshChildrenList = React.useCallback(async () => {
+    if (!parent?.id) return;
+    try {
+      const res = await getParentChildrenAPI(parent.id);
+      const payload = (res as any)?.data?.data ?? (res as any)?.data ?? res;
+      const list = Array.isArray(payload)
+        ? payload
+        : Array.isArray((payload as any)?.students)
+          ? (payload as any).students
+          : [];
+      setChildrenList(list);
+      setRefreshKey(prev => prev + 1);
+      return;
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.warn('getParentChildrenAPI failed, fallback to getParentByIdAPI', e);
+    }
+    try {
+      const response = await getParentByIdAPI(parent.id);
+      const payload = (response as any)?.data?.data ?? (response as any)?.data ?? response;
+      const list = Array.isArray((payload as any)?.students) ? (payload as any).students : [];
+      setChildrenList(list);
+      setRefreshKey(prev => prev + 1);
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('Error refreshing children list (fallback):', error);
+    }
+  }, [parent?.id]);
+
+  // Refresh when entering Manage Children tab
+  useEffect(() => {
+    if (open && parent?.id && tab === 1) {
+      refreshChildrenList();
+    }
+  }, [open, parent?.id, tab, refreshChildrenList]);
 
   useEffect(() => {
     let active = true;
@@ -125,11 +161,17 @@ const ParentForm: React.FC<ParentFormProps> = ({ open, onClose, onSubmit, parent
     const result = await handleAddChild(String(selectedStudent.id), String(parent.id));
     if (result.success) {
       setChildrenList(prev => {
-        const exists = prev.some((s: any) => s.id === selectedStudent.id);
+        const exists = prev.some((s: any) => String(s.id) === String(selectedStudent.id));
         return exists ? prev : [...prev, selectedStudent as any];
       });
       setSelectedStudent(null);
       setStudentQuery('');
+      if (onMessage) {
+        onMessage(result.message, 'success');
+      }
+
+      // Refresh lại danh sách con từ API để đảm bảo đồng bộ
+      await refreshChildrenList();
     }
   };
 
@@ -139,7 +181,7 @@ const ParentForm: React.FC<ParentFormProps> = ({ open, onClose, onSubmit, parent
     if (result.success) {
       // Cập nhật danh sách con ngay lập tức
       setChildrenList(prev => {
-        const exists = prev.some((s: any) => s.id === student.id);
+        const exists = prev.some((s: any) => String(s.id) === String(student.id));
         return exists ? prev : [...prev, student as any];
       });
 
@@ -149,15 +191,7 @@ const ParentForm: React.FC<ParentFormProps> = ({ open, onClose, onSubmit, parent
       }
 
       // Refresh lại danh sách con từ API để đảm bảo đồng bộ
-      try {
-        const response = await getParentByIdAPI(parent.id);
-        if (response && response.data && response.data.data) {
-          const updatedParent = response.data.data;
-          setChildrenList(updatedParent.students || []);
-        }
-      } catch (error) {
-        console.error('Error refreshing children list:', error);
-      }
+      await refreshChildrenList();
     } else {
       // Hiển thị thông báo lỗi
       if (onMessage) {
@@ -187,21 +221,7 @@ const ParentForm: React.FC<ParentFormProps> = ({ open, onClose, onSubmit, parent
       }
 
       // Refresh lại danh sách con từ API để đảm bảo đồng bộ
-      try {
-        console.log('🔄 Refreshing children list from API...');
-        const response = await getParentByIdAPI(parent.id);
-        console.log('🔄 API response:', response);
-
-        if (response && response.data && response.data.data) {
-          const updatedParent = response.data.data;
-          const freshChildrenList = updatedParent.students || [];
-          console.log('🔄 Fresh children list from API:', freshChildrenList);
-          setChildrenList(freshChildrenList);
-          setRefreshKey(prev => prev + 1); // Force re-render
-        }
-      } catch (error) {
-        console.error('Error refreshing children list:', error);
-      }
+      await refreshChildrenList();
     } else {
       // Hiển thị thông báo lỗi
       if (onMessage) {
