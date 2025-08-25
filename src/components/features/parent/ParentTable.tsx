@@ -114,11 +114,6 @@ const ParentTable: React.FC<ParentTableProps> = ({
                   </Typography>
                 </TableCell>
                 <TableCell>
-                  <Typography variant="body2">
-                    {parent.gender === 'male' ? 'Nam' : parent.gender === 'female' ? 'Nữ' : 'Không xác định'}
-                  </Typography>
-                </TableCell>
-                <TableCell>
                   <Box>
                     {parent.students && parent.students.length > 0 ? (
                       parent.students.map((student, index) => (
@@ -132,6 +127,11 @@ const ParentTable: React.FC<ParentTableProps> = ({
                       </Typography>
                     )}
                   </Box>
+                </TableCell>
+                <TableCell>
+                  <Typography variant="body2">
+                    {parent.gender === 'male' ? 'Nam' : parent.gender === 'female' ? 'Nữ' : 'Không xác định'}
+                  </Typography>
                 </TableCell>
                 <TableCell>
                   <Button

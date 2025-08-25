@@ -18,7 +18,6 @@ import {
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { Student } from '../../../types';
-import { renderClasses } from '../../../utils/studentHelpers';
 
 interface StudentTableProps {
   students: Student[];
@@ -109,13 +108,28 @@ const StudentTable: React.FC<StudentTableProps> = ({
                 </TableCell>
                 <TableCell>
                   <Typography variant="body2">
-                    {student.parentId ? 'Có phụ huynh' : 'Không có phụ huynh'}
+                    {(((student as any)?.parent && (student as any)?.parent?.id) || student.parentId)
+                      ? (((student as any)?.parent?.name) || 'Có phụ huynh')
+                      : 'Không có phụ huynh'}
                   </Typography>
                 </TableCell>
                 <TableCell>
-                  <Typography variant="body2">
-                    {renderClasses(student.classes || [])}
-                  </Typography>
+                  {Array.isArray(student.classes) && student.classes.length > 0 ? (
+                    <Box>
+                      {student.classes.map((cls: any, idx: number) => {
+                        const className = cls.class?.name || cls.classId?.name || `Lớp ${cls.class?.grade || cls.classId?.grade || ''}.${cls.class?.section || cls.classId?.section || ''}`;
+                        const status = cls.status === 'active' ? 'Đang học' : 'Đã nghỉ';
+                        const discount = cls.discountPercent ? ` (Giảm ${cls.discountPercent}%)` : '';
+                        return (
+                          <Typography key={idx} variant="body2" sx={{ display: 'block' }}>
+                            {`${className}${discount} - ${status}`}
+                          </Typography>
+                        );
+                      })}
+                    </Box>
+                  ) : (
+                    <Typography variant="body2">Chưa đăng ký lớp</Typography>
+                  )}
                 </TableCell>
                 <TableCell>
                   <Typography variant="body2">

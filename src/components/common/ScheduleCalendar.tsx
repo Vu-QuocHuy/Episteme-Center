@@ -324,7 +324,7 @@ const ServerDay: React.FC<ServerDayProps> = ({ day, lessons, userType, selected,
       day={day}
       selected={selected}
       sx={dayStyle}
-      onDaySelect={() => {}}
+      onDaySelect={other.onDaySelect}
       outsideCurrentMonth={false}
       isFirstVisibleCell={false}
       isLastVisibleCell={false}

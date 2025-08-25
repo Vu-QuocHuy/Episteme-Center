@@ -697,7 +697,8 @@ export const getTeacherPaymentsAPI = getAllTeacherPaymentsAPI;
 // Backward compatibility
 export const getPaymentsAPI = getAllPaymentsAPI;
 export const getTotalPaymentsAPI = () => axiosInstance.get('/payments/total');
-export const getPaymentsByStudentAPI = (studentId: string, params?: ApiParams) => axiosInstance.get(`/payments?studentId=${studentId}`, { params });
+export const getPaymentsByStudentAPI = (studentId: string, params?: ApiParams) =>
+  axiosInstance.get(`/payments/students/${studentId}`, { params });
 export const payTeacherAPI = (id: string, data: PaymentData, params: ApiParams = {}) => {
   const formData = new URLSearchParams();
   formData.append('amount', String(Number(data.amount)));

@@ -118,14 +118,34 @@ const TeacherTable: React.FC<TeacherTableProps> = ({
                   </Typography>
                 </TableCell>
                 <TableCell>
-                  <Typography variant="body2">
-                    {teacher.qualifications?.length > 0 ? teacher.qualifications.join(', ') : teacher.experience ? `${teacher.experience} năm kinh nghiệm` : 'Chưa cập nhật'}
-                  </Typography>
+                  {teacher.qualifications?.length > 0 ? (
+                    <Box>
+                      {teacher.qualifications.map((q, idx) => (
+                        <Typography key={idx} variant="body2" sx={{ display: 'block' }}>
+                          {q}
+                        </Typography>
+                      ))}
+                    </Box>
+                  ) : (
+                    <Typography variant="body2">
+                      {teacher.experience ? `${teacher.experience} năm kinh nghiệm` : 'Chưa cập nhật'}
+                    </Typography>
+                  )}
                 </TableCell>
                 <TableCell>
-                  <Typography variant="body2">
-                    {teacher.specializations?.length > 0 ? teacher.specializations.join(', ') : teacher.specialization || 'Không xác định'}
-                  </Typography>
+                  {teacher.specializations?.length > 0 ? (
+                    <Box>
+                      {teacher.specializations.map((s, idx) => (
+                        <Typography key={idx} variant="body2" sx={{ display: 'block' }}>
+                          {s}
+                        </Typography>
+                      ))}
+                    </Box>
+                  ) : (
+                    <Typography variant="body2">
+                      {teacher.specialization || 'Không xác định'}
+                    </Typography>
+                  )}
                 </TableCell>
                 <TableCell>
                   <Button
