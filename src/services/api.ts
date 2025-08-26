@@ -710,7 +710,10 @@ export const payTeacherAPI = (id: string, data: PaymentData, params: ApiParams =
   });
 };
 export const getTeacherPaymentByIdAPI = (id: string) => axiosInstance.get(`/teacher-payments/${id}`);
-export const getAttendanceListAPI = (params?: ApiParams) => axiosInstance.get('/attendances/all', { params });
+export const getAttendanceListAPI = (params: { classId: string; limit?: number; page?: number }) => {
+  const { classId, ...queryParams } = params;
+  return axiosInstance.get(`/sessions/all/${classId}`, { params: queryParams });
+};
 export const getAttendanceByIdAPI = (id: string) => axiosInstance.get(`/attendances/${id}`);
 
 // Schedule APIs

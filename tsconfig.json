@@ -25,6 +25,7 @@
     "paths": {
       "@/*": ["src/*"],
       "@components/*": ["src/components/*"],
+      "@teacher/*": ["src/components/features/teacher/*"],
       "@pages/*": ["src/pages/*"],
       "@utils/*": ["src/utils/*"],
       "@services/*": ["src/services/*"],

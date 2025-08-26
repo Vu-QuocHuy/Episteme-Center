@@ -23,7 +23,7 @@ import {
 } from '@mui/icons-material';
 import {
   getTodayAttendanceAPI,
-  updateAttendanceAPI
+  updateSessionAttendanceAPI
 } from '../../../services/api';
 import NotificationSnackbar from '../../../components/common/NotificationSnackbar';
 
@@ -80,6 +80,7 @@ const AttendanceModal: React.FC<AttendanceModalProps> = ({
   const [students, setStudents] = useState<Student[]>([]);
   const [attendance, setAttendance] = useState<AttendanceRecord>({});
   const [attendanceNote, setAttendanceNote] = useState<AttendanceNotes>({});
+  const [originalAttendance, setOriginalAttendance] = useState<AttendanceRecord>({});
   const [isChanged, setIsChanged] = useState<boolean>(false);
   const [notification, setNotification] = useState<NotificationState>({
     open: false,
@@ -130,15 +131,18 @@ const AttendanceModal: React.FC<AttendanceModalProps> = ({
       console.log('Calling getTodayAttendanceAPI with classId:', classData.id);
       console.log('Class data:', classData);
       const res = await getTodayAttendanceAPI(classData.id);
-      const attData = res?.data;
 
-      setAttendanceId(attData?.attendanceId);
+      // Parse the API response structure
+      const responseData = (res as any)?.data?.data || (res as any)?.data || {};
+      const sessionData = responseData;
 
-      const studentsList: Student[] = (attData?.students || []).map((s: any) => ({
-        id: s.studentId,
-        name: s.name,
-        status: s.status,
-        note: s.note || ''
+      setAttendanceId(sessionData?.id);
+
+      const studentsList: Student[] = (sessionData?.attendances || []).map((att: any) => ({
+        id: att.student?.id || '',
+        name: att.student?.name || '',
+        status: att.status || 'absent',
+        note: att.note || ''
       }));
 
       // Sắp xếp theo tên riêng (từ cuối cùng)
@@ -157,6 +161,7 @@ const AttendanceModal: React.FC<AttendanceModalProps> = ({
         notes[s.id] = s.note || '';
       });
       setAttendance(att);
+      setOriginalAttendance(att); // Store original status for comparison
       setAttendanceNote(notes);
       setIsChanged(false);
     } catch (err) {
@@ -190,12 +195,20 @@ const AttendanceModal: React.FC<AttendanceModalProps> = ({
     }
     setLoading(true);
     try {
-      const studentsBody = students.map(student => ({
-        studentId: student.id,
-        status: attendance[student.id] || ATTENDANCE_STATUS.ABSENT,
-        note: attendanceNote[student.id] || ''
-      }));
-      await updateAttendanceAPI(attendanceId, studentsBody as any);
+      const studentsBody = students.map(student => {
+        const currentStatus = attendance[student.id] || ATTENDANCE_STATUS.ABSENT;
+        const originalStatus = originalAttendance[student.id] || ATTENDANCE_STATUS.ABSENT;
+        const isModified = currentStatus !== originalStatus;
+
+        return {
+          studentId: student.id,
+          status: currentStatus,
+          isModified: isModified,
+          note: attendanceNote[student.id] || null
+        };
+      });
+
+      await updateSessionAttendanceAPI(attendanceId, studentsBody);
       setNotification({ open: true, message: 'Lưu điểm danh thành công', severity: 'success' });
       setIsChanged(false);
       onClose();

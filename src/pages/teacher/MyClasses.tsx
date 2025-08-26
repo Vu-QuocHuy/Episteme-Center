@@ -1,22 +1,49 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
-  Box, Typography, Grid, Card, CardContent, CardActions, Button, Chip, Avatar,
-  LinearProgress, Alert, List, ListItem, ListItemText, ListItemAvatar,
+  Box,
+  Typography,
+  Paper,
+  Grid,
+  Button,
+  Chip,
+  Card,
+  CardContent,
+  TextField,
+  InputAdornment,
+  Tabs,
+  Tab,
+  Tooltip,
+  CardActions,
+  LinearProgress,
+  Alert,
 } from '@mui/material';
 import {
-  Class as ClassIcon, Schedule as ScheduleIcon,
-  School as SchoolIcon, TrendingUp as TrendingUpIcon,
-  Group as GroupIcon,
+  Search as SearchIcon,
+  Assignment as AssignmentIcon,
+  People as PeopleIcon,
+  Event as EventIcon,
+  School as SchoolIcon,
+  DoneAll as DoneAllIcon,
+  HourglassEmpty as HourglassEmptyIcon,
+  WatchLater as WatchLaterIcon,
+  History as HistoryIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
-import { getMyClassesAPI } from '../../services/api';
+import { getTeacherScheduleAPI, getTodayAttendanceAPI } from '../../services/api';
+import ClassDetailModal from '@teacher/ClassDetailModal';
+import AttendanceModal from '@teacher/AttendanceModal';
+import AttendanceHistoryModal from '@teacher/AttendanceHistoryModal';
 import { commonStyles } from '../../utils/styles';
+import NotificationSnackbar from '../../components/common/NotificationSnackbar';
+import StatCard from '../../components/common/StatCard';
 
-interface ClassSchedule {
-  dayOfWeek: number;
-  startTime: string;
-  endTime: string;
+interface ScheduleOldShape {
+  dayOfWeeks: number[];
+  timeSlots?: {
+    startTime?: string;
+    endTime?: string;
+  };
 }
 
 interface Student {
@@ -31,7 +58,7 @@ interface ClassData {
   name: string;
   students?: Student[];
   studentCount?: number;
-  schedule: ClassSchedule[];
+  schedule?: ScheduleOldShape;
   status: string;
   grade?: string;
   section?: string;
@@ -63,42 +90,180 @@ const MyClasses: React.FC = () => {
     totalStudents: 0
   });
 
+  // Modal states
+  const [detailModalOpen, setDetailModalOpen] = useState<boolean>(false);
+  const [selectedClass, setSelectedClass] = useState<ClassData | null>(null);
+  const [attendanceModalOpen, setAttendanceModalOpen] = useState<boolean>(false);
+  const [historyModalOpen, setHistoryModalOpen] = useState<boolean>(false);
+  const [classesWithSessionToday, setClassesWithSessionToday] = useState<Set<string>>(new Set());
+
+  // Old UI states
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>('');
+  const [selectedTab, setSelectedTab] = useState<number>(0);
+  const [notification, setNotification] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'warning' | 'info' }>({ open: false, message: '', severity: 'success' });
+
   useEffect(() => {
     if (user) {
       fetchMyClasses();
     }
   }, [user]);
 
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearchQuery(searchQuery), 700);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   const fetchMyClasses = async (): Promise<void> => {
     try {
       setLoading(true);
-      const response = await getMyClassesAPI();
-      if (response.data) {
-        setClassesData(response.data);
+      const teacherId = (user as any)?.teacherId || (user as any)?.teacher?.teacher_id || user?.id;
+      if (!teacherId) {
+        throw new Error('Thiếu thông tin giáo viên');
       }
+
+      const response = await getTeacherScheduleAPI(String(teacherId));
+      const classes: ClassData[] = (response?.data?.classes || response?.data?.data || response?.data || []).map((item: any) => {
+        const schedule = item?.schedule || {};
+        const days: any[] = schedule.days_of_week || schedule.dayOfWeeks || [];
+        const timeSlotsApi: any = schedule.time_slots || schedule.timeSlots || {};
+
+        const scheduleOld: ScheduleOldShape | undefined = (days && days.length) || timeSlotsApi?.start_time || timeSlotsApi?.end_time
+          ? {
+              dayOfWeeks: days.map((d: any) => Number(d)),
+              timeSlots: {
+                startTime: (timeSlotsApi.start_time || timeSlotsApi.startTime || '').slice(0, 5) || undefined,
+                endTime: (timeSlotsApi.end_time || timeSlotsApi.endTime || '').slice(0, 5) || undefined,
+              }
+            }
+          : undefined;
+
+        const status: string = item?.status || 'active';
+
+        return {
+          id: String(item?.id || item?.classId || item?._id || `${item?.name}-${Math.random()}`),
+          name: item?.name || 'Lớp chưa đặt tên',
+          students: item?.students,
+          studentCount: item?.studentCount,
+          schedule: scheduleOld,
+          status,
+          grade: item?.grade,
+          section: item?.section,
+          room: item?.room,
+          startDate: schedule.start_date || schedule.startDate,
+          endDate: schedule.end_date || schedule.endDate,
+        } as ClassData;
+      });
+
+      const totalClasses: number = classes.length;
+      let activeClasses: number = 0;
+      let completedClasses: number = 0;
+      let totalStudents: number = 0;
+      for (const classItem of classes) {
+        const statusLower = (classItem.status || '').toLowerCase();
+        if (statusLower === 'active' || statusLower === 'đang học') activeClasses++;
+        if (statusLower === 'completed' || statusLower === 'hoàn thành') completedClasses++;
+        const count = classItem.studentCount || (classItem.students ? classItem.students.length : 0) || 0;
+        totalStudents += count;
+      }
+
+      setClassesData({
+        classes,
+        totalClasses,
+        activeClasses,
+        completedClasses,
+        totalStudents
+      });
+
+      // Check which classes have sessions today
+      await checkTodaySessions(classes);
     } catch (error: any) {
-      setError(error.response?.data?.message || 'Có lỗi xảy ra khi tải danh sách lớp học');
+      setError(error.response?.data?.message || error.message || 'Có lỗi xảy ra khi tải danh sách lớp học');
     } finally {
       setLoading(false);
     }
   };
 
-  const formatTime = (timeString: string): string => {
-    return timeString.substring(0, 5);
+  const checkTodaySessions = async (classes: ClassData[]): Promise<void> => {
+    const classesWithSession = new Set<string>();
+
+    for (const classItem of classes) {
+      if (classItem.status === 'active') {
+        try {
+          const response = await getTodayAttendanceAPI(classItem.id);
+          const responseData = (response as any)?.data?.data || (response as any)?.data || {};
+
+          // If we get a valid response with session data, it means there's a session today
+          if (responseData?.id && responseData?.attendances) {
+            classesWithSession.add(classItem.id);
+          }
+        } catch (error) {
+          // If API returns 404 or error, it means no session today
+          console.log(`No session today for class ${classItem.id}`);
+        }
+      }
+    }
+
+    setClassesWithSessionToday(classesWithSession);
   };
 
-  const formatDayOfWeek = (dayNumber: number): string => {
-    const days = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
-    return days[dayNumber] || `Thứ ${dayNumber}`;
+  // Handlers for modals
+  const handleOpenDetail = (classItem: ClassData): void => {
+    setSelectedClass(classItem);
+    setDetailModalOpen(true);
   };
 
-  const formatSchedule = (schedule: ClassSchedule[]): string => {
-    if (!schedule || schedule.length === 0) return 'Chưa có lịch học';
-
-    return schedule.map(s =>
-      `${formatDayOfWeek(s.dayOfWeek)} ${formatTime(s.startTime)}-${formatTime(s.endTime)}`
-    ).join(', ');
+  const handleCloseDetail = (): void => {
+    setDetailModalOpen(false);
+    setSelectedClass(null);
   };
+
+  const handleOpenAttendance = (classItem: ClassData): void => {
+    setSelectedClass(classItem);
+    setAttendanceModalOpen(true);
+  };
+
+  const handleCloseAttendance = (): void => {
+    setAttendanceModalOpen(false);
+    setSelectedClass(null);
+  };
+
+  const handleOpenHistory = (classItem: ClassData): void => {
+    setSelectedClass(classItem);
+    setHistoryModalOpen(true);
+  };
+
+  const handleCloseHistory = (): void => {
+    setHistoryModalOpen(false);
+    setSelectedClass(null);
+  };
+
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number): void => {
+    setSelectedTab(newValue);
+  };
+
+  const formatSchedule = (schedule?: ScheduleOldShape): string => {
+    if (!schedule) return '';
+    const days = (schedule.dayOfWeeks || [])
+      .map(d => ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'][d])
+      .join(', ');
+    const time = schedule.timeSlots?.startTime && schedule.timeSlots?.endTime
+      ? `${schedule.timeSlots.startTime} - ${schedule.timeSlots.endTime}`
+      : '';
+    return `${days}${time ? ' | ' + time : ''}`;
+  };
+
+  const filteredClasses = useMemo(() => {
+    const base = classesData.classes || [];
+    const q = debouncedSearchQuery.trim().toLowerCase();
+    let filtered = q ? base.filter(c => c.name?.toLowerCase().includes(q)) : base;
+    const statusFilters = ['active', 'upcoming', 'closed'];
+    if (selectedTab < statusFilters.length) {
+      filtered = filtered.filter(classItem => classItem.status === statusFilters[selectedTab]);
+    }
+    return filtered;
+  }, [classesData.classes, debouncedSearchQuery, selectedTab]);
 
   const getStatusColor = (status: string): 'success' | 'warning' | 'error' | 'default' => {
     switch (status.toLowerCase()) {
@@ -153,196 +318,127 @@ const MyClasses: React.FC = () => {
   }
 
   return (
-    <DashboardLayout role="teacher">
-      <Box sx={commonStyles.container}>
-        <Typography variant="h4" gutterBottom>
+    <DashboardLayout>
+      <Box sx={commonStyles.pageContainer}>
+        <Box sx={commonStyles.contentContainer}>
+          <Box sx={commonStyles.pageHeader}>
+            <Typography sx={commonStyles.pageTitle}>
           Lớp học của tôi
         </Typography>
+          </Box>
 
-        {/* Summary Cards */}
+          {/* Stat Cards */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} sm={3}>
-            <Card>
-              <CardContent>
-                <Box display="flex" alignItems="center">
-                  <SchoolIcon color="primary" sx={{ mr: 2, fontSize: 40 }} />
-                  <Box>
-                    <Typography variant="h4">{classesData.totalClasses}</Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      Tổng số lớp
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
+            <Grid item xs={12} sm={6} md={3}>
+              <StatCard title="Tổng số lớp" value={classesData.totalClasses} icon={<SchoolIcon sx={{ fontSize: 40 }} />} color="primary" />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <StatCard title="Đang dạy" value={classesData.activeClasses} icon={<HourglassEmptyIcon sx={{ fontSize: 40 }} />} color="success" />
           </Grid>
-          <Grid item xs={12} sm={3}>
-            <Card>
-              <CardContent>
-                <Box display="flex" alignItems="center">
-                  <TrendingUpIcon color="success" sx={{ mr: 2, fontSize: 40 }} />
-                  <Box>
-                    <Typography variant="h4">{classesData.activeClasses}</Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      Lớp đang dạy
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
+            <Grid item xs={12} sm={6} md={3}>
+              <StatCard title="Sắp diễn ra" value={Math.max(classesData.totalClasses - classesData.activeClasses - classesData.completedClasses, 0)} icon={<WatchLaterIcon sx={{ fontSize: 40 }} />} color="warning" />
           </Grid>
-          <Grid item xs={12} sm={3}>
-            <Card>
-              <CardContent>
-                <Box display="flex" alignItems="center">
-                  <ClassIcon sx={{ mr: 2, fontSize: 40, color: 'text.secondary' }} />
-                  <Box>
-                    <Typography variant="h4">{classesData.completedClasses}</Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      Lớp đã hoàn thành
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
+            <Grid item xs={12} sm={6} md={3}>
+              <StatCard title="Lớp đã kết thúc" value={classesData.completedClasses} icon={<DoneAllIcon sx={{ fontSize: 40 }} />} color="primary" />
           </Grid>
-          <Grid item xs={12} sm={3}>
-            <Card>
-              <CardContent>
-                <Box display="flex" alignItems="center">
-                  <GroupIcon color="secondary" sx={{ mr: 2, fontSize: 40 }} />
-                  <Box>
-                    <Typography variant="h4">{classesData.totalStudents}</Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      Tổng học sinh
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
           </Grid>
-        </Grid>
 
-        {/* Classes List */}
+          {/* Search */}
+          <Paper sx={commonStyles.searchContainer}>
+            <TextField
+              fullWidth
+              placeholder="Tìm kiếm theo tên lớp học..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              sx={commonStyles.searchField}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Paper>
+
+          {/* Tabs */}
+          <Tabs value={selectedTab} onChange={handleTabChange} sx={{ mb: 2 }} variant="fullWidth">
+            <Tab label="Đang dạy" />
+            <Tab label="Sắp diễn ra" />
+            <Tab label="Đã kết thúc" />
+          </Tabs>
+
+          {/* Class Cards Grid */}
         <Grid container spacing={3}>
-          {classesData.classes.map((classItem) => (
-            <Grid item xs={12} md={6} key={classItem.id}>
-              <Card>
-                <CardContent>
-                  <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
-                    <Typography variant="h6" component="h2">
-                      {classItem.name}
-                    </Typography>
+            {filteredClasses.map((classItem) => (
+              <Grid item xs={12} sm={6} md={4} key={classItem.id}>
+                <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                  <CardContent sx={{ flexGrow: 1 }}>
                     <Chip
-                      label={getStatusLabel(classItem.status)}
-                      color={getStatusColor(classItem.status)}
+                      label={classItem.status === 'active' ? 'Đang dạy' : classItem.status === 'upcoming' ? 'Sắp diễn ra' : classItem.status === 'closed' ? 'Đã kết thúc' : 'Không xác định'}
+                      color={classItem.status === 'active' ? 'success' : classItem.status === 'upcoming' ? 'warning' : 'default'}
                       size="small"
+                      sx={{ mb: 1.5 }}
                     />
-                  </Box>
-
-                  <List dense>
-                    <ListItem>
-                      <ListItemAvatar>
-                        <Avatar>
-                          <ScheduleIcon />
-                        </Avatar>
-                      </ListItemAvatar>
-                      <ListItemText
-                        primary="Lịch học"
-                        secondary={formatSchedule(classItem.schedule)}
-                      />
-                    </ListItem>
-
-                    {classItem.room && (
-                      <ListItem>
-                        <ListItemAvatar>
-                          <Avatar>
-                            <ClassIcon />
-                          </Avatar>
-                        </ListItemAvatar>
-                        <ListItemText
-                          primary="Phòng học"
-                          secondary={classItem.room}
-                        />
-                      </ListItem>
-                    )}
-
-                    {classItem.grade && (
-                      <ListItem>
-                        <ListItemAvatar>
-                          <Avatar>
-                            <SchoolIcon />
-                          </Avatar>
-                        </ListItemAvatar>
-                        <ListItemText
-                          primary="Khối"
-                          secondary={`${classItem.grade}${classItem.section ? ` - ${classItem.section}` : ''}`}
-                        />
-                      </ListItem>
-                    )}
-
-                    <ListItem>
-                      <ListItemAvatar>
-                        <Avatar>
-                          <GroupIcon />
-                        </Avatar>
-                      </ListItemAvatar>
-                      <ListItemText
-                        primary="Số học sinh"
-                        secondary={classItem.studentCount || (classItem.students ? classItem.students.length : 0)}
-                      />
-                    </ListItem>
-                  </List>
-
-                  {classItem.totalSessions !== undefined && classItem.completedSessions !== undefined && (
-                    <Box mt={2}>
-                      <Box display="flex" justifyContent="space-between" mb={1}>
-                        <Typography variant="body2">
-                          Tiến độ giảng dạy
+                    <Typography variant="h6" component="div" gutterBottom>
+                      {classItem.name}
                         </Typography>
-                        <Typography variant="body2">
-                          {classItem.completedSessions}/{classItem.totalSessions} buổi
-                        </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', color: 'text.secondary', mb: 1 }}>
+                      <PeopleIcon fontSize="small" sx={{ mr: 1 }} />
+                      <Typography variant="body2">Khối {classItem.grade} - Phần {classItem.section}</Typography>
                       </Box>
-                      <LinearProgress
-                        variant="determinate"
-                        value={(classItem.completedSessions / classItem.totalSessions) * 100}
-                        sx={{ height: 8, borderRadius: 4 }}
-                      />
+                    <Box sx={{ display: 'flex', alignItems: 'center', color: 'text.secondary', mb: 1 }}>
+                      <EventIcon fontSize="small" sx={{ mr: 1 }} />
+                      <Typography variant="body2">{formatSchedule(classItem.schedule)}</Typography>
                     </Box>
-                  )}
-
-                  {classItem.attendanceRate !== undefined && (
-                    <Box mt={2}>
-                      <Typography variant="body2" color="textSecondary">
-                        Tỷ lệ tham gia: {classItem.attendanceRate}%
-                      </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', color: 'text.secondary', mb: 2 }}>
+                      <SchoolIcon fontSize="small" sx={{ mr: 1 }} />
+                      <Typography variant="body2">Phòng {classItem.room}</Typography>
                     </Box>
-                  )}
                 </CardContent>
                 <CardActions>
-                  <Button size="small" color="primary">
-                    Xem chi tiết
+                    <Button size="small" onClick={() => handleOpenDetail(classItem)}>Xem chi tiết</Button>
+                    {(classItem.status === 'active' || classItem.status === 'closed') && (
+                      <Tooltip title="Xem lịch sử điểm danh">
+                        <Button size="small" startIcon={<HistoryIcon />} onClick={() => handleOpenHistory(classItem)}>
+                          Lịch sử điểm danh
                   </Button>
-                  <Button size="small" color="secondary">
-                    Quản lý học sinh
+                      </Tooltip>
+                    )}
+                    {classItem.status === 'active' && classesWithSessionToday.has(classItem.id) && (
+                      <Tooltip title="Điểm danh buổi học hôm nay">
+                        <Button size="small" startIcon={<AssignmentIcon />} onClick={() => handleOpenAttendance(classItem)}>
+                          Điểm danh
                   </Button>
-                  <Button size="small" color="info">
-                    Xem lịch học
-                  </Button>
+                      </Tooltip>
+                    )}
                 </CardActions>
               </Card>
             </Grid>
           ))}
         </Grid>
 
-        {classesData.classes.length === 0 && (
-          <Box textAlign="center" py={4}>
-            <Typography variant="h6" color="textSecondary">
-              Bạn chưa có lớp học nào
+          {filteredClasses.length === 0 && (
+            <Typography sx={{ textAlign: 'center', mt: 4 }}>
+              Không tìm thấy lớp học nào.
             </Typography>
+          )}
+
+          {/* Modals */}
+          <ClassDetailModal open={detailModalOpen} onClose={handleCloseDetail} classData={selectedClass as any} />
+          <AttendanceModal open={attendanceModalOpen} onClose={handleCloseAttendance} classData={selectedClass as any} />
+          <AttendanceHistoryModal open={historyModalOpen} onClose={handleCloseHistory} classData={selectedClass as any} />
+
+          {/* Notification */}
+          <NotificationSnackbar
+            open={notification.open}
+            onClose={() => setNotification({ ...notification, open: false })}
+            message={notification.message}
+            severity={notification.severity}
+            autoHideDuration={6000}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+          />
           </Box>
-        )}
       </Box>
     </DashboardLayout>
   );

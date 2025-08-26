@@ -90,7 +90,21 @@ const AttendanceHistoryModal: React.FC<AttendanceHistoryModalProps> = ({
         page: 1,
         sortBy: 'date'
       });
-      setAttendanceHistory(res?.data || []);
+
+      // Parse the API response structure
+      const responseData = (res as any)?.data?.data || (res as any)?.data || {};
+      const attendanceRecords = responseData?.result || [];
+
+      // Transform to match the expected interface
+      const transformedHistory: AttendanceRecord[] = attendanceRecords.map((record: any) => ({
+        date: record.date,
+        students: record.attendances?.map((att: any) => ({
+          name: att.student?.name || '',
+          status: att.status || 'absent'
+        })) || []
+      }));
+
+      setAttendanceHistory(transformedHistory);
     } catch (err) {
       console.error('Error loading attendance history:', err);
     } finally {

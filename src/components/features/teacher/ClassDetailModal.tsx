@@ -133,12 +133,46 @@ const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
     try {
       // Lấy thông tin chi tiết lớp học
       const classRes = await getClassByIdAPI(classData.id);
-      setSelectedClassDetail(classRes?.data);
+      const payload = (classRes as any)?.data?.data || (classRes as any)?.data || {};
 
-      // Lấy danh sách học sinh
+      const normalizedSchedule = payload?.schedule ? {
+        dayOfWeeks: (payload.schedule.days_of_week || []).map((d: any) => Number(d)),
+        startTime: payload.schedule.time_slots?.start_time || payload.schedule.start_time,
+        endTime: payload.schedule.time_slots?.end_time || payload.schedule.end_time,
+      } : undefined;
+
+      const normalizedClass = {
+        id: payload.id,
+        name: payload.name,
+        grade: payload.grade,
+        section: payload.section,
+        status: payload.status,
+        teacherId: payload.teacher ? {
+          id: payload.teacher.id,
+          name: payload.teacher.name,
+          email: payload.teacher.email
+        } : undefined,
+        schedule: normalizedSchedule,
+        capacity: payload.max_student,
+        currentStudents: Array.isArray(payload.students) ? payload.students.length : undefined,
+        description: payload.description,
+      } as any;
+
+      setSelectedClassDetail(normalizedClass);
+
+      // Lấy danh sách học sinh từ response data.students
       setLoadingStudents(true);
-      const allStudents = await fetchAllStudentsInClass(classData.id);
-      setStudentsDetail(allStudents);
+      const mappedStudents: Student[] = Array.isArray(payload?.students)
+        ? payload.students.map((s: any) => ({
+            id: s?.student?.id,
+            name: s?.student?.name,
+            email: s?.student?.email,
+            phone: s?.student?.phone,
+            avatar: undefined,
+            status: undefined,
+          }))
+        : [];
+      setStudentsDetail(mappedStudents);
     } catch (err) {
       console.error('Error loading class details:', err);
     } finally {
@@ -283,12 +317,7 @@ const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
                   iconPosition="start"
                   {...a11yProps(1)}
                 />
-                <Tab
-                  label="Lịch học"
-                  icon={<EventIcon />}
-                  iconPosition="start"
-                  {...a11yProps(2)}
-                />
+                {/* Removed Lịch học tab; schedule moved into Thông tin chung */}
               </Tabs>
 
               <TabPanel value={detailTabValue} index={0}>
@@ -325,9 +354,59 @@ const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
                               {selectedClassDetail.currentStudents || 0} / {selectedClassDetail.capacity || 'Không giới hạn'} học sinh
                             </Typography>
                           </Box>
-                        </Box>
-                      </Paper>
-                    </Grid>
+                                                  </Box>
+                        </Paper>
+                      </Grid>
+
+                      {selectedClassDetail.schedule && (
+                        <Grid item xs={12} md={6}>
+                          <Paper sx={{ p: 3, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+                            <Typography variant="h6" gutterBottom sx={{ color: '#2c3e50', fontWeight: 600 }}>
+                              Lịch học
+                            </Typography>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                              <Box>
+                                <Typography variant="body2" color="text.secondary">Ngày học trong tuần</Typography>
+                                <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+                                  {selectedClassDetail.schedule.dayOfWeeks?.map(day => (
+                                    <Chip
+                                      key={day}
+                                      label={['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'][day]}
+                                      color="primary"
+                                      size="small"
+                                    />
+                                  ))}
+                                </Box>
+                              </Box>
+                              {selectedClassDetail.schedule.startTime && selectedClassDetail.schedule.endTime && (
+                                <Box>
+                                  <Typography variant="body2" color="text.secondary">Giờ học</Typography>
+                                  <Typography variant="body1" fontWeight="medium">
+                                    {selectedClassDetail.schedule.startTime} - {selectedClassDetail.schedule.endTime}
+                                  </Typography>
+                                </Box>
+                              )}
+                              <Box>
+                                <Typography variant="body2" color="text.secondary">Lịch học đầy đủ</Typography>
+                                <Typography variant="body1" fontWeight="medium">
+                                  {formatSchedule(selectedClassDetail.schedule)}
+                                </Typography>
+                              </Box>
+                            </Box>
+                          </Paper>
+                        </Grid>
+                      )}
+
+                      {selectedClassDetail.description && (
+                        <Grid item xs={12} md={6}>
+                          <Paper sx={{ p: 3, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+                            <Typography variant="h6" gutterBottom sx={{ color: '#2c3e50', fontWeight: 600 }}>
+                              Mô tả
+                            </Typography>
+                            <Typography variant="body1">{selectedClassDetail.description}</Typography>
+                          </Paper>
+                        </Grid>
+                      )}
 
                     <Grid item xs={12} md={6}>
                       <Paper sx={{ p: 3, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
@@ -359,16 +438,7 @@ const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
                       </Paper>
                     </Grid>
 
-                    {selectedClassDetail.description && (
-                      <Grid item xs={12}>
-                        <Paper sx={{ p: 3, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-                          <Typography variant="h6" gutterBottom sx={{ color: '#2c3e50', fontWeight: 600 }}>
-                            Mô tả
-                          </Typography>
-                          <Typography variant="body1">{selectedClassDetail.description}</Typography>
-                        </Paper>
-                      </Grid>
-                    )}
+
                   </Grid>
                 )}
               </TabPanel>
@@ -385,18 +455,6 @@ const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
                       <Typography variant="h6" sx={{ color: '#2c3e50', fontWeight: 600 }}>
                         Danh sách học sinh ({studentsDetail.length})
                       </Typography>
-                      <Button
-                        variant="contained"
-                        startIcon={<AssignmentIcon />}
-                        onClick={handleOpenAttendance}
-                        sx={{
-                          bgcolor: '#667eea',
-                          '&:hover': { bgcolor: '#5a6fd8' },
-                          borderRadius: 2
-                        }}
-                      >
-                        Điểm danh
-                      </Button>
                     </Box>
                     <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
                       <Table>
@@ -405,6 +463,7 @@ const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
                             <TableCell sx={{ fontWeight: 600, color: '#2c3e50' }}>STT</TableCell>
                             <TableCell sx={{ fontWeight: 600, color: '#2c3e50' }}>Họ và tên</TableCell>
                             <TableCell sx={{ fontWeight: 600, color: '#2c3e50' }}>Email</TableCell>
+                            <TableCell sx={{ fontWeight: 600, color: '#2c3e50' }}>Số điện thoại</TableCell>
                             <TableCell sx={{ fontWeight: 600, color: '#2c3e50' }}>Trạng thái</TableCell>
                           </TableRow>
                         </TableHead>
@@ -427,6 +486,9 @@ const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
                               </TableCell>
                               <TableCell>
                                 <Typography variant="body2">{student.email || 'Không có'}</Typography>
+                              </TableCell>
+                              <TableCell>
+                                <Typography variant="body2">{student.phone || 'Không có'}</Typography>
                               </TableCell>
                               <TableCell>
                                 <Chip
@@ -454,54 +516,7 @@ const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
                 )}
               </TabPanel>
 
-              <TabPanel value={detailTabValue} index={2}>
-                {selectedClassDetail?.schedule ? (
-                  <Paper sx={{ p: 3, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-                    <Typography variant="h6" gutterBottom sx={{ color: '#2c3e50', fontWeight: 600 }}>
-                      Lịch học
-                    </Typography>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      <Box>
-                        <Typography variant="body2" color="text.secondary">Ngày học trong tuần</Typography>
-                        <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
-                          {selectedClassDetail.schedule.dayOfWeeks?.map(day => (
-                            <Chip
-                              key={day}
-                              label={['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'][day]}
-                              color="primary"
-                              size="small"
-                            />
-                          ))}
-                        </Box>
-                      </Box>
-                      {selectedClassDetail.schedule.startTime && selectedClassDetail.schedule.endTime && (
-                        <Box>
-                          <Typography variant="body2" color="text.secondary">Giờ học</Typography>
-                          <Typography variant="body1" fontWeight="medium">
-                            {selectedClassDetail.schedule.startTime} - {selectedClassDetail.schedule.endTime}
-                          </Typography>
-                        </Box>
-                      )}
-                      <Box>
-                        <Typography variant="body2" color="text.secondary">Lịch học đầy đủ</Typography>
-                        <Typography variant="body1" fontWeight="medium">
-                          {formatSchedule(selectedClassDetail.schedule)}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </Paper>
-                ) : (
-                  <Box sx={{ textAlign: 'center', py: 4 }}>
-                    <EventIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-                    <Typography variant="h6" color="text.secondary" gutterBottom>
-                      Chưa có lịch học
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Lớp học này chưa được thiết lập lịch học.
-                    </Typography>
-                  </Box>
-                )}
-              </TabPanel>
+                             {/* Removed Lịch học tab; schedule moved into Thông tin chung */}
             </Box>
           )}
         </DialogContent>

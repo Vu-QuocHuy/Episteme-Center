@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import {
   Box, Typography, Paper, Grid, TextField, MenuItem, Card, CardContent, Tabs, Tab, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Pagination, IconButton, Button, Tooltip, Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress
 } from '@mui/material';
-import { History as HistoryIcon, Visibility as VisibilityIcon, Edit as EditIcon, Delete as DeleteIcon, Add as AddIcon } from '@mui/icons-material';
+import { History as HistoryIcon, Visibility as VisibilityIcon, Edit as EditIcon, Delete as DeleteIcon, Add as AddIcon, Payment as PaymentIcon } from '@mui/icons-material';
 // import { getPaymentsAPI, getTeacherPaymentsAPI, payTeacherAPI, getTotalPaymentsAPI, getTeacherByIdAPI } from '../../services/api';
-import { getAllTransactionsAPI, createTransactionAPI, updateTransactionAPI, deleteTransactionAPI, getAllPaymentsAPI, createTransactionCategoryAPI, getAllTransactionCategoriesAPI, deleteTransactionCategoryAPI, updateTransactionCategoryAPI, getAllTeacherPaymentsAPI } from '../../services/api';
+import { getAllTransactionsAPI, createTransactionAPI, updateTransactionAPI, deleteTransactionAPI, getAllPaymentsAPI, createTransactionCategoryAPI, getAllTransactionCategoriesAPI, deleteTransactionCategoryAPI, updateTransactionCategoryAPI, getAllTeacherPaymentsAPI, payStudentAPI } from '../../services/api';
 import PaymentHistoryModal from '../../components/common/PaymentHistoryModal';
 import NotificationSnackbar from '../../components/common/NotificationSnackbar';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
@@ -179,6 +179,12 @@ const FinancialStatisticsPanel: React.FC = () => {
   const [teacherDetailInfo, setTeacherDetailInfo] = useState<TeacherDetailInfo | null>(null);
   const [fixedTotalTeacherSalary, setFixedTotalTeacherSalary] = useState<number>(0);
   const [paymentStatus, setPaymentStatus] = useState<string>('all');
+
+  // Student payment dialog states
+  const [openStudentPaymentDialog, setOpenStudentPaymentDialog] = useState<boolean>(false);
+  const [selectedStudentPayment, setSelectedStudentPayment] = useState<StudentPayment | null>(null);
+  const [studentPaymentForm, setStudentPaymentForm] = useState<{ amount: string; method: string; note: string }>({ amount: '', method: 'cash', note: '' });
+  const [studentPaymentLoading, setStudentPaymentLoading] = useState<boolean>(false);
 
   const paymentStatuses = [
     { value: 'all', label: 'Tất cả trạng thái' },
@@ -555,7 +561,12 @@ const FinancialStatisticsPanel: React.FC = () => {
 
       console.log('📊 Fetching student payments with params:', params);
       const res = await getAllPaymentsAPI(params);
-      const data = res?.data?.data || res?.data;
+
+      // Parse the API response structure
+      const responseData = res?.data?.data || res?.data || {};
+      const data = responseData;
+
+      console.log('📊 Student payments response:', data);
 
       if (data && data.result) {
         setStudentPayments(data.result);
@@ -695,6 +706,51 @@ const FinancialStatisticsPanel: React.FC = () => {
   const handleClosePaymentHistory = (): void => {
     setSelectedPaymentForHistory(null);
     setPaymentHistoryModalOpen(false);
+  };
+
+  // Student payment dialog handlers
+  const handleOpenStudentPaymentDialog = (payment: StudentPayment): void => {
+    const remainingAmount = (payment.totalAmount || 0) - (payment.discountAmount || 0) - (payment.paidAmount || 0);
+    setSelectedStudentPayment(payment);
+    setStudentPaymentForm({
+      amount: remainingAmount.toString(),
+      method: 'cash',
+      note: ''
+    });
+    setOpenStudentPaymentDialog(true);
+  };
+
+  const handleCloseStudentPaymentDialog = (): void => {
+    setOpenStudentPaymentDialog(false);
+    setSelectedStudentPayment(null);
+    setStudentPaymentForm({ amount: '', method: 'cash', note: '' });
+  };
+
+  const handleChangeStudentPaymentField = (key: 'amount' | 'method' | 'note', value: string) => {
+    setStudentPaymentForm(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleSubmitStudentPayment = async (): Promise<void> => {
+    if (!selectedStudentPayment || !studentPaymentForm.amount) return;
+
+    setStudentPaymentLoading(true);
+    try {
+      await payStudentAPI(selectedStudentPayment.id, {
+        amount: Number(studentPaymentForm.amount),
+        method: studentPaymentForm.method,
+        note: studentPaymentForm.note
+      });
+
+      setSnackbar({ open: true, message: 'Thanh toán thành công', severity: 'success' });
+      handleCloseStudentPaymentDialog();
+
+      // Refresh student payments data
+      await fetchStudentPayments(studentPagination.page);
+    } catch (e: any) {
+      setSnackbar({ open: true, message: e?.response?.data?.message || 'Thanh toán thất bại', severity: 'error' });
+    } finally {
+      setStudentPaymentLoading(false);
+    }
   };
 
 
@@ -1095,9 +1151,23 @@ const FinancialStatisticsPanel: React.FC = () => {
                           />
                         </TableCell>
                       <TableCell align="center">
+                        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                          <Tooltip title="Lịch sử thanh toán">
                           <IconButton onClick={() => handleOpenPaymentHistory(p)}>
                             <HistoryIcon />
                           </IconButton>
+                          </Tooltip>
+                          {p.status !== 'paid' && (
+                            <Tooltip title="Thanh toán">
+                              <IconButton
+                                onClick={() => handleOpenStudentPaymentDialog(p)}
+                                color="primary"
+                              >
+                                <PaymentIcon />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                        </Box>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -1276,69 +1346,170 @@ const FinancialStatisticsPanel: React.FC = () => {
         fullWidth
         PaperProps={{
           sx: {
-            borderRadius: 3,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
+            borderRadius: 4,
+            boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
+            overflow: 'hidden'
           }
         }}
       >
         <DialogTitle sx={{
-          bgcolor: '#f8fafc',
-          borderBottom: '1px solid #e2e8f0',
-          pb: 2
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          color: 'white',
+          py: 4,
+          px: 4
         }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Box>
-              <Typography variant="h5" fontWeight={600} color="#1e293b">
+            <Typography variant="h4" fontWeight={700} sx={{ mb: 1 }}>
                 Quản lý danh mục
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+            <Typography variant="body1" sx={{ opacity: 0.9, fontWeight: 300 }}>
                 Quản lý các danh mục thu chi của hệ thống
               </Typography>
-            </Box>
-            <Button
-              variant="contained"
-              onClick={handleOpenCreateCategoryFromManagement}
-              sx={{
-                borderRadius: 2,
-                bgcolor: '#667eea',
-                '&:hover': { bgcolor: '#5a6fd8' },
-                px: 3,
-                py: 1
-              }}
-              startIcon={<AddIcon />}
-            >
-              Tạo danh mục
-            </Button>
           </Box>
         </DialogTitle>
-        <DialogContent sx={{ p: 3 }}>
+        <DialogContent sx={{ p: 0 }}>
           {categoriesLoading ? (
             <Box sx={{
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
               alignItems: 'center',
-              py: 6
+              py: 8
             }}>
-              <CircularProgress size={40} sx={{ color: '#667eea', mb: 2 }} />
-              <Typography color="text.secondary">Đang tải danh mục...</Typography>
+              <CircularProgress size={60} sx={{ color: '#667eea', mb: 3 }} />
+              <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
+                Đang tải danh mục...
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Vui lòng chờ trong giây lát
+              </Typography>
             </Box>
           ) : (
-            <TableContainer
-              component={Paper}
+            <Box sx={{ p: 4 }}>
+              {/* Statistics Cards */}
+              <Grid container spacing={3} sx={{ mb: 4 }}>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Card sx={{
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    color: 'white',
+                    borderRadius: 3,
+                    boxShadow: '0 8px 25px rgba(102, 126, 234, 0.3)'
+                  }}>
+                    <CardContent sx={{ p: 3 }}>
+                      <Typography variant="h3" fontWeight={700} sx={{ mb: 1 }}>
+                        {Array.isArray(categories) ? categories.length : 0}
+                      </Typography>
+                      <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                        Tổng số danh mục
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Card sx={{
+                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                    color: 'white',
+                    borderRadius: 3,
+                    boxShadow: '0 8px 25px rgba(16, 185, 129, 0.3)'
+                  }}>
+                    <CardContent sx={{ p: 3 }}>
+                      <Typography variant="h3" fontWeight={700} sx={{ mb: 1 }}>
+                        {Array.isArray(categories) ? categories.filter(c => c.type === 'revenue').length : 0}
+                      </Typography>
+                      <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                        Danh mục thu
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Card sx={{
+                    background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                    color: 'white',
+                    borderRadius: 3,
+                    boxShadow: '0 8px 25px rgba(239, 68, 68, 0.3)'
+                  }}>
+                    <CardContent sx={{ p: 3 }}>
+                      <Typography variant="h3" fontWeight={700} sx={{ mb: 1 }}>
+                        {Array.isArray(categories) ? categories.filter(c => c.type === 'expense').length : 0}
+                      </Typography>
+                      <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                        Danh mục chi
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Card sx={{
+                    background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                    color: 'white',
+                    borderRadius: 3,
+                    boxShadow: '0 8px 25px rgba(245, 158, 11, 0.3)'
+                  }}>
+                    <CardContent sx={{ p: 3 }}>
+                      <Typography variant="h3" fontWeight={700} sx={{ mb: 1 }}>
+                        {Array.isArray(categories) ? Math.round((categories.length / 10) * 100) : 0}%
+                      </Typography>
+                      <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                        Tỷ lệ sử dụng
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              </Grid>
+
+              {/* Categories Table */}
+              <Paper sx={{
+                borderRadius: 3,
+                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                border: '1px solid #e2e8f0',
+                overflow: 'hidden'
+              }}>
+                <Box sx={{
+                  p: 3,
+                  background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+                  borderBottom: '1px solid #e2e8f0',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <Box>
+                    <Typography variant="h6" fontWeight={600} color="#1e293b">
+                      Danh sách danh mục
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Quản lý và chỉnh sửa các danh mục thu chi
+                    </Typography>
+                  </Box>
+                  <Button
+                    variant="contained"
+                    onClick={handleOpenCreateCategoryFromManagement}
               sx={{
-                borderRadius: 2,
-                boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-                border: '1px solid #e2e8f0'
-              }}
-            >
+                      borderRadius: 3,
+                      bgcolor: '#667eea',
+                      px: 3,
+                      py: 1,
+                      fontWeight: 600,
+                      '&:hover': {
+                        bgcolor: '#5a6fd8',
+                        transform: 'translateY(-2px)',
+                        boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
+                      },
+                      transition: 'all 0.2s ease'
+                    }}
+                    startIcon={<AddIcon />}
+                  >
+                    Tạo danh mục
+                  </Button>
+                </Box>
+                <TableContainer>
               <Table>
                 <TableHead>
                   <TableRow sx={{ bgcolor: '#f8fafc' }}>
-                    <TableCell sx={{ fontWeight: 600, color: '#475569' }}>ID</TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: '#475569' }}>Tên danh mục</TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: '#475569' }}>Loại</TableCell>
-                    <TableCell align="center" sx={{ fontWeight: 600, color: '#475569' }}>Thao tác</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '0.875rem' }}>ID</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '0.875rem' }}>Tên danh mục</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '0.875rem' }}>Loại</TableCell>
+                        <TableCell align="center" sx={{ fontWeight: 700, color: '#475569', fontSize: '0.875rem' }}>Thao tác</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -1348,15 +1519,33 @@ const FinancialStatisticsPanel: React.FC = () => {
                         key={category.id}
                         hover
                         sx={{
-                          '&:hover': { bgcolor: '#f1f5f9' },
-                          '&:nth-of-type(even)': { bgcolor: '#fafbfc' }
-                        }}
-                      >
-                        <TableCell sx={{ fontWeight: 500, color: '#64748b' }}>
+                              '&:hover': {
+                                bgcolor: '#f1f5f9',
+                                transform: 'scale(1.01)',
+                                transition: 'all 0.2s ease'
+                              },
+                              '&:nth-of-type(even)': { bgcolor: '#fafbfc' },
+                              transition: 'all 0.2s ease'
+                            }}
+                          >
+                            <TableCell sx={{ fontWeight: 600, color: '#64748b' }}>
+                              <Box sx={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                width: 32,
+                                height: 32,
+                                borderRadius: '50%',
+                                bgcolor: '#e2e8f0',
+                                color: '#475569',
+                                fontSize: '0.875rem',
+                                fontWeight: 600
+                              }}>
                           #{category.id}
+                              </Box>
                         </TableCell>
                         <TableCell>
-                          <Typography variant="body1" fontWeight={500}>
+                              <Typography variant="body1" fontWeight={600} color="#1e293b">
                             {category.name}
                           </Typography>
                         </TableCell>
@@ -1364,55 +1553,100 @@ const FinancialStatisticsPanel: React.FC = () => {
                           <Chip
                             label={category.type === 'revenue' ? 'Thu' : 'Chi'}
                             color={category.type === 'revenue' ? 'success' : 'error'}
-                            size="small"
+                                size="medium"
                             sx={{
-                              fontWeight: 600,
-                              '& .MuiChip-label': { px: 1.5 }
+                                  fontWeight: 700,
+                                  fontSize: '0.875rem',
+                                  '& .MuiChip-label': { px: 2 },
+                                  boxShadow: category.type === 'revenue'
+                                    ? '0 4px 12px rgba(16, 185, 129, 0.3)'
+                                    : '0 4px 12px rgba(239, 68, 68, 0.3)'
                             }}
                           />
                         </TableCell>
                         <TableCell align="center">
-                          <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                              <Box sx={{ display: 'flex', gap: 1.5, justifyContent: 'center' }}>
+                                <Tooltip title="Chỉnh sửa danh mục" arrow>
                                                         <IconButton
-                              size="small"
+                                    size="medium"
                               color="primary"
-                              title="Chỉnh sửa"
                               onClick={() => handleEditCategory(category)}
                               sx={{
                                 bgcolor: '#dbeafe',
-                                '&:hover': { bgcolor: '#bfdbfe' },
-                                '& .MuiSvgIcon-root': { fontSize: 18 }
+                                      borderRadius: 2,
+                                      '&:hover': {
+                                        bgcolor: '#bfdbfe',
+                                        transform: 'translateY(-2px)',
+                                        boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
+                                      },
+                                      '& .MuiSvgIcon-root': { fontSize: 20 },
+                                      transition: 'all 0.2s ease'
                               }}
                             >
                               <EditIcon />
                             </IconButton>
+                                </Tooltip>
+                                <Tooltip title="Xóa danh mục" arrow>
                                                         <IconButton
-                              size="small"
+                                    size="medium"
                               color="error"
-                              title="Xóa"
                               onClick={() => handleDeleteCategory(category)}
                               sx={{
                                 bgcolor: '#fee2e2',
-                                '&:hover': { bgcolor: '#fecaca' },
-                                '& .MuiSvgIcon-root': { fontSize: 18 }
+                                      borderRadius: 2,
+                                      '&:hover': {
+                                        bgcolor: '#fecaca',
+                                        transform: 'translateY(-2px)',
+                                        boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)'
+                                      },
+                                      '& .MuiSvgIcon-root': { fontSize: 20 },
+                                      transition: 'all 0.2s ease'
                               }}
                             >
                               <DeleteIcon />
                             </IconButton>
+                                </Tooltip>
                           </Box>
                         </TableCell>
                       </TableRow>
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={4} align="center" sx={{ py: 4 }}>
+                          <TableCell colSpan={4} align="center" sx={{ py: 8 }}>
                         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                          <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
-                            Không có danh mục nào
+                              <Box sx={{
+                                width: 80,
+                                height: 80,
+                                borderRadius: '50%',
+                                bgcolor: '#f1f5f9',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                mb: 3
+                              }}>
+                                <AddIcon sx={{ fontSize: 40, color: '#64748b' }} />
+                              </Box>
+                              <Typography variant="h6" color="text.secondary" sx={{ mb: 2, fontWeight: 600 }}>
+                                Chưa có danh mục nào
                           </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            Hãy tạo danh mục đầu tiên để bắt đầu
+                              <Typography variant="body2" color="text.secondary" sx={{ mb: 3, textAlign: 'center' }}>
+                                Hãy tạo danh mục đầu tiên để bắt đầu quản lý thu chi
                           </Typography>
+                              <Button
+                                variant="contained"
+                                onClick={handleOpenCreateCategoryFromManagement}
+                                sx={{
+                                  borderRadius: 3,
+                                  bgcolor: '#667eea',
+                                  px: 4,
+                                  py: 1.5,
+                                  fontWeight: 600,
+                                  '&:hover': { bgcolor: '#5a6fd8' }
+                                }}
+                                startIcon={<AddIcon />}
+                              >
+                                Tạo danh mục đầu tiên
+                              </Button>
                         </Box>
                       </TableCell>
                     </TableRow>
@@ -1420,17 +1654,34 @@ const FinancialStatisticsPanel: React.FC = () => {
                 </TableBody>
               </Table>
             </TableContainer>
+              </Paper>
+            </Box>
           )}
         </DialogContent>
-        <DialogActions sx={{ p: 3, bgcolor: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+        <DialogActions sx={{
+          p: 4,
+          bgcolor: '#f8fafc',
+          borderTop: '1px solid #e2e8f0',
+          justifyContent: 'space-between'
+        }}>
+          <Typography variant="body2" color="text.secondary">
+            Tổng cộng: {Array.isArray(categories) ? categories.length : 0} danh mục
+          </Typography>
           <Button
             onClick={handleCloseCategoryManagementDialog}
             sx={{
-              borderRadius: 2,
-              px: 3,
-              py: 1,
-              color: '#64748b',
-              '&:hover': { bgcolor: '#e2e8f0' }
+              borderRadius: 3,
+              px: 4,
+              py: 1.5,
+              bgcolor: '#64748b',
+              color: 'white',
+              fontWeight: 600,
+              '&:hover': {
+                bgcolor: '#475569',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 4px 12px rgba(100, 116, 139, 0.3)'
+              },
+              transition: 'all 0.2s ease'
             }}
           >
             Đóng
@@ -1531,120 +1782,42 @@ const FinancialStatisticsPanel: React.FC = () => {
       </Dialog>
 
       {/* Dialog chỉnh sửa danh mục */}
-      <Dialog
+      <FormDialog
         open={openEditCategoryDialog}
         onClose={handleCloseEditCategoryDialog}
+        title="Chỉnh sửa danh mục"
+        subtitle="Cập nhật thông tin danh mục"
+        onSubmit={handleSubmitEditCategory}
+        loading={editCategoryLoading}
+        submitText="Cập nhật"
+        cancelText="Hủy"
         maxWidth="sm"
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 3,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
-          }
-        }}
       >
-        <DialogTitle sx={{
-          bgcolor: '#eff6ff',
-          borderBottom: '1px solid #bfdbfe',
-          pb: 2
-        }}>
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <Box sx={{
-              bgcolor: '#dbeafe',
-              borderRadius: '50%',
-              p: 1,
-              mr: 2,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <EditIcon sx={{ color: '#2563eb', fontSize: 24 }} />
-            </Box>
-            <Box>
-              <Typography variant="h6" color="#1e40af" fontWeight={600}>
-                Chỉnh sửa danh mục
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                Cập nhật thông tin danh mục
-              </Typography>
-            </Box>
-          </Box>
-        </DialogTitle>
-        <DialogContent sx={{ p: 3 }}>
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                select
-                fullWidth
-                label="Loại"
-                value={editCategoryForm.type}
-                onChange={(e) => handleChangeEditCategoryField('type', e.target.value)}
-                required
-                sx={{ mb: 2 }}
-              >
-                <MenuItem value="revenue">Thu</MenuItem>
-                <MenuItem value="expense">Chi</MenuItem>
-              </TextField>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Tên danh mục"
-                fullWidth
-                value={editCategoryForm.name}
-                onChange={(e) => handleChangeEditCategoryField('name', e.target.value)}
-                required
-                sx={{ mb: 2 }}
-              />
-            </Grid>
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              select
+              fullWidth
+              label="Loại"
+              value={editCategoryForm.type}
+              onChange={(e) => handleChangeEditCategoryField('type', e.target.value)}
+              required
+            >
+              <MenuItem value="revenue">Thu</MenuItem>
+              <MenuItem value="expense">Chi</MenuItem>
+            </TextField>
           </Grid>
-          {categoryToEdit && (
-            <Paper sx={{ p: 2, bgcolor: '#f8fafc', border: '1px solid #e2e8f0', mt: 2 }}>
-              <Typography variant="body2" color="#64748b" sx={{ mb: 1 }}>
-                Thông tin hiện tại:
-              </Typography>
-              <Typography variant="body1" fontWeight={500} color="#374151">
-                {categoryToEdit.name}
-              </Typography>
-              <Chip
-                label={categoryToEdit.type === 'revenue' ? 'Thu' : 'Chi'}
-                color={categoryToEdit.type === 'revenue' ? 'success' : 'error'}
-                size="small"
-                sx={{ mt: 1 }}
-              />
-            </Paper>
-          )}
-        </DialogContent>
-        <DialogActions sx={{ p: 3, bgcolor: '#eff6ff', borderTop: '1px solid #bfdbfe' }}>
-          <Button
-            onClick={handleCloseEditCategoryDialog}
-            disabled={editCategoryLoading}
-            sx={{
-              borderRadius: 2,
-              px: 3,
-              py: 1,
-              color: '#64748b',
-              '&:hover': { bgcolor: '#e2e8f0' }
-            }}
-          >
-            Hủy
-          </Button>
-          <Button
-            onClick={handleSubmitEditCategory}
-            disabled={editCategoryLoading}
-            variant="contained"
-            sx={{
-              borderRadius: 2,
-              px: 3,
-              py: 1,
-              bgcolor: '#2563eb',
-              '&:hover': { bgcolor: '#1d4ed8' },
-              '&:disabled': { bgcolor: '#93c5fd' }
-            }}
-          >
-            {editCategoryLoading ? 'Đang cập nhật...' : 'Cập nhật'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              label="Tên danh mục"
+              fullWidth
+              value={editCategoryForm.name}
+              onChange={(e) => handleChangeEditCategoryField('name', e.target.value)}
+              required
+            />
+          </Grid>
+        </Grid>
+      </FormDialog>
 
       {/* Dialog tạo danh mục */}
       <FormDialog
@@ -1808,6 +1981,135 @@ const FinancialStatisticsPanel: React.FC = () => {
           </Grid>
         </Grid>
       </FormDialog>
+
+      {/* Student Payment Dialog */}
+      <Dialog
+        open={openStudentPaymentDialog}
+        onClose={handleCloseStudentPaymentDialog}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
+          }
+        }}
+      >
+        <DialogTitle sx={{
+          bgcolor: '#f8fafc',
+          borderBottom: '1px solid #e2e8f0',
+          pb: 2
+        }}>
+          <Typography variant="h5" fontWeight={600} color="#1e293b">
+            Thanh toán học phí
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+            {selectedStudentPayment?.student?.name} - {selectedStudentPayment?.class?.name}
+          </Typography>
+        </DialogTitle>
+        <DialogContent sx={{ p: 3 }}>
+          <Grid container spacing={2}>
+            <Grid item xs={12}>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Thông tin hóa đơn:
+              </Typography>
+              <Box sx={{ p: 2, bgcolor: '#f8fafc', borderRadius: 1, mb: 2 }}>
+                <Grid container spacing={1}>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" color="text.secondary">Tổng tiền:</Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" fontWeight={500}>
+                      {(selectedStudentPayment?.totalAmount || 0).toLocaleString()} ₫
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" color="text.secondary">Giảm giá:</Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" fontWeight={500}>
+                      {(selectedStudentPayment?.discountAmount || 0).toLocaleString()} ₫
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" color="text.secondary">Đã thanh toán:</Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" fontWeight={500} color="success.main">
+                      {(selectedStudentPayment?.paidAmount || 0).toLocaleString()} ₫
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" color="text.secondary">Còn thiếu:</Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" fontWeight={500} color="error.main">
+                      {((selectedStudentPayment?.totalAmount || 0) - (selectedStudentPayment?.discountAmount || 0) - (selectedStudentPayment?.paidAmount || 0)).toLocaleString()} ₫
+                    </Typography>
+                  </Grid>
+                </Grid>
+              </Box>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Số tiền thanh toán"
+                type="number"
+                fullWidth
+                value={studentPaymentForm.amount}
+                onChange={(e) => handleChangeStudentPaymentField('amount', e.target.value)}
+                inputProps={{ min: 0 }}
+                required
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                select
+                fullWidth
+                label="Phương thức thanh toán"
+                value={studentPaymentForm.method}
+                onChange={(e) => handleChangeStudentPaymentField('method', e.target.value)}
+              >
+                <MenuItem value="cash">Tiền mặt</MenuItem>
+                <MenuItem value="bank_transfer">Chuyển khoản</MenuItem>
+                <MenuItem value="card">Thẻ</MenuItem>
+              </TextField>
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                label="Ghi chú"
+                fullWidth
+                multiline
+                minRows={2}
+                value={studentPaymentForm.note}
+                onChange={(e) => handleChangeStudentPaymentField('note', e.target.value)}
+                placeholder="Ghi chú về khoản thanh toán (tùy chọn)"
+              />
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions sx={{ p: 3, bgcolor: '#f8fafc' }}>
+          <Button
+            onClick={handleCloseStudentPaymentDialog}
+            variant="outlined"
+            sx={{ borderRadius: 2 }}
+          >
+            Hủy
+          </Button>
+          <Button
+            onClick={handleSubmitStudentPayment}
+            variant="contained"
+            disabled={!studentPaymentForm.amount || studentPaymentLoading}
+            sx={{
+              borderRadius: 2,
+              bgcolor: '#667eea',
+              '&:hover': { bgcolor: '#5a6fd8' },
+              px: 3
+            }}
+          >
+            {studentPaymentLoading ? <CircularProgress size={20} /> : 'Thanh toán'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
              {/* Payment History Modal */}
        {selectedPaymentForHistory && (
