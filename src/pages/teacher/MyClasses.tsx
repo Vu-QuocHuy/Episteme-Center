@@ -31,9 +31,9 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
 import { getTeacherScheduleAPI, getTodayAttendanceAPI } from '../../services/api';
-import ClassDetailModal from '@teacher/ClassDetailModal';
-import AttendanceModal from '@teacher/AttendanceModal';
-import AttendanceHistoryModal from '@teacher/AttendanceHistoryModal';
+import ClassDetailModal from '../../components/features/teacher/ClassDetailModal';
+import AttendanceModal from '../../components/features/teacher/AttendanceModal';
+import AttendanceHistoryModal from '../../components/features/teacher/AttendanceHistoryModal';
 import { commonStyles } from '../../utils/styles';
 import NotificationSnackbar from '../../components/common/NotificationSnackbar';
 import StatCard from '../../components/common/StatCard';
@@ -78,6 +78,21 @@ interface MyClassesData {
   totalStudents: number;
 }
 
+type ClassStatus = 'active' | 'upcoming' | 'closed' | 'completed' | 'pending';
+
+interface StatusConfig {
+  label: string;
+  color: 'success' | 'warning' | 'error' | 'default' | 'primary';
+}
+
+const STATUS_CONFIG: Record<ClassStatus, StatusConfig> = {
+  active: { label: 'Đang dạy', color: 'success' },
+  upcoming: { label: 'Sắp diễn ra', color: 'warning' },
+  closed: { label: 'Đã kết thúc', color: 'default' },
+  completed: { label: 'Hoàn thành', color: 'default' },
+  pending: { label: 'Chờ', color: 'warning' }
+};
+
 const MyClasses: React.FC = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState<boolean>(true);
@@ -97,7 +112,7 @@ const MyClasses: React.FC = () => {
   const [historyModalOpen, setHistoryModalOpen] = useState<boolean>(false);
   const [classesWithSessionToday, setClassesWithSessionToday] = useState<Set<string>>(new Set());
 
-  // Old UI states
+  // UI states
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>('');
   const [selectedTab, setSelectedTab] = useState<number>(0);
@@ -114,6 +129,21 @@ const MyClasses: React.FC = () => {
     const timer = setTimeout(() => setDebouncedSearchQuery(searchQuery), 700);
     return () => clearTimeout(timer);
   }, [searchQuery]);
+
+  const normalizeStatus = (status: string): ClassStatus => {
+    const statusLower = status.toLowerCase();
+    if (statusLower === 'active' || statusLower === 'đang học') return 'active';
+    if (statusLower === 'completed' || statusLower === 'hoàn thành') return 'completed';
+    if (statusLower === 'pending' || statusLower === 'chờ') return 'pending';
+    if (statusLower === 'upcoming' || statusLower === 'sắp diễn ra') return 'upcoming';
+    if (statusLower === 'closed' || statusLower === 'đã kết thúc') return 'closed';
+    return 'active'; // default
+  };
+
+  const getStatusConfig = (status: string): StatusConfig => {
+    const normalizedStatus = normalizeStatus(status);
+    return STATUS_CONFIG[normalizedStatus] || STATUS_CONFIG.active;
+  };
 
   const fetchMyClasses = async (): Promise<void> => {
     try {
@@ -160,10 +190,11 @@ const MyClasses: React.FC = () => {
       let activeClasses: number = 0;
       let completedClasses: number = 0;
       let totalStudents: number = 0;
+
       for (const classItem of classes) {
-        const statusLower = (classItem.status || '').toLowerCase();
-        if (statusLower === 'active' || statusLower === 'đang học') activeClasses++;
-        if (statusLower === 'completed' || statusLower === 'hoàn thành') completedClasses++;
+        const normalizedStatus = normalizeStatus(classItem.status);
+        if (normalizedStatus === 'active') activeClasses++;
+        if (normalizedStatus === 'completed' || normalizedStatus === 'closed') completedClasses++;
         const count = classItem.studentCount || (classItem.students ? classItem.students.length : 0) || 0;
         totalStudents += count;
       }
@@ -189,7 +220,7 @@ const MyClasses: React.FC = () => {
     const classesWithSession = new Set<string>();
 
     for (const classItem of classes) {
-      if (classItem.status === 'active') {
+      if (normalizeStatus(classItem.status) === 'active') {
         try {
           const response = await getTodayAttendanceAPI(classItem.id);
           const responseData = (response as any)?.data?.data || (response as any)?.data || {};
@@ -258,44 +289,13 @@ const MyClasses: React.FC = () => {
     const base = classesData.classes || [];
     const q = debouncedSearchQuery.trim().toLowerCase();
     let filtered = q ? base.filter(c => c.name?.toLowerCase().includes(q)) : base;
-    const statusFilters = ['active', 'upcoming', 'closed'];
+
+    const statusFilters: ClassStatus[] = ['active', 'upcoming', 'closed'];
     if (selectedTab < statusFilters.length) {
-      filtered = filtered.filter(classItem => classItem.status === statusFilters[selectedTab]);
+      filtered = filtered.filter(classItem => normalizeStatus(classItem.status) === statusFilters[selectedTab]);
     }
     return filtered;
   }, [classesData.classes, debouncedSearchQuery, selectedTab]);
-
-  const getStatusColor = (status: string): 'success' | 'warning' | 'error' | 'default' => {
-    switch (status.toLowerCase()) {
-      case 'active':
-      case 'đang học':
-        return 'success';
-      case 'completed':
-      case 'hoàn thành':
-        return 'default';
-      case 'pending':
-      case 'chờ':
-        return 'warning';
-      default:
-        return 'default';
-    }
-  };
-
-  const getStatusLabel = (status: string): string => {
-    switch (status.toLowerCase()) {
-      case 'active':
-      case 'đang học':
-        return 'Đang học';
-      case 'completed':
-      case 'hoàn thành':
-        return 'Hoàn thành';
-      case 'pending':
-      case 'chờ':
-        return 'Chờ';
-      default:
-        return status;
-    }
-  };
 
   if (loading) {
     return (
@@ -370,52 +370,58 @@ const MyClasses: React.FC = () => {
 
           {/* Class Cards Grid */}
         <Grid container spacing={3}>
-            {filteredClasses.map((classItem) => (
-              <Grid item xs={12} sm={6} md={4} key={classItem.id}>
-                <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                  <CardContent sx={{ flexGrow: 1 }}>
+            {filteredClasses.map((classItem) => {
+              const statusConfig = getStatusConfig(classItem.status);
+              const isActive = normalizeStatus(classItem.status) === 'active';
+              const hasSessionToday = classesWithSessionToday.has(classItem.id);
+
+              return (
+                <Grid item xs={12} sm={6} md={4} key={classItem.id}>
+                  <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                    <CardContent sx={{ flexGrow: 1 }}>
                     <Chip
-                      label={classItem.status === 'active' ? 'Đang dạy' : classItem.status === 'upcoming' ? 'Sắp diễn ra' : classItem.status === 'closed' ? 'Đã kết thúc' : 'Không xác định'}
-                      color={classItem.status === 'active' ? 'success' : classItem.status === 'upcoming' ? 'warning' : 'default'}
+                        label={statusConfig.label}
+                        color={statusConfig.color}
                       size="small"
-                      sx={{ mb: 1.5 }}
-                    />
-                    <Typography variant="h6" component="div" gutterBottom>
-                      {classItem.name}
+                        sx={{ mb: 1.5 }}
+                      />
+                      <Typography variant="h6" component="div" gutterBottom>
+                        {classItem.name}
                         </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', color: 'text.secondary', mb: 1 }}>
-                      <PeopleIcon fontSize="small" sx={{ mr: 1 }} />
-                      <Typography variant="body2">Khối {classItem.grade} - Phần {classItem.section}</Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', color: 'text.secondary', mb: 1 }}>
+                        <PeopleIcon fontSize="small" sx={{ mr: 1 }} />
+                        <Typography variant="body2">Khối {classItem.grade} - Phần {classItem.section}</Typography>
                       </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', color: 'text.secondary', mb: 1 }}>
-                      <EventIcon fontSize="small" sx={{ mr: 1 }} />
-                      <Typography variant="body2">{formatSchedule(classItem.schedule)}</Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', color: 'text.secondary', mb: 1 }}>
+                        <EventIcon fontSize="small" sx={{ mr: 1 }} />
+                        <Typography variant="body2">{formatSchedule(classItem.schedule)}</Typography>
                     </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', color: 'text.secondary', mb: 2 }}>
-                      <SchoolIcon fontSize="small" sx={{ mr: 1 }} />
-                      <Typography variant="body2">Phòng {classItem.room}</Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', color: 'text.secondary', mb: 2 }}>
+                        <SchoolIcon fontSize="small" sx={{ mr: 1 }} />
+                        <Typography variant="body2">Phòng {classItem.room}</Typography>
                     </Box>
                 </CardContent>
                 <CardActions>
-                    <Button size="small" onClick={() => handleOpenDetail(classItem)}>Xem chi tiết</Button>
-                    {(classItem.status === 'active' || classItem.status === 'closed') && (
-                      <Tooltip title="Xem lịch sử điểm danh">
-                        <Button size="small" startIcon={<HistoryIcon />} onClick={() => handleOpenHistory(classItem)}>
-                          Lịch sử điểm danh
+                      <Button size="small" onClick={() => handleOpenDetail(classItem)}>Xem chi tiết</Button>
+                      {(isActive || normalizeStatus(classItem.status) === 'closed') && (
+                        <Tooltip title="Xem lịch sử điểm danh">
+                          <Button size="small" startIcon={<HistoryIcon />} onClick={() => handleOpenHistory(classItem)}>
+                            Lịch sử điểm danh
                   </Button>
-                      </Tooltip>
-                    )}
-                    {classItem.status === 'active' && classesWithSessionToday.has(classItem.id) && (
-                      <Tooltip title="Điểm danh buổi học hôm nay">
-                        <Button size="small" startIcon={<AssignmentIcon />} onClick={() => handleOpenAttendance(classItem)}>
-                          Điểm danh
+                        </Tooltip>
+                      )}
+                      {isActive && hasSessionToday && (
+                        <Tooltip title="Điểm danh buổi học hôm nay">
+                          <Button size="small" startIcon={<AssignmentIcon />} onClick={() => handleOpenAttendance(classItem)}>
+                            Điểm danh
                   </Button>
-                      </Tooltip>
-                    )}
+                        </Tooltip>
+                      )}
                 </CardActions>
               </Card>
             </Grid>
-          ))}
+              );
+            })}
         </Grid>
 
           {filteredClasses.length === 0 && (

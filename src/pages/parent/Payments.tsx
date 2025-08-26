@@ -2,12 +2,11 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Box, Typography, Grid, Card, CardContent, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Chip, LinearProgress, Alert, Button,
-  Avatar, TextField, FormControl, InputLabel, Select, MenuItem,
+  TextField, FormControl, InputLabel, Select, MenuItem,
   Paper, Tabs, Tab, InputAdornment, Dialog, DialogTitle, DialogContent, DialogActions, IconButton,
 } from '@mui/material';
 import {
-  Payment as PaymentIcon, TrendingUp as TrendingUpIcon, AccountBalance as AccountBalanceIcon,
-  AttachMoney as MoneyIcon,
+  Payment as PaymentIcon,
   Search as SearchIcon, Receipt as ReceiptIcon, MoneyOff as MoneyOffIcon, Discount as DiscountIcon,
   History as HistoryIcon,
 } from '@mui/icons-material';
@@ -39,19 +38,18 @@ interface PaymentTransaction {
   paymentHistory?: any[];
 }
 
-interface PaymentSummary {
-  totalAmount: number;
-  paidAmount: number;
-  pendingAmount: number;
-  overdueAmount: number;
-  totalTransactions: number;
-  paidTransactions: number;
-  pendingTransactions: number;
-  overdueTransactions: number;
-}
-
 interface PaymentData {
   invoices: PaymentTransaction[];
+}
+
+interface PaymentConfirmData {
+  invoice: PaymentTransaction;
+  paymentData: {
+    paymentId: string;
+    amount: number;
+    method: string;
+    note: string;
+  };
 }
 
 const Payments: React.FC = () => {
@@ -61,6 +59,7 @@ const Payments: React.FC = () => {
   const [paymentData, setPaymentData] = useState<PaymentData>({ invoices: [] });
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedTab, setSelectedTab] = useState<number>(0);
+  
   // Payment dialog states
   const [paymentDialogOpen, setPaymentDialogOpen] = useState<boolean>(false);
   const [selectedInvoice, setSelectedInvoice] = useState<PaymentTransaction | null>(null);
@@ -70,14 +69,17 @@ const Payments: React.FC = () => {
   const [paymentSuccess, setPaymentSuccess] = useState<string>('');
   const [paymentNote, setPaymentNote] = useState<string>('');
   const [paymentMethod, setPaymentMethod] = useState<string>('cash');
+  
   // History modal
   const [paymentHistoryModalOpen, setPaymentHistoryModalOpen] = useState<boolean>(false);
-  const [selectedPaymentForHistory, setSelectedPaymentForHistory] = useState<any>(null);
+  const [selectedPaymentForHistory, setSelectedPaymentForHistory] = useState<PaymentTransaction | null>(null);
+  
   // Snackbar
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' | 'warning' }>({ open: false, message: '', severity: 'success' });
+  
   // Confirm dialog
   const [paymentConfirmOpen, setPaymentConfirmOpen] = useState<boolean>(false);
-  const [paymentConfirmData, setPaymentConfirmData] = useState<any>(null);
+  const [paymentConfirmData, setPaymentConfirmData] = useState<PaymentConfirmData | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -150,10 +152,6 @@ const Payments: React.FC = () => {
     }).format(amount);
   };
 
-  const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString('vi-VN');
-  };
-
   const getStatusColor = (status: string): 'success' | 'warning' | 'error' | 'default' => {
     switch (status.toLowerCase()) {
       case 'paid':
@@ -185,8 +183,6 @@ const Payments: React.FC = () => {
         return status;
     }
   };
-
-  // Removed legacy payment details modal handlers in favor of payment dialog flow
 
   const allInvoices = paymentData.invoices;
   const summary = useMemo(() => {
@@ -251,7 +247,7 @@ const Payments: React.FC = () => {
     setPaymentSuccess('');
   };
 
-  const handleOpenPaymentHistory = (payment: any) => {
+  const handleOpenPaymentHistory = (payment: PaymentTransaction) => {
     setSelectedPaymentForHistory(payment);
     setPaymentHistoryModalOpen(true);
   };
@@ -259,6 +255,10 @@ const Payments: React.FC = () => {
   const handleClosePaymentHistory = () => {
     setSelectedPaymentForHistory(null);
     setPaymentHistoryModalOpen(false);
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
   };
 
   const handleConfirmPayment = () => {
@@ -342,197 +342,368 @@ const Payments: React.FC = () => {
             Xem và quản lý hóa đơn học phí của con bạn
           </Typography>
 
-        {/* Stat Cards */}
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Box display="flex" alignItems="center">
-                  <ReceiptIcon color="primary" sx={{ mr: 2, fontSize: 40 }} />
-                  <Box>
-                    <Typography variant="h4">{summary.totalInvoices}</Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      Tổng hóa đơn
-                    </Typography>
+          {/* Stat Cards */}
+          <Grid container spacing={3} sx={{ mb: 4 }}>
+            <Grid item xs={12} sm={6} md={3}>
+              <Card>
+                <CardContent>
+                  <Box display="flex" alignItems="center">
+                    <ReceiptIcon color="primary" sx={{ mr: 2, fontSize: 40 }} />
+                    <Box>
+                      <Typography variant="h4">{summary.totalInvoices}</Typography>
+                      <Typography variant="body2" color="textSecondary">
+                        Tổng hóa đơn
+                      </Typography>
+                    </Box>
                   </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Box display="flex" alignItems="center">
-                  <PaymentIcon color="success" sx={{ mr: 2, fontSize: 40 }} />
-                  <Box>
-                    <Typography variant="h4">{formatCurrency(summary.totalPaid)}</Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      Đã thanh toán
-                    </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <Card>
+                <CardContent>
+                  <Box display="flex" alignItems="center">
+                    <PaymentIcon color="success" sx={{ mr: 2, fontSize: 40 }} />
+                    <Box>
+                      <Typography variant="h4">{formatCurrency(summary.totalPaid)}</Typography>
+                      <Typography variant="body2" color="textSecondary">
+                        Đã thanh toán
+                      </Typography>
+                    </Box>
                   </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Box display="flex" alignItems="center">
-                  <MoneyOffIcon color="error" sx={{ mr: 2, fontSize: 40 }} />
-                  <Box>
-                    <Typography variant="h4">{formatCurrency(summary.totalUnpaid)}</Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      Chưa thanh toán
-                    </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <Card>
+                <CardContent>
+                  <Box display="flex" alignItems="center">
+                    <MoneyOffIcon color="error" sx={{ mr: 2, fontSize: 40 }} />
+                    <Box>
+                      <Typography variant="h4">{formatCurrency(summary.totalUnpaid)}</Typography>
+                      <Typography variant="body2" color="textSecondary">
+                        Chưa thanh toán
+                      </Typography>
+                    </Box>
                   </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Box display="flex" alignItems="center">
-                  <DiscountIcon color="warning" sx={{ mr: 2, fontSize: 40 }} />
-                  <Box>
-                    <Typography variant="h4">{formatCurrency(summary.totalDiscount)}</Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      Tổng giảm giá
-                    </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <Card>
+                <CardContent>
+                  <Box display="flex" alignItems="center">
+                    <DiscountIcon color="warning" sx={{ mr: 2, fontSize: 40 }} />
+                    <Box>
+                      <Typography variant="h4">{formatCurrency(summary.totalDiscount)}</Typography>
+                      <Typography variant="body2" color="textSecondary">
+                        Tổng giảm giá
+                      </Typography>
+                    </Box>
                   </Box>
-                </Box>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </Grid>
           </Grid>
-        </Grid>
 
-        {/* Tabs */}
-        <Tabs value={selectedTab} onChange={handleTabChange} sx={{ mb: 3 }}>
-          <Tab label={`Tất cả (${allInvoices.length})`} />
-          <Tab label={`Chưa thanh toán (${summary.unpaidInvoices})`} />
-          <Tab label={`Thanh toán một phần (${summary.partialInvoices})`} />
-          <Tab label={`Đã thanh toán (${summary.paidInvoices})`} />
-        </Tabs>
+          {/* Tabs */}
+          <Tabs value={selectedTab} onChange={handleTabChange} sx={{ mb: 3 }}>
+            <Tab label={`Tất cả (${allInvoices.length})`} />
+            <Tab label={`Chưa thanh toán (${summary.unpaidInvoices})`} />
+            <Tab label={`Thanh toán một phần (${summary.partialInvoices})`} />
+            <Tab label={`Đã thanh toán (${summary.paidInvoices})`} />
+          </Tabs>
 
-        {/* Search */}
-        <Paper sx={commonStyles.searchContainer}>
-          <TextField
-            fullWidth
-            placeholder="Tìm kiếm theo tên con hoặc tên lớp..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            sx={commonStyles.searchField}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-            }}
-          />
-        </Paper>
+          {/* Search */}
+          <Paper sx={commonStyles.searchContainer}>
+            <TextField
+              fullWidth
+              placeholder="Tìm kiếm theo tên con hoặc tên lớp..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              sx={commonStyles.searchField}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Paper>
 
-        {/* Payment Transactions Table */}
-        <Card>
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
-              Danh sách hóa đơn
-            </Typography>
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell align="center" sx={{ fontWeight: 'bold' }}>Tên con</TableCell>
-                    <TableCell align="center" sx={{ fontWeight: 'bold' }}>Lớp học</TableCell>
-                    <TableCell align="center" sx={{ fontWeight: 'bold' }}>Tháng</TableCell>
-                    <TableCell align="center" sx={{ fontWeight: 'bold' }}>Số buổi học</TableCell>
-                    <TableCell align="center" sx={{ fontWeight: 'bold' }}>Tiền gốc</TableCell>
-                    <TableCell align="center" sx={{ fontWeight: 'bold' }}>Giảm giá</TableCell>
-                    <TableCell align="center" sx={{ fontWeight: 'bold' }}>Tiền cuối</TableCell>
-                    <TableCell align="center" sx={{ fontWeight: 'bold' }}>Đã thanh toán</TableCell>
-                    <TableCell align="center" sx={{ fontWeight: 'bold' }}>Còn lại</TableCell>
-                    <TableCell align="center" sx={{ fontWeight: 'bold' }}>Trạng thái</TableCell>
-                    <TableCell align="center" sx={{ fontWeight: 'bold' }}>Thao tác</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {filteredInvoices.map((invoice) => (
-                    <TableRow key={invoice.id} sx={commonStyles.tableRow}>
-                      <TableCell align="center">
-                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                          {invoice.childName}
-                        </Typography>
-                      </TableCell>
-                      <TableCell align="center">
-                        <Typography variant="body2" sx={{ fontWeight: 500 }}>{invoice.className}</Typography>
-                      </TableCell>
-                      <TableCell align="center">{invoice.month}</TableCell>
-                      <TableCell align="center"><Typography variant="body2" sx={{ fontWeight: 500 }}>{`${invoice.attendedLessons} buổi`}</Typography></TableCell>
-                      <TableCell align="center"><Typography variant="body2" sx={{ fontWeight: 500 }}>{formatCurrency(invoice.originalAmount)}</Typography></TableCell>
-                      <TableCell align="center">
-                        {invoice.discountAmount > 0 ? (
+          {/* Payment Transactions Table */}
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Danh sách hóa đơn
+              </Typography>
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell align="center" sx={{ fontWeight: 'bold' }}>Tên con</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 'bold' }}>Lớp học</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 'bold' }}>Tháng</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 'bold' }}>Số buổi học</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 'bold' }}>Tiền gốc</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 'bold' }}>Giảm giá</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 'bold' }}>Tiền cuối</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 'bold' }}>Đã thanh toán</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 'bold' }}>Còn lại</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 'bold' }}>Trạng thái</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 'bold' }}>Thao tác</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {filteredInvoices.map((invoice) => (
+                      <TableRow key={invoice.id} sx={commonStyles.tableRow}>
+                        <TableCell align="center">
+                          <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                            {invoice.childName}
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="center">
+                          <Typography variant="body2" sx={{ fontWeight: 500 }}>{invoice.className}</Typography>
+                        </TableCell>
+                        <TableCell align="center">{invoice.month}</TableCell>
+                        <TableCell align="center"><Typography variant="body2" sx={{ fontWeight: 500 }}>{`${invoice.attendedLessons} buổi`}</Typography></TableCell>
+                        <TableCell align="center"><Typography variant="body2" sx={{ fontWeight: 500 }}>{formatCurrency(invoice.originalAmount)}</Typography></TableCell>
+                        <TableCell align="center">
+                          {invoice.discountAmount > 0 ? (
+                            <Chip
+                              label={`-${formatCurrency(invoice.discountAmount)}`}
+                              color="success"
+                              size="small"
+                              variant="outlined"
+                            />
+                          ) : (
+                            '-'
+                          )}
+                        </TableCell>
+                        <TableCell align="center" sx={{ fontWeight: 'bold' }}><Typography variant="body2" sx={{ fontWeight: 500 }}>{formatCurrency(invoice.finalAmount)}</Typography></TableCell>
+                        <TableCell align="center"><Typography variant="body2" sx={{ fontWeight: 500 }}>{formatCurrency(invoice.paidAmount)}</Typography></TableCell>
+                        <TableCell align="center"><Typography variant="body2" sx={{ fontWeight: 500 }}>{formatCurrency(invoice.remainingAmount)}</Typography></TableCell>
+                        <TableCell align="center">
                           <Chip
-                            label={`-${formatCurrency(invoice.discountAmount)}`}
-                            color="success"
+                            label={getStatusLabel(invoice.status)}
+                            color={getStatusColor(invoice.status)}
                             size="small"
                             variant="outlined"
                           />
-                        ) : (
-                          '-'
-                        )}
-                      </TableCell>
-                      <TableCell align="center" sx={{ fontWeight: 'bold' }}><Typography variant="body2" sx={{ fontWeight: 500 }}>{formatCurrency(invoice.finalAmount)}</Typography></TableCell>
-                      <TableCell align="center"><Typography variant="body2" sx={{ fontWeight: 500 }}>{formatCurrency(invoice.paidAmount)}</Typography></TableCell>
-                      <TableCell align="center"><Typography variant="body2" sx={{ fontWeight: 500 }}>{formatCurrency(invoice.remainingAmount)}</Typography></TableCell>
-                      <TableCell align="center">
-                        <Chip
-                          label={getStatusLabel(invoice.status)}
-                          color={getStatusColor(invoice.status)}
-                          size="small"
-                          variant="outlined"
-                        />
-                      </TableCell>
-                      <TableCell align="left">
-                        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'left' }}>
-                          {invoice.status.toLowerCase() !== 'paid' ? (
-                            <Button
-                              variant="contained"
-                              color="primary"
-                              size="small"
-                              onClick={() => handlePayment(invoice)}
-                            >
-                              Thanh toán
-                            </Button>
-                          ) : null}
-                          {invoice.paymentHistory && invoice.paymentHistory.length > 0 && (
-                            <IconButton
-                              size="small"
-                              color="info"
-                              onClick={() => handleOpenPaymentHistory(invoice)}
-                              title="Xem lịch sử thanh toán"
-                            >
-                              <HistoryIcon />
-                            </IconButton>
-                          )}
-                        </Box>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                        </TableCell>
+                        <TableCell align="left">
+                          <Box sx={{ display: 'flex', gap: 1, justifyContent: 'left' }}>
+                            {invoice.status.toLowerCase() !== 'paid' ? (
+                              <Button
+                                variant="contained"
+                                color="primary"
+                                size="small"
+                                onClick={() => handlePayment(invoice)}
+                              >
+                                Thanh toán
+                              </Button>
+                            ) : null}
+                            {invoice.paymentHistory && invoice.paymentHistory.length > 0 && (
+                              <IconButton
+                                size="small"
+                                color="info"
+                                onClick={() => handleOpenPaymentHistory(invoice)}
+                                title="Xem lịch sử thanh toán"
+                              >
+                                <HistoryIcon />
+                              </IconButton>
+                            )}
+                          </Box>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
 
-            {filteredInvoices.length === 0 && (
-              <Box textAlign="center" py={4}>
-                <Typography variant="h6" color="textSecondary">
-                  Không tìm thấy giao dịch thanh toán
-                </Typography>
-              </Box>
-            )}
-          </CardContent>
-        </Card>
+              {filteredInvoices.length === 0 && (
+                <Box textAlign="center" py={4}>
+                  <Typography variant="h6" color="textSecondary">
+                    Không tìm thấy giao dịch thanh toán
+                  </Typography>
+                </Box>
+              )}
+            </CardContent>
+          </Card>
         </Box>
       </Box>
+
+      {/* Payment Dialog */}
+      <Dialog
+        open={paymentDialogOpen}
+        onClose={handleClosePaymentDialog}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
+          }
+        }}
+      >
+        <DialogTitle sx={{
+          bgcolor: '#f8fafc',
+          borderBottom: '1px solid #e2e8f0',
+          pb: 2
+        }}>
+          <Typography variant="h5" fontWeight={600} color="#1e293b">
+            Thanh toán học phí
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+            {selectedInvoice?.childName} - {selectedInvoice?.className}
+          </Typography>
+        </DialogTitle>
+        <DialogContent sx={{ p: 3 }}>
+          <Grid container spacing={2}>
+            <Grid item xs={12}>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Thông tin hóa đơn:
+              </Typography>
+              <Box sx={{ p: 2, bgcolor: '#f8fafc', borderRadius: 1, mb: 2 }}>
+                <Grid container spacing={1}>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" color="text.secondary">Tổng tiền:</Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" fontWeight={500}>
+                      {formatCurrency(selectedInvoice?.originalAmount || 0)}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" color="text.secondary">Giảm giá:</Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" fontWeight={500}>
+                      {formatCurrency(selectedInvoice?.discountAmount || 0)}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" color="text.secondary">Đã thanh toán:</Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" fontWeight={500} color="success.main">
+                      {formatCurrency(selectedInvoice?.paidAmount || 0)}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" color="text.secondary">Còn thiếu:</Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" fontWeight={500} color="error.main">
+                      {formatCurrency(selectedInvoice?.remainingAmount || 0)}
+                    </Typography>
+                  </Grid>
+                </Grid>
+              </Box>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Số tiền thanh toán"
+                type="number"
+                fullWidth
+                value={paymentAmount}
+                onChange={(e) => setPaymentAmount(e.target.value)}
+                inputProps={{ min: 0 }}
+                required
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth>
+                <InputLabel>Phương thức thanh toán</InputLabel>
+                <Select
+                  value={paymentMethod}
+                  onChange={(e) => setPaymentMethod(e.target.value)}
+                  label="Phương thức thanh toán"
+                >
+                  <MenuItem value="cash">Tiền mặt</MenuItem>
+                  <MenuItem value="bank_transfer">Chuyển khoản</MenuItem>
+                  <MenuItem value="card">Thẻ</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                label="Ghi chú"
+                fullWidth
+                multiline
+                minRows={2}
+                value={paymentNote}
+                onChange={(e) => setPaymentNote(e.target.value)}
+                placeholder="Ghi chú về khoản thanh toán (tùy chọn)"
+              />
+            </Grid>
+            {paymentError && (
+              <Grid item xs={12}>
+                <Alert severity="error">{paymentError}</Alert>
+              </Grid>
+            )}
+            {paymentSuccess && (
+              <Grid item xs={12}>
+                <Alert severity="success">{paymentSuccess}</Alert>
+              </Grid>
+            )}
+          </Grid>
+        </DialogContent>
+        <DialogActions sx={{ p: 3, bgcolor: '#f8fafc' }}>
+          <Button
+            onClick={handleClosePaymentDialog}
+            variant="outlined"
+            sx={{ borderRadius: 2 }}
+          >
+            Hủy
+          </Button>
+          <Button
+            onClick={handleConfirmPayment}
+            variant="contained"
+            disabled={!paymentAmount || paymentLoading}
+            sx={{
+              borderRadius: 2,
+              bgcolor: '#667eea',
+              '&:hover': { bgcolor: '#5a6fd8' },
+              px: 3
+            }}
+          >
+            {paymentLoading ? 'Đang xử lý...' : 'Xác nhận thanh toán'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Payment History Modal */}
+      {selectedPaymentForHistory && (
+        <PaymentHistoryModal
+          open={paymentHistoryModalOpen}
+          onClose={handleClosePaymentHistory}
+          paymentData={selectedPaymentForHistory as any}
+          title="Lịch sử thanh toán học phí"
+          showPaymentDetails={true}
+        />
+      )}
+
+      {/* Notification Snackbar */}
+      <NotificationSnackbar
+        open={snackbar.open}
+        onClose={handleCloseSnackbar}
+        message={snackbar.message}
+        severity={snackbar.severity}
+      />
+
+      {/* Confirm Dialog for Payment */}
+      <ConfirmDialog
+        open={paymentConfirmOpen}
+        onClose={() => setPaymentConfirmOpen(false)}
+        onConfirm={handleConfirmPaymentFinal}
+        title="Xác nhận thanh toán"
+        message={`Bạn có chắc chắn muốn thanh toán ${formatCurrency(paymentConfirmData?.paymentData.amount || 0)} cho hóa đơn học phí tháng ${paymentConfirmData?.invoice.month} của ${paymentConfirmData?.invoice.childName}?`}
+        confirmText="Xác nhận"
+        cancelText="Hủy"
+        loading={paymentLoading}
+      />
     </DashboardLayout>
   );
 };

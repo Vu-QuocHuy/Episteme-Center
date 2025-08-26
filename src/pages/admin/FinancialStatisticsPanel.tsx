@@ -126,7 +126,7 @@ const FinancialStatisticsPanel: React.FC = () => {
 
   // Category management dialog states
   const [openCategoryManagementDialog, setOpenCategoryManagementDialog] = useState<boolean>(false);
-  const [categoryManagementLoading, setCategoryManagementLoading] = useState<boolean>(false);
+  // const [categoryManagementLoading, setCategoryManagementLoading] = useState<boolean>(false);
   const [openDeleteCategoryDialog, setOpenDeleteCategoryDialog] = useState<boolean>(false);
   const [categoryToDelete, setCategoryToDelete] = useState<any | null>(null);
   const [deleteCategoryLoading, setDeleteCategoryLoading] = useState<boolean>(false);
@@ -229,7 +229,7 @@ const FinancialStatisticsPanel: React.FC = () => {
     }
   };
 
-  const handleOpenOtherDialog = (): void => setOpenOtherDialog(true);
+  // const handleOpenOtherDialog = (): void => setOpenOtherDialog(true);
   const handleCloseOtherDialog = (): void => setOpenOtherDialog(false);
   const handleChangeOtherField = (key: 'amount' | 'category_id' | 'description', value: string) => setOtherForm(prev => ({ ...prev, [key]: value }));
   const handleSubmitOther = async (): Promise<void> => {
@@ -249,7 +249,7 @@ const FinancialStatisticsPanel: React.FC = () => {
   };
 
   // Category dialog handlers
-  const handleOpenCategoryDialog = (): void => setOpenCategoryDialog(true);
+  // const handleOpenCategoryDialog = (): void => setOpenCategoryDialog(true);
   const handleCloseCategoryDialog = (): void => setOpenCategoryDialog(false);
   const handleChangeCategoryField = (key: 'type' | 'name', value: string) => setCategoryForm(prev => ({ ...prev, [key]: value }));
   const handleSubmitCategory = async (): Promise<void> => {
@@ -1514,7 +1514,7 @@ const FinancialStatisticsPanel: React.FC = () => {
                 </TableHead>
                 <TableBody>
                   {Array.isArray(categories) && categories.length > 0 ? (
-                    categories.map((category, index) => (
+                    categories.map((category, ) => (
                       <TableRow
                         key={category.id}
                         hover
@@ -1793,30 +1793,30 @@ const FinancialStatisticsPanel: React.FC = () => {
         cancelText="Hủy"
         maxWidth="sm"
       >
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              select
-              fullWidth
-              label="Loại"
-              value={editCategoryForm.type}
-              onChange={(e) => handleChangeEditCategoryField('type', e.target.value)}
-              required
-            >
-              <MenuItem value="revenue">Thu</MenuItem>
-              <MenuItem value="expense">Chi</MenuItem>
-            </TextField>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                select
+                fullWidth
+                label="Loại"
+                value={editCategoryForm.type}
+                onChange={(e) => handleChangeEditCategoryField('type', e.target.value)}
+                required
+              >
+                <MenuItem value="revenue">Thu</MenuItem>
+                <MenuItem value="expense">Chi</MenuItem>
+              </TextField>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Tên danh mục"
+                fullWidth
+                value={editCategoryForm.name}
+                onChange={(e) => handleChangeEditCategoryField('name', e.target.value)}
+                required
+              />
+            </Grid>
           </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              label="Tên danh mục"
-              fullWidth
-              value={editCategoryForm.name}
-              onChange={(e) => handleChangeEditCategoryField('name', e.target.value)}
-              required
-            />
-          </Grid>
-        </Grid>
       </FormDialog>
 
       {/* Dialog tạo danh mục */}
