@@ -58,18 +58,14 @@ const ParentForm: React.FC<ParentFormProps> = ({ open, onClose, onSubmit, parent
   const debouncedStudentQuery = useDebounce(studentQuery, 500);
 
   useEffect(() => {
-    console.log('🔄 useEffect triggered. parent:', !!parent, 'open:', open, 'tab:', tab);
     if (parent && open) {
-      console.log('📝 Setting up edit mode');
       setFormData(parent as any);
       // Không reset tab khi đã mở dialog
     } else if (!open) {
-      console.log('❌ Dialog closed, resetting');
       resetForm();
       setChildrenList([]);
       setTab(0); // Reset về tab đầu tiên khi đóng dialog
     } else if (!parent && open) {
-      console.log('➕ Setting up add mode');
       // Khi mở dialog thêm mới
       setTab(0); // Chỉ hiển thị tab thông tin cơ bản
     }
@@ -176,16 +172,11 @@ const ParentForm: React.FC<ParentFormProps> = ({ open, onClose, onSubmit, parent
   const removeChild = async (studentId: string) => {
     if (!parent?.id) return;
 
-    console.log('🗑️ Removing child:', studentId, 'from parent:', parent.id);
-    console.log('🗑️ Current children list:', childrenList);
-
     const result = await handleRemoveChild(String(studentId), String(parent.id));
-    console.log('🗑️ Remove result:', result);
 
     if (result.success) {
       // Cập nhật danh sách con ngay lập tức
       const updatedList = childrenList.filter((s: any) => String(s.id) !== String(studentId));
-      console.log('🗑️ Updated children list:', updatedList);
       setChildrenList(updatedList);
 
       // Hiển thị thông báo thành công
@@ -251,7 +242,6 @@ const ParentForm: React.FC<ParentFormProps> = ({ open, onClose, onSubmit, parent
         {parent && (
           <Box sx={{ px: 4, pt: 2 }}>
             <Tabs value={tab} onChange={(_e, v) => {
-              console.log('🔄 Tab changed from', tab, 'to', v);
               setTab(v);
             }} sx={{ mb: 2 }}>
               <Tab label="Thông tin cơ bản" />
@@ -332,7 +322,7 @@ const ParentForm: React.FC<ParentFormProps> = ({ open, onClose, onSubmit, parent
                   <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: '#2c3e50' }}>
                     Danh sách con hiện tại ({childrenList.length} con)
                   </Typography>
-                  {(() => { console.log('👥 Rendering children list:', childrenList, 'refreshKey:', refreshKey); return null; })()}
+                  {(() => { return null; })()}
                   {childrenList.length > 0 ? (
                     <Box key={refreshKey} sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                       {childrenList.map((child: any) => (

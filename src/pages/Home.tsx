@@ -131,52 +131,8 @@ const Home: React.FC = () => {
           {/* Hiển thị khác nhau tùy trạng thái đăng nhập */}
           {user ? (
             <>
-              <Button
-                variant="contained"
-                startIcon={<DashboardIcon />}
-                onClick={handleDashboardClick}
-                sx={{
-                  mr: 2,
-                  borderRadius: 2,
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                  '&:hover': {
-                    transform: 'translateY(-1px)',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-                  },
-                  transition: 'all 0.2s ease-in-out'
-                }}
-              >
-                Dashboard
-              </Button>
 
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                {/* User info - hidden on mobile */}
-                <Box sx={{
-                  display: { xs: 'none', md: 'flex' },
-                  flexDirection: 'column',
-                  alignItems: 'flex-end'
-                }}>
-                  <Typography variant="subtitle2" sx={{
-                    fontWeight: 600,
-                    color: 'text.primary',
-                    lineHeight: 1.2
-                  }}>
-                    {user.name || 'User'}
-                  </Typography>
-                  <Chip
-                    label={getRoleLabel(user.role)}
-                    size="small"
-                    sx={{
-                      bgcolor: `${getRoleColor(user.role)}15`,
-                      color: getRoleColor(user.role),
-                      fontWeight: 500,
-                      fontSize: '0.75rem',
-                      height: 20,
-                      mt: 0.5
-                    }}
-                  />
-                </Box>
-
                 {/* Avatar button */}
                 <Button
                   onClick={handleMenu}
@@ -197,6 +153,7 @@ const Home: React.FC = () => {
                     height: 40,
                     fontWeight: 600,
                     boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+
                   }}>
                     {user.name?.charAt(0)?.toUpperCase() || 'U'}
                   </Avatar>
@@ -225,7 +182,9 @@ const Home: React.FC = () => {
                     WebkitBackdropFilter: 'blur(20px)',
                     border: '1px solid rgba(226, 232, 240, 0.8)',
                     borderRadius: 3,
-                    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+,
+
                     overflow: 'visible',
                   }
                 }}
@@ -254,6 +213,27 @@ const Home: React.FC = () => {
                     </Typography>
                   </Box>
                 </Box>
+
+                <MenuItem
+                  onClick={() => { handleDashboardClick(); handleClose(); }}
+                  sx={{
+                    mx: 1,
+                    borderRadius: 2,
+                    color: 'text.primary',
+                    transition: 'all 0.2s ease-in-out',
+                    '&:hover': {
+                      backgroundColor: `${getRoleColor(user.role)}15`,
+                      transform: 'translateX(4px)',
+                    },
+                  }}
+                >
+                  <DashboardIcon sx={{
+                    mr: 2,
+                    color: 'text.secondary',
+                    fontSize: 20
+                  }} />
+                  Dashboard
+                </MenuItem>
 
                 <MenuItem
                   onClick={handleClose}

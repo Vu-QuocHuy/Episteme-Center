@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { createParentAPI, updateParentAPI, addChildAPI, removeChildAPI } from '../../services/api';
 import { validateParent } from '../../validations/parentValidation';
 import { Parent, ParentFormData, ParentValidationErrors } from '../../types';
@@ -43,15 +43,15 @@ export const useParentForm = (): UseParentFormReturn => {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searchingStudents, setSearchingStudents] = useState<boolean>(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>): void => {
     const { name, value, type, checked } = e.target;
     setForm((prev) => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
-  };
+  }, []);
 
-  const setFormData = (parent: Parent | null = null): void => {
+  const setFormData = useCallback((parent: Parent | null = null): void => {
     if (parent) {
       setForm({
         name: (parent as any).userId?.name || (parent as any).name || '',
@@ -76,9 +76,9 @@ export const useParentForm = (): UseParentFormReturn => {
         canSeeTeacherInfo: true,
       });
     }
-  };
+  }, []);
 
-  const resetForm = (): void => {
+  const resetForm = useCallback((): void => {
     setForm({
       name: '',
       email: '',
@@ -94,7 +94,7 @@ export const useParentForm = (): UseParentFormReturn => {
     setTabValue(0);
     setStudentSearchQuery('');
     setSearchResults([]);
-  };
+  }, []);
 
   const handleSubmit = async (selectedParent?: Parent | null, onSuccess?: () => void): Promise<{ success: boolean; message?: string }> => {
     const isNewParent = !selectedParent;
@@ -164,7 +164,6 @@ export const useParentForm = (): UseParentFormReturn => {
 
       return { success: true };
     } catch (error: any) {
-      console.error('Error submitting parent:', error);
       const errorMessage = error.response?.data?.message || 'Có lỗi xảy ra khi lưu phụ huynh';
       setFormError(errorMessage);
       return { success: false, message: errorMessage };
@@ -178,7 +177,6 @@ export const useParentForm = (): UseParentFormReturn => {
       await addChildAPI(studentId, parentId);
       return { success: true, message: 'Thêm con thành công!' };
     } catch (error: any) {
-      console.error('Error adding child:', error);
       return {
         success: false,
         message: error?.response?.data?.message || 'Có lỗi xảy ra khi thêm con'
@@ -191,7 +189,6 @@ export const useParentForm = (): UseParentFormReturn => {
       await removeChildAPI(studentId, parentId);
       return { success: true, message: 'Xóa con thành công!' };
     } catch (error: any) {
-      console.error('Error removing child:', error);
       return {
         success: false,
         message: error?.response?.data?.message || 'Có lỗi xảy ra khi xóa con'

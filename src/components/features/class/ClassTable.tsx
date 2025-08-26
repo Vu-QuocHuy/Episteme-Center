@@ -214,9 +214,6 @@ const ClassTable: React.FC<ClassTableProps> = ({
     return days.map(day => dayNames[day] || day).join(', ');
   };
 
-  // Debug classes data
-  console.log('🎓 ClassTable render - classes:', classes, 'loading:', loading);
-
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight={200}>

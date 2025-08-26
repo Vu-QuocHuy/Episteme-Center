@@ -75,7 +75,6 @@ const ClassManagement: React.FC = () => {
       handleCloseDeleteDialog();
       fetchClasses();
     } catch (error) {
-      console.error('Error deleting class:', error);
       setSnackbar({ open: true, message: 'Có lỗi xảy ra khi xóa lớp học!', severity: 'error' });
     }
   }, [classToDelete, handleCloseDeleteDialog, fetchClasses]);
@@ -114,7 +113,6 @@ const ClassManagement: React.FC = () => {
       handleCloseDialog();
       fetchClasses();
     } catch (error) {
-      console.error('Error submitting class:', error);
       setSnackbar({
         open: true,
         message: selectedClass ? 'Có lỗi xảy ra khi cập nhật lớp học!' : 'Có lỗi xảy ra khi tạo lớp học!',

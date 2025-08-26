@@ -224,14 +224,6 @@ export const resetPasswordAPI = (email: string, code: string, password: string) 
   formData.append('email', email);
   formData.append('code', code);
   formData.append('password', password);
-
-  console.log('resetPasswordAPI debug:', {
-    email,
-    code,
-    password,
-    formDataString: formData.toString()
-  });
-
   return axiosInstance.post(API_CONFIG.ENDPOINTS.AUTH.RESET_PASSWORD, formData, {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
   });
@@ -253,20 +245,9 @@ export const createClassAPI = (data: ClassFormData) => {
 };
 
 export const getAllClassesAPI = (params?: ApiParams) => {
-  console.log('📊 Classes API Request:', params);
   const queryParams = createQueryParams(params || {});
-  console.log('🔗 Generated URL:', API_CONFIG.ENDPOINTS.CLASSES.GET_ALL);
   return axiosInstance.get(API_CONFIG.ENDPOINTS.CLASSES.GET_ALL, {
     params: queryParams
-  }).then(response => {
-    console.log('✅ Classes API Success:', response);
-    return response;
-  }).catch(error => {
-    console.error('❌ Classes API Error:', error);
-    console.error('❌ Error Response:', error.response);
-    console.error('❌ Error Status:', error.response?.status);
-    console.error('❌ Error Data:', error.response?.data);
-    throw error;
   });
 };
 
@@ -297,12 +278,6 @@ export const deleteClassAPI = (id: string) => {
 };
 
 export const assignTeacherAPI = (classId: string, teacherId: string) => {
-  console.log('📊 Assign Teacher API Request:', {
-    url: API_CONFIG.ENDPOINTS.CLASSES.ASSIGN_TEACHER,
-    classId,
-    teacherId
-  });
-
   return axiosInstance.patch(API_CONFIG.ENDPOINTS.CLASSES.ASSIGN_TEACHER, undefined, {
     params: {
       classId: classId,
@@ -311,25 +286,10 @@ export const assignTeacherAPI = (classId: string, teacherId: string) => {
     headers: {
       'x-lang': 'vi'
     }
-  }).then(response => {
-    console.log('✅ Assign Teacher API Success:', response);
-    return response;
-  }).catch(error => {
-    console.error('❌ Assign Teacher API Error:', error);
-    console.error('❌ Error Response:', error.response);
-    console.error('❌ Error Status:', error.response?.status);
-    console.error('❌ Error Data:', error.response?.data);
-    throw error;
   });
 };
 
 export const unassignTeacherAPI = (classId: string, teacherId: string) => {
-  console.log('📊 Unassign Teacher API Request:', {
-    url: API_CONFIG.ENDPOINTS.CLASSES.UNASSIGN_TEACHER,
-    classId,
-    teacherId
-  });
-
   return axiosInstance.patch(API_CONFIG.ENDPOINTS.CLASSES.UNASSIGN_TEACHER, undefined, {
     params: {
       classId: classId,
@@ -338,15 +298,6 @@ export const unassignTeacherAPI = (classId: string, teacherId: string) => {
     headers: {
       'x-lang': 'vi'
     }
-  }).then(response => {
-    console.log('✅ Unassign Teacher API Success:', response);
-    return response;
-  }).catch(error => {
-    console.error('❌ Unassign Teacher API Error:', error);
-    console.error('❌ Error Response:', error.response);
-    console.error('❌ Error Status:', error.response?.status);
-    console.error('❌ Error Data:', error.response?.data);
-    throw error;
   });
 };
 
@@ -363,37 +314,21 @@ export const getAvailableStudentsAPI = (classId: string, params?: ApiParams) => 
   });
 };
 export const addStudentsToClassAPI = (classId: string, students: Array<{studentId: string, discountPercent?: number}>) => {
-  console.log('📊 Add Students API Request:', {
-    url: API_CONFIG.ENDPOINTS.CLASSES.ADD_STUDENTS(classId),
-    data: students,
-    classId
-  });
-
   // Try different formats based on API specification
   const requestData = students.map(student => ({
     studentId: student.studentId,
     discountPercent: student.discountPercent || 0
   }));
-
-  console.log('📊 Formatted request data:', requestData);
-
   return axiosInstance.patch(API_CONFIG.ENDPOINTS.CLASSES.ADD_STUDENTS(classId), requestData, {
     headers: {
       'Content-Type': 'application/json',
       'x-lang': 'vi'
     }
   }).then(response => {
-    console.log('✅ Add Students API Success:', response);
     return response;
   }).catch(error => {
-    console.error('❌ Add Students API Error:', error);
-    console.error('❌ Error Response:', error.response);
-    console.error('❌ Error Status:', error.response?.status);
-    console.error('❌ Error Data:', error.response?.data);
-
     // If it's a 500 error, the operation might have succeeded
     if (error.response?.status === 500) {
-      console.log('⚠️ Got 500 error, but operation might have succeeded. Returning success...');
       // Return a mock success response
       return { data: { success: true, message: 'Students added successfully despite 500 error' } };
     }
@@ -403,23 +338,11 @@ export const addStudentsToClassAPI = (classId: string, students: Array<{studentI
 };
 
 export const removeStudentsFromClassAPI = (classId: string, studentIds: string[]) => {
-  console.log('📊 Remove Students API Request:', {
-    url: API_CONFIG.ENDPOINTS.CLASSES.REMOVE_STUDENTS(classId),
-    data: studentIds,
-    classId
-  });
-
   return axiosInstance.patch(API_CONFIG.ENDPOINTS.CLASSES.REMOVE_STUDENTS(classId), studentIds, {
     headers: {
       'Content-Type': 'application/json',
       'x-lang': 'vi'
     }
-  }).catch(error => {
-    console.error('❌ Remove Students API Error:', error);
-    console.error('❌ Error Response:', error.response);
-    console.error('❌ Error Status:', error.response?.status);
-    console.error('❌ Error Data:', error.response?.data);
-    throw error;
   });
 };
 // Backward compatibility
@@ -433,25 +356,11 @@ export const getStudentsInClassAPI = (classId: string, params?: ApiParams) => {
 // Student APIs
 export const createStudentAPI = (data: StudentData) => axiosInstance.post(API_CONFIG.ENDPOINTS.STUDENTS.CREATE, data);
 export const getAllStudentsAPI = (params?: ApiParams) => {
-  console.log('📊 Students API Request:', params);
-
   // Use helper function to create query params with filters
   const queryParams = createQueryParams(params || {});
-
-  console.log('🔗 Generated URL:', API_CONFIG.ENDPOINTS.STUDENTS.GET_ALL);
-
   // Use axios with properly encoded filters
   return axiosInstance.get(API_CONFIG.ENDPOINTS.STUDENTS.GET_ALL, {
     params: queryParams
-  }).then(response => {
-    console.log('✅ Students API Success:', response);
-    return response;
-  }).catch(error => {
-    console.error('❌ Students API Error:', error);
-    console.error('❌ Error Response:', error.response);
-    console.error('❌ Error Status:', error.response?.status);
-    console.error('❌ Error Data:', error.response?.data);
-    throw error;
   });
 };
 export const getStudentByIdAPI = (id: string) => axiosInstance.get(API_CONFIG.ENDPOINTS.STUDENTS.GET_BY_ID(id));
@@ -463,8 +372,6 @@ export const getMonthlyStudentChangeAPI = (params?: ApiParams) => axiosInstance.
 
 // Teacher APIs - Updated for new backend structure
 export const createTeacherAPI = (data: TeacherData) => {
-  console.log('📊 Teacher API Create Request:', data);
-
   // Use JSON format as per Postman spec
   return axiosInstance.post(API_CONFIG.ENDPOINTS.TEACHERS.CREATE, data, {
     headers: {
@@ -475,20 +382,9 @@ export const createTeacherAPI = (data: TeacherData) => {
 };
 
 export const getAllTeachersAPI = (params?: ApiParams) => {
-  console.log('📊 Teachers API Request:', params);
   const queryParams = createQueryParams(params || {});
-  console.log('🔗 Generated URL:', API_CONFIG.ENDPOINTS.TEACHERS.GET_ALL);
   return axiosInstance.get(API_CONFIG.ENDPOINTS.TEACHERS.GET_ALL, {
     params: queryParams
-  }).then(response => {
-    console.log('✅ Teachers API Success:', response);
-    return response;
-  }).catch(error => {
-    console.error('❌ Teachers API Error:', error);
-    console.error('❌ Error Response:', error.response);
-    console.error('❌ Error Status:', error.response?.status);
-    console.error('❌ Error Data:', error.response?.data);
-    throw error;
   });
 };
 
@@ -497,8 +393,6 @@ export const getTeacherByIdAPI = (id: string) => {
 };
 
 export const updateTeacherAPI = (id: string, data: Partial<TeacherData>) => {
-  console.log('📊 Teacher API Update Request:', data);
-
   // Use JSON format as per Postman spec
   return axiosInstance.patch(API_CONFIG.ENDPOINTS.TEACHERS.UPDATE(id), data, {
     headers: { 'Content-Type': 'application/json' }
@@ -506,8 +400,6 @@ export const updateTeacherAPI = (id: string, data: Partial<TeacherData>) => {
 };
 
 export const deleteTeacherAPI = (id: string) => {
-  console.log('🔗 deleteTeacherAPI called with ID:', id);
-  console.log('🔗 Endpoint:', API_CONFIG.ENDPOINTS.TEACHERS.DELETE(id));
   return axiosInstance.delete(API_CONFIG.ENDPOINTS.TEACHERS.DELETE(id));
 };
 
@@ -536,34 +428,15 @@ export const createParentAPI = (data: ParentData) => {
 };
 
 export const getAllParentsAPI = (params?: ApiParams) => {
-  console.log('📊 Parents API Request:', params);
   const queryParams = createQueryParams(params || {});
-  console.log('🔗 Generated URL:', API_CONFIG.ENDPOINTS.PARENTS.GET_ALL);
   return axiosInstance.get(API_CONFIG.ENDPOINTS.PARENTS.GET_ALL, {
     params: queryParams
-  }).then(response => {
-    console.log('✅ Parents API Success:', response);
-    return response;
-  }).catch(error => {
-    console.error('❌ Parents API Error:', error);
-    console.error('❌ Error Response:', error.response);
-    console.error('❌ Error Status:', error.response?.status);
-    console.error('❌ Error Data:', error.response?.data);
-    throw error;
   });
 };
 
 export const getParentByIdAPI = (id: string) => {
-  console.log('🔍 getParentByIdAPI called with ID:', id);
-  console.log('🔍 Endpoint:', API_CONFIG.ENDPOINTS.PARENTS.GET_BY_ID(id));
   return axiosInstance.get(API_CONFIG.ENDPOINTS.PARENTS.GET_BY_ID(id), {
     headers: { 'x-lang': 'vi' }
-  }).then(response => {
-    console.log('✅ getParentByIdAPI success:', response);
-    return response;
-  }).catch(error => {
-    console.error('❌ getParentByIdAPI error:', error);
-    throw error;
   });
 };
 
@@ -643,23 +516,12 @@ export const updateAttendanceAPI = (id: string, data: AttendanceData) => updateS
 
 // Payment APIs
 export const getAllPaymentsAPI = (params?: ApiParams) => {
-  console.log('📊 Get All Payments API Request:', params);
   const queryParams = createQueryParams(params || {});
-  console.log('🔗 Generated URL:', API_CONFIG.ENDPOINTS.PAYMENTS.GET_ALL);
   return axiosInstance.get(API_CONFIG.ENDPOINTS.PAYMENTS.GET_ALL, {
     params: queryParams,
     headers: {
       'x-lang': 'vi'
     }
-  }).then(response => {
-    console.log('✅ Get All Payments API Success:', response);
-    return response;
-  }).catch(error => {
-    console.error('❌ Get All Payments API Error:', error);
-    console.error('❌ Error Response:', error.response);
-    console.error('❌ Error Status:', error.response?.status);
-    console.error('❌ Error Data:', error.response?.data);
-    throw error;
   });
 };
 export const payStudentAPI = (paymentId: string, data: PaymentData) => {
@@ -672,23 +534,12 @@ export const payStudentAPI = (paymentId: string, data: PaymentData) => {
   });
 };
 export const getAllTeacherPaymentsAPI = (params?: ApiParams) => {
-  console.log('📊 Get All Teacher Payments API Request:', params);
   const queryParams = createQueryParams(params || {});
-  console.log('🔗 Generated URL:', '/teacher-payments/all');
   return axiosInstance.get('/teacher-payments/all', {
     params: queryParams,
     headers: {
       'x-lang': 'vi'
     }
-  }).then(response => {
-    console.log('✅ Get All Teacher Payments API Success:', response);
-    return response;
-  }).catch(error => {
-    console.error('❌ Get All Teacher Payments API Error:', error);
-    console.error('❌ Error Response:', error.response);
-    console.error('❌ Error Status:', error.response?.status);
-    console.error('❌ Error Data:', error.response?.data);
-    throw error;
   });
 };
 
@@ -852,54 +703,25 @@ export interface TransactionData {
 }
 
 export const createTransactionAPI = (data: TransactionData) => {
-  console.log('📊 Create Transaction API Request:', data);
-
   const formData = new URLSearchParams();
   formData.append('amount', String(data.amount));
   if (data.category_id) formData.append('categoryId', data.category_id); // Use camelCase as backend expects
   if (data.description) formData.append('description', data.description);
-
-  console.log('📤 Form Data being sent:');
-  console.log('  - amount:', String(data.amount));
-  console.log('  - categoryId:', data.category_id);
-  console.log('  - description:', data.description);
-  console.log('📤 URLSearchParams toString():', formData.toString());
-
   return axiosInstance.post(API_CONFIG.ENDPOINTS.TRANSACTIONS.CREATE, formData, {
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
       'x-lang': 'vi'
     }
-  }).then(response => {
-    console.log('✅ Create Transaction API Success:', response);
-    return response;
-  }).catch(error => {
-    console.error('❌ Create Transaction API Error:', error);
-    console.error('❌ Error Response:', error.response);
-    console.error('❌ Error Status:', error.response?.status);
-    console.error('❌ Error Data:', error.response?.data);
-    throw error;
   });
 };
 
 export const getAllTransactionsAPI = (params?: ApiParams) => {
-  console.log('📊 Get All Transactions API Request:', params);
   const queryParams = createQueryParams(params || {});
-  console.log('🔗 Generated URL:', API_CONFIG.ENDPOINTS.TRANSACTIONS.GET_ALL);
   return axiosInstance.get(API_CONFIG.ENDPOINTS.TRANSACTIONS.GET_ALL, {
     params: queryParams,
     headers: {
       'x-lang': 'vi'
     }
-  }).then(response => {
-    console.log('✅ Get All Transactions API Success:', response);
-    return response;
-  }).catch(error => {
-    console.error('❌ Get All Transactions API Error:', error);
-    console.error('❌ Error Response:', error.response);
-    console.error('❌ Error Status:', error.response?.status);
-    console.error('❌ Error Data:', error.response?.data);
-    throw error;
   });
 };
 
@@ -912,27 +734,15 @@ export const getTransactionByIdAPI = (id: string) => {
 };
 
 export const updateTransactionAPI = (id: string, data: Partial<TransactionData>) => {
-  console.log('📊 Update Transaction API Request:', { id, data });
-
   const formData = new URLSearchParams();
   if (data.amount) formData.append('amount', String(data.amount));
   if (data.category_id) formData.append('categoryId', data.category_id); // Use camelCase as backend expects
   if (data.description) formData.append('description', data.description);
-
   return axiosInstance.patch(API_CONFIG.ENDPOINTS.TRANSACTIONS.UPDATE(id), formData, {
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
       'x-lang': 'vi'
     }
-  }).then(response => {
-    console.log('✅ Update Transaction API Success:', response);
-    return response;
-  }).catch(error => {
-    console.error('❌ Update Transaction API Error:', error);
-    console.error('❌ Error Response:', error.response);
-    console.error('❌ Error Status:', error.response?.status);
-    console.error('❌ Error Data:', error.response?.data);
-    throw error;
   });
 };
 
@@ -960,26 +770,14 @@ export const createTransactionCategoryAPI = (data: TransactionCategoryData) => {
 };
 
 export const getAllTransactionCategoriesAPI = (params?: ApiParams) => {
-  console.log('📊 Get All Transaction Categories API Request:', params);
-
   const queryParams: any = {};
   if (params?.page) queryParams.page = params.page;
   if (params?.limit) queryParams.limit = params.limit;
-
   return axiosInstance.get(API_CONFIG.ENDPOINTS.TRANSACTION_CATEGORIES.GET_ALL, {
     params: queryParams,
     headers: {
       'x-lang': 'vi'
     }
-  }).then(response => {
-    console.log('✅ Get All Transaction Categories API Success:', response);
-    return response;
-  }).catch(error => {
-    console.error('❌ Get All Transaction Categories API Error:', error);
-    console.error('❌ Error Response:', error.response);
-    console.error('❌ Error Status:', error.response?.status);
-    console.error('❌ Error Data:', error.response?.data);
-    throw error;
   });
 };
 

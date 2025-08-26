@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Box, Typography, Paper, Grid, TextField, MenuItem, Card, CardContent, Tabs, Tab, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Pagination, IconButton, Button, Tooltip, Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress
-} from '@mui/material';
-import { History as HistoryIcon, Visibility as VisibilityIcon, Edit as EditIcon, Delete as DeleteIcon, Add as AddIcon, Payment as PaymentIcon } from '@mui/icons-material';
+import { Box, Typography, Paper, Grid, TextField, MenuItem, Card, CardContent, Tabs, Tab, Button, Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, IconButton, Tooltip, Pagination } from '@mui/material';
+import { Edit as EditIcon, Delete as DeleteIcon, Add as AddIcon } from '@mui/icons-material';
 // import { getPaymentsAPI, getTeacherPaymentsAPI, payTeacherAPI, getTotalPaymentsAPI, getTeacherByIdAPI } from '../../services/api';
 import { getAllTransactionsAPI, createTransactionAPI, updateTransactionAPI, deleteTransactionAPI, getAllPaymentsAPI, createTransactionCategoryAPI, getAllTransactionCategoriesAPI, deleteTransactionCategoryAPI, updateTransactionCategoryAPI, getAllTeacherPaymentsAPI, payStudentAPI } from '../../services/api';
 import PaymentHistoryModal from '../../components/common/PaymentHistoryModal';
 import NotificationSnackbar from '../../components/common/NotificationSnackbar';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
+import TeacherPaymentsTab from './financial/tabs/TeacherPaymentsTab';
+import StudentPaymentsTab from './financial/tabs/StudentPaymentsTab';
+import OtherTransactionsTab from './financial/tabs/OtherTransactionsTab';
 import FormDialog from '../../components/common/forms/FormDialog';
 // NOTE: Payments/teacher APIs under development; calls commented out to avoid 404s
 
@@ -106,10 +107,23 @@ const months = Array.from({ length: 12 }, (_, i) => i + 1);
 const quarters = [1, 2, 3, 4];
 
 const FinancialStatisticsPanel: React.FC = () => {
-  const [periodType, setPeriodType] = useState<string>('year');
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
-  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
-  const [selectedQuarter, setSelectedQuarter] = useState<number>(1);
+  // Teacher filters (tab 0)
+  const [teacherPeriodType, setTeacherPeriodType] = useState<string>('year');
+  const [teacherSelectedYear, setTeacherSelectedYear] = useState<number>(new Date().getFullYear());
+  const [teacherSelectedMonth, setTeacherSelectedMonth] = useState<number>(new Date().getMonth() + 1);
+  const [teacherSelectedQuarter, setTeacherSelectedQuarter] = useState<number>(1);
+  const [teacherCustomStart, setTeacherCustomStart] = useState<string>(new Date().toISOString().split('T')[0].substring(0, 8) + '01');
+  const [teacherCustomEnd, setTeacherCustomEnd] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [teacherPaymentStatus, setTeacherPaymentStatus] = useState<string>('all');
+
+  // Student filters (tab 1)
+  const [studentPeriodType, setStudentPeriodType] = useState<string>('year');
+  const [studentSelectedYear, setStudentSelectedYear] = useState<number>(new Date().getFullYear());
+  const [studentSelectedMonth, setStudentSelectedMonth] = useState<number>(new Date().getMonth() + 1);
+  const [studentSelectedQuarter, setStudentSelectedQuarter] = useState<number>(1);
+  const [studentCustomStart, setStudentCustomStart] = useState<string>(new Date().toISOString().split('T')[0].substring(0, 8) + '01');
+  const [studentCustomEnd, setStudentCustomEnd] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [studentPaymentStatus, setStudentPaymentStatus] = useState<string>('all');
   const [tab, setTab] = useState<number>(0);
   // Other transactions (manual revenues/expenses)
   const [otherTransactions, setOtherTransactions] = useState<Transaction[]>([]);
@@ -154,8 +168,9 @@ const FinancialStatisticsPanel: React.FC = () => {
   const [deleteTransactionLoading, setDeleteTransactionLoading] = useState<boolean>(false);
   const [categories, setCategories] = useState<any[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState<boolean>(false);
-  const [customStart, setCustomStart] = useState<string>(new Date().toISOString().split('T')[0].substring(0, 8) + '01');
-  const [customEnd, setCustomEnd] = useState<string>(new Date().toISOString().split('T')[0]);
+  // Other tab simple filters (optional UI)
+  const [otherCustomStart, setOtherCustomStart] = useState<string>(new Date().toISOString().split('T')[0].substring(0, 8) + '01');
+  const [otherCustomEnd, setOtherCustomEnd] = useState<string>(new Date().toISOString().split('T')[0]);
   const [studentPayments, setStudentPayments] = useState<StudentPayment[]>([]);
   const [teacherPayments, setTeacherPayments] = useState<TeacherPayment[]>([]);
   const [studentPaymentsLoaded, setStudentPaymentsLoaded] = useState<boolean>(false);
@@ -178,7 +193,6 @@ const FinancialStatisticsPanel: React.FC = () => {
   const [teacherPaymentConfirmData, setTeacherPaymentConfirmData] = useState<TeacherPaymentConfirmData | null>(null);
   const [teacherDetailInfo, setTeacherDetailInfo] = useState<TeacherDetailInfo | null>(null);
   const [fixedTotalTeacherSalary, setFixedTotalTeacherSalary] = useState<number>(0);
-  const [paymentStatus, setPaymentStatus] = useState<string>('all');
 
   // Student payment dialog states
   const [openStudentPaymentDialog, setOpenStudentPaymentDialog] = useState<boolean>(false);
@@ -534,21 +548,21 @@ const FinancialStatisticsPanel: React.FC = () => {
 
       // Build filters object based on current filters
       const filters: any = {};
-      if (paymentStatus !== 'all') filters.status = paymentStatus;
-      if (periodType === 'month') {
-        filters.month = selectedMonth;
-        filters.year = selectedYear;
-      } else if (periodType === 'quarter') {
-        const { startMonth, endMonth } = getQuarterMonths(selectedQuarter);
+      if (studentPaymentStatus !== 'all') filters.status = studentPaymentStatus;
+      if (studentPeriodType === 'month') {
+        filters.month = studentSelectedMonth;
+        filters.year = studentSelectedYear;
+      } else if (studentPeriodType === 'quarter') {
+        const { startMonth, endMonth } = getQuarterMonths(studentSelectedQuarter);
         filters.startMonth = startMonth;
         filters.endMonth = endMonth;
-        filters.year = selectedYear;
-      } else if (periodType === 'year') {
-        filters.year = selectedYear;
-      } else if (periodType === 'custom') {
-        const year = new Date(customStart).getFullYear();
-        const startMonth = new Date(customStart).getMonth() + 1;
-        const endMonth = new Date(customEnd).getMonth() + 1;
+        filters.year = studentSelectedYear;
+      } else if (studentPeriodType === 'year') {
+        filters.year = studentSelectedYear;
+      } else if (studentPeriodType === 'custom') {
+        const year = new Date(studentCustomStart).getFullYear();
+        const startMonth = new Date(studentCustomStart).getMonth() + 1;
+        const endMonth = new Date(studentCustomEnd).getMonth() + 1;
         filters.startMonth = startMonth;
         filters.endMonth = endMonth;
         filters.year = year;
@@ -559,14 +573,12 @@ const FinancialStatisticsPanel: React.FC = () => {
         params.filters = JSON.stringify(filters);
       }
 
-      console.log('📊 Fetching student payments with params:', params);
       const res = await getAllPaymentsAPI(params);
 
       // Parse the API response structure
       const responseData = res?.data?.data || res?.data || {};
       const data = responseData;
 
-      console.log('📊 Student payments response:', data);
 
       if (data && data.result) {
         setStudentPayments(data.result);
@@ -597,16 +609,16 @@ const FinancialStatisticsPanel: React.FC = () => {
   const fetchTeacherPayments = async (page: number = 1): Promise<void> => {
     try {
       let params: any = { page, limit: 10 };
-      if (paymentStatus !== 'all') params = { ...params, status: paymentStatus };
-      if (periodType === 'month') params = { ...params, year: selectedYear, month: selectedMonth };
-      else if (periodType === 'quarter') {
-        const { startMonth, endMonth } = getQuarterMonths(selectedQuarter);
-        params = { ...params, year: selectedYear, startMonth, endMonth };
-      } else if (periodType === 'year') params = { ...params, year: selectedYear };
-      else if (periodType === 'custom') {
-        const year = new Date(customStart).getFullYear();
-        const startMonth = new Date(customStart).getMonth() + 1;
-        const endMonth = new Date(customEnd).getMonth() + 1;
+      if (teacherPaymentStatus !== 'all') params = { ...params, status: teacherPaymentStatus };
+      if (teacherPeriodType === 'month') params = { ...params, year: teacherSelectedYear, month: teacherSelectedMonth };
+      else if (teacherPeriodType === 'quarter') {
+        const { startMonth, endMonth } = getQuarterMonths(teacherSelectedQuarter);
+        params = { ...params, year: teacherSelectedYear, startMonth, endMonth };
+      } else if (teacherPeriodType === 'year') params = { ...params, year: teacherSelectedYear };
+      else if (teacherPeriodType === 'custom') {
+        const year = new Date(teacherCustomStart).getFullYear();
+        const startMonth = new Date(teacherCustomStart).getMonth() + 1;
+        const endMonth = new Date(teacherCustomEnd).getMonth() + 1;
         params = { ...params, year, startMonth, endMonth };
       }
 
@@ -632,10 +644,8 @@ const FinancialStatisticsPanel: React.FC = () => {
 
   useEffect(() => {
     fetchTeacherPayments(1);
-    setStudentPaymentsLoaded(false);
-    setStudentPagination(prev => ({ ...prev, page: 1 }));
     setTeacherPagination(prev => ({ ...prev, page: 1 }));
-  }, [periodType, selectedYear, selectedMonth, selectedQuarter, customStart, customEnd, paymentStatus]);
+  }, [teacherPeriodType, teacherSelectedYear, teacherSelectedMonth, teacherSelectedQuarter, teacherCustomStart, teacherCustomEnd, teacherPaymentStatus]);
 
   // Fetch categories on mount
   useEffect(() => {
@@ -660,14 +670,14 @@ const FinancialStatisticsPanel: React.FC = () => {
     if (tab === 1 && !studentPaymentsLoaded) {
       fetchStudentPayments(1);
     }
-  }, [tab, periodType, selectedYear, selectedMonth, selectedQuarter, customStart, customEnd, paymentStatus]);
+  }, [tab, studentPeriodType, studentSelectedYear, studentSelectedMonth, studentSelectedQuarter, studentCustomStart, studentCustomEnd, studentPaymentStatus]);
 
   useEffect(() => {
     if (tab === 1) {
       fetchStudentPayments(1);
       setStudentPagination(prev => ({ ...prev, page: 1 }));
     }
-  }, [periodType, selectedYear, selectedMonth, selectedQuarter, customStart, customEnd, paymentStatus]);
+  }, [studentPeriodType, studentSelectedYear, studentSelectedMonth, studentSelectedQuarter, studentCustomStart, studentCustomEnd, studentPaymentStatus]);
 
   // Update total statistics when student payments change
   useEffect(() => {
@@ -680,13 +690,18 @@ const FinancialStatisticsPanel: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (paymentStatus !== 'all') {
+    if (studentPaymentStatus !== 'all') {
       fetchStudentPayments(1);
-      fetchTeacherPayments(1);
       setStudentPagination(prev => ({ ...prev, page: 1 }));
+    }
+  }, [studentPaymentStatus]);
+
+  useEffect(() => {
+    if (teacherPaymentStatus !== 'all') {
+      fetchTeacherPayments(1);
       setTeacherPagination(prev => ({ ...prev, page: 1 }));
     }
-  }, [paymentStatus]);
+  }, [teacherPaymentStatus]);
 
   const handleStudentPageChange = (_: React.ChangeEvent<unknown>, newPage: number): void => {
     fetchStudentPayments(newPage);
@@ -829,465 +844,81 @@ const FinancialStatisticsPanel: React.FC = () => {
         </Grid>
       </Grid>
 
-      {/* Bộ lọc thời gian */}
-      <Paper sx={{ p: 2, mb: 3, bgcolor: 'grey.50', boxShadow: 'none' }}>
-        <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} sm={2}>
-            <TextField select fullWidth label="Loại thống kê" value={periodType} onChange={e => setPeriodType(e.target.value)}>
-              <MenuItem value="month">Tháng</MenuItem>
-              <MenuItem value="quarter">Quý</MenuItem>
-              <MenuItem value="year">Năm</MenuItem>
-              <MenuItem value="custom">Tùy chỉnh</MenuItem>
-            </TextField>
-          </Grid>
-          {periodType !== 'custom' && (
-            <Grid item xs={12} sm={2}>
-              <TextField select fullWidth label="Năm" value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))}>
-                {years.map(year => <MenuItem key={year} value={year}>{year}</MenuItem>)}
-              </TextField>
-            </Grid>
-          )}
-          {periodType === 'month' && (
-            <Grid item xs={12} sm={2}>
-              <TextField select fullWidth label="Tháng" value={selectedMonth} onChange={e => setSelectedMonth(Number(e.target.value))}>
-                {months.map(month => <MenuItem key={month} value={month}>{month}</MenuItem>)}
-              </TextField>
-            </Grid>
-          )}
-          {periodType === 'quarter' && (
-            <Grid item xs={12} sm={2}>
-              <TextField select fullWidth label="Quý" value={selectedQuarter} onChange={e => setSelectedQuarter(Number(e.target.value))}>
-                {quarters.map(q => <MenuItem key={q} value={q}>Quý {q}</MenuItem>)}
-              </TextField>
-            </Grid>
-          )}
-          {periodType === 'custom' && (
-            <>
-              <Grid item xs={12} sm={2}>
-                <TextField
-                  label="Từ ngày"
-                  type="date"
-                  value={customStart}
-                  onChange={e => setCustomStart(e.target.value)}
-                  InputLabelProps={{ shrink: true }}
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={12} sm={2}>
-                <TextField
-                  label="Đến ngày"
-                  type="date"
-                  value={customEnd}
-                  onChange={e => setCustomEnd(e.target.value)}
-                  InputLabelProps={{ shrink: true }}
-                  fullWidth
-                />
-              </Grid>
-            </>
-          )}
-          <Grid item xs={12} sm={2}>
-            <TextField select fullWidth label="Trạng thái thanh toán" value={paymentStatus} onChange={e => setPaymentStatus(e.target.value)}>
-              {paymentStatuses.map(s => <MenuItem key={s.value} value={s.value}>{s.label}</MenuItem>)}
-            </TextField>
-          </Grid>
-        </Grid>
-      </Paper>
+      {/* Tabs bảng chi tiết (moved above filters); Filters are now inside each tab */}
 
       {/* Tabs bảng chi tiết */}
       <Paper sx={{ mb: 3, boxShadow: 'none' }}>
-        <Tabs value={tab} onChange={(_, v) => {
-          setTab(v);
-          if (v === 2) fetchOtherTransactions(1);
-        }}>
+        <Tabs value={tab} onChange={(_, v) => { setTab(v); if (v === 2) fetchOtherTransactions(1); }}>
           <Tab label="Chi tiết giáo viên" />
           <Tab label="Chi tiết học sinh" />
           <Tab label="Thu chi khác" />
         </Tabs>
         <Box sx={{ p: 2 }}>
           {tab === 0 && (
-            <>
-            {/* Filter controls for teacher payments */}
-            <Box sx={{ mb: 3, display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
-              <TextField
-                select
-                label="Trạng thái"
-                value={paymentStatus}
-                onChange={(e) => setPaymentStatus(e.target.value)}
-                sx={{ minWidth: 150 }}
-              >
-                <MenuItem value="all">Tất cả</MenuItem>
-                <MenuItem value="paid">Đã thanh toán</MenuItem>
-                <MenuItem value="pending">Chờ thanh toán</MenuItem>
-                <MenuItem value="partial">Nhận một phần</MenuItem>
-              </TextField>
-
-              <TextField
-                select
-                label="Thời gian"
-                value={periodType}
-                onChange={(e) => setPeriodType(e.target.value)}
-                sx={{ minWidth: 150 }}
-              >
-                <MenuItem value="year">Năm</MenuItem>
-                <MenuItem value="month">Tháng</MenuItem>
-                <MenuItem value="quarter">Quý</MenuItem>
-                <MenuItem value="custom">Tùy chọn</MenuItem>
-              </TextField>
-
-              {periodType === 'year' && (
-                <TextField
-                  select
-                  label="Năm"
-                  value={selectedYear}
-                  onChange={(e) => setSelectedYear(Number(e.target.value))}
-                  sx={{ minWidth: 120 }}
-                >
-                  {years.map((year) => (
-                    <MenuItem key={year} value={year}>{year}</MenuItem>
-                  ))}
-                </TextField>
-              )}
-
-              {periodType === 'month' && (
-                <>
-                  <TextField
-                    select
-                    label="Năm"
-                    value={selectedYear}
-                    onChange={(e) => setSelectedYear(Number(e.target.value))}
-                    sx={{ minWidth: 120 }}
-                  >
-                    {years.map((year) => (
-                      <MenuItem key={year} value={year}>{year}</MenuItem>
-                    ))}
-                  </TextField>
-                  <TextField
-                    select
-                    label="Tháng"
-                    value={selectedMonth}
-                    onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                    sx={{ minWidth: 120 }}
-                  >
-                    {months.map((month) => (
-                      <MenuItem key={month} value={month}>{month}</MenuItem>
-                    ))}
-                  </TextField>
-                </>
-              )}
-
-              {periodType === 'quarter' && (
-                <>
-                  <TextField
-                    select
-                    label="Năm"
-                    value={selectedYear}
-                    onChange={(e) => setSelectedYear(Number(e.target.value))}
-                    sx={{ minWidth: 120 }}
-                  >
-                    {years.map((year) => (
-                      <MenuItem key={year} value={year}>{year}</MenuItem>
-                    ))}
-                  </TextField>
-                  <TextField
-                    select
-                    label="Quý"
-                    value={selectedQuarter}
-                    onChange={(e) => setSelectedQuarter(Number(e.target.value))}
-                    sx={{ minWidth: 120 }}
-                  >
-                    {quarters.map((quarter) => (
-                      <MenuItem key={quarter} value={quarter}>Q{quarter}</MenuItem>
-                    ))}
-                  </TextField>
-                </>
-              )}
-
-              {periodType === 'custom' && (
-                <>
-                  <TextField
-                    label="Từ ngày"
-                    type="date"
-                    value={customStart}
-                    onChange={(e) => setCustomStart(e.target.value)}
-                    sx={{ minWidth: 150 }}
-                    InputLabelProps={{ shrink: true }}
-                  />
-                  <TextField
-                    label="Đến ngày"
-                    type="date"
-                    value={customEnd}
-                    onChange={(e) => setCustomEnd(e.target.value)}
-                    sx={{ minWidth: 150 }}
-                    InputLabelProps={{ shrink: true }}
-                  />
-                </>
-              )}
-
-              <Button
-                variant="contained"
-                onClick={() => fetchTeacherPayments(1)}
-                sx={{ minWidth: 100 }}
-              >
-                Lọc
-              </Button>
-            </Box>
-
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Giáo viên</TableCell>
-                    <TableCell align="center">Tháng/Năm</TableCell>
-                    <TableCell align="right">Lương/buổi</TableCell>
-                    <TableCell align="right">Số buổi dạy</TableCell>
-                    <TableCell align="right">Tổng lương</TableCell>
-                    <TableCell align="right">Đã trả</TableCell>
-                    <TableCell align="center">Trạng thái</TableCell>
-                    <TableCell align="center">Thao tác</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {teacherPayments.map((p) => (
-                    <TableRow key={p.id} hover>
-                      <TableCell>
-                        <Typography variant="body2" fontWeight="medium">
-                          {p.teacher?.name || p.teacherId?.userId?.name || p.teacherId?.name || 'Chưa có tên'}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {p.teacher?.email || ''}
-                        </Typography>
-                      </TableCell>
-                      <TableCell align="center">{p.month || 0}/{p.year || 0}</TableCell>
-                      <TableCell align="right">{(p.salaryPerLesson ?? 0).toLocaleString()} ₫</TableCell>
-                      <TableCell align="right">
-                        {p.classes && Array.isArray(p.classes)
-                          ? p.classes.reduce((sum, classItem) => sum + (classItem.totalLessons || 0), 0)
-                          : 0
-                        }
-                      </TableCell>
-                      <TableCell align="right">{(p.totalAmount ?? 0).toLocaleString()} ₫</TableCell>
-                      <TableCell align="right">{(p.paidAmount ?? 0).toLocaleString()} ₫</TableCell>
-                      <TableCell align="center">
-                        <Chip
-                          label={p.status === 'paid' ? 'Đã thanh toán' : p.status === 'partial' ? 'Nhận một phần' : p.status === 'pending' ? 'Chờ thanh toán' : 'Chưa thanh toán'}
-                          color={p.status === 'paid' ? 'success' : p.status === 'partial' ? 'warning' : p.status === 'pending' ? 'info' : 'error'}
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell align="center">
-                        <Tooltip title="Xem chi tiết">
-                          <IconButton size="small" color="primary" onClick={() => console.log('View detail:', p)}>
-                            <VisibilityIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Lịch sử thanh toán">
-                          <IconButton size="small" color="info" onClick={() => handleOpenPaymentHistory(p)}>
-                            <HistoryIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                        {((p.totalAmount ?? 0) - (p.paidAmount ?? 0) > 0) && (
-                          <Button
-                            variant="contained"
-                            color="primary"
-                            size="small"
-                            sx={{ ml: 1 }}
-                            onClick={() => console.log('Payment for:', p)}
-                          >
-                            Thanh toán
-                          </Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-              <Pagination
-                count={teacherPagination.totalPages}
-                page={teacherPagination.page}
-                onChange={handleTeacherPageChange}
-                color="primary"
-              />
-            </Box>
-            </>
+            <TeacherPaymentsTab
+              payments={teacherPayments as any}
+              pagination={{ page: teacherPagination.page, totalPages: teacherPagination.totalPages }}
+              onPageChange={(p) => handleTeacherPageChange({} as any, p)}
+              periodType={teacherPeriodType}
+              setPeriodType={setTeacherPeriodType}
+              selectedYear={teacherSelectedYear}
+              setSelectedYear={setTeacherSelectedYear}
+              selectedMonth={teacherSelectedMonth}
+              setSelectedMonth={setTeacherSelectedMonth}
+              selectedQuarter={teacherSelectedQuarter}
+              setSelectedQuarter={setTeacherSelectedQuarter}
+              customStart={teacherCustomStart}
+              setCustomStart={setTeacherCustomStart}
+              customEnd={teacherCustomEnd}
+              setCustomEnd={setTeacherCustomEnd}
+              paymentStatus={teacherPaymentStatus}
+              setPaymentStatus={setTeacherPaymentStatus}
+              years={years}
+              months={months}
+              quarters={quarters}
+              onOpenHistory={handleOpenPaymentHistory}
+            />
           )}
           {tab === 1 && (
-            <>
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Học sinh</TableCell>
-                    <TableCell>Lớp</TableCell>
-                    <TableCell align="center">Tháng</TableCell>
-                    <TableCell align="center">Số buổi học</TableCell>
-                    <TableCell align="center">Số tiền gốc</TableCell>
-                    <TableCell align="center">Giảm giá</TableCell>
-                    <TableCell align="center">Số tiền cuối</TableCell>
-                    <TableCell align="center">Đã đóng</TableCell>
-                    <TableCell align="center">Còn thiếu</TableCell>
-                    <TableCell align="center">Trạng thái</TableCell>
-                    <TableCell align="center">Thao tác</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                    {studentPayments.map((p) => (
-                    <TableRow key={p.id} hover>
-                        <TableCell>{p.student?.name || 'Chưa có tên'}</TableCell>
-                        <TableCell>{p.class?.name || 'Chưa có tên lớp'}</TableCell>
-                        <TableCell align="center">{p.month}/{p.year}</TableCell>
-                        <TableCell align="center">{p.totalLessons || 0}</TableCell>
-                      <TableCell align="center">{(p.totalAmount ?? 0).toLocaleString()} ₫</TableCell>
-                      <TableCell align="center">{(p.discountAmount ?? 0).toLocaleString()} ₫</TableCell>
-                        <TableCell align="center">{((p.totalAmount ?? 0) - (p.discountAmount ?? 0)).toLocaleString()} ₫</TableCell>
-                        <TableCell align="center">{(p.paidAmount ?? 0).toLocaleString()} ₫</TableCell>
-                        <TableCell align="center">{(((p.totalAmount ?? 0) - (p.discountAmount ?? 0)) - (p.paidAmount ?? 0)).toLocaleString()} ₫</TableCell>
-                        <TableCell align="center">
-                          <Chip
-                            label={p.status === 'paid' ? 'Đã đóng đủ' : p.status === 'partial' ? 'Đóng một phần' : 'Chưa đóng'}
-                            color={p.status === 'paid' ? 'success' : p.status === 'partial' ? 'warning' : 'error'}
-                            size="small"
-                          />
-                        </TableCell>
-                      <TableCell align="center">
-                        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-                          <Tooltip title="Lịch sử thanh toán">
-                          <IconButton onClick={() => handleOpenPaymentHistory(p)}>
-                            <HistoryIcon />
-                          </IconButton>
-                          </Tooltip>
-                          {p.status !== 'paid' && (
-                            <Tooltip title="Thanh toán">
-                              <IconButton
-                                onClick={() => handleOpenStudentPaymentDialog(p)}
-                                color="primary"
-                              >
-                                <PaymentIcon />
-                              </IconButton>
-                            </Tooltip>
-                          )}
-                        </Box>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-                <Pagination
-                  count={studentPagination.totalPages}
-                  page={studentPagination.page}
-                  onChange={handleStudentPageChange}
-                  color="primary"
-                />
-              </Box>
-            </>
+            <StudentPaymentsTab
+              payments={studentPayments as any}
+              pagination={{ page: studentPagination.page, totalPages: studentPagination.totalPages }}
+              onPageChange={(p) => handleStudentPageChange({} as any, p)}
+              periodType={studentPeriodType}
+              setPeriodType={setStudentPeriodType}
+              selectedYear={studentSelectedYear}
+              setSelectedYear={setStudentSelectedYear}
+              selectedMonth={studentSelectedMonth}
+              setSelectedMonth={setStudentSelectedMonth}
+              selectedQuarter={studentSelectedQuarter}
+              setSelectedQuarter={setStudentSelectedQuarter}
+              customStart={studentCustomStart}
+              setCustomStart={setStudentCustomStart}
+              customEnd={studentCustomEnd}
+              setCustomEnd={setStudentCustomEnd}
+              paymentStatus={studentPaymentStatus}
+              setPaymentStatus={setStudentPaymentStatus}
+              years={years}
+              months={months}
+              quarters={quarters}
+              onOpenHistory={handleOpenPaymentHistory}
+              onOpenPayDialog={handleOpenStudentPaymentDialog}
+            />
           )}
           {tab === 2 && (
-            <>
-
-
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-                <Box sx={{ display: 'flex', gap: 2 }}>
-                  <Button
-                    variant="outlined"
-                    onClick={handleOpenCategoryManagementDialog}
-                    sx={{ borderRadius: 2 }}
-                  >
-                    Quản lý danh mục
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    onClick={handleOpenTransactionDialog}
-                    sx={{ borderRadius: 2 }}
-                  >
-                    Tạo hóa đơn
-                  </Button>
-              </Box>
-              </Box>
-              <TableContainer component={Paper} elevation={1}>
-                <Table>
-                  <TableHead>
-                    <TableRow sx={{ bgcolor: '#f8fafc' }}>
-                      <TableCell sx={{ fontWeight: 600 }}>Danh mục</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Loại</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Mô tả</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Ngày</TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 600 }}>Số tiền</TableCell>
-                      <TableCell align="center" sx={{ fontWeight: 600 }}>Thao tác</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {otherTransactions.map((transaction: Transaction, idx: number) => (
-                      <TableRow key={transaction.id || idx} hover>
-                        <TableCell>
-                          <Typography variant="body2" fontWeight={500}>
-                            {transaction.category?.name || '-'}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            label={transaction.category?.type === 'revenue' ? 'Thu' : 'Chi'}
-                            color={transaction.category?.type === 'revenue' ? 'success' : 'error'}
-                            size="small"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="body2">
-                            {transaction.description || '-'}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="body2" color="text.secondary">
-                            {transaction.transaction_at ? new Date(transaction.transaction_at).toLocaleDateString('vi-VN') : '-'}
-                          </Typography>
-                        </TableCell>
-                        <TableCell align="right">
-                          <Typography variant="body2" fontWeight={600} color={transaction.category?.type === 'revenue' ? 'success.main' : 'error.main'}>
-                            {transaction.amount ? transaction.amount.toLocaleString() : '0'} ₫
-                          </Typography>
-                        </TableCell>
-                        <TableCell align="center">
-                          <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-                            <Tooltip title="Chỉnh sửa">
-                              <IconButton
-                                size="small"
-                                onClick={() => handleEditTransaction(transaction)}
-                                sx={{ color: 'primary.main' }}
-                              >
-                                <EditIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Xóa">
-                              <IconButton
-                                size="small"
-                                onClick={() => handleDeleteTransaction(transaction)}
-                                sx={{ color: 'error.main' }}
-                              >
-                                <DeleteIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          </Box>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {otherTransactions.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={6} align="center">
-                          <Typography variant="body2" color="text.secondary">
-                            Không có dữ liệu
-                          </Typography>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-                <Pagination count={otherTotalPages} page={otherPage} onChange={(_, p) => fetchOtherTransactions(p)} />
-              </Box>
-            </>
+            <OtherTransactionsTab
+              transactions={otherTransactions as any}
+              pagination={{ page: otherPage, totalPages: otherTotalPages }}
+              onPageChange={(p) => fetchOtherTransactions(p)}
+              customStart={otherCustomStart}
+              setCustomStart={setOtherCustomStart}
+              customEnd={otherCustomEnd}
+              setCustomEnd={setOtherCustomEnd}
+              onOpenCategory={handleOpenCategoryManagementDialog}
+              onOpenTransaction={handleOpenTransactionDialog}
+              onEdit={(t) => handleEditTransaction(t as any)}
+              onDelete={(t) => handleDeleteTransaction(t as any)}
+            />
           )}
         </Box>
       </Paper>

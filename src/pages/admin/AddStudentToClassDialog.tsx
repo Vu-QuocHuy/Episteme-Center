@@ -70,7 +70,6 @@ const AddStudentToClassDialog: React.FC<AddStudentToClassDialogProps> = ({ open,
           setExistingStudentIds([]);
         }
       } catch (error) {
-        console.error('Error fetching existing students:', error);
         setExistingStudentIds([]);
       }
     };
@@ -93,7 +92,6 @@ const AddStudentToClassDialog: React.FC<AddStudentToClassDialogProps> = ({ open,
         );
         setAllStudents(availableStudents);
       } catch (error) {
-        console.error('Error fetching students:', error);
       } finally {
         setLoadingList(false);
       }
@@ -159,7 +157,6 @@ const AddStudentToClassDialog: React.FC<AddStudentToClassDialogProps> = ({ open,
       onUpdate();
       onClose();
     } catch (error: any) {
-      console.error('Error adding students:', error);
       setNotification({
         open: true,
         message: error.response?.data?.message || 'Có lỗi xảy ra khi thêm học sinh',

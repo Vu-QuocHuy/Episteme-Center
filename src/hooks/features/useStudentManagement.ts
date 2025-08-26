@@ -73,7 +73,6 @@ export const useStudentManagement = (): UseStudentManagementReturn => {
         setParentDetails(parentMap);
       }
     } catch (error) {
-      console.error('Error fetching students:', error);
       setError('Có lỗi xảy ra khi tải danh sách học sinh');
     } finally {
       setLoading(false);
@@ -88,7 +87,6 @@ export const useStudentManagement = (): UseStudentManagementReturn => {
       await fetchStudents(); // Refresh student list
       return { success: true, message: 'Xóa học sinh thành công!' };
     } catch (error: any) {
-      console.error('Error deleting student:', error);
       return {
         success: false,
         message: error?.response?.data?.message || 'Có lỗi xảy ra khi xóa học sinh'

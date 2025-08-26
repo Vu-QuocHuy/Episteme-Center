@@ -138,8 +138,6 @@ export const useStudentForm = (): UseStudentFormReturn => {
         };
       }
 
-      console.log('Student submit body:', body);
-
       if (selectedStudent) {
         // Update existing student
         await updateStudentAPI(selectedStudent.id, body);
@@ -155,7 +153,6 @@ export const useStudentForm = (): UseStudentFormReturn => {
 
       return { success: true };
     } catch (error: any) {
-      console.error('Error submitting student:', error);
       const errorMessage = error.response?.data?.message || 'Có lỗi xảy ra khi lưu học sinh';
       setFormError(errorMessage);
       return { success: false, message: errorMessage };

@@ -63,7 +63,6 @@ export const useTeacherManagement = (): UseTeacherManagementReturn => {
       }
 
       const response = await getAllTeachersAPI(params);
-      console.log('📊 Teachers API Response:', response);
 
       // Handle new paginated API response structure
       if (response && response.data && response.data.data) {
@@ -84,7 +83,6 @@ export const useTeacherManagement = (): UseTeacherManagementReturn => {
         setTotalRecords(0);
       }
     } catch (error: any) {
-      console.error('Error fetching teachers:', error);
       const errorMessage = error?.response?.data?.message ||
                           error?.message ||
                           'Có lỗi xảy ra khi tải danh sách giáo viên';
@@ -99,14 +97,12 @@ export const useTeacherManagement = (): UseTeacherManagementReturn => {
   }, [debouncedSearch, isActiveFilter]);
 
   const deleteTeacher = useCallback(async (teacherId: string): Promise<{ success: boolean; message: string }> => {
-    console.log('🚀 deleteTeacher called with ID:', teacherId);
     setLoading(true);
     try {
       await deleteTeacherAPI(teacherId);
       await fetchTeachers(); // Refresh teacher list
       return { success: true, message: 'Xóa giáo viên thành công!' };
     } catch (error: any) {
-      console.error('Error deleting teacher:', error);
       return {
         success: false,
         message: error?.response?.data?.message || 'Có lỗi xảy ra khi xóa giáo viên'
@@ -125,7 +121,6 @@ export const useTeacherManagement = (): UseTeacherManagementReturn => {
     setLoadingDetail(true);
     try {
       const response = await getTeacherByIdAPI(id);
-      console.log('📊 Teacher Detail API Response:', response);
 
       if (response && response.data && response.data.data) {
         const teacher = response.data.data;
@@ -134,7 +129,6 @@ export const useTeacherManagement = (): UseTeacherManagementReturn => {
       }
       return null;
     } catch (error: any) {
-      console.error('❌ Error fetching teacher detail:', error);
       setError(error.response?.data?.message || 'Không thể tải thông tin giáo viên');
       return null;
     } finally {

@@ -49,7 +49,6 @@ export const useParentManagement = (): UseParentManagementReturn => {
       };
 
       const response = await getAllParentsAPI(params);
-      console.log('📊 Parents API Response:', response);
 
       // Handle paginated API response structure similar to students
       if (response && response.data && response.data.data) {
@@ -65,7 +64,6 @@ export const useParentManagement = (): UseParentManagementReturn => {
         setTotalRecords((response as any).totalRecords || 0);
       }
     } catch (error) {
-      console.error('Error fetching parents:', error);
       setError('Có lỗi xảy ra khi tải danh sách phụ huynh');
     } finally {
       setLoading(false);
@@ -80,7 +78,6 @@ export const useParentManagement = (): UseParentManagementReturn => {
       await fetchParents(); // Refresh parent list
       return { success: true, message: 'Xóa phụ huynh thành công!' };
     } catch (error: any) {
-      console.error('Error deleting parent:', error);
       return {
         success: false,
         message: error?.response?.data?.message || 'Có lỗi xảy ra khi xóa phụ huynh'
@@ -98,7 +95,6 @@ export const useParentManagement = (): UseParentManagementReturn => {
       }
       return null;
     } catch (error) {
-      console.error('Error fetching parent by id:', error);
       return null;
     }
   };
@@ -119,7 +115,6 @@ export const useParentManagement = (): UseParentManagementReturn => {
       // Fallback for old API structure
       return response?.data || [];
     } catch (error) {
-      console.error('Error searching students:', error);
       return [];
     }
   };

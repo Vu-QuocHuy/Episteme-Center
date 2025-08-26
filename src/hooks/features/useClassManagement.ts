@@ -61,9 +61,7 @@ export const useClassManagement = (): UseClassManagementReturn => {
         (params as any).name = debouncedSearch;
       }
 
-      console.log('📚 Fetching classes with params:', params);
       const response = await getAllClassesAPI(params);
-      console.log('📊 Classes API Response:', response);
 
       if (response && response.data && response.data.data) {
         const { data } = response.data;
@@ -71,11 +69,6 @@ export const useClassManagement = (): UseClassManagementReturn => {
         setClasses(classesArray);
         setTotalPages(data.meta?.totalPages || 1);
         setTotalRecords(data.meta?.totalItems || 0);
-        console.log('✅ Classes loaded successfully:', {
-          count: classesArray.length,
-          totalPages: data.meta?.totalPages,
-          totalItems: data.meta?.totalItems
-        });
       } else if (response && response.data) {
         // Fallback for old API structure
         setClasses(response.data);
@@ -83,7 +76,6 @@ export const useClassManagement = (): UseClassManagementReturn => {
         setTotalRecords(response.data?.totalRecords || 0);
       }
     } catch (error: any) {
-      console.error('❌ Error fetching classes:', error);
       setError('Có lỗi xảy ra khi tải danh sách lớp học');
     } finally {
       setLoading(false);
@@ -124,13 +116,12 @@ export const useClassManagement = (): UseClassManagementReturn => {
 
   // Fetch classes on initial mount
   useEffect(() => {
-    console.log('🚀 Initial fetch classes on mount');
     fetchClasses(1);
   }, []); // Only run once on mount
 
   // Fetch classes when dependencies change
   useEffect(() => {
-    console.log('🔄 Refetch classes due to dependency change:', { page, debouncedSearch, yearFilter, gradeFilter, statusFilter });
+    
     fetchClasses(page);
   }, [page, debouncedSearch, yearFilter, gradeFilter, statusFilter]);
 

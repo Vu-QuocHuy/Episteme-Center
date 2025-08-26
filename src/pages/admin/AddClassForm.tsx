@@ -364,8 +364,6 @@ const AddClassForm: React.FC<AddClassFormProps> = ({ classData, onSubmit, id }) 
       }
 
       if (onSubmit) {
-        console.log('CALLING onSubmit in AddClassForm', submitData);
-        console.log('onSubmit function:', onSubmit);
         await onSubmit(submitData);
       } else {
         console.error('onSubmit is not provided');

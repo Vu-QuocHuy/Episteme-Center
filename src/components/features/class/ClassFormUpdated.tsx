@@ -105,16 +105,12 @@ const ClassForm: React.FC<ClassFormProps> = ({
       if (classItem && open) {
         try {
           const res = await getClassByIdAPI(classItem.id);
-          console.log('📊 Class API Response:', res);
           const data = res?.data?.data || res?.data;
-          console.log('📊 Class Data:', data);
-          console.log('📊 Students Data:', data?.students);
           if (data) {
             setTeacherInfo(data.teacher || null);
             setStudentsInfo(data.students || []);
           }
         } catch (e) {
-          console.error('Failed to fetch class details:', e);
         }
       } else {
         setTeacherInfo(null);
@@ -229,7 +225,6 @@ const ClassForm: React.FC<ClassFormProps> = ({
 
     try {
       // Call API to remove student from class
-      console.log('Removing student with ID:', studentToRemove.student?.id);
       await removeStudentsFromClassAPI(classItem.id, [studentToRemove.student?.id]);
 
       // Update local state
@@ -256,7 +251,6 @@ const ClassForm: React.FC<ClassFormProps> = ({
 
     try {
       // Call API to unassign teacher from class
-      console.log('Removing teacher from class:', classItem.id, 'Teacher ID:', teacherInfo.id);
       await unassignTeacherAPI(classItem.id, teacherInfo.id);
 
       // Update local state
@@ -264,8 +258,6 @@ const ClassForm: React.FC<ClassFormProps> = ({
 
       handleCloseRemoveTeacherDialog();
     } catch (error: any) {
-      console.error('Error removing teacher:', error);
-      console.error('Error details:', error.response?.data);
     }
   };
 
@@ -273,8 +265,6 @@ const ClassForm: React.FC<ClassFormProps> = ({
     if (!classItem) return;
 
     try {
-      console.log('Adding teacher to class:', teacherId);
-
       // Call API to assign teacher to class
       await assignTeacherAPI(classItem.id, teacherId);
 
@@ -285,8 +275,6 @@ const ClassForm: React.FC<ClassFormProps> = ({
         setTeacherInfo(data.teacher || null);
       }
     } catch (error: any) {
-      console.error('Error adding teacher:', error);
-      console.error('Error details:', error.response?.data);
       throw error;
     }
   };
@@ -301,12 +289,8 @@ const ClassForm: React.FC<ClassFormProps> = ({
         discountPercent: discounts[id] || 0
       }));
 
-      console.log('Adding students data:', studentsData);
-      console.log('Class ID:', classItem.id);
-
       // Call API to add students to class
-      const response = await addStudentsToClassAPI(classItem.id, studentsData);
-      console.log('Add students response:', response);
+      await addStudentsToClassAPI(classItem.id, studentsData);
 
       // If API call was successful, update local state immediately
       // Add the new students to the existing list
@@ -335,29 +319,21 @@ const ClassForm: React.FC<ClassFormProps> = ({
           setStudentsInfo(data.students || []);
         }
       } catch (refreshError) {
-        console.warn('Failed to refresh students list, but students were added successfully:', refreshError);
         // Don't throw error since the main operation was successful
       }
 
     } catch (error: any) {
-      console.error('Error adding students:', error);
-      console.error('Error details:', error.response?.data);
-
       // Check if it's a 500 error but operation might have succeeded
       if (error.response?.status === 500) {
-        console.log('Got 500 error, but operation might have succeeded. Trying to refresh...');
-
         // Try to refresh to see if students were actually added
         try {
           const res = await getClassByIdAPI(classItem.id);
           const data = res?.data?.data || res?.data;
           if (data && data.students) {
             setStudentsInfo(data.students || []);
-            console.log('Students were actually added successfully despite 500 error');
             return; // Don't throw error since operation succeeded
           }
         } catch (refreshError) {
-          console.error('Failed to refresh after 500 error:', refreshError);
         }
       }
 
@@ -373,7 +349,7 @@ const ClassForm: React.FC<ClassFormProps> = ({
           <TextField
             fullWidth
             label="Khối"
-            value={formData.grade}
+            value={formData.grade ?? ''}
             onChange={(e) => handleInputChange('grade', e.target.value)}
             error={!!errors.grade}
             helperText={errors.grade}
@@ -383,7 +359,7 @@ const ClassForm: React.FC<ClassFormProps> = ({
           <TextField
             fullWidth
             label="Tên lớp"
-            value={formData.name}
+            value={formData.name ?? ''}
             onChange={(e) => handleInputChange('name', e.target.value)}
             error={!!errors.name}
             helperText={errors.name}
@@ -394,7 +370,7 @@ const ClassForm: React.FC<ClassFormProps> = ({
             fullWidth
             label="Giờ bắt đầu"
             placeholder="HH:MM"
-            value={formData.schedule.time_slots.start_time}
+            value={formData.schedule?.time_slots?.start_time ?? ''}
             onChange={(e) => handleInputChange('schedule.time_slots.start_time', e.target.value)}
             error={!!errors.start_time}
             helperText={errors.start_time || "Định dạng: HH:MM (24 giờ)"}
@@ -404,7 +380,7 @@ const ClassForm: React.FC<ClassFormProps> = ({
           <TextField
             fullWidth
             label="Phòng học"
-            value={formData.room}
+            value={formData.room ?? ''}
             onChange={(e) => handleInputChange('room', e.target.value)}
             error={!!errors.room}
             helperText={errors.room}
@@ -415,7 +391,7 @@ const ClassForm: React.FC<ClassFormProps> = ({
             fullWidth
             label="Ngày kết thúc"
             type="date"
-            value={formData.schedule.end_date}
+            value={formData.schedule?.end_date ?? ''}
             onChange={(e) => handleInputChange('schedule', {
               ...formData.schedule,
               end_date: e.target.value
@@ -434,7 +410,7 @@ const ClassForm: React.FC<ClassFormProps> = ({
           <TextField
             fullWidth
             label="Lớp"
-            value={formData.section}
+            value={formData.section ?? ''}
             onChange={(e) => handleInputChange('section', e.target.value)}
             error={!!errors.section}
             helperText={errors.section}
@@ -444,7 +420,7 @@ const ClassForm: React.FC<ClassFormProps> = ({
           <TextField
             fullWidth
             label="Học phí/buổi"
-            value={formData.feePerLesson}
+            value={formData.feePerLesson ?? ''}
             onChange={(e) => handleInputChange('feePerLesson', e.target.value)}
             error={!!errors.feePerLesson}
             helperText={errors.feePerLesson}
@@ -455,7 +431,7 @@ const ClassForm: React.FC<ClassFormProps> = ({
             fullWidth
             label="Giờ kết thúc"
             placeholder="HH:MM"
-            value={formData.schedule.time_slots.end_time}
+            value={formData.schedule?.time_slots?.end_time ?? ''}
             onChange={(e) => handleInputChange('schedule.time_slots.end_time', e.target.value)}
             error={!!errors.end_time}
             helperText={errors.end_time || "Định dạng: HH:MM (24 giờ)"}
@@ -466,7 +442,7 @@ const ClassForm: React.FC<ClassFormProps> = ({
             fullWidth
             label="Số học sinh tối đa"
             type="number"
-            value={formData.max_student}
+            value={formData.max_student ?? 0}
             onChange={(e) => handleInputChange('max_student', parseInt(e.target.value) || 30)}
             error={!!errors.max_student}
             helperText={errors.max_student}
@@ -478,7 +454,7 @@ const ClassForm: React.FC<ClassFormProps> = ({
             fullWidth
             label="Ngày bắt đầu"
             type="date"
-            value={formData.schedule.start_date}
+            value={formData.schedule?.start_date ?? ''}
             onChange={(e) => handleInputChange('schedule', {
               ...formData.schedule,
               start_date: e.target.value
@@ -509,7 +485,7 @@ const ClassForm: React.FC<ClassFormProps> = ({
           label="Mô tả"
           multiline
           rows={3}
-          value={formData.description}
+          value={formData.description ?? ''}
           onChange={(e) => handleInputChange('description', e.target.value)}
         />
       </Grid>
