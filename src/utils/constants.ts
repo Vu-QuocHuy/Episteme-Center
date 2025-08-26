@@ -1,8 +1,8 @@
 // Re-export from new constants location for backward compatibility
-export * from '../constants/index.js';
+export { USER_ROLES, ROLE_LABELS, APP_NAME, APP_DESCRIPTION, ROUTES as CONSTANT_ROUTES, STORAGE_KEYS as CONSTANT_STORAGE_KEYS, PAGINATION as CONSTANT_PAGINATION, DATE_FORMATS as CONSTANT_DATE_FORMATS, VALIDATION, ADVERTISEMENT } from '../constants/index';
 
 // Type exports
-export type { UserRole } from '../constants/index.js';
+export type { UserRole } from '../constants/index';
 
 // Legacy file - deprecated
 // Please import directly from '../constants' or '@constants' instead
@@ -14,14 +14,6 @@ if (import.meta.env.DEV) {
     'Please import from "constants" or "@constants" instead.'
   );
 }
-
-// Role Labels
-export const ROLE_LABELS: Record<UserRole, string> = {
-  [USER_ROLES.ADMIN]: 'Quản trị viên',
-  [USER_ROLES.TEACHER]: 'Giáo viên',
-  [USER_ROLES.STUDENT]: 'Học sinh',
-  [USER_ROLES.PARENT]: 'Phụ huynh'
-};
 
 // Routes
 export const ROUTES = {
@@ -270,11 +262,13 @@ export const AVATAR_COLORS: readonly string[] = [
   '#ffeb3b', '#ffc107', '#ff9800', '#ff5722'
 ] as const;
 
+// App Info
+export const APP_NAME = 'English Center Management';
+export const APP_VERSION = '1.0.0';
+
 export default {
   APP_NAME,
   APP_VERSION,
-  USER_ROLES,
-  ROLE_LABELS,
   ROUTES,
   STORAGE_KEYS,
   PAGINATION,

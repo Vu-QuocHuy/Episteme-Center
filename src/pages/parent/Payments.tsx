@@ -59,7 +59,7 @@ const Payments: React.FC = () => {
   const [paymentData, setPaymentData] = useState<PaymentData>({ invoices: [] });
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedTab, setSelectedTab] = useState<number>(0);
-  
+
   // Payment dialog states
   const [paymentDialogOpen, setPaymentDialogOpen] = useState<boolean>(false);
   const [selectedInvoice, setSelectedInvoice] = useState<PaymentTransaction | null>(null);
@@ -69,14 +69,14 @@ const Payments: React.FC = () => {
   const [paymentSuccess, setPaymentSuccess] = useState<string>('');
   const [paymentNote, setPaymentNote] = useState<string>('');
   const [paymentMethod, setPaymentMethod] = useState<string>('cash');
-  
+
   // History modal
   const [paymentHistoryModalOpen, setPaymentHistoryModalOpen] = useState<boolean>(false);
   const [selectedPaymentForHistory, setSelectedPaymentForHistory] = useState<PaymentTransaction | null>(null);
-  
+
   // Snackbar
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' | 'warning' }>({ open: false, message: '', severity: 'success' });
-  
+
   // Confirm dialog
   const [paymentConfirmOpen, setPaymentConfirmOpen] = useState<boolean>(false);
   const [paymentConfirmData, setPaymentConfirmData] = useState<PaymentConfirmData | null>(null);

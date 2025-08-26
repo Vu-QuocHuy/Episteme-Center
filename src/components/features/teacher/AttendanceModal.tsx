@@ -201,7 +201,7 @@ const AttendanceModal: React.FC<AttendanceModalProps> = ({
         const isModified = currentStatus !== originalStatus;
 
         return {
-          studentId: student.id,
+          studentId: Number(student.id),
           status: currentStatus,
           isModified: isModified,
           note: attendanceNote[student.id] || null

@@ -179,7 +179,7 @@ const TeacherForm: React.FC<TeacherFormProps> = ({
         specializations: formData.specializations ? formData.specializations.split(',').map(s => s.trim()).filter(s => s) as any : [],
         introduction: formData.introduction,
         workExperience: formData.workExperience,
-        ...(formData.salaryPerLesson ? { salaryPerLesson: parseInt(formData.salaryPerLesson) as any } : {}),
+        ...(formData.salaryPerLesson ? { salaryPerLesson: Number(formData.salaryPerLesson) } : {}),
         isActive: formData.isActive
       };
 

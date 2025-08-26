@@ -65,12 +65,12 @@ describe('SearchInput', () => {
     expect(input).toBeInTheDocument();
   });
 
-  it('should handle different sizes', () => {
-    const { rerender } = render(<SearchInput {...defaultProps} size="small" />);
+  it('should handle different debounce delays', () => {
+    const { rerender } = render(<SearchInput {...defaultProps} debounceDelay={1000} />);
     let input = screen.getByPlaceholderText('Tìm kiếm...');
     expect(input).toBeInTheDocument();
 
-    rerender(<SearchInput {...defaultProps} size="large" />);
+    rerender(<SearchInput {...defaultProps} debounceDelay={2000} />);
     input = screen.getByPlaceholderText('Tìm kiếm...');
     expect(input).toBeInTheDocument();
   });

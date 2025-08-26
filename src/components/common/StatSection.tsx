@@ -7,7 +7,7 @@ export interface StatItem {
   title: string;
   value: string | number;
   icon: React.ReactNode;
-  color?: string;
+  color?: 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning';
   subtitle?: string;
 }
 

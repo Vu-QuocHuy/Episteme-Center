@@ -114,8 +114,8 @@ const StaffLogin: React.FC = () => {
 
       if (result && result.user) {
         const roleId = typeof result.user.role === 'object' ? (result.user.role as any)?.id :
-                      (result.user.role === 'admin' || result.user.role === 'Admin') ? 1 :
-                      (result.user.role === 'teacher' || result.user.role === 'Teacher') ? 2 : 0;
+                      (result.user.role === 'admin') ? 1 :
+                      (result.user.role === 'teacher') ? 2 : 0;
 
         if (roleId !== 1 && roleId !== 2) {
           setLoginError('Chỉ có quản trị viên và giáo viên mới được phép đăng nhập tại đây');
@@ -425,5 +425,3 @@ const StaffLogin: React.FC = () => {
 };
 
 export default StaffLogin;
-
-
