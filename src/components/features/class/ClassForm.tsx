@@ -13,18 +13,12 @@ import {
   Box,
   Typography,
   CircularProgress,
-  IconButton,
   Grid,
   Chip,
   Autocomplete,
-  Divider,
   Paper
 } from '@mui/material';
 import {
-  Close as CloseIcon,
-  Save as SaveIcon,
-  Cancel as CancelIcon,
-  CalendarToday as CalendarIcon,
   Add as AddIcon
 } from '@mui/icons-material';
 
@@ -258,10 +252,10 @@ const ClassForm: React.FC<ClassFormProps> = ({
       // Determine status based on dates
       const now = new Date();
       const startDate = new Date(formData.schedule.start_date);
-      let status = 'active';
+      let status: 'active' | 'inactive' | 'completed' | 'cancelled' | 'closed' = 'active';
 
       if (startDate > now) {
-        status = 'upcoming';
+        status = 'active'; // upcoming is not in the type, use active
       } else if (endDate < now) {
         status = 'completed';
       }
@@ -371,7 +365,7 @@ const ClassForm: React.FC<ClassFormProps> = ({
                       label="Khối *"
                       type="number"
                       value={formData.grade}
-                      onChange={(e) => handleInputChange('grade', parseInt(e.target.value) || 1)}
+                      onChange={(e) => handleInputChange('grade', Number(e.target.value) || 1)}
                       error={!!errors.grade}
                       helperText={errors.grade}
                       InputProps={{ inputProps: { min: 1, max: 12 } }}
@@ -393,7 +387,7 @@ const ClassForm: React.FC<ClassFormProps> = ({
                       label="Học phí/buổi *"
                       type="number"
                       value={formData.feePerLesson}
-                      onChange={(e) => handleInputChange('feePerLesson', parseInt(e.target.value) || 0)}
+                      onChange={(e) => handleInputChange('feePerLesson', Number(e.target.value) || 0)}
                       error={!!errors.feePerLesson}
                       helperText={errors.feePerLesson}
                       InputProps={{ inputProps: { min: 0 } }}
@@ -444,7 +438,7 @@ const ClassForm: React.FC<ClassFormProps> = ({
                       label="Lớp *"
                 type="number"
                 value={formData.section}
-                onChange={(e) => handleInputChange('section', parseInt(e.target.value) || 1)}
+                onChange={(e) => handleInputChange('section', Number(e.target.value) || 1)}
                 error={!!errors.section}
                 helperText={errors.section}
                 InputProps={{ inputProps: { min: 1 } }}
@@ -471,7 +465,7 @@ const ClassForm: React.FC<ClassFormProps> = ({
                       label="Số học sinh tối đa *"
                 type="number"
                 value={formData.max_student}
-                onChange={(e) => handleInputChange('max_student', parseInt(e.target.value) || 30)}
+                onChange={(e) => handleInputChange('max_student', Number(e.target.value) || 30)}
                 error={!!errors.max_student}
                 helperText={errors.max_student}
                 InputProps={{ inputProps: { min: 1 } }}

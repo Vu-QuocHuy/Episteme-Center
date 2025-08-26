@@ -26,7 +26,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
-import { COLORS, GRADIENTS } from '../utils/colors';
+import { GRADIENTS } from '../utils/colors';
 import { USER_ROLES, ROLE_LABELS, APP_NAME } from '../constants';
 import { getRoleColor } from '../utils/helpers';
 

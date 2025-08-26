@@ -9,27 +9,27 @@ import {
   Paper,
   IconButton,
   Chip,
-  Avatar,
-  Box,
   Typography,
-  Grid,
+  Box,
   Menu,
   MenuItem,
-  ListItemIcon,
-  ListItemText,
+  Button,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
+  Grid,
   Alert,
+  ListItemIcon,
+  ListItemText,
+  Avatar,
   Snackbar
 } from '@mui/material';
 import {
   Edit as EditIcon,
   Delete as DeleteIcon,
-  Visibility as VisibilityIcon,
-  People as PeopleIcon,
+  Visibility as ViewIcon,
+  Group as GroupIcon,
   Schedule as ScheduleIcon
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
@@ -68,7 +68,6 @@ const ClassTable: React.FC<ClassTableProps> = ({
   classes,
   onEdit,
   onDelete,
-  onViewDetails,
   onViewStudents,
   onViewSchedule,
   loading = false
@@ -77,7 +76,6 @@ const ClassTable: React.FC<ClassTableProps> = ({
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedClass, setSelectedClass] = useState<Class | null>(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
-  const [detailsLoading, setDetailsLoading] = useState(false);
   const [studentsModalOpen, setStudentsModalOpen] = useState(false);
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -91,11 +89,6 @@ const ClassTable: React.FC<ClassTableProps> = ({
     message: '',
     severity: 'info'
   });
-
-  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, classItem: Class) => {
-    setAnchorEl(event.currentTarget);
-    setSelectedClass(classItem);
-  };
 
   const handleMenuClose = () => {
     setAnchorEl(null);
@@ -111,15 +104,12 @@ const ClassTable: React.FC<ClassTableProps> = ({
 
   const fetchAndOpenDetails = async (classItem: Class) => {
     try {
-      setDetailsLoading(true);
       const res = await getClassByIdAPI(classItem.id);
       openDetailsWithData(res);
     } catch (e) {
       // Fallback: show existing item if fetch fails
       setSelectedClass(classItem);
       setDetailsModalOpen(true);
-    } finally {
-      setDetailsLoading(false);
     }
   };
 
@@ -209,16 +199,6 @@ const ClassTable: React.FC<ClassTableProps> = ({
       'cancelled': 'Đã hủy'
     };
     return statusMap[status] || status;
-  };
-
-  const getStudentCount = (classItem: Class) => {
-    return classItem.students?.length || 0;
-  };
-
-  const getCapacityPercentage = (classItem: Class) => {
-    const current = getStudentCount(classItem);
-    const max = classItem.max_student || classItem.maxStudents || 0;
-    return max > 0 ? (current / max) * 100 : 0;
   };
 
   const getDaysOfWeekText = (days: string[]): string => {
@@ -353,7 +333,7 @@ const ClassTable: React.FC<ClassTableProps> = ({
                       onClick={() => fetchAndOpenDetails(classItem)}
                       sx={{ color: 'grey.600' }}
                     >
-                      <VisibilityIcon />
+                      <ViewIcon />
                     </IconButton>
                     <IconButton
                       size="small"
@@ -386,13 +366,13 @@ const ClassTable: React.FC<ClassTableProps> = ({
       >
         <MenuItem onClick={handleViewDetails}>
           <ListItemIcon>
-            <VisibilityIcon fontSize="small" />
+            <ViewIcon fontSize="small" />
           </ListItemIcon>
           <ListItemText>Xem chi tiết</ListItemText>
         </MenuItem>
         <MenuItem onClick={handleViewStudents}>
           <ListItemIcon>
-            <PeopleIcon fontSize="small" />
+            <GroupIcon fontSize="small" />
           </ListItemIcon>
           <ListItemText>Xem học sinh</ListItemText>
         </MenuItem>
@@ -528,7 +508,7 @@ const ClassDetailsModal: React.FC<ClassDetailsModalProps> = ({
             <Typography variant="body2" sx={{ opacity: 0.9 }}>Thông tin chi tiết về lớp học và học sinh</Typography>
           </Box>
           <Avatar sx={{ bgcolor: 'rgba(255,255,255,0.15)' }}>
-            <VisibilityIcon htmlColor="#fff" />
+            <ViewIcon htmlColor="#fff" />
           </Avatar>
         </Box>
       </DialogTitle>
@@ -683,7 +663,7 @@ const ClassStudentsModal: React.FC<ClassStudentsModalProps> = ({
     <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
       <DialogTitle>
         <Box display="flex" alignItems="center" gap={2}>
-          <PeopleIcon />
+          <GroupIcon />
           <Typography variant="h6">Học sinh lớp {classItem.name}</Typography>
         </Box>
       </DialogTitle>

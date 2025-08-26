@@ -24,7 +24,7 @@ const methodColor: Record<string, 'default' | 'primary' | 'success' | 'warning' 
 const AuditLog: React.FC = () => {
   const [logs, setLogs] = useState<AuditLogItem[]>([]);
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+  const [limit] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -127,5 +127,3 @@ const AuditLog: React.FC = () => {
 };
 
 export default AuditLog;
-
-

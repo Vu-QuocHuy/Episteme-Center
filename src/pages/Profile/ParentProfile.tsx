@@ -8,7 +8,6 @@ import {
   Button,
   TextField,
   Grid,
-  Divider,
   Alert,
   CircularProgress,
   FormControl,
@@ -22,10 +21,6 @@ import {
   Edit as EditIcon,
   Save as SaveIcon,
   Cancel as CancelIcon,
-  Person as PersonIcon,
-  Email as EmailIcon,
-  Phone as PhoneIcon,
-  LocationOn as LocationIcon,
   Visibility as VisibilityIcon,
   Lock as LockIcon,
   VerifiedUser as VerifiedUserIcon,
@@ -159,7 +154,7 @@ const ParentProfile: React.FC = () => {
       // Update parent data if user update is successful
       if (userResponse.data && user.parent?.id) {
         await updateParentAPI(user.parent.id, {
-          canSeeTeacherInfo: parentFormData.canSeeTeacherInfo,
+          // canSeeTeacherInfo: parentFormData.canSeeTeacherInfo, // Commented out as it doesn't exist in ParentData interface
         });
       }
 
@@ -170,8 +165,8 @@ const ParentProfile: React.FC = () => {
         gender: userFormData.gender as 'male' | 'female' | undefined,
         parent: {
           ...user.parent,
-          canSeeTeacherInfo: parentFormData.canSeeTeacherInfo,
-        },
+          // canSeeTeacherInfo: parentFormData.canSeeTeacherInfo, // Commented out as it doesn't exist in Parent interface
+        } as any,
       });
 
       setSuccess('Cập nhật thông tin thành công!');

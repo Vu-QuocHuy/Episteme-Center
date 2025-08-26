@@ -20,7 +20,6 @@ import {
 } from '@mui/material';
 import { Save as SaveIcon, Cancel as CancelIcon, Edit as EditIcon } from '@mui/icons-material';
 import { Teacher } from '../../../types';
-import { validateTeacher } from '../../../validations/teacherValidation';
 
 interface TeacherFormProps {
   open: boolean;
@@ -41,7 +40,6 @@ interface FormData {
   description: string;
   qualifications: string;
   specializations: string;
-  introduction: string;
   workExperience: string;
   salaryPerLesson: string;
   isActive: boolean;
@@ -56,10 +54,9 @@ interface FormErrors {
   description?: string;
   qualifications?: string;
   specializations?: string;
-  introduction?: string;
   workExperience?: string;
   salaryPerLesson?: string;
-  isActive?: string;
+  isActive?: boolean;
 }
 
 const TeacherForm: React.FC<TeacherFormProps> = ({
@@ -80,7 +77,6 @@ const TeacherForm: React.FC<TeacherFormProps> = ({
     description: '',
     qualifications: '',
     specializations: '',
-    introduction: '',
     workExperience: '',
     salaryPerLesson: '',
     isActive: true
@@ -109,7 +105,6 @@ const TeacherForm: React.FC<TeacherFormProps> = ({
         specializations: Array.isArray((teacher as any)?.specializations)
           ? (teacher as any)?.specializations.join(', ')
           : (teacher as any)?.specializations || '',
-        introduction: (teacher as any)?.introduction || '',
         workExperience: (teacher as any)?.workExperience || '',
         salaryPerLesson: (teacher as any)?.salaryPerLesson ? String((teacher as any).salaryPerLesson) : '',
         isActive: (teacher as any)?.isActive ?? true
@@ -133,7 +128,6 @@ const TeacherForm: React.FC<TeacherFormProps> = ({
       description: '',
       qualifications: '',
       specializations: '',
-      introduction: '',
       workExperience: '',
       salaryPerLesson: '',
       isActive: true
@@ -177,8 +171,8 @@ const TeacherForm: React.FC<TeacherFormProps> = ({
         description: formData.description,
         qualifications: formData.qualifications ? formData.qualifications.split(',').map(q => q.trim()).filter(q => q) as any : [],
         specializations: formData.specializations ? formData.specializations.split(',').map(s => s.trim()).filter(s => s) as any : [],
-        introduction: formData.introduction,
-        workExperience: formData.workExperience,
+        // introduction: formData.introduction, // Commented out as it doesn't exist in Teacher interface
+        workExperience: Number(formData.workExperience),
         ...(formData.salaryPerLesson ? { salaryPerLesson: Number(formData.salaryPerLesson) } : {}),
         isActive: formData.isActive
       };
@@ -347,19 +341,6 @@ const TeacherForm: React.FC<TeacherFormProps> = ({
                     placeholder="Mô tả về kinh nghiệm giảng dạy, chuyên môn..."
                   />
               </Grid>
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="Giới thiệu"
-                    multiline
-                    rows={3}
-                    value={formData.introduction}
-                    onChange={(e) => handleInputChange('introduction', e.target.value)}
-                    error={!!errors.introduction}
-                    helperText={errors.introduction}
-                    placeholder="Giới thiệu về bản thân..."
-                  />
-                </Grid>
                 <Grid item xs={12}>
                   <TextField
                     fullWidth

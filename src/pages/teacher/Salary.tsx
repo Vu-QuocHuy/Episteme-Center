@@ -9,7 +9,7 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
-import { getTeacherPaymentsAPI, getTotalPaymentsAPI } from '../../services/api';
+import { getTeacherPaymentsAPI } from '../../services/api';
 import { commonStyles } from '../../utils/styles';
 import PaymentHistoryModal from '../../components/common/PaymentHistoryModal';
 
@@ -104,7 +104,6 @@ const Salary: React.FC = () => {
 
       if (paymentsResponse.data?.data) {
         const payments = paymentsResponse.data.data.result || [];
-        const meta = paymentsResponse.data.data.meta || {};
 
         // Tính toán summary từ payments
         const summary = calculateSalarySummary(payments);

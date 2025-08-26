@@ -87,8 +87,7 @@ const AttendanceHistoryModal: React.FC<AttendanceHistoryModalProps> = ({
       const res = await getAttendanceListAPI({
         classId: classData.id,
         limit: 50,
-        page: 1,
-        sortBy: 'date'
+        page: 1
       });
 
       // Parse the API response structure

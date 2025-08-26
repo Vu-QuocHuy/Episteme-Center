@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-  getAllHomeContentAPI,
   getHomeContentByIdAPI,
-  getActiveHomeContentAPI,
   getHomeContentBySectionAPI
 } from '../../services/api';
 import { HomeContent, HomeSection } from '../../types';

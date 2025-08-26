@@ -3,7 +3,6 @@ import { Box, Typography } from '@mui/material';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
 import { commonStyles } from '../../utils/styles';
 import FinancialStatisticsPanel from './FinancialStatisticsPanel';
-import StudentStatisticsPanel from './StudentStatisticsPanel';
 
 const Statistics: React.FC = () => {
   return (

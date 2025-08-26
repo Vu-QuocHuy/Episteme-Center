@@ -59,11 +59,9 @@ const TeacherManagement: React.FC = () => {
 
   // Teacher form hook
   const {
-    form,
     loading: formLoading,
     setFormData,
     resetForm,
-    handleSubmit
   } = useTeacherForm();
 
   // Local state

@@ -17,14 +17,13 @@ import {
   Paper
 } from '@mui/material';
 import { Save as SaveIcon, Cancel as CancelIcon, Edit as EditIcon } from '@mui/icons-material';
-import { Student, Parent } from '../../../types';
+import { Student } from '../../../types';
 
 interface StudentFormProps {
   open: boolean;
   onClose: () => void;
   onSubmit: (studentData: Partial<Student>) => Promise<void>;
   student?: Student | null;
-  parents?: Parent[];
   loading?: boolean;
 }
 
@@ -44,10 +43,6 @@ interface FormErrors {
   address?: string;
   dateOfBirth?: string;
   gender?: string;
-  level?: string;
-  schoolName?: string;
-  grade?: string;
-  parentId?: string;
 }
 
 const StudentForm: React.FC<StudentFormProps> = ({
@@ -55,7 +50,6 @@ const StudentForm: React.FC<StudentFormProps> = ({
   onClose,
   onSubmit,
   student,
-  parents = [],
   loading = false
 }) => {
   // Removed theme-based avatar UI for edit layout

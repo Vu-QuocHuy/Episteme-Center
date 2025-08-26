@@ -117,7 +117,7 @@ const HomeContentForm: React.FC<HomeContentFormProps> = ({
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.title.trim()) {
+    if (String(formData.title ?? '').trim() === '') {
       newErrors.title = 'Tiêu đề là bắt buộc';
     }
 
@@ -141,23 +141,6 @@ const HomeContentForm: React.FC<HomeContentFormProps> = ({
     }
 
     await onSubmit(formData);
-  };
-
-    const insertText = (text: string) => {
-    const textarea = document.getElementById('content-textarea') as HTMLTextAreaElement;
-    if (textarea) {
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      const currentText = formData.content;
-      const newText = currentText.substring(0, start) + text + currentText.substring(end);
-      handleInputChange('content', newText);
-
-      // Set cursor position after inserted text
-      setTimeout(() => {
-        textarea.focus();
-        textarea.setSelectionRange(start + text.length, start + text.length);
-      }, 0);
-    }
   };
 
   const addComponent = (type: string) => {
@@ -224,9 +207,9 @@ const HomeContentForm: React.FC<HomeContentFormProps> = ({
           html += `<p style="font-size: 1.1rem; line-height: 1.6; margin-bottom: 1rem; color: #555;">${block.content}</p>`;
           break;
         case 'list':
-          const items = block.content.split('\n').filter(item => item.trim());
+          const items = block.content.split('\n').filter((item: string) => item.trim());
           html += '<ul style="font-size: 1rem; line-height: 1.6; margin-bottom: 1rem; color: #555;">';
-          items.forEach(item => {
+          items.forEach((item: string) => {
             html += `<li style="margin-bottom: 0.5rem;">${item}</li>`;
           });
           html += '</ul>';
@@ -237,7 +220,7 @@ const HomeContentForm: React.FC<HomeContentFormProps> = ({
         case 'columns2':
           const cols2 = block.content.split('\n\n');
           html += `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin: 2rem 0;">`;
-          cols2.forEach(col => {
+          cols2.forEach((col: string) => {
             html += `<div style="padding: 1rem; background: #f8f9fa; border-radius: 8px;"><p style="margin: 0; color: #555;">${col}</p></div>`;
           });
           html += '</div>';
@@ -245,7 +228,7 @@ const HomeContentForm: React.FC<HomeContentFormProps> = ({
         case 'columns3':
           const cols3 = block.content.split('\n\n');
           html += `<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 2rem; margin: 2rem 0;">`;
-          cols3.forEach(col => {
+          cols3.forEach((col: string) => {
             html += `<div style="padding: 1rem; background: #f8f9fa; border-radius: 8px;"><p style="margin: 0; color: #555;">${col}</p></div>`;
           });
           html += '</div>';
@@ -256,7 +239,7 @@ const HomeContentForm: React.FC<HomeContentFormProps> = ({
             const columns = Array(data.columns).fill('1fr').join(' ');
             const cols = data.content.split('\n\n');
             html += `<div style="display: grid; grid-template-columns: ${columns}; gap: 2rem; margin: 2rem 0;">`;
-            cols.forEach(col => {
+            cols.forEach((col: string) => {
               html += `<div style="padding: 1rem; background: #f8f9fa; border-radius: 8px;"><p style="margin: 0; color: #555;">${col}</p></div>`;
             });
             html += '</div>';
@@ -479,7 +462,7 @@ const HomeContentForm: React.FC<HomeContentFormProps> = ({
 
       <form onSubmit={handleSubmit}>
         <DialogContent sx={{ p: 0, maxHeight: '70vh', overflow: 'auto' }}>
-          <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)} sx={{ px: 3, pt: 1 }}>
+          <Tabs value={activeTab} onChange={(_e, newValue) => setActiveTab(newValue)} sx={{ px: 3, pt: 1 }}>
             <Tab label="Thông tin cơ bản" />
             <Tab label="Tạo nội dung" />
             <Tab label="Xem trước" />

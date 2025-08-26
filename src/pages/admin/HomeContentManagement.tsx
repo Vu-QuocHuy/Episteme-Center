@@ -4,11 +4,6 @@ import {
   Typography,
   Button,
   TextField,
-  Grid,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Pagination,
   Alert,
   Card,
@@ -34,8 +29,7 @@ import {
   Visibility as ViewIcon,
   VisibilityOff as HideIcon,
   DragIndicator as DragIcon,
-  Preview as PreviewIcon,
-  Settings as SettingsIcon
+  Preview as PreviewIcon
 } from '@mui/icons-material';
 import { commonStyles } from '../../utils/styles';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
@@ -77,16 +71,13 @@ const sectionConfig = [
 const HomeContentManagement: React.FC = () => {
   const {
     homeContent,
-    loading,
     error,
     page,
     totalPages,
     searchQuery,
     setSearchQuery,
-    sectionFilter,
     setSectionFilter,
     handlePageChange,
-    resetFilters
   } = useHomeContentManagement();
 
   const [openDialog, setOpenDialog] = useState<boolean>(false);
@@ -136,7 +127,7 @@ const HomeContentManagement: React.FC = () => {
     setPreviewDialog(true);
   }, []);
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
     const section = sectionConfig[newValue]?.value;
     if (section) {
@@ -274,7 +265,7 @@ const HomeContentManagement: React.FC = () => {
               scrollButtons="auto"
               sx={{ borderBottom: 1, borderColor: 'divider' }}
             >
-              {sectionConfig.map((section, index) => (
+              {sectionConfig.map((section) => (
                 <Tab
                   key={section.value}
                   label={

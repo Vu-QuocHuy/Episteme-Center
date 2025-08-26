@@ -8,7 +8,6 @@ import {
   Button,
   TextField,
   Grid,
-  Divider,
   Alert,
   CircularProgress,
   FormControl,
@@ -20,12 +19,6 @@ import {
   Edit as EditIcon,
   Save as SaveIcon,
   Cancel as CancelIcon,
-  Person as PersonIcon,
-  Email as EmailIcon,
-  Phone as PhoneIcon,
-  LocationOn as LocationIcon,
-  School as SchoolIcon,
-  Work as WorkIcon,
   Lock as LockIcon,
   VerifiedUser as VerifiedUserIcon,
   CameraAlt as CameraIcon,
@@ -175,7 +168,7 @@ const TeacherProfile: React.FC = () => {
           ...user.teacher,
           description: teacherFormData.description,
           isActive: teacherFormData.isActive,
-        },
+        } as any,
       });
 
       setSuccess('Cập nhật thông tin thành công!');

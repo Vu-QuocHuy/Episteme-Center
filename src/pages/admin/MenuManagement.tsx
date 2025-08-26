@@ -5,11 +5,6 @@ import {
   Button,
   TextField,
   Grid,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Pagination,
   Alert,
   Card,
   CardContent,
@@ -35,7 +30,6 @@ import {
   VisibilityOff as HideIcon,
   DragIndicator as DragIcon,
   Preview as PreviewIcon,
-  Settings as SettingsIcon,
   Link as LinkIcon,
   Language as LanguageIcon
 } from '@mui/icons-material';
@@ -75,11 +69,9 @@ const menuCategories = [
 const MenuManagement: React.FC = () => {
   const {
     menuItems,
-    loading,
     error,
     searchQuery,
     setSearchQuery,
-    fetchMenuItems,
     createMenuItem,
     updateMenuItem,
     deleteMenuItem,
@@ -96,7 +88,14 @@ const MenuManagement: React.FC = () => {
     setSelectedMenuItem(menuItem);
     if (category && !menuItem) {
       // Pre-fill category when adding new menu item
-      setSelectedMenuItem({ ...menuItem, isExternal: category === 'external' } as MenuItemType);
+      setSelectedMenuItem({
+        label: '',
+        sectionId: '',
+        order: 1,
+        isActive: true,
+        isExternal: category === 'external',
+        externalUrl: ''
+      } as MenuItemType);
     }
     setOpenDialog(true);
   }, []);
@@ -146,7 +145,7 @@ const MenuManagement: React.FC = () => {
     setPreviewDialog(true);
   }, []);
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
   };
 
@@ -285,7 +284,7 @@ const MenuManagement: React.FC = () => {
               scrollButtons="auto"
               sx={{ borderBottom: 1, borderColor: 'divider' }}
             >
-              {menuCategories.map((category, index) => (
+              {menuCategories.map((category) => (
                 <Tab
                   key={category.value}
                   label={
@@ -379,7 +378,7 @@ const MenuManagement: React.FC = () => {
           {previewMenuItem && (
             <Box>
               <Typography variant="h5" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                {previewMenuItem.icon} {previewMenuItem.label}
+                {previewMenuItem.label}
               </Typography>
 
               <Box sx={{ mb: 2 }}>
@@ -443,7 +442,7 @@ const MenuFormDialog: React.FC<MenuFormDialogProps> = ({
   onClose,
   onSubmit,
   menuItem,
-  loading = false
+  loading: _loading = false
 }) => {
   const [formData, setFormData] = useState({
     label: '',
@@ -451,8 +450,7 @@ const MenuFormDialog: React.FC<MenuFormDialogProps> = ({
     order: 1,
     isActive: true,
     isExternal: false,
-    externalUrl: '',
-    icon: ''
+    externalUrl: ''
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -464,8 +462,7 @@ const MenuFormDialog: React.FC<MenuFormDialogProps> = ({
         order: menuItem.order,
         isActive: menuItem.isActive,
         isExternal: menuItem.isExternal || false,
-        externalUrl: menuItem.externalUrl || '',
-        icon: menuItem.icon || ''
+        externalUrl: menuItem.externalUrl || ''
       });
     } else {
       setFormData({
@@ -474,8 +471,7 @@ const MenuFormDialog: React.FC<MenuFormDialogProps> = ({
         order: 1,
         isActive: true,
         isExternal: false,
-        externalUrl: '',
-        icon: ''
+        externalUrl: ''
       });
     }
     setErrors({});
@@ -615,10 +611,10 @@ const MenuFormDialog: React.FC<MenuFormDialogProps> = ({
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose} disabled={loading}>
+          <Button onClick={onClose}>
             Hủy
           </Button>
-          <Button type="submit" variant="contained" disabled={loading}>
+          <Button type="submit" variant="contained">
             {menuItem ? 'Cập nhật' : 'Tạo mới'}
           </Button>
         </DialogActions>
@@ -628,4 +624,3 @@ const MenuFormDialog: React.FC<MenuFormDialogProps> = ({
 };
 
 export default MenuManagement;
-

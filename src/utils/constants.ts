@@ -1,8 +1,16 @@
 // Re-export from new constants location for backward compatibility
-export { USER_ROLES, ROLE_LABELS, APP_NAME, APP_DESCRIPTION, ROUTES as CONSTANT_ROUTES, STORAGE_KEYS as CONSTANT_STORAGE_KEYS, PAGINATION as CONSTANT_PAGINATION, DATE_FORMATS as CONSTANT_DATE_FORMATS, VALIDATION, ADVERTISEMENT } from '../constants/index';
+export { USER_ROLES, APP_DESCRIPTION, ROUTES as CONSTANT_ROUTES, STORAGE_KEYS as CONSTANT_STORAGE_KEYS, PAGINATION as CONSTANT_PAGINATION, DATE_FORMATS as CONSTANT_DATE_FORMATS, VALIDATION, ADVERTISEMENT } from '../constants/index';
 
 // Type exports
 export type { UserRole } from '../constants/index';
+
+// Role Labels (for backward compatibility)
+export const ROLE_LABELS: Record<string, string> = {
+  admin: 'Quản trị viên',
+  teacher: 'Giáo viên',
+  student: 'Học sinh',
+  parent: 'Phụ huynh'
+};
 
 // Legacy file - deprecated
 // Please import directly from '../constants' or '@constants' instead

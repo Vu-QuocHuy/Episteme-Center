@@ -4,7 +4,7 @@ import { Teacher, UseFormReturn, FormErrors } from '../../types';
 import { validateTeacher } from '../../validations/teacherValidation';
 
 export const useTeacherForm = (): UseFormReturn<Teacher> => {
-  const [form, setForm] = useState<Teacher>({
+  const [form, setForm] = useState<any>({
     id: '',
     userId: {
       id: '',
@@ -25,7 +25,7 @@ export const useTeacherForm = (): UseFormReturn<Teacher> => {
   const handleChange = useCallback((event: React.ChangeEvent<HTMLInputElement>): void => {
     const { name, value, type, checked } = event.target;
 
-    setForm(prev => ({
+    setForm((prev: any) => ({
       ...prev,
       ...(name.includes('.')
         ? {
@@ -107,9 +107,12 @@ export const useTeacherForm = (): UseFormReturn<Teacher> => {
       description: teacherData.description || '',
       salaryPerLesson: 0,
       qualifications: '',
-      specialization: teacherData.specialization || ''
+      specializations: teacherData.specialization || '',
+      introduction: '',
+      workExperience: 0,
+      isActive: true,
     };
-    const errors = validateTeacher(teacherFormData);
+    const errors = validateTeacher(teacherFormData as any);
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors as any);
       return { success: false, message: 'Vui lòng kiểm tra lại thông tin' };

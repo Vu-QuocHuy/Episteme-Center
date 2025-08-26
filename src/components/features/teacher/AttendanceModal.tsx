@@ -204,7 +204,7 @@ const AttendanceModal: React.FC<AttendanceModalProps> = ({
           studentId: Number(student.id),
           status: currentStatus,
           isModified: isModified,
-          note: attendanceNote[student.id] || null
+          note: attendanceNote[student.id] || undefined
         };
       });
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Table,
   TableBody,
@@ -15,7 +15,7 @@ import {
 import {
   Edit as EditIcon,
   Delete as DeleteIcon,
-  Visibility as VisibilityIcon,
+  Visibility as VisibilityIcon
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { Teacher } from '../../../types';

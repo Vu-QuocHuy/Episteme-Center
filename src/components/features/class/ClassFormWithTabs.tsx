@@ -6,24 +6,18 @@ import {
   DialogActions,
   Button,
   TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Box,
   Typography,
   CircularProgress,
-  IconButton,
-  Grid,
   Chip,
   Autocomplete,
   Paper,
   Tabs,
   Tab,
-  Divider
+  Divider,
+  Grid
 } from '@mui/material';
 import {
-  Close as CloseIcon,
   Add as AddIcon,
   Edit as EditIcon
 } from '@mui/icons-material';
@@ -40,13 +34,13 @@ interface ClassFormProps {
 
 const initialFormData: ClassFormData = {
   name: '',
-  grade: '1',
-  section: '1',
+  grade: 1,
+  section: 1,
   year: new Date().getFullYear(),
   description: '',
-  feePerLesson: '0',
+  feePerLesson: 0,
   status: 'active',
-  max_student: '30',
+  max_student: 30,
   room: '',
   schedule: {
     start_date: '',
@@ -86,13 +80,13 @@ const ClassForm: React.FC<ClassFormProps> = ({
     if (classItem) {
       setFormData({
         name: classItem.name || '',
-        grade: (classItem.grade || 1).toString(),
-        section: (classItem.section || 1).toString(),
+        grade: classItem.grade || 1,
+        section: classItem.section || 1,
         year: classItem.year || new Date().getFullYear(),
         description: classItem.description || '',
-        feePerLesson: (classItem.feePerLesson || 0).toString(),
+        feePerLesson: classItem.feePerLesson || 0,
         status: classItem.status || 'active',
-        max_student: (classItem.max_student || classItem.maxStudents || 30).toString(),
+        max_student: classItem.max_student || classItem.maxStudents || 30,
         room: classItem.room || '',
         schedule: {
           start_date: classItem.schedule?.start_date ?
@@ -113,6 +107,11 @@ const ClassForm: React.FC<ClassFormProps> = ({
   }, [classItem, open]);
 
   const handleInputChange = (field: string, value: any) => {
+    // Convert string to number for numeric fields
+    if (['grade', 'section', 'feePerLesson', 'max_student'].includes(field)) {
+      value = Number(value) || 0;
+    }
+
     if (field.includes('.')) {
       const [parent, child] = field.split('.');
       setFormData(prev => ({
@@ -203,7 +202,7 @@ const ClassForm: React.FC<ClassFormProps> = ({
     onClose();
   };
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
   };
 

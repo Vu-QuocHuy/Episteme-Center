@@ -57,7 +57,7 @@ const DashboardRefactored: React.FC = () => {
   // Use custom hook for data fetching and state management
   const { data, loading, error } = useDashboardData({
     initialData: initialDashboardData,
-    fetchFunction: getTeacherDashboardAPI
+    fetchFunction: (userId?: string) => getTeacherDashboardAPI(userId || '')
   });
 
   return (

@@ -18,15 +18,10 @@ import {
   Checkbox,
   Tabs,
   Tab,
-  Paper,
-  Autocomplete,
-  List,
-  ListItem,
-  ListItemText
+  Paper
 } from '@mui/material';
 import {
   Save as SaveIcon,
-  Cancel as CancelIcon,
   Edit as EditIcon
 } from '@mui/icons-material';
 import { Parent, Student } from '../../../types';
@@ -44,12 +39,10 @@ interface ParentFormProps {
 const ParentForm: React.FC<ParentFormProps> = ({ open, onClose, onSubmit, parent, loading = false, onMessage }) => {
   const {
     form,
-    formErrors,
     formLoading,
     handleChange,
     setFormData,
     resetForm,
-    handleSubmit,
     handleAddChild,
     handleRemoveChild,
   } = useParentForm();
@@ -58,7 +51,6 @@ const ParentForm: React.FC<ParentFormProps> = ({ open, onClose, onSubmit, parent
   const [childrenList, setChildrenList] = useState<Student[]>([]);
   const [studentQuery, setStudentQuery] = useState<string>('');
   const [studentOptions, setStudentOptions] = useState<Student[]>([]);
-  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [refreshKey, setRefreshKey] = useState<number>(0);
   const busy = loading || formLoading;
 
@@ -156,25 +148,6 @@ const ParentForm: React.FC<ParentFormProps> = ({ open, onClose, onSubmit, parent
     await onSubmit();
   };
 
-  const addChild = async () => {
-    if (!parent?.id || !selectedStudent?.id) return;
-    const result = await handleAddChild(String(selectedStudent.id), String(parent.id));
-    if (result.success) {
-      setChildrenList(prev => {
-        const exists = prev.some((s: any) => String(s.id) === String(selectedStudent.id));
-        return exists ? prev : [...prev, selectedStudent as any];
-      });
-      setSelectedStudent(null);
-      setStudentQuery('');
-      if (onMessage) {
-        onMessage(result.message, 'success');
-      }
-
-      // Refresh lại danh sách con từ API để đảm bảo đồng bộ
-      await refreshChildrenList();
-    }
-  };
-
   const addChildFromSearch = async (student: any) => {
     if (!parent?.id || !student?.id) return;
     const result = await handleAddChild(String(student.id), String(parent.id));
@@ -233,7 +206,6 @@ const ParentForm: React.FC<ParentFormProps> = ({ open, onClose, onSubmit, parent
   const handleClose = () => {
     resetForm();
     setChildrenList([]);
-    setSelectedStudent(null);
     setStudentOptions([]);
     setStudentQuery('');
     onClose();

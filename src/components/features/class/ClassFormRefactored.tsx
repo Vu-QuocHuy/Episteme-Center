@@ -5,26 +5,16 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
   TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
+  Button,
+  Grid,
   Box,
   Typography,
-  CircularProgress,
-  IconButton,
-  Grid,
-  Chip,
-  Autocomplete,
   Paper,
-  Tabs,
-  Tab,
-  Divider
+  Chip,
+  CircularProgress
 } from '@mui/material';
 import {
-  Close as CloseIcon,
   Add as AddIcon
 } from '@mui/icons-material';
 
@@ -81,7 +71,6 @@ const ClassForm: React.FC<ClassFormProps> = ({
   const [formData, setFormData] = useState<ClassFormData>(initialFormData);
   const [errors, setErrors] = useState<ClassFormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [activeTab, setActiveTab] = useState(0);
 
   // Initialize form data when classItem changes
   useEffect(() => {
@@ -255,12 +244,7 @@ const ClassForm: React.FC<ClassFormProps> = ({
   const handleClose = () => {
     setFormData(initialFormData);
     setErrors({});
-    setActiveTab(0);
     onClose();
-  };
-
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setActiveTab(newValue);
   };
 
   return (
@@ -474,37 +458,40 @@ const ClassForm: React.FC<ClassFormProps> = ({
 
                  {/* Ngày học trong tuần - Full width */}
                  <Grid item xs={12}>
-                   <Autocomplete
-                     multiple
-                     options={daysOfWeekOptions}
-                     getOptionLabel={(option) => option.label}
-                     value={daysOfWeekOptions.filter(day => formData.schedule.days_of_week.includes(day.value))}
-                     onChange={(_, newValue) => {
-                       handleInputChange('schedule', {
-                         ...formData.schedule,
-                         days_of_week: newValue.map(day => day.value)
-                       });
+                   <Chip
+                     label="Ngày học trong tuần"
+                     sx={{
+                       bgcolor: '#e0e0e0',
+                       color: '#333',
+                       borderRadius: 2,
+                       fontWeight: 600,
+                       mb: 2
                      }}
-                     renderTags={(value, getTagProps) =>
-                       value.map((option, index) => (
-                         <Chip
-                           variant="outlined"
-                           label={option.label}
-                           {...getTagProps({ index })}
-                           key={option.value}
-                         />
-                       ))
-                     }
-                     renderInput={(params) => (
-                       <TextField
-                         {...params}
-                         label="Ngày học trong tuần"
-                         placeholder="Chọn ngày trong tuần"
-                         error={!!errors.days_of_week}
-                         helperText={errors.days_of_week}
-                       />
-                     )}
                    />
+                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                     {daysOfWeekOptions.map(day => (
+                       <Chip
+                         key={day.value}
+                         label={day.label}
+                         variant={formData.schedule.days_of_week.includes(day.value) ? 'filled' : 'outlined'}
+                         onClick={() => {
+                           const newDays = formData.schedule.days_of_week.includes(day.value)
+                             ? formData.schedule.days_of_week.filter(d => d !== day.value)
+                             : [...formData.schedule.days_of_week, day.value];
+                           handleInputChange('schedule', {
+                             ...formData.schedule,
+                             days_of_week: newDays
+                           });
+                         }}
+                         sx={{
+                           cursor: 'pointer',
+                           '&:hover': {
+                             bgcolor: '#e0e0e0'
+                           }
+                         }}
+                       />
+                     ))}
+                   </Box>
                  </Grid>
 
                  {/* Mô tả - Full width */}

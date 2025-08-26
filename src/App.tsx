@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 
-import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { useAuth } from './contexts/AuthContext';
 import ProtectedRoute from './components/common/ProtectedRoute';
 
 
@@ -30,27 +30,27 @@ import FinancialStatistics from './pages/admin/FinancialStatistics';
 import StudentStatistics from './pages/admin/StudentStatistics';
 import HomeContentManagement from './pages/admin/HomeContentManagement';
 import MenuManagement from './pages/admin/MenuManagement';
-import AdminProfile from './pages/Profile/AdminProfile';
+import AdminProfile from './pages/profile/AdminProfile';
 import AuditLog from './pages/admin/AuditLog';
 
 // Teacher Pages
 import TeacherDashboard from './pages/teacher/Dashboard';
 import TeacherMyClasses from './pages/teacher/MyClasses';
 import TeacherSchedule from './pages/teacher/Schedule';
-import TeacherProfile from './pages/Profile/TeacherProfile';
+import TeacherProfile from './pages/profile/TeacherProfile';
 import Salary from './pages/teacher/Salary';
 
 // Student Pages
 import StudentDashboard from './pages/student/Dashboard';
 import StudentMyClasses from './pages/student/MyClasses';
 import StudentSchedule from './pages/student/Schedule';
-import StudentProfile from './pages/Profile/StudentProfile';
+import StudentProfile from './pages/profile/StudentProfile';
 
 // Parent Pages
 import ParentDashboard from './pages/parent/Dashboard';
 import ParentChildren from './pages/parent/Children';
 import ParentPayments from './pages/parent/Payments';
-import ParentProfile from './pages/Profile/ParentProfile';
+import ParentProfile from './pages/profile/ParentProfile';
 
 import { USER_ROLES } from './constants';
 

@@ -9,10 +9,10 @@ export { default as UnauthorizedAccess } from './auth/UnauthorizedAccess';
 export { default as Home } from './Home';
 
 // Profile Pages
-export { default as AdminProfile } from './Profile/AdminProfile';
-export { default as TeacherProfile } from './Profile/TeacherProfile';
-export { default as StudentProfile } from './Profile/StudentProfile';
-export { default as ParentProfile } from './Profile/ParentProfile';
+export { default as AdminProfile } from './profile/AdminProfile';
+export { default as TeacherProfile } from './profile/TeacherProfile';
+export { default as StudentProfile } from './profile/StudentProfile';
+export { default as ParentProfile } from './profile/ParentProfile';
 
 // Admin Pages
 export { default as AdminDashboard } from './admin/Dashboard';

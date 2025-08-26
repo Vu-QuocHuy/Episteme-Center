@@ -31,25 +31,25 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({ data }) => {
       title: 'Tổng số học sinh',
       value: data.totalStudent || 0,
       icon: <SchoolIcon />,
-      color: '#1976d2'
+      color: 'primary'
     },
     {
       title: 'Lớp đang dạy',
       value: data.teachingClasses || 0,
       icon: <ClassIcon />,
-      color: '#388e3c'
+      color: 'success'
     },
     {
       title: 'Lớp đã hoàn thành',
       value: data.closedClasses || 0,
       icon: <TrendingUpIcon />,
-      color: '#f57c00'
+      color: 'warning'
     },
     {
       title: 'Lương tháng này',
       value: formatters.currency(data.recentlySalary?.totalAmount),
       icon: <PaymentIcon />,
-      color: '#7b1fa2',
+      color: 'secondary',
       subtitle: data.recentlySalary?.paidAmount > 0 ? 'Đã thanh toán' : 'Chưa thanh toán'
     }
   ];

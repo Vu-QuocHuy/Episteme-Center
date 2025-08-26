@@ -1,4 +1,4 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { Component, ErrorInfo, ReactNode } from 'react';
 import { Box, Typography, Button, Paper } from '@mui/material';
 import { RefreshOutlined, BugReportOutlined } from '@mui/icons-material';
 
@@ -19,7 +19,7 @@ class ErrorBoundary extends Component<Props, State> {
     this.state = { hasError: false };
   }
 
-  static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(_error: Error): State {
     return { hasError: true };
   }
 

@@ -58,7 +58,7 @@ export const useClassManagement = (): UseClassManagementReturn => {
 
       // Handle filters with {} format
       if (debouncedSearch) {
-        params.name = debouncedSearch;
+        (params as any).name = debouncedSearch;
       }
 
       console.log('📚 Fetching classes with params:', params);

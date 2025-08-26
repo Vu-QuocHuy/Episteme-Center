@@ -23,13 +23,10 @@ import {
 } from '@mui/material';
 import {
   School as SchoolIcon,
-  Event as EventIcon,
-  People as PeopleIcon,
-  Assignment as AssignmentIcon,
+  People as PeopleIcon
 } from '@mui/icons-material';
 import {
   getClassByIdAPI,
-  getStudentsInClassAPI,
 } from '../../../services/api';
 import AttendanceModal from './AttendanceModal';
 
@@ -66,10 +63,6 @@ interface Student {
   phone?: string;
   avatar?: string;
   status?: string;
-}
-
-interface StudentsResponse {
-  students: Student[];
 }
 
 interface ClassDetailModalProps {
@@ -182,38 +175,8 @@ const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
     }
   };
 
-  const fetchAllStudentsInClass = async (classId: string): Promise<Student[]> => {
-    const allStudents: Student[] = [];
-    let page = 1;
-    const limit = 50;
-
-    while (true) {
-      try {
-        const res = await getStudentsInClassAPI(classId, { limit, page });
-        const students = (res?.data as StudentsResponse)?.students || [];
-
-        if (students.length === 0) break;
-
-        allStudents.push(...students);
-
-        if (students.length < limit) break;
-
-        page++;
-      } catch (err) {
-        console.error('Error fetching students:', err);
-        break;
-      }
-    }
-
-    return allStudents;
-  };
-
   const handleDetailTabChange = (_event: React.SyntheticEvent, newValue: number): void => {
     setDetailTabValue(newValue);
-  };
-
-  const handleOpenAttendance = (): void => {
-    setAttendanceModalOpen(true);
   };
 
   const handleCloseAttendance = (): void => {
@@ -355,59 +318,59 @@ const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
                               {selectedClassDetail.currentStudents || 0} / {selectedClassDetail.capacity || 'Không giới hạn'} học sinh
                             </Typography>
                           </Box>
-                                                  </Box>
-                        </Paper>
-                      </Grid>
+                        </Box>
+                      </Paper>
+                    </Grid>
 
-                      {selectedClassDetail.schedule && (
-                        <Grid item xs={12} md={6}>
-                          <Paper sx={{ p: 3, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-                            <Typography variant="h6" gutterBottom sx={{ color: '#2c3e50', fontWeight: 600 }}>
-                              Lịch học
-                            </Typography>
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                              <Box>
-                                <Typography variant="body2" color="text.secondary">Ngày học trong tuần</Typography>
-                                <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
-                                  {selectedClassDetail.schedule.dayOfWeeks?.map(day => (
-                                    <Chip
-                                      key={day}
-                                      label={['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'][day]}
-                                      color="primary"
-                                      size="small"
-                                    />
-                                  ))}
-                                </Box>
-                              </Box>
-                              {selectedClassDetail.schedule.startTime && selectedClassDetail.schedule.endTime && (
-                                <Box>
-                                  <Typography variant="body2" color="text.secondary">Giờ học</Typography>
-                                  <Typography variant="body1" fontWeight="medium">
-                                    {selectedClassDetail.schedule.startTime} - {selectedClassDetail.schedule.endTime}
-                                  </Typography>
-                                </Box>
-                              )}
-                              <Box>
-                                <Typography variant="body2" color="text.secondary">Lịch học đầy đủ</Typography>
-                                <Typography variant="body1" fontWeight="medium">
-                                  {formatSchedule(selectedClassDetail.schedule)}
-                                </Typography>
+                    {selectedClassDetail.schedule && (
+                      <Grid item xs={12} md={6}>
+                        <Paper sx={{ p: 3, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+                          <Typography variant="h6" gutterBottom sx={{ color: '#2c3e50', fontWeight: 600 }}>
+                            Lịch học
+                          </Typography>
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                            <Box>
+                              <Typography variant="body2" color="text.secondary">Ngày học trong tuần</Typography>
+                              <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+                                {selectedClassDetail.schedule.dayOfWeeks?.map(day => (
+                                  <Chip
+                                    key={day}
+                                    label={['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'][day]}
+                                    color="primary"
+                                    size="small"
+                                  />
+                                ))}
                               </Box>
                             </Box>
-                          </Paper>
-                        </Grid>
-                      )}
+                            {selectedClassDetail.schedule.startTime && selectedClassDetail.schedule.endTime && (
+                              <Box>
+                                <Typography variant="body2" color="text.secondary">Giờ học</Typography>
+                                <Typography variant="body1" fontWeight="medium">
+                                  {selectedClassDetail.schedule.startTime} - {selectedClassDetail.schedule.endTime}
+                                </Typography>
+                              </Box>
+                            )}
+                            <Box>
+                              <Typography variant="body2" color="text.secondary">Lịch học đầy đủ</Typography>
+                              <Typography variant="body1" fontWeight="medium">
+                                {formatSchedule(selectedClassDetail.schedule)}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        </Paper>
+                      </Grid>
+                    )}
 
-                      {selectedClassDetail.description && (
-                        <Grid item xs={12} md={6}>
-                          <Paper sx={{ p: 3, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-                            <Typography variant="h6" gutterBottom sx={{ color: '#2c3e50', fontWeight: 600 }}>
-                              Mô tả
-                            </Typography>
-                            <Typography variant="body1">{selectedClassDetail.description}</Typography>
-                          </Paper>
-                        </Grid>
-                      )}
+                    {selectedClassDetail.description && (
+                      <Grid item xs={12} md={6}>
+                        <Paper sx={{ p: 3, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+                          <Typography variant="h6" gutterBottom sx={{ color: '#2c3e50', fontWeight: 600 }}>
+                            Mô tả
+                          </Typography>
+                          <Typography variant="body1">{selectedClassDetail.description}</Typography>
+                        </Paper>
+                      </Grid>
+                    )}
 
                     <Grid item xs={12} md={6}>
                       <Paper sx={{ p: 3, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
@@ -438,7 +401,6 @@ const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
                         )}
                       </Paper>
                     </Grid>
-
 
                   </Grid>
                 )}
@@ -517,7 +479,7 @@ const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
                 )}
               </TabPanel>
 
-                             {/* Removed Lịch học tab; schedule moved into Thông tin chung */}
+              {/* Removed Lịch học tab; schedule moved into Thông tin chung */}
             </Box>
           )}
         </DialogContent>

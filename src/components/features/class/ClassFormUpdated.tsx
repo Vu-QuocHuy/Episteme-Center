@@ -4,35 +4,17 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
   TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
+  Button,
+  Grid,
   Box,
   Typography,
-  CircularProgress,
-  IconButton,
-  Grid,
-  Chip,
-  Autocomplete,
   Paper,
-  Tabs,
-  Tab,
-  Divider,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow
+  CircularProgress
 } from '@mui/material';
 import {
-  Close as CloseIcon,
   Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon
+  Edit as EditIcon
 } from '@mui/icons-material';
 
 import { Class, ClassFormData, ClassFormErrors } from '../../../types';
@@ -50,13 +32,13 @@ interface ClassFormProps {
 
 const initialFormData: ClassFormData = {
   name: '',
-  grade: '1',
-  section: '1',
+  grade: 1,
+  section: 1,
   year: new Date().getFullYear(),
   description: '',
-  feePerLesson: '0',
+  feePerLesson: 0,
   status: 'active',
-  max_student: '30',
+  max_student: 30,
   room: '',
   schedule: {
     start_date: '',
@@ -69,16 +51,6 @@ const initialFormData: ClassFormData = {
   }
 };
 
-const daysOfWeekOptions = [
-  { value: '1', label: 'Thứ 2' },
-  { value: '2', label: 'Thứ 3' },
-  { value: '3', label: 'Thứ 4' },
-  { value: '4', label: 'Thứ 5' },
-  { value: '5', label: 'Thứ 6' },
-  { value: '6', label: 'Thứ 7' },
-  { value: '0', label: 'Chủ nhật' }
-];
-
 const ClassForm: React.FC<ClassFormProps> = ({
   open,
   onClose,
@@ -89,7 +61,6 @@ const ClassForm: React.FC<ClassFormProps> = ({
   const [formData, setFormData] = useState<ClassFormData>(initialFormData);
   const [errors, setErrors] = useState<ClassFormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [activeTab, setActiveTab] = useState(0);
   const [teacherInfo, setTeacherInfo] = useState<any | null>(null);
   const [studentsInfo, setStudentsInfo] = useState<Array<any>>([]);
   const [openAddStudentDialog, setOpenAddStudentDialog] = useState(false);
@@ -103,13 +74,13 @@ const ClassForm: React.FC<ClassFormProps> = ({
     if (classItem) {
       setFormData({
         name: classItem.name || '',
-        grade: (classItem.grade || 1).toString(),
-        section: (classItem.section || 1).toString(),
+        grade: classItem.grade || 1,
+        section: classItem.section || 1,
         year: classItem.year || new Date().getFullYear(),
         description: classItem.description || '',
-        feePerLesson: (classItem.feePerLesson || 0).toString(),
+        feePerLesson: classItem.feePerLesson || 0,
         status: classItem.status || 'active',
-        max_student: (classItem.max_student || classItem.maxStudents || 30).toString(),
+        max_student: classItem.max_student || classItem.maxStudents || 30,
         room: classItem.room || '',
         schedule: {
           start_date: classItem.schedule?.start_date ?
@@ -240,27 +211,12 @@ const ClassForm: React.FC<ClassFormProps> = ({
   const handleClose = () => {
     setFormData(initialFormData);
     setErrors({});
-    setActiveTab(0);
     onClose();
   };
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setActiveTab(newValue);
-  };
-
   // Student management functions
-  const handleAddStudent = () => {
-    setOpenAddStudentDialog(true);
-  };
-
   const handleCloseAddStudentDialog = () => {
     setOpenAddStudentDialog(false);
-  };
-
-  const handleRemoveStudent = (student: any) => {
-    console.log('Student to remove:', student);
-    setStudentToRemove(student);
-    setOpenRemoveStudentDialog(true);
   };
 
   const handleCloseRemoveStudentDialog = () => {
@@ -287,16 +243,8 @@ const ClassForm: React.FC<ClassFormProps> = ({
   };
 
   // Teacher management functions
-  const handleAddTeacher = () => {
-    setOpenAddTeacherDialog(true);
-  };
-
   const handleCloseAddTeacherDialog = () => {
     setOpenAddTeacherDialog(false);
-  };
-
-  const handleRemoveTeacher = () => {
-    setOpenRemoveTeacherDialog(true);
   };
 
   const handleCloseRemoveTeacherDialog = () => {
@@ -545,36 +493,12 @@ const ClassForm: React.FC<ClassFormProps> = ({
 
       {/* Ngày học trong tuần - Full width */}
       <Grid item xs={12}>
-        <Autocomplete
-          multiple
-          options={daysOfWeekOptions}
-          getOptionLabel={(option) => option.label}
-          value={daysOfWeekOptions.filter(day => formData.schedule.days_of_week.includes(day.value))}
-          onChange={(_, newValue) => {
-            handleInputChange('schedule', {
-              ...formData.schedule,
-              days_of_week: newValue.map(day => day.value)
-            });
-          }}
-          renderTags={(value, getTagProps) =>
-            value.map((option, index) => (
-              <Chip
-                variant="outlined"
-                label={option.label}
-                {...getTagProps({ index })}
-                key={option.value}
-              />
-            ))
-          }
-          renderInput={(params) => (
             <TextField
-              {...params}
+            fullWidth
               label="Ngày học trong tuần"
               placeholder="Chọn ngày trong tuần"
               error={!!errors.days_of_week}
               helperText={errors.days_of_week}
-            />
-          )}
         />
       </Grid>
 
@@ -592,123 +516,7 @@ const ClassForm: React.FC<ClassFormProps> = ({
     </Grid>
   );
 
-  const renderTeachersTab = () => (
-    <Box>
-      <Typography variant="h6" gutterBottom>
-        Giáo viên phụ trách
-      </Typography>
-
-      {teacherInfo ? (
-        <Box>
-          <Paper sx={{ p: 2, mb: 2 }}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              <Typography><b>Tên:</b> {teacherInfo.name}</Typography>
-              <Typography><b>Email:</b> {teacherInfo.email}</Typography>
-              <Typography><b>Điện thoại:</b> {teacherInfo.phone}</Typography>
-              {teacherInfo.gender && <Typography><b>Giới tính:</b> {teacherInfo.gender}</Typography>}
-            </Box>
-          </Paper>
-
-          <Button
-            variant="outlined"
-            color="error"
-            startIcon={<DeleteIcon />}
-            onClick={handleRemoveTeacher}
-            sx={{ borderRadius: 2 }}
-          >
-            Xóa giáo viên khỏi lớp
-          </Button>
-        </Box>
-      ) : (
-        <Box>
-          <Typography color="text.secondary" sx={{ mb: 2 }}>
-            Chưa có giáo viên phụ trách lớp này.
-          </Typography>
-
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleAddTeacher}
-            sx={{
-              bgcolor: '#667eea',
-              '&:hover': { bgcolor: '#5a6fd8' },
-              borderRadius: 2
-            }}
-          >
-            Thêm giáo viên
-          </Button>
-        </Box>
-      )}
-    </Box>
-  );
-
-  const renderStudentsTab = () => {
-    console.log('📊 Rendering Students Tab - studentsInfo:', studentsInfo);
-
-    return (
-      <Box>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Typography variant="h6">
-            Danh sách học sinh ({studentsInfo?.length || 0} / {formData.max_student})
-          </Typography>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleAddStudent}
-            sx={{
-              bgcolor: '#667eea',
-              '&:hover': { bgcolor: '#5a6fd8' },
-              borderRadius: 2
-            }}
-          >
-            Thêm học sinh
-          </Button>
-        </Box>
-
-        {studentsInfo && studentsInfo.length > 0 ? (
-          <TableContainer component={Paper} sx={{ maxHeight: 400 }}>
-            <Table stickyHeader>
-              <TableHead>
-                <TableRow>
-                  <TableCell sx={{ fontWeight: 600 }}>Họ và tên</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Email</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Số điện thoại</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Thao tác</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {studentsInfo.map((item: any, index: number) => {
-                  console.log(`📊 Student ${index}:`, item);
-                  console.log(`📊 Student ${index} name:`, item.student?.name);
-                  return (
-                    <TableRow key={item.student?.id || Math.random()} hover>
-                      <TableCell>{item.student?.name || 'Không tên'}</TableCell>
-                      <TableCell>{item.student?.email || '-'}</TableCell>
-                      <TableCell>{item.student?.phone || '-'}</TableCell>
-                      <TableCell>
-                        <IconButton
-                          color="error"
-                          onClick={() => handleRemoveStudent(item)}
-                          title="Xóa học sinh khỏi lớp"
-                          size="small"
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        ) : (
-          <Paper sx={{ p: 3, textAlign: 'center' }}>
-            <Typography color="text.secondary">Chưa có học sinh.</Typography>
-          </Paper>
-        )}
-      </Box>
-    );
-  };
+  // Removed unused renderTeachersTab and renderStudentsTab
 
   return (
     <Dialog
@@ -785,40 +593,151 @@ const ClassForm: React.FC<ClassFormProps> = ({
             {classItem ? (
               // Edit mode - Show tabs
               <Box sx={{ bgcolor: 'white', borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-                <Tabs
-                  value={activeTab}
-                  onChange={handleTabChange}
-                  sx={{
-                    px: 3,
-                    pt: 2,
-                    '& .MuiTab-root': {
-                      textTransform: 'none',
-                      fontWeight: 600,
-                      fontSize: '0.95rem',
-                      minHeight: 48,
-                      color: '#666',
-                      '&.Mui-selected': {
-                        color: '#667eea',
-                      }
-                    },
-                    '& .MuiTabs-indicator': {
-                      backgroundColor: '#667eea',
-                      height: 3
-                    }
-                  }}
-                >
-                  <Tab label="Thông tin chung" />
-                  <Tab label="Giáo viên" />
-                  <Tab label="Học sinh" />
-                </Tabs>
-
-                <Divider sx={{ mx: 3 }} />
-
-                <Box sx={{ p: 3 }}>
-                  {activeTab === 0 && renderGeneralInfoTab()}
-                  {activeTab === 1 && renderTeachersTab()}
-                  {activeTab === 2 && renderStudentsTab()}
-                </Box>
+                <Grid container spacing={2} sx={{ px: 3, pt: 2 }}>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Khối"
+                      value={formData.grade}
+                      onChange={(e) => handleInputChange('grade', e.target.value)}
+                      error={!!errors.grade}
+                      helperText={errors.grade}
+                      required
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Tên lớp"
+                      value={formData.name}
+                      onChange={(e) => handleInputChange('name', e.target.value)}
+                      error={!!errors.name}
+                      helperText={errors.name}
+                      required
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Lớp"
+                      value={formData.section}
+                      onChange={(e) => handleInputChange('section', e.target.value)}
+                      error={!!errors.section}
+                      helperText={errors.section}
+                      required
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Học phí/buổi"
+                      value={formData.feePerLesson}
+                      onChange={(e) => handleInputChange('feePerLesson', e.target.value)}
+                      error={!!errors.feePerLesson}
+                      helperText={errors.feePerLesson}
+                      required
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Số học sinh tối đa"
+                      type="number"
+                      value={formData.max_student}
+                      onChange={(e) => handleInputChange('max_student', parseInt(e.target.value) || 30)}
+                      error={!!errors.max_student}
+                      helperText={errors.max_student}
+                      InputProps={{ inputProps: { min: 1 } }}
+                      required
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Phòng học"
+                      value={formData.room}
+                      onChange={(e) => handleInputChange('room', e.target.value)}
+                      error={!!errors.room}
+                      helperText={errors.room}
+                      required
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Giờ bắt đầu"
+                      placeholder="HH:MM"
+                      value={formData.schedule.time_slots.start_time}
+                      onChange={(e) => handleInputChange('schedule.time_slots.start_time', e.target.value)}
+                      error={!!errors.start_time}
+                      helperText={errors.start_time || "Định dạng: HH:MM (24 giờ)"}
+                      required
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Giờ kết thúc"
+                      placeholder="HH:MM"
+                      value={formData.schedule.time_slots.end_time}
+                      onChange={(e) => handleInputChange('schedule.time_slots.end_time', e.target.value)}
+                      error={!!errors.end_time}
+                      helperText={errors.end_time || "Định dạng: HH:MM (24 giờ)"}
+                      required
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Ngày bắt đầu"
+                      type="date"
+                      value={formData.schedule.start_date}
+                      onChange={(e) => handleInputChange('schedule', {
+                        ...formData.schedule,
+                        start_date: e.target.value
+                      })}
+                      error={!!errors.start_date}
+                      helperText={errors.start_date}
+                      InputLabelProps={{ shrink: true }}
+                      required
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Ngày kết thúc"
+                      type="date"
+                      value={formData.schedule.end_date}
+                      onChange={(e) => handleInputChange('schedule', {
+                        ...formData.schedule,
+                        end_date: e.target.value
+                      })}
+                      error={!!errors.end_date}
+                      helperText={errors.end_date}
+                      InputLabelProps={{ shrink: true }}
+                      required
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="Ngày học trong tuần"
+                      placeholder="Chọn ngày trong tuần"
+                      error={!!errors.days_of_week}
+                      helperText={errors.days_of_week}
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="Mô tả"
+                      multiline
+                      rows={3}
+                      value={formData.description}
+                      onChange={(e) => handleInputChange('description', e.target.value)}
+                    />
+                  </Grid>
+                </Grid>
               </Box>
             ) : (
               // Create mode - Show original form

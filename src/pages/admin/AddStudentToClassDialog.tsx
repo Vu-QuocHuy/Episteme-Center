@@ -142,7 +142,7 @@ const AddStudentToClassDialog: React.FC<AddStudentToClassDialogProps> = ({ open,
     setLoading(true);
     try {
       const enrollPromises = selectedStudents.map(studentId => {
-        return enrollStudentAPI(classData.id, [studentId]);
+        return enrollStudentAPI(classData.id, [{ studentId, discountPercent: Number(studentDiscounts[studentId]) || 0 }]);
       });
 
       await Promise.all(enrollPromises);
