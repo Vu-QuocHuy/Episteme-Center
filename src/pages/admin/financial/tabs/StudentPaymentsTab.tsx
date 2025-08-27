@@ -1,6 +1,8 @@
 import React from 'react';
-import { Box, TextField, MenuItem, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Pagination, IconButton, Tooltip } from '@mui/material';
+import { Box, TextField, MenuItem, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Pagination, IconButton, Tooltip, Dialog, DialogTitle, DialogContent, DialogActions, Button, CircularProgress, Typography } from '@mui/material';
 import { History as HistoryIcon, Payment as PaymentIcon } from '@mui/icons-material';
+import PaymentHistoryModal from '../../../../components/common/PaymentHistoryModal';
+import { getAllPaymentsAPI, payStudentAPI } from '../../../../services/api';
 
 interface StudentPayment {
   id: string;
@@ -16,55 +18,114 @@ interface StudentPayment {
 }
 
 interface Props {
-  payments: StudentPayment[];
-  pagination: { page: number; totalPages: number };
-  onPageChange: (page: number) => void;
-  // filters
-  periodType: string;
-  setPeriodType: (v: string) => void;
-  selectedYear: number;
-  setSelectedYear: (v: number) => void;
-  selectedMonth: number;
-  setSelectedMonth: (v: number) => void;
-  selectedQuarter: number;
-  setSelectedQuarter: (v: number) => void;
-  customStart: string;
-  setCustomStart: (v: string) => void;
-  customEnd: string;
-  setCustomEnd: (v: string) => void;
-  paymentStatus: string;
-  setPaymentStatus: (v: string) => void;
-  years: number[];
-  months: number[];
-  quarters: number[];
-  onOpenHistory: (payment: any) => void;
-  onOpenPayDialog: (payment: any) => void;
+  onTotalsChange?: (totals: { totalStudentFees: number; totalPaidAmount: number; totalRemainingAmount: number }) => void;
 }
 
-const StudentPaymentsTab: React.FC<Props> = ({
-  payments,
-  pagination,
-  onPageChange,
-  periodType,
-  setPeriodType,
-  selectedYear,
-  setSelectedYear,
-  selectedMonth,
-  setSelectedMonth,
-  selectedQuarter,
-  setSelectedQuarter,
-  customStart,
-  setCustomStart,
-  customEnd,
-  setCustomEnd,
-  paymentStatus,
-  setPaymentStatus,
-  years,
-  months,
-  quarters,
-  onOpenHistory,
-  onOpenPayDialog,
-}) => {
+const StudentPaymentsTab: React.FC<Props> = ({ onTotalsChange }) => {
+  const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
+  const months = Array.from({ length: 12 }, (_, i) => i + 1);
+  const quarters = [1, 2, 3, 4];
+
+  const [payments, setPayments] = React.useState<StudentPayment[]>([]);
+  const [pagination, setPagination] = React.useState<{ page: number; totalPages: number }>({ page: 1, totalPages: 1 });
+  const [periodType, setPeriodType] = React.useState<string>('year');
+  const [selectedYear, setSelectedYear] = React.useState<number>(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = React.useState<number>(new Date().getMonth() + 1);
+  const [selectedQuarter, setSelectedQuarter] = React.useState<number>(1);
+  const [customStart, setCustomStart] = React.useState<string>(new Date().toISOString().split('T')[0].substring(0, 8) + '01');
+  const [customEnd, setCustomEnd] = React.useState<string>(new Date().toISOString().split('T')[0]);
+  const [paymentStatus, setPaymentStatus] = React.useState<string>('all');
+
+  const [historyOpen, setHistoryOpen] = React.useState<boolean>(false);
+  const [selectedPaymentForHistory, setSelectedPaymentForHistory] = React.useState<StudentPayment | null>(null);
+
+  const [openPayDialog, setOpenPayDialog] = React.useState<boolean>(false);
+  const [selectedPayment, setSelectedPayment] = React.useState<StudentPayment | null>(null);
+  const [studentPaymentForm, setStudentPaymentForm] = React.useState<{ amount: string; method: string; note: string }>({ amount: '', method: 'cash', note: '' });
+  const [studentPaymentLoading, setStudentPaymentLoading] = React.useState<boolean>(false);
+
+  const computeAndEmitTotals = React.useCallback((list: StudentPayment[]) => {
+    const totalStudentFees = list.reduce((t, p) => t + (p.totalAmount ?? 0), 0);
+    const totalPaidAmount = list.reduce((t, p) => t + (p.paidAmount ?? 0), 0);
+    const totalRemainingAmount = list.reduce((t, p) => t + ((p.totalAmount ?? 0) - (p.discountAmount ?? 0) - (p.paidAmount ?? 0)), 0);
+    if (onTotalsChange) onTotalsChange({ totalStudentFees, totalPaidAmount, totalRemainingAmount });
+  }, [onTotalsChange]);
+
+  const fetchPayments = React.useCallback(async (page: number = 1) => {
+    let params: any = { page, limit: 10 };
+    const filters: any = {};
+    if (paymentStatus !== 'all') filters.status = paymentStatus;
+    if (periodType === 'month') {
+      filters.month = selectedMonth;
+      filters.year = selectedYear;
+    } else if (periodType === 'quarter') {
+      const getQuarterMonths = (q: number) => q === 1 ? { startMonth: 1, endMonth: 3 } : q === 2 ? { startMonth: 4, endMonth: 6 } : q === 3 ? { startMonth: 7, endMonth: 9 } : { startMonth: 10, endMonth: 12 };
+      const { startMonth, endMonth } = getQuarterMonths(selectedQuarter);
+      filters.startMonth = startMonth;
+      filters.endMonth = endMonth;
+      filters.year = selectedYear;
+    } else if (periodType === 'year') {
+      filters.year = selectedYear;
+    } else if (periodType === 'custom') {
+      const year = new Date(customStart).getFullYear();
+      const startMonth = new Date(customStart).getMonth() + 1;
+      const endMonth = new Date(customEnd).getMonth() + 1;
+      filters.startMonth = startMonth;
+      filters.endMonth = endMonth;
+      filters.year = year;
+    }
+    if (Object.keys(filters).length > 0) params.filters = JSON.stringify(filters);
+    const res = await getAllPaymentsAPI(params);
+    const responseData = (res as any)?.data?.data || (res as any)?.data || {};
+    const data = responseData;
+    if (data && data.result) {
+      setPayments(data.result);
+      const meta = data.meta;
+      setPagination({ page: meta?.page || page, totalPages: meta?.totalPages || 1 });
+      computeAndEmitTotals(data.result);
+    } else {
+      setPayments([]);
+      setPagination({ page, totalPages: 1 });
+      computeAndEmitTotals([]);
+    }
+  }, [paymentStatus, periodType, selectedMonth, selectedYear, selectedQuarter, customStart, customEnd, computeAndEmitTotals]);
+
+  React.useEffect(() => { fetchPayments(1); }, [fetchPayments]);
+
+  const onPageChange = (page: number) => fetchPayments(page);
+
+  const onOpenHistory = (payment: any) => {
+    setSelectedPaymentForHistory(payment);
+    setHistoryOpen(true);
+  };
+  const onCloseHistory = () => { setHistoryOpen(false); setSelectedPaymentForHistory(null); };
+
+  const onOpenPayDialog = (payment: any) => {
+    const remainingAmount = (payment.totalAmount || 0) - (payment.discountAmount || 0) - (payment.paidAmount || 0);
+    setSelectedPayment(payment);
+    setStudentPaymentForm({ amount: remainingAmount.toString(), method: 'cash', note: '' });
+    setOpenPayDialog(true);
+  };
+  const onClosePayDialog = () => { setOpenPayDialog(false); setSelectedPayment(null); setStudentPaymentForm({ amount: '', method: 'cash', note: '' }); };
+
+  const handleChangeStudentPaymentField = (key: 'amount' | 'method' | 'note', value: string) => {
+    setStudentPaymentForm(prev => ({ ...prev, [key]: value }));
+  };
+  const handleSubmitStudentPayment = async (): Promise<void> => {
+    if (!selectedPayment || !studentPaymentForm.amount) return;
+    setStudentPaymentLoading(true);
+    try {
+      await payStudentAPI((selectedPayment as any).id, {
+        amount: Number(studentPaymentForm.amount),
+        method: studentPaymentForm.method,
+        note: studentPaymentForm.note
+      });
+      onClosePayDialog();
+      await fetchPayments(pagination.page);
+    } finally {
+      setStudentPaymentLoading(false);
+    }
+  };
   return (
     <>
       <Box sx={{ mb: 3, display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -161,6 +222,45 @@ const StudentPaymentsTab: React.FC<Props> = ({
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
         <Pagination count={pagination.totalPages} page={pagination.page} onChange={(_, p) => onPageChange(p)} color="primary" />
       </Box>
+
+      {/* Payment History Modal */}
+      {selectedPaymentForHistory && (
+        <PaymentHistoryModal
+          open={historyOpen}
+          onClose={onCloseHistory}
+          paymentData={selectedPaymentForHistory as any}
+          title="Lịch sử thanh toán học phí"
+          showPaymentDetails={true}
+          teacherInfo={null as any}
+        />
+      )}
+
+      {/* Student Payment Dialog */}
+      <Dialog open={openPayDialog} onClose={onClosePayDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>Thanh toán học phí</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" gutterBottom>
+            {selectedPayment?.student?.name} - {selectedPayment?.class?.name}
+          </Typography>
+          <Box sx={{ mt: 2 }}>
+            <TextField label="Số tiền thanh toán" type="number" fullWidth value={studentPaymentForm.amount} onChange={(e) => handleChangeStudentPaymentField('amount', e.target.value)} inputProps={{ min: 0 }} required />
+          </Box>
+          <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
+            <TextField select fullWidth label="Phương thức thanh toán" value={studentPaymentForm.method} onChange={(e) => handleChangeStudentPaymentField('method', e.target.value)}>
+              <MenuItem value="cash">Tiền mặt</MenuItem>
+              <MenuItem value="bank_transfer">Chuyển khoản</MenuItem>
+              <MenuItem value="card">Thẻ</MenuItem>
+            </TextField>
+            <TextField label="Ghi chú" fullWidth value={studentPaymentForm.note} onChange={(e) => handleChangeStudentPaymentField('note', e.target.value)} />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={onClosePayDialog} variant="outlined">Hủy</Button>
+          <Button onClick={handleSubmitStudentPayment} variant="contained" disabled={!studentPaymentForm.amount || studentPaymentLoading}>
+            {studentPaymentLoading ? <CircularProgress size={20} /> : 'Thanh toán'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };

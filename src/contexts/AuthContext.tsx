@@ -133,13 +133,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const userData = localStorage.getItem('userData');
     const sessionActive = localStorage.getItem('session_active');
 
-    console.log('🚀 AuthContext initializing...', {
-      hasToken: !!token,
-      hasRefreshToken: !!refreshToken,
-      hasUserData: !!userData,
-      sessionActive: !!sessionActive
-    });
-
         if (token && userData) {
       try {
         let user: User = JSON.parse(userData);
@@ -165,14 +158,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           localStorage.setItem('userData', JSON.stringify(user));
         }
 
-        console.log('🔐 Restoring user session:', user.email, 'Role:', user.role);
-
         dispatch({
           type: 'LOGIN_SUCCESS',
           payload: { user, accessToken: token, refreshToken: refreshToken || undefined }
         });
       } catch (error) {
-        console.error('❌ Error restoring user session:', error);
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
         localStorage.removeItem('userData');
@@ -237,7 +227,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     // Lắng nghe event logout từ axios interceptor
     const handleLogoutEvent = (event: CustomEvent) => {
-      console.log('Received logout event:', event.detail);
       dispatch({ type: 'LOGOUT' });
     };
 
@@ -251,7 +240,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Luôn đồng bộ user/token vào localStorage khi thay đổi
   useEffect(() => {
     if (state.user && state.token) {
-      console.log('💾 Saving user session to localStorage:', state.user.email);
       localStorage.setItem('access_token', state.token);
       localStorage.setItem('userData', JSON.stringify(state.user));
       if (state.refreshToken) {
@@ -265,7 +253,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       localStorage.setItem('session_active', 'true');
     } else if (!state.user && !state.loading && localStorage.getItem('session_active')) {
       // Only clear if we're not loading AND we had an active session (to avoid clearing during initialization)
-      console.log('🧹 Clearing localStorage due to logout');
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
       localStorage.removeItem('userData');
@@ -278,8 +265,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     dispatch({ type: 'LOGIN_START' });
 
     try {
-      console.log('🔐 Attempting login...', { email: credentials.email, isAdmin });
-
       const apiResponse = await Promise.race([
         isAdmin ? loginAdminAPI({
           email: credentials.email,
@@ -292,8 +277,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setTimeout(() => reject(new Error('Request timeout')), 10000)
         )
       ]);
-
-      console.log('📋 Raw API Response:', apiResponse);
 
       let userData: User | null = null;
       let accessToken: string | null = null;
@@ -320,19 +303,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           refreshToken = apiResponse.data.refresh_token || apiResponse.data.refreshToken;
         } else if (apiResponse?.data?.user) {
           userData = apiResponse.data.user;
-          accessToken = apiResponse.data.access_token || apiResponse.data.accessToken;
+          accessToken = apiResponse.data.access_token || apiResponse.data.AccessToken;
           refreshToken = apiResponse.data.refresh_token || apiResponse.data.refreshToken;
         }
       }
 
-      console.log('🔍 Parsed tokens:', {
-        hasUserData: !!userData,
-        hasAccessToken: !!accessToken,
-        hasRefreshToken: !!refreshToken
-      });
-
       if (!userData || !accessToken) {
-        console.error('❌ Invalid response structure:', { userData, accessToken });
         throw new Error('Invalid response structure: missing user data or token');
       }
 
@@ -345,12 +321,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                           roleId === 3 ? 'parent' :
                           roleId === 4 ? 'student' : 'unknown';
       }
-
-      console.log('✅ Login successful:', {
-        user: userData,
-        role: userData.role,
-        roleType: typeof userData.role
-      });
 
       localStorage.setItem('access_token', accessToken);
       localStorage.setItem('userData', JSON.stringify(userData));
@@ -425,7 +395,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         await logoutAPI(refreshToken);
       }
     } catch (error) {
-      console.error('Logout API error:', error);
     } finally {
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
@@ -446,9 +415,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       let newAccessToken: string | null = null;
       let newRefreshToken: string | null = null;
-
-      // Xử lý response theo cấu trúc API mới
-      console.log('🔄 Refresh token response:', response);
 
       if (response?.data?.data?.access_token) {
         // New API structure: { data: { access_token, user } }
@@ -503,7 +469,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       return newAccessToken;
     } catch (error) {
-      console.error('Refresh token error:', error);
       // Nếu refresh token thất bại, logout user
       await logout();
       // Không throw error để tránh reload trang

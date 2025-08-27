@@ -87,6 +87,17 @@ export interface ApiEndpoints {
     UPDATE: (id: string) => string;
     DELETE: (id: string) => string;
   };
+  ADVERTISEMENTS: {
+    CREATE: string;
+    GET_ALL: string;
+    GET_BY_ID: (id: string) => string;
+    UPDATE: (id: string) => string;
+    DELETE: (id: string) => string;
+  };
+  FILES: {
+    UPLOAD: string;
+    DELETE: string;
+  };
   HOME_CONTENT: {
     CREATE: string;
     GET_ALL: string;
@@ -236,6 +247,17 @@ export const API_CONFIG: ApiConfig = {
       GET_BY_ID: (id: string) => `/announcements/${id}`,
       UPDATE: (id: string) => `/announcements/${id}`,
       DELETE: (id: string) => `/announcements/${id}`,
+    },
+    ADVERTISEMENTS: {
+      CREATE: '/advertisements',
+      GET_ALL: '/advertisements',
+      GET_BY_ID: (id: string) => `/advertisements/${id}`,
+      UPDATE: (id: string) => `/advertisements/${id}`,
+      DELETE: (id: string) => `/advertisements/${id}`,
+    },
+    FILES: {
+      UPLOAD: '/files',
+      DELETE: '/files',
     },
     HOME_CONTENT: {
       CREATE: '/home-content',

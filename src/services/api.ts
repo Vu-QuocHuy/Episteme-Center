@@ -806,6 +806,121 @@ export const deleteTransactionCategoryAPI = (id: string) => {
   });
 };
 
+// File APIs
+export interface FileUploadResponse {
+  statusCode: number;
+  message: string;
+  data: {
+    url: string;
+    publicId: string;
+  };
+}
+
+export const uploadFileAPI = (file: File) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  return axiosInstance.post<FileUploadResponse>(API_CONFIG.ENDPOINTS.FILES.UPLOAD, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+};
+
+export const deleteFileAPI = (publicId: string) => {
+  return axiosInstance.delete(API_CONFIG.ENDPOINTS.FILES.DELETE, {
+    params: { publicId }
+  });
+};
+
+// Advertisement APIs
+export interface AdvertisementData {
+  title: string;
+  description: string;
+  priority: number;
+  imageUrl: string;
+  publicId: string;
+  classId: string;
+  type: string;
+}
+
+export interface AdvertisementResponse {
+  statusCode: number;
+  message: string;
+  data: {
+    id: string;
+    title: string;
+    description: string;
+    priority: number;
+    imageUrl: string;
+    publicId: string;
+    classId: string;
+    isActive: boolean;
+    type: string;
+    createdAt: string;
+    updatedAt: string;
+  };
+}
+
+export interface AdvertisementsListResponse {
+  statusCode: number;
+  message: string;
+  data: {
+    meta: {
+      limit: number;
+      page: number;
+      totalPages: number;
+      totalItems: number;
+    };
+    result: AdvertisementResponse['data'][];
+  };
+}
+
+export const createAdvertisementAPI = (data: AdvertisementData) => {
+  const formData = new URLSearchParams();
+  formData.append('title', data.title);
+  formData.append('description', data.description);
+  formData.append('priority', data.priority.toString());
+  formData.append('imageUrl', data.imageUrl);
+  formData.append('publicId', data.publicId);
+  if (data.classId) formData.append('classId', data.classId);
+  formData.append('type', data.type);
+
+  return axiosInstance.post<AdvertisementResponse>(API_CONFIG.ENDPOINTS.ADVERTISEMENTS.CREATE, formData, {
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+  });
+};
+
+export const getAdvertisementsAPI = (params?: { limit?: number; page?: number }) => {
+  const queryParams: any = {};
+  if (params?.page) queryParams.page = params.page;
+  if (params?.limit) queryParams.limit = params.limit;
+
+  return axiosInstance.get<AdvertisementsListResponse>(API_CONFIG.ENDPOINTS.ADVERTISEMENTS.GET_ALL, {
+    params: queryParams
+  });
+};
+
+export const getAdvertisementByIdAPI = (id: string) => {
+  return axiosInstance.get<AdvertisementResponse>(API_CONFIG.ENDPOINTS.ADVERTISEMENTS.GET_BY_ID(id));
+};
+
+export const updateAdvertisementAPI = (id: string, data: Partial<AdvertisementData>) => {
+  const formData = new URLSearchParams();
+  if (data.title !== undefined) formData.append('title', data.title);
+  if (data.description !== undefined) formData.append('description', data.description);
+  if (data.priority !== undefined) formData.append('priority', data.priority.toString());
+  if (data.imageUrl !== undefined) formData.append('imageUrl', data.imageUrl);
+  if (data.publicId !== undefined) formData.append('publicId', data.publicId);
+  if (data.classId !== undefined) formData.append('classId', data.classId);
+  if (data.type !== undefined) formData.append('type', data.type);
+
+  return axiosInstance.patch<AdvertisementResponse>(API_CONFIG.ENDPOINTS.ADVERTISEMENTS.UPDATE(id), formData, {
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+  });
+};
+
+export const deleteAdvertisementAPI = (id: string) => {
+  return axiosInstance.delete(API_CONFIG.ENDPOINTS.ADVERTISEMENTS.DELETE(id));
+};
+
 // Dashboard APIs
 export const getAdminDashboardAPI = () => axiosInstance.get(API_CONFIG.ENDPOINTS.DASHBOARD.ADMIN);
 export const getTeacherDashboardAPI = (id: string) => axiosInstance.get(API_CONFIG.ENDPOINTS.DASHBOARD.TEACHER(id));

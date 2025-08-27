@@ -20,7 +20,11 @@ import {
   TableRow,
   Paper,
   IconButton,
-  Avatar
+  Avatar,
+  Pagination,
+  Chip,
+  Autocomplete,
+  CircularProgress
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -31,30 +35,43 @@ import {
 import DashboardLayout from '../../components/layouts/DashboardLayout';
 import { commonStyles } from '../../utils/styles';
 import {
-  getAllAnnouncementsAPI,
-  createAnnouncementAPI,
-  updateAnnouncementAPI,
-  deleteAnnouncementAPI
+  getAdvertisementsAPI,
+  createAdvertisementAPI,
+  updateAdvertisementAPI,
+  deleteAdvertisementAPI,
+  uploadFileAPI,
+  getAllClassesAPI,
+  deleteFileAPI
 } from '../../services/api';
 import NotificationSnackbar from '../../components/common/NotificationSnackbar';
-import { validateAdvertisement } from '../../validations/advertisementValidation';
+// Optional: add your own validations if needed
 
 interface Advertisement {
   id: string;
   title: string;
   description: string;
-  content: string;
   imageUrl?: string;
-  displayType: 'banner' | 'popup' | 'notification';
+  type: 'banner' | 'popup' | 'notification';
   priority: number;
+  publicId?: string;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  class?: {
+    id: string;
+    name: string;
+    grade: number;
+    section: number;
+    year: number;
+    status: string;
+  } | null;
 }
 
 interface FormData {
   title: string;
   description: string;
-  content: string;
   image: File | null;
-  displayType: 'banner' | 'popup' | 'notification';
+  type: 'banner' | 'popup' | 'notification';
   priority: number;
 }
 
@@ -66,9 +83,8 @@ interface SnackbarState {
 
 interface FormErrors {
   title?: string;
-  shortDescription?: string;
-  content?: string;
-  displayType?: string;
+  description?: string;
+  type?: string;
   priority?: string;
 }
 
@@ -76,43 +92,65 @@ const AdvertisementManagement: React.FC = () => {
   const [advertisements, setAdvertisements] = useState<Advertisement[]>([]);
   const [openDialog, setOpenDialog] = useState<boolean>(false);
   const [editingAd, setEditingAd] = useState<Advertisement | null>(null);
+  const [page, setPage] = useState<number>(1);
+  const [limit] = useState<number>(10);
+  const [totalPages, setTotalPages] = useState<number>(1);
   const [formData, setFormData] = useState<FormData>({
     title: '',
     description: '',
-    content: '',
     image: null,
-    displayType: 'banner',
+    type: 'banner',
     priority: 1
   });
+  const [imageUploading, setImageUploading] = useState<boolean>(false);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | undefined>(undefined);
+  const [uploadedPublicId, setUploadedPublicId] = useState<string | undefined>(undefined);
+  const [classId, setClassId] = useState<string>('');
+  // isActive is driven by backend; not required in form
+  const [classSearch, setClassSearch] = useState<string>('');
+  const [classOptions, setClassOptions] = useState<Array<{ id: string; name: string; grade?: number; section?: number; year?: number }>>([]);
+  const [classLoading, setClassLoading] = useState<boolean>(false);
   const [snackbar, setSnackbar] = useState<SnackbarState>({ open: false, message: '', severity: 'success' });
   const [formErrors, setFormErrors] = useState<FormErrors>({});
 
   // Lấy danh sách quảng cáo từ API
   useEffect(() => {
     fetchAdvertisements();
-  }, []);
+  }, [page]);
 
   const fetchAdvertisements = async (): Promise<void> => {
     try {
-      const res = await getAllAnnouncementsAPI();
-      setAdvertisements(res.data || []);
+      const res = await getAdvertisementsAPI({ page, limit });
+      const list = res.data?.data?.result || [];
+      setAdvertisements(
+        list.map((item: any) => ({
+          id: item.id,
+          title: item.title,
+          description: item.description,
+          imageUrl: item.imageUrl,
+          type: (item.type as 'banner' | 'popup' | 'notification') || 'banner',
+          priority: Number(item.priority) ?? 0,
+          publicId: item.publicId,
+          isActive: item.isActive,
+          createdAt: item.createdAt,
+          updatedAt: item.updatedAt,
+          class: item.class ? {
+            id: item.class.id,
+            name: item.class.name,
+            grade: item.class.grade,
+            section: item.class.section,
+            year: item.class.year,
+            status: item.class.status,
+          } : null,
+        }))
+      );
+      setTotalPages(res.data?.data?.meta?.totalPages || 1);
     } catch (err: any) {
-      // Hiển thị thông báo user-friendly cho admin
-      if (err?.response?.status === 404) {
-        console.info('Announcements API chưa được implement');
-        setSnackbar({
-          open: true,
-          message: 'API quảng cáo đang được phát triển',
-          severity: 'info'
-        });
-      } else {
-        console.error('Lỗi lấy danh sách quảng cáo:', err);
-        setSnackbar({
-          open: true,
-          message: 'Không thể tải danh sách quảng cáo',
-          severity: 'error'
-        });
-      }
+      setSnackbar({
+        open: true,
+        message: 'Không thể tải danh sách quảng cáo',
+        severity: 'error'
+      });
       setAdvertisements([]);
     }
   };
@@ -123,21 +161,29 @@ const AdvertisementManagement: React.FC = () => {
       setFormData({
         title: ad.title || '',
         description: ad.description || '',
-        content: ad.content || '',
         image: null,
-        displayType: ad.displayType || 'banner',
+        type: ad.type || 'banner',
         priority: ad.priority || 1
       });
+      setUploadedImageUrl(ad.imageUrl);
+      setUploadedPublicId(undefined);
+      setImageUploading(false);
+      setClassId(ad.class?.id || '');
+      setClassSearch(ad.class?.name || '');
     } else {
       setEditingAd(null);
       setFormData({
         title: '',
         description: '',
-        content: '',
         image: null,
-        displayType: 'banner',
+        type: 'banner',
         priority: 1
       });
+      setUploadedImageUrl(undefined);
+      setUploadedPublicId(undefined);
+      setImageUploading(false);
+      setClassId('');
+      setClassSearch('');
     }
     setOpenDialog(true);
   };
@@ -147,40 +193,102 @@ const AdvertisementManagement: React.FC = () => {
     setEditingAd(null);
   };
 
+  // Fetch class options with debounce
+  useEffect(() => {
+    let active = true;
+    const handler = setTimeout(async () => {
+      try {
+        setClassLoading(true);
+        const res = await getAllClassesAPI({ page: 1, limit: 10, name: classSearch });
+        const list = res.data?.data?.result || res.data?.data || res.data || [];
+        const options = (list || []).map((c: any) => ({ id: c.id, name: c.name, grade: c.grade, section: c.section, year: c.year }));
+        if (active) setClassOptions(options);
+      } catch (_err) {
+        if (active) setClassOptions([]);
+      } finally {
+        if (active) setClassLoading(false);
+      }
+    }, 300);
+    return () => { active = false; clearTimeout(handler); };
+  }, [classSearch]);
+
   const handleCloseNotification = (): void => {
     setSnackbar({ ...snackbar, open: false });
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>): Promise<void> => {
     const file = e.target.files?.[0] || null;
     setFormData({ ...formData, image: file });
+    if (file) {
+      try {
+        setImageUploading(true);
+        const uploadRes = await uploadFileAPI(file);
+        setUploadedImageUrl(uploadRes.data.data.url);
+        setUploadedPublicId(uploadRes.data.data.publicId);
+      } catch (_err) {
+        setSnackbar({ open: true, message: 'Tải ảnh thất bại, vui lòng thử lại', severity: 'error' });
+        setUploadedImageUrl(undefined);
+        setUploadedPublicId(undefined);
+      } finally {
+        setImageUploading(false);
+      }
+    } else {
+      setUploadedImageUrl(undefined);
+      setUploadedPublicId(undefined);
+    }
   };
 
   const handleSaveAd = async (): Promise<void> => {
-    // Validate trước khi submit
-    const errors = validateAdvertisement({
-      title: formData.title,
-      shortDescription: formData.description,
-      content: formData.content,
-      priority: formData.priority,
-      imageName: formData.image ? formData.image.name : (editingAd?.imageUrl ? editingAd.imageUrl.split('/').pop() || '' : ''),
-    });
+    // Validate tối giản
+    const errors: FormErrors = {};
+    if (!formData.title) errors.title = 'Tiêu đề là bắt buộc';
+    if (!formData.description) errors.description = 'Mô tả là bắt buộc';
+    if (!formData.priority || formData.priority < 0) errors.priority = 'Độ ưu tiên không hợp lệ';
     setFormErrors(errors);
-    const hasError = Object.values(errors).some(Boolean);
-    if (hasError) return;
-
-    const announcementData: any = {
-      title: formData.title,
-      content: formData.content,
-      image: formData.image || undefined
-    };
+    if (Object.keys(errors).length > 0) return;
 
     try {
+      // Nếu đã upload khi chọn ảnh thì dùng luôn; nếu chưa, và có file mới, upload tại đây
+      let imageUrl: string | undefined = uploadedImageUrl ?? editingAd?.imageUrl;
+      let publicId: string | undefined = uploadedPublicId;
+      if (!uploadedImageUrl && formData.image) {
+        setImageUploading(true);
+        const uploadRes = await uploadFileAPI(formData.image);
+        imageUrl = uploadRes.data.data.url;
+        publicId = uploadRes.data.data.publicId;
+        setImageUploading(false);
+      }
+
       if (editingAd) {
-        await updateAnnouncementAPI(editingAd.id, announcementData);
+        const previousPublicId = editingAd.publicId;
+        await updateAdvertisementAPI(editingAd.id, {
+          title: formData.title,
+          description: formData.description,
+          priority: formData.priority,
+          imageUrl,
+          publicId,
+          type: formData.type,
+          classId: classId || undefined,
+        });
+        // If new image uploaded and previous exists, delete old file
+        if (publicId && previousPublicId && publicId !== previousPublicId) {
+          try {
+            await deleteFileAPI(previousPublicId);
+          } catch (_e) {
+            // swallow error - not critical for UX
+          }
+        }
         setSnackbar({ open: true, message: 'Cập nhật quảng cáo thành công!', severity: 'success' });
       } else {
-        await createAnnouncementAPI(announcementData);
+        await createAdvertisementAPI({
+          title: formData.title,
+          description: formData.description,
+          priority: formData.priority,
+          imageUrl: imageUrl || '',
+          publicId: publicId || '',
+          classId: classId || '',
+          type: formData.type,
+        });
         setSnackbar({ open: true, message: 'Tạo quảng cáo thành công!', severity: 'success' });
       }
       fetchAdvertisements();
@@ -191,14 +299,13 @@ const AdvertisementManagement: React.FC = () => {
         message: err?.response?.data?.message || 'Có lỗi khi lưu quảng cáo!',
         severity: 'error'
       });
-      console.error(err);
     }
   };
 
   const handleDeleteAd = async (id: string): Promise<void> => {
     if (window.confirm('Bạn có chắc chắn muốn xóa quảng cáo này?')) {
       try {
-        await deleteAnnouncementAPI(id);
+        await deleteAdvertisementAPI(id);
         setSnackbar({ open: true, message: 'Xóa quảng cáo thành công!', severity: 'success' });
         fetchAdvertisements();
       } catch (err: any) {
@@ -207,7 +314,6 @@ const AdvertisementManagement: React.FC = () => {
           message: err?.response?.data?.message || 'Có lỗi khi xóa quảng cáo!',
           severity: 'error'
         });
-        console.error(err);
       }
     }
   };
@@ -250,6 +356,8 @@ const AdvertisementManagement: React.FC = () => {
                       <TableCell>Mô tả</TableCell>
                       <TableCell>Kiểu hiển thị</TableCell>
                       <TableCell>Độ ưu tiên</TableCell>
+                      <TableCell>Lớp</TableCell>
+                      <TableCell>Trạng thái</TableCell>
                       <TableCell>Thao tác</TableCell>
                     </TableRow>
                   </TableHead>
@@ -275,10 +383,29 @@ const AdvertisementManagement: React.FC = () => {
                           </Typography>
                         </TableCell>
                         <TableCell>
-                          {getDisplayTypeLabel(ad.displayType)}
+                          {getDisplayTypeLabel(ad.type)}
                         </TableCell>
                         <TableCell>
                           {ad.priority}
+                        </TableCell>
+                        <TableCell>
+                          {ad.class ? (
+                            <Box>
+                              <Typography variant="body2" fontWeight={600}>{ad.class.name}</Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                Lớp: {ad.class.grade}.{ad.class.section} • Năm: {ad.class.year}
+                              </Typography>
+                            </Box>
+                          ) : (
+                            <Typography variant="caption" color="text.secondary">—</Typography>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            size="small"
+                            label={ad.isActive ? 'Đang hoạt động' : 'Ngừng hoạt động'}
+                            color={ad.isActive ? 'success' : 'default'}
+                          />
                         </TableCell>
                         <TableCell>
                           <IconButton
@@ -301,6 +428,9 @@ const AdvertisementManagement: React.FC = () => {
                   </TableBody>
                 </Table>
               </TableContainer>
+              <Box display="flex" justifyContent="center" mt={2}>
+                <Pagination count={totalPages} page={page} onChange={(_, p) => setPage(p)} color="primary" />
+              </Box>
             </CardContent>
           </Card>
 
@@ -402,7 +532,7 @@ const AdvertisementManagement: React.FC = () => {
                       <Grid item xs={12}>
                         <TextField
                           fullWidth
-                          label="Mô tả ngắn *"
+                          label="Mô tả *"
                           value={formData.description}
                           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                           sx={{
@@ -413,37 +543,18 @@ const AdvertisementManagement: React.FC = () => {
                               },
                             },
                           }}
-                          error={!!formErrors.shortDescription}
-                          helperText={formErrors.shortDescription}
+                          error={!!formErrors.description}
+                          helperText={formErrors.description}
                         />
                       </Grid>
-                      <Grid item xs={12}>
-                        <TextField
-                          fullWidth
-                          multiline
-                          minRows={4}
-                          label="Nội dung *"
-                          value={formData.content}
-                          onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                          sx={{
-                            '& .MuiOutlinedInput-root': {
-                              borderRadius: 2,
-                              '&:hover .MuiOutlinedInput-notchedOutline': {
-                                borderColor: '#667eea',
-                              },
-                            },
-                          }}
-                          error={!!formErrors.content}
-                          helperText={formErrors.content}
-                        />
-                      </Grid>
+
                       <Grid item xs={12} sm={6}>
                         <TextField
                           fullWidth
                           select
                           label="Kiểu hiển thị"
-                          value={formData.displayType}
-                          onChange={(e) => setFormData({ ...formData, displayType: e.target.value as 'banner' | 'popup' | 'notification' })}
+                          value={formData.type}
+                          onChange={(e) => setFormData({ ...formData, type: e.target.value as 'banner' | 'popup' | 'notification' })}
                           sx={{
                             '& .MuiOutlinedInput-root': {
                               borderRadius: 2,
@@ -452,8 +563,8 @@ const AdvertisementManagement: React.FC = () => {
                               },
                             },
                           }}
-                          error={!!formErrors.displayType}
-                          helperText={formErrors.displayType}
+                          error={!!formErrors.type}
+                          helperText={formErrors.type}
                         >
                           <MenuItem value="banner">Banner</MenuItem>
                           <MenuItem value="popup">Popup</MenuItem>
@@ -480,6 +591,34 @@ const AdvertisementManagement: React.FC = () => {
                           helperText={formErrors.priority}
                         />
                       </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <Autocomplete
+                          loading={classLoading}
+                          options={classOptions}
+                          getOptionLabel={(o) => o?.name || ''}
+                          value={classOptions.find((c) => c.id === classId) || null}
+                          onChange={(_, val) => setClassId(val?.id || '')}
+                          inputValue={classSearch}
+                          onInputChange={(_, val) => setClassSearch(val)}
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              label="Chọn lớp"
+                              placeholder="Tìm kiếm lớp theo tên"
+                              InputProps={{
+                                ...params.InputProps,
+                                endAdornment: (
+                                  <>
+                                    {classLoading ? <CircularProgress color="inherit" size={16} /> : null}
+                                    {params.InputProps.endAdornment}
+                                  </>
+                                ),
+                              }}
+                            />
+                          )}
+                        />
+                      </Grid>
+                      {/* Trạng thái hoạt động do backend quản lý, không cần trong form tạo/sửa */}
                       <Grid item xs={12}>
                         <Box
                           sx={{
@@ -573,7 +712,7 @@ const AdvertisementManagement: React.FC = () => {
               <Button
                 onClick={handleSaveAd}
                 variant="contained"
-                disabled={!formData.title || !formData.description || !formData.content}
+                disabled={!formData.title || !formData.description || imageUploading}
                 sx={{
                   px: 3,
                   py: 1,
