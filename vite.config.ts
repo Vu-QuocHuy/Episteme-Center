@@ -59,20 +59,7 @@ export default defineConfig({
             './src/pages/parent/Payments.tsx',
           ],
 
-          // Common components
-          'common-components': [
-            './src/components/common/SearchInput.tsx',
-            './src/components/common/StatusChip.tsx',
-            './src/components/common/ActionButtons.tsx',
-            './src/components/common/LoadingSpinner.tsx',
-            './src/components/common/EmptyState.tsx',
-            './src/components/common/LazyRoute.tsx',
-            './src/components/common/FilterSelect.tsx',
-            './src/components/common/DatePicker.tsx',
-            './src/components/common/FileUpload.tsx',
-            './src/components/common/Modal.tsx',
-            './src/components/common/VirtualList.tsx',
-          ],
+          // Note: temporarily remove explicit common-components chunk to avoid init-order TDZ issues
 
           // Hooks
           'common-hooks': [
@@ -106,7 +93,7 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000,
 
     // Source maps for production debugging
-    sourcemap: false,
+    sourcemap: true,
 
     // Assets optimization
     assetsInlineLimit: 4096,
