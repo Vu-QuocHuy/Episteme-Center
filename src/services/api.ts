@@ -654,14 +654,9 @@ export const getActiveHomeContentAPI = () => {
 };
 
 // Refresh token
-export const refreshTokenAPI = (refreshToken?: string) => {
-  // Use the new refresh endpoint with Authorization header
-  const config = refreshToken ? {
-    headers: {
-      'Authorization': `Bearer ${refreshToken}`
-    }
-  } : {};
-  return axiosInstance.get(API_CONFIG.ENDPOINTS.AUTH.REFRESH_TOKEN, config);
+export const refreshTokenAPI = () => {
+  // Use HttpOnly cookie; no need to pass token explicitly
+  return axiosInstance.get(API_CONFIG.ENDPOINTS.AUTH.REFRESH_TOKEN, { withCredentials: true });
 };
 
 // Gửi email xác thực

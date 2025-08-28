@@ -131,7 +131,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const token = localStorage.getItem('access_token');
     const refreshToken = localStorage.getItem('refresh_token');
     const userData = localStorage.getItem('userData');
-    const sessionActive = localStorage.getItem('session_active');
+    // const sessionActive = localStorage.getItem('session_active');
 
         if (token && userData) {
       try {
@@ -184,7 +184,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                       roleId === 4 ? 'student' : 'unknown';
           }
 
-          const response = await refreshTokenAPI(refreshToken);
+          const response = await refreshTokenAPI();
           let newAccessToken: string | null = null;
           let newRefreshToken: string | null = null;
           if (response?.data?.data?.access_token) {
@@ -202,9 +202,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           }
           if (newAccessToken) {
             localStorage.setItem('access_token', newAccessToken);
-            if (newRefreshToken) {
-              localStorage.setItem('refresh_token', newRefreshToken);
-            }
+            // refresh token kept in HttpOnly cookie now
             dispatch({
               type: 'LOGIN_SUCCESS',
               payload: { user, accessToken: newAccessToken, refreshToken: newRefreshToken || refreshToken }
@@ -226,7 +224,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
 
     // Lắng nghe event logout từ axios interceptor
-    const handleLogoutEvent = (event: CustomEvent) => {
+    const handleLogoutEvent = (_event: CustomEvent) => {
       dispatch({ type: 'LOGOUT' });
     };
 
@@ -411,7 +409,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw new Error('No refresh token available');
       }
 
-      const response = await refreshTokenAPI(refreshToken);
+      const response = await refreshTokenAPI();
 
       let newAccessToken: string | null = null;
       let newRefreshToken: string | null = null;
@@ -454,9 +452,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       // Cập nhật localStorage
       localStorage.setItem('access_token', newAccessToken);
-      if (newRefreshToken) {
-        localStorage.setItem('refresh_token', newRefreshToken);
-      }
+      // refresh token kept in HttpOnly cookie now
 
       // Cập nhật state
       dispatch({
@@ -484,8 +480,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     dispatch({ type: 'CLEAR_ERROR' });
   };
 
+  // Exclude refreshToken (state field) to satisfy AuthContextType (it provides a method named refreshToken)
+  const { refreshToken: _refreshTokenState, ...stateWithoutRefreshToken } = state;
+
   const value: AuthContextType = {
-    ...state,
+    ...stateWithoutRefreshToken,
     login,
     logout,
     refreshToken,

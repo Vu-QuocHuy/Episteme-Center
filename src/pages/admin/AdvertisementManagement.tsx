@@ -39,6 +39,7 @@ import {
   createAdvertisementAPI,
   updateAdvertisementAPI,
   deleteAdvertisementAPI,
+  getAdvertisementByIdAPI,
   uploadFileAPI,
   getAllClassesAPI,
   deleteFileAPI
@@ -105,6 +106,7 @@ const AdvertisementManagement: React.FC = () => {
   const [imageUploading, setImageUploading] = useState<boolean>(false);
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | undefined>(undefined);
   const [uploadedPublicId, setUploadedPublicId] = useState<string | undefined>(undefined);
+  const [originalPublicId, setOriginalPublicId] = useState<string | undefined>(undefined);
   const [classId, setClassId] = useState<string>('');
   // isActive is driven by backend; not required in form
   const [classSearch, setClassSearch] = useState<string>('');
@@ -130,7 +132,7 @@ const AdvertisementManagement: React.FC = () => {
           imageUrl: item.imageUrl,
           type: (item.type as 'banner' | 'popup' | 'notification') || 'banner',
           priority: Number(item.priority) ?? 0,
-          publicId: item.publicId,
+          publicId: item.publicId || (item as any).public_id || (item as any).imagePublicId || (item as any).image_public_id,
           isActive: item.isActive,
           createdAt: item.createdAt,
           updatedAt: item.updatedAt,
@@ -167,9 +169,21 @@ const AdvertisementManagement: React.FC = () => {
       });
       setUploadedImageUrl(ad.imageUrl);
       setUploadedPublicId(undefined);
+      setOriginalPublicId(ad.publicId);
       setImageUploading(false);
       setClassId(ad.class?.id || '');
       setClassSearch(ad.class?.name || '');
+      (async () => {
+        try {
+          const detail = await getAdvertisementByIdAPI(ad.id);
+          const data = (detail as any)?.data?.data;
+          if (data) {
+            setOriginalPublicId(
+              data.publicId || (data as any).public_id || (data as any).imagePublicId || (data as any).image_public_id
+            );
+          }
+        } catch (_e) {}
+      })();
     } else {
       setEditingAd(null);
       setFormData({
@@ -181,6 +195,7 @@ const AdvertisementManagement: React.FC = () => {
       });
       setUploadedImageUrl(undefined);
       setUploadedPublicId(undefined);
+      setOriginalPublicId(undefined);
       setImageUploading(false);
       setClassId('');
       setClassSearch('');
@@ -193,13 +208,18 @@ const AdvertisementManagement: React.FC = () => {
     setEditingAd(null);
   };
 
-  // Fetch class options with debounce
+  // Fetch class options with debounce only when dialog open and user types a query
   useEffect(() => {
     let active = true;
+    const query = classSearch?.trim();
+    if (!openDialog || !query) {
+      // Do not call API on page load or when no search query
+      return;
+    }
     const handler = setTimeout(async () => {
       try {
         setClassLoading(true);
-        const res = await getAllClassesAPI({ page: 1, limit: 10, name: classSearch });
+        const res = await getAllClassesAPI({ page: 1, limit: 10, name: query });
         const list = res.data?.data?.result || res.data?.data || res.data || [];
         const options = (list || []).map((c: any) => ({ id: c.id, name: c.name, grade: c.grade, section: c.section, year: c.year }));
         if (active) setClassOptions(options);
@@ -210,7 +230,7 @@ const AdvertisementManagement: React.FC = () => {
       }
     }, 300);
     return () => { active = false; clearTimeout(handler); };
-  }, [classSearch]);
+  }, [classSearch, openDialog]);
 
   const handleCloseNotification = (): void => {
     setSnackbar({ ...snackbar, open: false });
@@ -260,7 +280,7 @@ const AdvertisementManagement: React.FC = () => {
       }
 
       if (editingAd) {
-        const previousPublicId = editingAd.publicId;
+        const previousPublicId = originalPublicId;
         await updateAdvertisementAPI(editingAd.id, {
           title: formData.title,
           description: formData.description,
@@ -270,8 +290,12 @@ const AdvertisementManagement: React.FC = () => {
           type: formData.type,
           classId: classId || undefined,
         });
-        // If new image uploaded and previous exists, delete old file
-        if (publicId && previousPublicId && publicId !== previousPublicId) {
+        // If a new image was uploaded in this session, delete old file when it changes
+        // Prefer comparing publicId; fallback to imageUrl comparison
+        if (
+          (uploadedPublicId && previousPublicId && uploadedPublicId !== previousPublicId) ||
+          (uploadedImageUrl && editingAd.imageUrl && uploadedImageUrl !== editingAd.imageUrl && previousPublicId)
+        ) {
           try {
             await deleteFileAPI(previousPublicId);
           } catch (_e) {

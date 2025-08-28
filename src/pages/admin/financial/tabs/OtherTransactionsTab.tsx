@@ -33,6 +33,7 @@ const OtherTransactionsTab: React.FC<Props> = () => {
 
   const [categories, setCategories] = React.useState<any[]>([]);
   const [categoriesLoading, setCategoriesLoading] = React.useState<boolean>(false);
+  void categoriesLoading; // silence unused variable until used
   const [openCategoryManagementDialog, setOpenCategoryManagementDialog] = React.useState<boolean>(false);
   const [openCategoryDialog, setOpenCategoryDialog] = React.useState<boolean>(false);
   const [categoryForm, setCategoryForm] = React.useState<{ type: 'revenue' | 'expense'; name: string }>({ type: 'expense', name: '' });

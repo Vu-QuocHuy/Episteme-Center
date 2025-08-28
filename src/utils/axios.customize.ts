@@ -130,37 +130,17 @@ instance.interceptors.response.use(
                 originalRequest._retry = true;
                 isRefreshing = true;
 
-                const refreshToken = localStorage.getItem('refresh_token');
-
-                if (!refreshToken) {
-                    // Không có refresh token, logout user
-                    localStorage.removeItem('access_token');
-                    localStorage.removeItem('refresh_token');
-                    localStorage.removeItem('userData');
-                    localStorage.removeItem('parent_id');
-                    // Thông báo logout cho AuthContext
-                    createLogoutEvent();
-                    return Promise.reject(error);
-                }
-
                 try {
-                    // Gọi API refresh token với method GET và Authorization header
+                    // Gọi API refresh token: dùng HttpOnly cookie (withCredentials)
                     const response = await instance.get<RefreshTokenResponse>(
                         '/auth/refresh',
-                        {
-                            headers: {
-                                'Authorization': `Bearer ${refreshToken}`,
-                                'Content-Type': 'application/json'
-                            }
-                        }
+                        { withCredentials: true }
                     );
 
                     let newAccessToken: string | null = null;
                     let newRefreshToken: string | null = null;
 
                     // Xử lý response theo cấu trúc API mới
-                    console.log('🔄 Refresh token response:', response);
-
                     // New API structure: { statusCode, message, data: { access_token, user } }
                     if (response?.data?.data?.access_token) {
                         newAccessToken = response.data.data.access_token;
@@ -209,8 +189,6 @@ instance.interceptors.response.use(
                         throw new Error('Invalid refresh token response');
                     }
                 } catch (refreshError) {
-                    console.error('Refresh token failed:', refreshError);
-
                     // Xử lý queue với lỗi
                     processQueue(refreshError, null);
 
