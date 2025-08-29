@@ -25,9 +25,15 @@ interface Student {
   phone?: string;
 }
 
+interface StudentInfo {
+  discountPercent: number;
+  student: Student;
+}
+
 interface ClassData {
   id: string;
   name: string;
+  students?: StudentInfo[];
 }
 
 interface ClassStudentManagementProps {
@@ -45,7 +51,7 @@ const ClassStudentManagement: React.FC<ClassStudentManagementProps> = ({ classDa
   const [openAddDialog, setOpenAddDialog] = useState<boolean>(false);
   const [studentToRemove, setStudentToRemove] = useState<Student | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
-  const [students, setStudents] = useState<Student[]>([]);
+  const [students, setStudents] = useState<StudentInfo[]>([]);
   const [studentsLoading, setStudentsLoading] = useState<boolean>(false);
   const [notification, setNotification] = useState<NotificationState>({
     open: false,
@@ -53,30 +59,32 @@ const ClassStudentManagement: React.FC<ClassStudentManagementProps> = ({ classDa
     severity: 'success',
   });
 
-  // Fetch students from API
+  // Use students data from classData if available, otherwise fetch from API
   useEffect(() => {
-    const fetchStudents = async (): Promise<void> => {
-      setStudentsLoading(true);
-      try {
-        const params = { page: 1, limit: 100 }; // Get all students
-        const res = await getStudentsInClassAPI(classData.id, params);
-        if (res.data && res.data.students) {
-          setStudents(res.data.students);
-        } else {
+    if (classData?.students) {
+      setStudents(classData.students);
+      setStudentsLoading(false);
+    } else if (classData?.id) {
+      const fetchStudents = async (): Promise<void> => {
+        setStudentsLoading(true);
+        try {
+          const params = { page: 1, limit: 100 };
+          const res = await getStudentsInClassAPI(classData.id, params);
+          if (res.data && res.data.students) {
+            setStudents(res.data.students);
+          } else {
+            setStudents([]);
+          }
+        } catch (error) {
+          console.error('Error fetching students:', error);
           setStudents([]);
+        } finally {
+          setStudentsLoading(false);
         }
-      } catch (error) {
-        console.error('Error fetching students:', error);
-        setStudents([]);
-      } finally {
-        setStudentsLoading(false);
-      }
-    };
-
-    if (classData?.id) {
+      };
       fetchStudents();
     }
-  }, [classData?.id]);
+  }, [classData?.id, classData?.students]);
 
   const handleOpenAddDialog = (): void => {
     setOpenAddDialog(true);
@@ -179,16 +187,16 @@ const ClassStudentManagement: React.FC<ClassStudentManagementProps> = ({ classDa
                     </TableCell>
                   </TableRow>
                 ) : (
-                  students.map((student, index) => (
-                    <TableRow key={student.id} hover>
+                  students.map((studentInfo, index) => (
+                    <TableRow key={studentInfo.student.id} hover>
                       <TableCell>{index + 1}</TableCell>
-                      <TableCell>{student.name}</TableCell>
-                      <TableCell>{student.email || 'N/A'}</TableCell>
-                      <TableCell>{student.phone || 'N/A'}</TableCell>
+                      <TableCell>{studentInfo.student.name}</TableCell>
+                      <TableCell>{studentInfo.student.email || 'N/A'}</TableCell>
+                      <TableCell>{studentInfo.student.phone || 'N/A'}</TableCell>
                       <TableCell align="center">
                         <IconButton
                           color="error"
-                          onClick={() => handleOpenConfirmRemove(student)}
+                          onClick={() => handleOpenConfirmRemove(studentInfo.student)}
                           title="Xóa học sinh khỏi lớp"
                         >
                           <DeleteIcon />

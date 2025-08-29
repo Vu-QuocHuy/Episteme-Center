@@ -83,13 +83,25 @@ const AddStudentToClassDialog: React.FC<AddStudentToClassDialogProps> = ({ open,
     const fetchStudents = async (): Promise<void> => {
       setLoadingList(true);
       try {
-        const params: any = { limit: 30 };
+        const params: any = { page: 1, limit: 30 };
         if (searchQuery) params.name = searchQuery;
         const response = await getAllStudentsAPI(params);
+        console.log('API Response:', response); // Debug log
+
+        // Handle new paginated API response structure
+        let studentsArray: Student[] = [];
+        if (response && response.data && response.data.data) {
+          const { data } = response.data;
+          studentsArray = data.result || [];
+        } else if (response && response.data) {
+          studentsArray = response.data || [];
+        }
+
         // Filter out students who are already in the class
-        const availableStudents = (response.data || []).filter(
+        const availableStudents = studentsArray.filter(
           (student: Student) => !existingStudentIds.includes(student.id)
         );
+        console.log('Available students:', availableStudents); // Debug log
         setAllStudents(availableStudents);
       } catch (error) {
       } finally {
@@ -97,11 +109,18 @@ const AddStudentToClassDialog: React.FC<AddStudentToClassDialogProps> = ({ open,
       }
     };
 
-    const debounceFetch = setTimeout(() => {
-      fetchStudents();
-    }, 700); // Debounce search query
+    // Chỉ gọi API khi có từ khóa tìm kiếm
+    if (searchQuery.trim()) {
+      const debounceFetch = setTimeout(() => {
+        fetchStudents();
+      }, 700); // Debounce search query
 
-    return () => clearTimeout(debounceFetch);
+      return () => clearTimeout(debounceFetch);
+    } else {
+      // Nếu không có từ khóa, xóa danh sách học sinh
+      setAllStudents([]);
+      setLoadingList(false);
+    }
   }, [searchQuery, existingStudentIds]);
 
   const handleToggleStudent = (studentId: string): void => {
@@ -171,10 +190,8 @@ const AddStudentToClassDialog: React.FC<AddStudentToClassDialogProps> = ({ open,
     setNotification(prev => ({ ...prev, open: false }));
   };
 
-  const filteredStudents = allStudents.filter(student =>
-    student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (student.email && student.email.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  // API đã trả về kết quả đã được filter, không cần filter thêm
+  const studentsToShow = allStudents;
 
   return (
     <>
@@ -205,7 +222,7 @@ const AddStudentToClassDialog: React.FC<AddStudentToClassDialogProps> = ({ open,
             </Box>
           ) : (
             <List sx={{ maxHeight: 400, overflow: 'auto' }}>
-              {filteredStudents.map((student) => (
+              {studentsToShow.map((student) => (
                 <ListItem key={student.id} dense>
                   <Checkbox
                     edge="start"
@@ -229,11 +246,11 @@ const AddStudentToClassDialog: React.FC<AddStudentToClassDialogProps> = ({ open,
                   )}
                 </ListItem>
               ))}
-              {filteredStudents.length === 0 && (
+              {studentsToShow.length === 0 && (
                 <ListItem>
                   <ListItemText
-                    primary="Không tìm thấy học sinh nào"
-                    secondary="Thử tìm kiếm với từ khóa khác"
+                    primary={searchQuery.trim() ? "Không tìm thấy học sinh nào" : "Nhập từ khóa để tìm kiếm học sinh"}
+                    secondary={searchQuery.trim() ? "Thử tìm kiếm với từ khóa khác" : "Vui lòng nhập tên hoặc email học sinh"}
                   />
                 </ListItem>
               )}

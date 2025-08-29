@@ -5,8 +5,6 @@ import {
   Typography,
   Button,
   FormControl,
-  Chip,
-  Grid,
   Paper,
   Autocomplete,
   TextField,
@@ -77,7 +75,7 @@ const ClassTeacherManagement: React.FC<ClassTeacherManagementProps> = ({
         // Nếu không tìm thấy trong allTeachers, fetch từ API
         if (!teacherObj) {
           try {
-            const params = { limit: 1000 }; // Lấy tất cả giáo viên để tìm
+            const params = { page: 1, limit: 1000 }; // Lấy tất cả giáo viên để tìm
             const response = await getAllTeachersAPI(params);
 
             // Handle new paginated API response structure
@@ -119,7 +117,7 @@ const ClassTeacherManagement: React.FC<ClassTeacherManagementProps> = ({
           setAllTeachers([]);
           return;
         }
-        const params = { limit: 20, name: debouncedSearchTeacher };
+        const params = { page: 1, limit: 20, name: debouncedSearchTeacher };
         const response = await getAllTeachersAPI(params);
 
         // Handle new paginated API response structure
@@ -167,8 +165,12 @@ const ClassTeacherManagement: React.FC<ClassTeacherManagementProps> = ({
         severity: 'success'
       });
       if (onSuccessMessage) onSuccessMessage('Phân công giáo viên thành công!');
-      onUpdate();
-      onClose();
+
+      // Thêm delay trước khi refresh để đảm bảo backend đã xử lý xong
+      setTimeout(() => {
+        onUpdate();
+        onClose();
+      }, 1000);
     } catch (error: any) {
       console.error('Error assigning teacher:', error);
       setNotification({
@@ -201,8 +203,12 @@ const ClassTeacherManagement: React.FC<ClassTeacherManagementProps> = ({
         severity: 'success'
       });
       if (onSuccessMessage) onSuccessMessage('Hủy phân công giáo viên thành công!');
-      onUpdate();
-      onClose();
+
+      // Thêm delay trước khi refresh để đảm bảo backend đã xử lý xong
+      setTimeout(() => {
+        onUpdate();
+        onClose();
+      }, 1000);
     } catch (error: any) {
       console.error('Error unassigning teacher:', error);
       setNotification({
@@ -222,69 +228,40 @@ const ClassTeacherManagement: React.FC<ClassTeacherManagementProps> = ({
   return (
     <>
       <Box sx={{ p: 2 }}>
-        <Typography variant="h6" gutterBottom>
-          Quản lý giáo viên cho lớp: {classData?.name}
-        </Typography>
-
         <Paper sx={{ p: 3, mb: 3 }}>
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
-              <Typography variant="subtitle1" gutterBottom>
-                Giáo viên hiện tại:
-              </Typography>
-              {currentTeacherObj ? (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
-                  <PersonIcon color="primary" />
-                  <Box>
-                    <Typography variant="body1" fontWeight="medium">
-                      {currentTeacherObj.name}
-                    </Typography>
-                    {currentTeacherObj.email && (
-                      <Typography variant="body2" color="text.secondary">
-                        {currentTeacherObj.email}
-                      </Typography>
-                    )}
-                  </Box>
-                  <Chip label="Đang phụ trách" color="success" size="small" />
-                </Box>
-              ) : (
-                <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1, textAlign: 'center' }}>
-                  <Typography color="text.secondary">
-                    Chưa có giáo viên phụ trách
+          <Typography variant="subtitle1" gutterBottom>
+            Giáo viên hiện tại:
+          </Typography>
+          {currentTeacherObj ? (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1, mb: 2 }}>
+              <PersonIcon color="primary" />
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="body1" fontWeight="medium">
+                  {currentTeacherObj.name}
+                </Typography>
+                {currentTeacherObj.email && (
+                  <Typography variant="body2" color="text.secondary">
+                    {currentTeacherObj.email}
                   </Typography>
-                </Box>
-              )}
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <Typography variant="subtitle1" gutterBottom>
-                Thao tác:
-              </Typography>
-              <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                {currentTeacherObj ? (
-                  <Button
-                    variant="outlined"
-                    color="error"
-                    onClick={handleUnassignTeacher}
-                    disabled={loading}
-                    startIcon={<SchoolIcon />}
-                  >
-                    Hủy phân công
-                  </Button>
-                ) : (
-                  <Button
-                    variant="outlined"
-                    color="primary"
-                    onClick={handleAssignTeacher}
-                    disabled={loading || !selectedTeacherId}
-                    startIcon={<PersonIcon />}
-                  >
-                    Phân công giáo viên
-                  </Button>
                 )}
               </Box>
-            </Grid>
-          </Grid>
+              <Button
+                variant="outlined"
+                color="error"
+                onClick={handleUnassignTeacher}
+                disabled={loading}
+                startIcon={<SchoolIcon />}
+              >
+                Hủy phân công
+              </Button>
+            </Box>
+          ) : (
+            <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1, textAlign: 'center' }}>
+              <Typography color="text.secondary">
+                Chưa có giáo viên phụ trách
+              </Typography>
+            </Box>
+          )}
         </Paper>
 
         {!currentTeacherObj && (

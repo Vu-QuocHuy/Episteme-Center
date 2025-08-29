@@ -10,7 +10,10 @@ import {
   Box,
   Typography,
   Paper,
-  CircularProgress
+  CircularProgress,
+  Tabs,
+  Tab,
+  Divider
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -18,9 +21,9 @@ import {
 } from '@mui/icons-material';
 
 import { Class, ClassFormData, ClassFormErrors } from '../../../types';
-import { getClassByIdAPI, addStudentsToClassAPI, removeStudentsFromClassAPI, assignTeacherAPI, unassignTeacherAPI } from '../../../services/api';
-import AddStudentToClassDialog from './AddStudentToClassDialog';
-import AddTeacherToClassDialog from './AddTeacherToClassDialog';
+import { getClassByIdAPI } from '../../../services/api';
+import ClassTeacherManagement from '../../../pages/admin/ClassTeacherManagement';
+import ClassStudentManagement from '../../../pages/admin/ClassStudentManagement';
 
 interface ClassFormProps {
   open: boolean;
@@ -63,11 +66,8 @@ const ClassForm: React.FC<ClassFormProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [teacherInfo, setTeacherInfo] = useState<any | null>(null);
   const [studentsInfo, setStudentsInfo] = useState<Array<any>>([]);
-  const [openAddStudentDialog, setOpenAddStudentDialog] = useState(false);
-  const [studentToRemove, setStudentToRemove] = useState<any | null>(null);
-  const [openRemoveStudentDialog, setOpenRemoveStudentDialog] = useState(false);
-  const [openAddTeacherDialog, setOpenAddTeacherDialog] = useState(false);
-  const [openRemoveTeacherDialog, setOpenRemoveTeacherDialog] = useState(false);
+
+  const [activeTab, setActiveTab] = useState(0);
 
   // Initialize form data when classItem changes
   useEffect(() => {
@@ -210,134 +210,39 @@ const ClassForm: React.FC<ClassFormProps> = ({
     onClose();
   };
 
-  // Student management functions
-  const handleCloseAddStudentDialog = () => {
-    setOpenAddStudentDialog(false);
+
+
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+    setActiveTab(newValue);
   };
 
-  const handleCloseRemoveStudentDialog = () => {
-    setStudentToRemove(null);
-    setOpenRemoveStudentDialog(false);
-  };
-
-  const handleConfirmRemoveStudent = async () => {
-    if (!studentToRemove || !classItem) return;
-
-    try {
-      // Call API to remove student from class
-      await removeStudentsFromClassAPI(classItem.id, [studentToRemove.student?.id]);
-
-      // Update local state
-      setStudentsInfo(prev => prev.filter(s => s.student?.id !== studentToRemove.student?.id));
-
-      handleCloseRemoveStudentDialog();
-    } catch (error: any) {
-      console.error('Error removing student:', error);
-      console.error('Error details:', error.response?.data);
-    }
-  };
-
-  // Teacher management functions
-  const handleCloseAddTeacherDialog = () => {
-    setOpenAddTeacherDialog(false);
-  };
-
-  const handleCloseRemoveTeacherDialog = () => {
-    setOpenRemoveTeacherDialog(false);
-  };
-
-  const handleConfirmRemoveTeacher = async () => {
-    if (!classItem || !teacherInfo) return;
-
-    try {
-      // Call API to unassign teacher from class
-      await unassignTeacherAPI(classItem.id, teacherInfo.id);
-
-      // Update local state
-      setTeacherInfo(null);
-
-      handleCloseRemoveTeacherDialog();
-    } catch (error: any) {
-    }
-  };
-
-  const handleAddTeacherToClass = async (teacherId: string) => {
-    if (!classItem) return;
-
-    try {
-      // Call API to assign teacher to class
-      await assignTeacherAPI(classItem.id, teacherId);
-
-      // Refresh teacher info
-      const res = await getClassByIdAPI(classItem.id);
-      const data = res?.data?.data || res?.data;
-      if (data) {
-        setTeacherInfo(data.teacher || null);
-      }
-    } catch (error: any) {
-      throw error;
-    }
-  };
-
-  const handleAddStudentsToClass = async (studentIds: string[], discounts: Record<string, number>) => {
-    if (!classItem) return;
-
-    try {
-      // Prepare data for API
-      const studentsData = studentIds.map(id => ({
-        studentId: id,
-        discountPercent: discounts[id] || 0
-      }));
-
-      // Call API to add students to class
-      await addStudentsToClassAPI(classItem.id, studentsData);
-
-      // If API call was successful, update local state immediately
-      // Add the new students to the existing list
-      const newStudents = studentIds.map(id => {
-        const discount = discounts[id] || 0;
-        // Create a temporary student object until we refresh from server
-        return {
-          discountPercent: discount,
-          student: {
-            id: id,
-            name: 'Loading...', // Will be updated when we refresh
-            email: '',
-            phone: ''
-          }
-        };
-      });
-
-      // Update local state immediately
-      setStudentsInfo(prev => [...prev, ...newStudents]);
-
-      // Try to refresh from server, but don't fail if it errors
-      try {
-        const res = await getClassByIdAPI(classItem.id);
-        const data = res?.data?.data || res?.data;
-        if (data && data.students) {
-          setStudentsInfo(data.students || []);
-        }
-      } catch (refreshError) {
-        // Don't throw error since the main operation was successful
-      }
-
-    } catch (error: any) {
-      // Check if it's a 500 error but operation might have succeeded
-      if (error.response?.status === 500) {
-        // Try to refresh to see if students were actually added
+  const handleUpdateClass = () => {
+    // Refresh class data when teacher/student management updates
+    if (classItem) {
+      const fetchDetails = async (retryCount = 0) => {
         try {
           const res = await getClassByIdAPI(classItem.id);
           const data = res?.data?.data || res?.data;
-          if (data && data.students) {
+          if (data) {
+            setTeacherInfo(data.teacher || null);
             setStudentsInfo(data.students || []);
-            return; // Don't throw error since operation succeeded
           }
-        } catch (refreshError) {
-        }
-      }
+        } catch (e) {
+          console.error('Error refreshing class details:', e);
 
-      throw error;
+          // Retry logic - thử lại tối đa 3 lần với delay 1s
+          if (retryCount < 3) {
+            console.log(`Retrying... Attempt ${retryCount + 1}/3`);
+            setTimeout(() => {
+              fetchDetails(retryCount + 1);
+            }, 1000);
+          } else {
+            console.error('Failed to refresh class details after 3 attempts');
+            // Có thể hiển thị thông báo lỗi cho user
+          }
+        }
+      };
+      fetchDetails();
     }
   };
 
@@ -569,151 +474,203 @@ const ClassForm: React.FC<ClassFormProps> = ({
             {classItem ? (
               // Edit mode - Show tabs
               <Box sx={{ bgcolor: 'white', borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-                <Grid container spacing={2} sx={{ px: 3, pt: 2 }}>
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      fullWidth
-                      label="Khối"
-                      value={formData.grade}
-                      onChange={(e) => handleInputChange('grade', e.target.value)}
-                      error={!!errors.grade}
-                      helperText={errors.grade}
-                      required
+                <Tabs
+                  value={activeTab}
+                  onChange={handleTabChange}
+                  sx={{
+                    px: 3,
+                    pt: 2,
+                    '& .MuiTab-root': {
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      fontSize: '0.95rem',
+                      minHeight: 48,
+                      color: '#666',
+                      '&.Mui-selected': {
+                        color: '#667eea',
+                      }
+                    },
+                    '& .MuiTabs-indicator': {
+                      backgroundColor: '#667eea',
+                      height: 3
+                    }
+                  }}
+                >
+                  <Tab label="Thông tin chung" />
+                  <Tab label="Giáo viên" />
+                  <Tab label="Học sinh" />
+                </Tabs>
+
+                <Divider sx={{ mx: 3 }} />
+
+                <Box sx={{ p: 3 }}>
+                  <Box sx={{ display: activeTab === 0 ? 'block' : 'none' }}>
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} md={6}>
+                        <TextField
+                          fullWidth
+                          label="Khối"
+                          value={formData.grade}
+                          onChange={(e) => handleInputChange('grade', e.target.value)}
+                          error={!!errors.grade}
+                          helperText={errors.grade}
+                          required
+                        />
+                      </Grid>
+                      <Grid item xs={12} md={6}>
+                        <TextField
+                          fullWidth
+                          label="Tên lớp"
+                          value={formData.name}
+                          onChange={(e) => handleInputChange('name', e.target.value)}
+                          error={!!errors.name}
+                          helperText={errors.name}
+                          required
+                        />
+                      </Grid>
+                      <Grid item xs={12} md={6}>
+                        <TextField
+                          fullWidth
+                          label="Lớp"
+                          value={formData.section}
+                          onChange={(e) => handleInputChange('section', e.target.value)}
+                          error={!!errors.section}
+                          helperText={errors.section}
+                          required
+                        />
+                      </Grid>
+                      <Grid item xs={12} md={6}>
+                        <TextField
+                          fullWidth
+                          label="Học phí/buổi"
+                          value={formData.feePerLesson}
+                          onChange={(e) => handleInputChange('feePerLesson', e.target.value)}
+                          error={!!errors.feePerLesson}
+                          helperText={errors.feePerLesson}
+                          required
+                        />
+                      </Grid>
+                      <Grid item xs={12} md={6}>
+                        <TextField
+                          fullWidth
+                          label="Số học sinh tối đa"
+                          type="number"
+                          value={formData.max_student}
+                          onChange={(e) => handleInputChange('max_student', parseInt(e.target.value) || 30)}
+                          error={!!errors.max_student}
+                          helperText={errors.max_student}
+                          InputProps={{ inputProps: { min: 1 } }}
+                          required
+                        />
+                      </Grid>
+                      <Grid item xs={12} md={6}>
+                        <TextField
+                          fullWidth
+                          label="Phòng học"
+                          value={formData.room}
+                          onChange={(e) => handleInputChange('room', e.target.value)}
+                          error={!!errors.room}
+                          helperText={errors.room}
+                          required
+                        />
+                      </Grid>
+                      <Grid item xs={12} md={6}>
+                        <TextField
+                          fullWidth
+                          label="Giờ bắt đầu"
+                          placeholder="HH:MM"
+                          value={formData.schedule.time_slots.start_time}
+                          onChange={(e) => handleInputChange('schedule.time_slots.start_time', e.target.value)}
+                          error={!!errors.start_time}
+                          helperText={errors.start_time || "Định dạng: HH:MM (24 giờ)"}
+                          required
+                        />
+                      </Grid>
+                      <Grid item xs={12} md={6}>
+                        <TextField
+                          fullWidth
+                          label="Giờ kết thúc"
+                          placeholder="HH:MM"
+                          value={formData.schedule.time_slots.end_time}
+                          onChange={(e) => handleInputChange('schedule.time_slots.end_time', e.target.value)}
+                          error={!!errors.end_time}
+                          helperText={errors.end_time || "Định dạng: HH:MM (24 giờ)"}
+                          required
+                        />
+                      </Grid>
+                      <Grid item xs={12} md={6}>
+                        <TextField
+                          fullWidth
+                          label="Ngày bắt đầu"
+                          type="date"
+                          value={formData.schedule.start_date}
+                          onChange={(e) => handleInputChange('schedule', {
+                            ...formData.schedule,
+                            start_date: e.target.value
+                          })}
+                          error={!!errors.start_date}
+                          helperText={errors.start_date}
+                          InputLabelProps={{ shrink: true }}
+                          required
+                        />
+                      </Grid>
+                      <Grid item xs={12} md={6}>
+                        <TextField
+                          fullWidth
+                          label="Ngày kết thúc"
+                          type="date"
+                          value={formData.schedule.end_date}
+                          onChange={(e) => handleInputChange('schedule', {
+                            ...formData.schedule,
+                            end_date: e.target.value
+                          })}
+                          error={!!errors.end_date}
+                          helperText={errors.end_date}
+                          InputLabelProps={{ shrink: true }}
+                          required
+                        />
+                      </Grid>
+                      <Grid item xs={12}>
+                        <TextField
+                          fullWidth
+                          label="Ngày học trong tuần"
+                          placeholder="Chọn ngày trong tuần"
+                          error={!!errors.days_of_week}
+                          helperText={errors.days_of_week}
+                        />
+                      </Grid>
+                      <Grid item xs={12}>
+                        <TextField
+                          fullWidth
+                          label="Mô tả"
+                          multiline
+                          rows={3}
+                          value={formData.description}
+                          onChange={(e) => handleInputChange('description', e.target.value)}
+                        />
+                      </Grid>
+                    </Grid>
+                  </Box>
+                  <Box sx={{ display: activeTab === 1 ? 'block' : 'none' }}>
+                    <ClassTeacherManagement
+                      classData={{
+                        ...classItem,
+                        teacherId: teacherInfo
+                      }}
+                      onUpdate={handleUpdateClass}
+                      onClose={() => {}}
                     />
-                  </Grid>
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      fullWidth
-                      label="Tên lớp"
-                      value={formData.name}
-                      onChange={(e) => handleInputChange('name', e.target.value)}
-                      error={!!errors.name}
-                      helperText={errors.name}
-                      required
+                  </Box>
+                  <Box sx={{ display: activeTab === 2 ? 'block' : 'none' }}>
+                    <ClassStudentManagement
+                      classData={{
+                        ...classItem,
+                        students: studentsInfo
+                      }}
+                      onUpdate={handleUpdateClass}
                     />
-                  </Grid>
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      fullWidth
-                      label="Lớp"
-                      value={formData.section}
-                      onChange={(e) => handleInputChange('section', e.target.value)}
-                      error={!!errors.section}
-                      helperText={errors.section}
-                      required
-                    />
-                  </Grid>
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      fullWidth
-                      label="Học phí/buổi"
-                      value={formData.feePerLesson}
-                      onChange={(e) => handleInputChange('feePerLesson', e.target.value)}
-                      error={!!errors.feePerLesson}
-                      helperText={errors.feePerLesson}
-                      required
-                    />
-                  </Grid>
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      fullWidth
-                      label="Số học sinh tối đa"
-                      type="number"
-                      value={formData.max_student}
-                      onChange={(e) => handleInputChange('max_student', parseInt(e.target.value) || 30)}
-                      error={!!errors.max_student}
-                      helperText={errors.max_student}
-                      InputProps={{ inputProps: { min: 1 } }}
-                      required
-                    />
-                  </Grid>
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      fullWidth
-                      label="Phòng học"
-                      value={formData.room}
-                      onChange={(e) => handleInputChange('room', e.target.value)}
-                      error={!!errors.room}
-                      helperText={errors.room}
-                      required
-                    />
-                  </Grid>
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      fullWidth
-                      label="Giờ bắt đầu"
-                      placeholder="HH:MM"
-                      value={formData.schedule.time_slots.start_time}
-                      onChange={(e) => handleInputChange('schedule.time_slots.start_time', e.target.value)}
-                      error={!!errors.start_time}
-                      helperText={errors.start_time || "Định dạng: HH:MM (24 giờ)"}
-                      required
-                    />
-                  </Grid>
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      fullWidth
-                      label="Giờ kết thúc"
-                      placeholder="HH:MM"
-                      value={formData.schedule.time_slots.end_time}
-                      onChange={(e) => handleInputChange('schedule.time_slots.end_time', e.target.value)}
-                      error={!!errors.end_time}
-                      helperText={errors.end_time || "Định dạng: HH:MM (24 giờ)"}
-                      required
-                    />
-                  </Grid>
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      fullWidth
-                      label="Ngày bắt đầu"
-                      type="date"
-                      value={formData.schedule.start_date}
-                      onChange={(e) => handleInputChange('schedule', {
-                        ...formData.schedule,
-                        start_date: e.target.value
-                      })}
-                      error={!!errors.start_date}
-                      helperText={errors.start_date}
-                      InputLabelProps={{ shrink: true }}
-                      required
-                    />
-                  </Grid>
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      fullWidth
-                      label="Ngày kết thúc"
-                      type="date"
-                      value={formData.schedule.end_date}
-                      onChange={(e) => handleInputChange('schedule', {
-                        ...formData.schedule,
-                        end_date: e.target.value
-                      })}
-                      error={!!errors.end_date}
-                      helperText={errors.end_date}
-                      InputLabelProps={{ shrink: true }}
-                      required
-                    />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <TextField
-                      fullWidth
-                      label="Ngày học trong tuần"
-                      placeholder="Chọn ngày trong tuần"
-                      error={!!errors.days_of_week}
-                      helperText={errors.days_of_week}
-                    />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <TextField
-                      fullWidth
-                      label="Mô tả"
-                      multiline
-                      rows={3}
-                      value={formData.description}
-                      onChange={(e) => handleInputChange('description', e.target.value)}
-                    />
-                  </Grid>
-                </Grid>
+                  </Box>
+                </Box>
               </Box>
             ) : (
               // Create mode - Show original form
@@ -770,76 +727,7 @@ const ClassForm: React.FC<ClassFormProps> = ({
         </Button>
       </DialogActions>
 
-      {/* Confirm Remove Student Dialog */}
-      <Dialog
-        open={openRemoveStudentDialog}
-        onClose={handleCloseRemoveStudentDialog}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>
-          <Typography variant="h6">Xác nhận xóa học sinh</Typography>
-        </DialogTitle>
-        <DialogContent>
-          <Typography>
-            Bạn có chắc chắn muốn xóa học sinh "{studentToRemove?.student?.name}" khỏi lớp học này?
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseRemoveStudentDialog}>Hủy</Button>
-          <Button
-            onClick={handleConfirmRemoveStudent}
-            color="error"
-            variant="contained"
-          >
-            Xóa
-          </Button>
-        </DialogActions>
-      </Dialog>
 
-      {/* Add Student Dialog */}
-      <AddStudentToClassDialog
-        open={openAddStudentDialog}
-        onClose={handleCloseAddStudentDialog}
-        onAddStudents={handleAddStudentsToClass}
-        existingStudentIds={studentsInfo.map(s => s.student?.id).filter(Boolean)}
-        loading={false}
-      />
-
-      {/* Confirm Remove Teacher Dialog */}
-      <Dialog
-        open={openRemoveTeacherDialog}
-        onClose={handleCloseRemoveTeacherDialog}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>
-          <Typography variant="h6">Xác nhận xóa giáo viên</Typography>
-        </DialogTitle>
-        <DialogContent>
-          <Typography>
-            Bạn có chắc chắn muốn xóa giáo viên "{teacherInfo?.name}" khỏi lớp học này?
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseRemoveTeacherDialog}>Hủy</Button>
-          <Button
-            onClick={handleConfirmRemoveTeacher}
-            color="error"
-            variant="contained"
-          >
-            Xóa
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Add Teacher Dialog */}
-      <AddTeacherToClassDialog
-        open={openAddTeacherDialog}
-        onClose={handleCloseAddTeacherDialog}
-        onAddTeacher={handleAddTeacherToClass}
-        loading={false}
-      />
     </Dialog>
   );
 };
