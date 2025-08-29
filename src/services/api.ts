@@ -923,24 +923,22 @@ export const getParentDashboardAPI = (id: string) => axiosInstance.get(API_CONFI
 export const getStudentDashboardAPI = (id: string) => axiosInstance.get(API_CONFIG.ENDPOINTS.DASHBOARD.STUDENT(id));
 
 // Audit Log APIs
-export interface AuditLogChange {
-  fieldName: string;
-  oldValue: string | null;
-  newValue: string | null;
-}
-
 export interface AuditLogItem {
   id: string;
-  entity: string;
+  entityName: string;
   entityId: string | null;
   path: string;
   method: string;
+  description: string; // HTML content from backend
+  action?: string;
   user: {
     id: string;
     email: string;
     name: string;
   };
-  changes: AuditLogChange[];
+  changedFields?: string[];
+  newValue?: unknown;
+  oldValue?: unknown;
 }
 
 export interface AuditLogResponse {

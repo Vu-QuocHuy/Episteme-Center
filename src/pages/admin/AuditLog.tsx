@@ -1,25 +1,45 @@
 import React, { useEffect, useState } from 'react';
-import {
-  Box,
-  Card,
-  CardContent,
-  Typography,
-  Chip,
-  Stack,
-  Divider,
-  Pagination,
-  CircularProgress,
-} from '@mui/material';
+import { Box, Stack, Pagination, CircularProgress, Table, TableHead, TableRow, TableCell, TableBody, Paper, TableContainer } from '@mui/material';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
 import { getAuditLogsAPI, AuditLogItem } from '../../services/api';
+import { commonStyles } from '../../utils/styles';
 
-const methodColor: Record<string, 'default' | 'primary' | 'success' | 'warning' | 'error' | 'info'> = {
-  GET: 'info',
-  POST: 'success',
-  PATCH: 'warning',
-  PUT: 'warning',
-  DELETE: 'error',
+// Parse HTML description to extract action, actor, and content (keep list structure)
+const parseDescription = (html: string): { action: string; actor: string; contentHtml: string } => {
+  try {
+    const container = document.createElement('div');
+    container.innerHTML = html || '';
+
+    // Extract content list HTML (preserve <li> formatting). If not available, fallback to line breaks
+    const items = Array.from(container.querySelectorAll('ul li')) as HTMLLIElement[];
+    const ulEl = container.querySelector('ul');
+    const contentHtml = ulEl
+      ? ulEl.innerHTML
+      : items.map(li => (li.textContent?.trim() || '')).filter(Boolean).map(t => `<div>${t}</div>`).join('');
+
+    // Remove the list to get only the header text
+    if (ulEl && ulEl.parentElement) {
+      ulEl.parentElement.removeChild(ulEl);
+    }
+
+    let header = (container.textContent || '').trim();
+    // Normalize spaces
+    header = header.replace(/\s+/g, ' ');
+    // Drop trailing colon
+    header = header.replace(/:$/, '').trim();
+
+    // Split by 'bởi' to separate action and actor (Vietnamese 'by')
+    const parts = header.split(' bởi ');
+    const action = (parts[0] || '').trim();
+    const actor = (parts[1] || '').trim();
+
+    return { action, actor, contentHtml };
+  } catch (e) {
+    return { action: '', actor: '', contentHtml: '' };
+  }
 };
+
+// Only render description per requirements
 
 const AuditLog: React.FC = () => {
   const [logs, setLogs] = useState<AuditLogItem[]>([]);
@@ -28,6 +48,15 @@ const AuditLog: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const formatDateTime = (iso?: string): string => {
+    if (!iso) return '';
+    try {
+      return new Date(iso).toLocaleString('vi-VN', { hour12: false });
+    } catch {
+      return iso;
+    }
+  };
 
   const fetchLogs = async (pageNum = page, pageLimit = limit) => {
     setLoading(true);
@@ -51,75 +80,76 @@ const AuditLog: React.FC = () => {
 
   return (
     <DashboardLayout role="admin">
-      <Box sx={{ p: 3 }}>
-        <Typography variant="h4" fontWeight={700} gutterBottom>
-          Audit Logs
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Danh sách hoạt động của hệ thống (Admin & hệ thống backend)
-        </Typography>
+      <Box sx={commonStyles.pageContainer}>
+        {/* Simplified header intentionally omitted */}
 
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
             <CircularProgress />
           </Box>
         ) : error ? (
-          <Typography color="error">{error}</Typography>
+          <Box sx={{ color: 'error.main' }}>{error}</Box>
         ) : logs.length === 0 ? (
-          <Typography color="text.secondary">Không có log nào</Typography>
+          <Box sx={{ color: 'text.secondary' }}>Không có log nào</Box>
         ) : (
-          <Stack spacing={2}>
-            {logs.map((log) => (
-              <Card key={log.id} variant="outlined">
-                <CardContent>
-                  <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
-                    <Chip size="small" label={log.method} color={methodColor[log.method] || 'default'} />
-                    <Typography variant="subtitle1" sx={{ wordBreak: 'break-all' }}>
-                      {log.path}
-                    </Typography>
-                  </Stack>
+          <Box sx={commonStyles.contentContainer}>
+            <Stack spacing={2}>
+            <TableContainer component={Paper} variant="outlined" sx={commonStyles.tableContainer}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell width="20%">Hành động</TableCell>
+                    <TableCell width="25%">Người thực hiện</TableCell>
+                    <TableCell width="15%">Thời gian</TableCell>
+                    <TableCell width="35%">Nội dung</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {logs.map((log) => {
+                    const parsed = parseDescription(log.description || '');
+                    return (
+                      <TableRow key={log.id} hover>
+                        <TableCell sx={{ textTransform: 'none', fontWeight: 600, width: '25%' }}>
+                          {parsed.action || log.action || log.method}
+                        </TableCell>
+                        <TableCell sx={{ width: '20%' }}>
+                          {parsed.actor || (log.user ? `${log.user.name}${log.user.email ? ` - ${log.user.email}` : ''}` : '')}
+                        </TableCell>
+                        <TableCell sx={{ width: '15%', whiteSpace: 'nowrap' }}>
+                          {formatDateTime((log as any).createdAt)}
+                        </TableCell>
+                        <TableCell sx={{ width: '35%' }}>
+                          {parsed.contentHtml ? (
+                            <Box
+                              sx={{ '& ul': { pl: 3 }, '& li': { mb: 0.5 } }}
+                              dangerouslySetInnerHTML={{ __html: `<ul style=\"margin: 8px 0; padding-left: 20px;\">${parsed.contentHtml}</ul>` }}
+                            />
+                          ) : (
+                            <Box
+                              sx={{ '& ul': { pl: 3 }, '& li': { mb: 0.5 } }}
+                              dangerouslySetInnerHTML={{ __html: log.description || '' }}
+                            />
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </TableContainer>
 
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                    Entity: <strong>{log.entity}</strong>
-                    {log.entityId ? (
-                      <>
-                        {' '}• ID: <span style={{ fontFamily: 'monospace' }}>{log.entityId}</span>
-                      </>
-                    ) : null}
-                  </Typography>
-
-                  <Typography variant="body2" sx={{ mb: 1 }}>
-                    Người thực hiện: <strong>{log.user?.name}</strong> ({log.user?.email})
-                  </Typography>
-
-                  {log.changes?.length ? (
-                    <Box>
-                      <Divider sx={{ my: 1.5 }} />
-                      <Typography variant="subtitle2" sx={{ mb: 1 }}>Thay đổi</Typography>
-                      <Stack spacing={0.75}>
-                        {log.changes.map((chg, idx) => (
-                          <Typography key={idx} variant="body2">
-                            - <strong>{chg.fieldName}</strong>: {String(chg.oldValue)} → {String(chg.newValue)}
-                          </Typography>
-                        ))}
-                      </Stack>
-                    </Box>
-                  ) : null}
-                </CardContent>
-              </Card>
-            ))}
-
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 1 }}>
-              <Pagination
-                count={totalPages}
-                page={page}
-                onChange={(_e, value) => {
-                  setPage(value);
-                  fetchLogs(value, limit);
-                }}
-              />
-            </Box>
-          </Stack>
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 1 }}>
+                <Pagination
+                  count={totalPages}
+                  page={page}
+                  onChange={(_e, value) => {
+                    setPage(value);
+                    fetchLogs(value, limit);
+                  }}
+                />
+              </Box>
+            </Stack>
+          </Box>
         )}
       </Box>
     </DashboardLayout>

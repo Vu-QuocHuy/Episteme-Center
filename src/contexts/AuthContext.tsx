@@ -168,9 +168,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         localStorage.removeItem('userData');
       }
       dispatch({ type: 'SET_LOADING', payload: false });
-    } else if (refreshToken && userData) {
-      // Always try refresh if we have refreshToken and userData, regardless of access token
-      // Nếu thiếu access_token nhưng có refresh_token và userData, tự động refresh
+    } else if (userData) {
+      // Always try refresh using HttpOnly cookie when we have userData
+      // FE không cần truyền refresh token, backend sẽ đọc từ cookie
       (async () => {
         try {
           let user: User = JSON.parse(userData);
@@ -205,7 +205,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             // refresh token kept in HttpOnly cookie now
             dispatch({
               type: 'LOGIN_SUCCESS',
-              payload: { user, accessToken: newAccessToken, refreshToken: newRefreshToken || refreshToken }
+              payload: { user, accessToken: newAccessToken, refreshToken: newRefreshToken || undefined }
             });
           } else {
             throw new Error('Invalid refresh token response');
@@ -404,11 +404,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const refreshToken = async (): Promise<string | null> => {
     try {
-      const refreshToken = localStorage.getItem('refresh_token');
-      if (!refreshToken) {
-        throw new Error('No refresh token available');
-      }
-
+      // FE không cần đọc refresh token từ localStorage; backend dùng HttpOnly cookie
       const response = await refreshTokenAPI();
 
       let newAccessToken: string | null = null;

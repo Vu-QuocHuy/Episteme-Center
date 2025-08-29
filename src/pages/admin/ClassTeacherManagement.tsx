@@ -230,6 +230,61 @@ const ClassTeacherManagement: React.FC<ClassTeacherManagementProps> = ({
       <Box sx={{ p: 2 }}>
         <Paper sx={{ p: 3, mb: 3 }}>
           <Typography variant="subtitle1" gutterBottom>
+            Tìm kiếm và chọn giáo viên:
+          </Typography>
+          <FormControl fullWidth sx={{ mb: 2 }}>
+            <Autocomplete
+              options={allTeachers}
+              getOptionLabel={(option: Teacher) => option.name}
+              value={allTeachers.find(t => String(t.id || t._id) === selectedTeacherId) || null}
+              onChange={(_, newValue) => {
+                setSelectedTeacherId(newValue ? String(newValue.id || newValue._id) : '');
+              }}
+              inputValue={searchTeacher}
+              onInputChange={(_, newInputValue) => {
+                setSearchTeacher(newInputValue);
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Tìm kiếm giáo viên"
+                  placeholder="Nhập tên giáo viên..."
+                />
+              )}
+              renderOption={(props, option: Teacher) => (
+                <Box component="li" {...props}>
+                  <Box>
+                    <Typography variant="body1">{option.name}</Typography>
+                    {option.email && (
+                      <Typography variant="body2" color="text.secondary">
+                        {option.email}
+                      </Typography>
+                    )}
+                  </Box>
+                </Box>
+              )}
+              loading={debouncedSearchTeacher !== searchTeacher}
+              noOptionsText="Không tìm thấy giáo viên"
+            />
+          </FormControl>
+
+          {selectedTeacherId && (
+            <Box sx={{ mt: 2 }}>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleAssignTeacher}
+                disabled={loading}
+                fullWidth
+              >
+                Phân công giáo viên này
+              </Button>
+            </Box>
+          )}
+        </Paper>
+
+        <Paper sx={{ p: 3, mb: 3 }}>
+          <Typography variant="subtitle1" gutterBottom>
             Giáo viên hiện tại:
           </Typography>
           {currentTeacherObj ? (
@@ -263,63 +318,6 @@ const ClassTeacherManagement: React.FC<ClassTeacherManagementProps> = ({
             </Box>
           )}
         </Paper>
-
-        {!currentTeacherObj && (
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="subtitle1" gutterBottom>
-              Tìm kiếm và chọn giáo viên:
-            </Typography>
-            <FormControl fullWidth sx={{ mb: 2 }}>
-              <Autocomplete
-                options={allTeachers}
-                getOptionLabel={(option: Teacher) => option.name}
-                value={allTeachers.find(t => String(t.id || t._id) === selectedTeacherId) || null}
-                onChange={(_, newValue) => {
-                  setSelectedTeacherId(newValue ? String(newValue.id || newValue._id) : '');
-                }}
-                inputValue={searchTeacher}
-                onInputChange={(_, newInputValue) => {
-                  setSearchTeacher(newInputValue);
-                }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Tìm kiếm giáo viên"
-                    placeholder="Nhập tên giáo viên..."
-                  />
-                )}
-                renderOption={(props, option: Teacher) => (
-                  <Box component="li" {...props}>
-                    <Box>
-                      <Typography variant="body1">{option.name}</Typography>
-                      {option.email && (
-                        <Typography variant="body2" color="text.secondary">
-                          {option.email}
-                        </Typography>
-                      )}
-                    </Box>
-                  </Box>
-                )}
-                loading={debouncedSearchTeacher !== searchTeacher}
-                noOptionsText="Không tìm thấy giáo viên"
-              />
-            </FormControl>
-
-            {selectedTeacherId && (
-              <Box sx={{ mt: 2 }}>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={handleAssignTeacher}
-                  disabled={loading}
-                  fullWidth
-                >
-                  Phân công giáo viên này
-                </Button>
-              </Box>
-            )}
-          </Paper>
-        )}
       </Box>
 
       <NotificationSnackbar
