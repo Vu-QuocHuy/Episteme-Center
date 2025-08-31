@@ -10,3 +10,7 @@ export { default as WelcomeAdPopup } from './advertisement/WelcomeAdPopup';
 
 // Common Components
 export * from './common';
+
+// Navigation components
+export { default as NavigationMenu } from './NavigationMenu';
+export { default as Breadcrumb } from './Breadcrumb';

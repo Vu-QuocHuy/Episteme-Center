@@ -9,7 +9,7 @@ interface DashboardLayoutProps {
   role?: string;
 }
 
-const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
+const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, role }) => {
   const { sidebarOpen, toggleSidebar } = useSidebar();
 
   return (

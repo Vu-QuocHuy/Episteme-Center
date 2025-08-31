@@ -749,58 +749,7 @@ export interface Advertisement {
   endDate?: string;
 }
 
-// Home Page Content Management Types
-export interface HomeContent {
-  id: string;
-  section: string; // 'hero', 'about', 'services', 'contact', etc.
-  title?: string;
-  subtitle?: string;
-  description?: string;
-  content?: string;
-  imageUrl?: string;
-  buttonText?: string;
-  buttonLink?: string;
-  order: number;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
 
-export interface HomeContentFormData {
-  section: string;
-  title?: string;
-  subtitle?: string;
-  description?: string;
-  content?: string;
-  imageUrl?: string;
-  buttonText?: string;
-  buttonLink?: string;
-  order: number;
-  isActive: boolean;
-}
-
-export interface HomeContentFormErrors {
-  section?: string;
-  title?: string;
-  subtitle?: string;
-  description?: string;
-  content?: string;
-  imageUrl?: string;
-  buttonText?: string;
-  buttonLink?: string;
-  order?: string;
-  isActive?: string;
-}
-
-export interface HomeSection {
-  hero: HomeContent[];
-  about: HomeContent[];
-  services: HomeContent[];
-  features: HomeContent[];
-  testimonials: HomeContent[];
-  contact: HomeContent[];
-  footer: HomeContent[];
-}
 
 // Menu Item Types for Navigation
 export interface MenuItem {
@@ -811,4 +760,192 @@ export interface MenuItem {
   isActive: boolean;
   isExternal: boolean;
   externalUrl: string;
+}
+
+// Detailed Content Types for Sections
+export interface BannerSlide {
+  id: string;
+  title: string;
+  description?: string;
+  imageUrl: string;
+  linkUrl?: string;
+  buttonText?: string;
+  isActive: boolean;
+  order: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface AboutFeature {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  order: number;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Testimonial {
+  id: string;
+  name: string;
+  role: string;
+  content: string;
+  rating: number;
+  avatar?: string;
+  isActive: boolean;
+  order: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Statistic {
+  id: string;
+  number: string;
+  label: string;
+  icon: string;
+  order: number;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface FeaturedTeacher {
+  id: string;
+  teacherId: string;
+  teacher: {
+    id: string;
+    name: string;
+    avatar?: string;
+    specializations?: string[];
+  };
+  order: number;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// API Response Types
+export interface BannerSlidesResponse {
+  statusCode: number;
+  message: string;
+  data: BannerSlide[];
+}
+
+export interface AboutFeaturesResponse {
+  statusCode: number;
+  message: string;
+  data: AboutFeature[];
+}
+
+export interface TestimonialsResponse {
+  statusCode: number;
+  message: string;
+  data: Testimonial[];
+}
+
+export interface StatisticsResponse {
+  statusCode: number;
+  message: string;
+  data: Statistic[];
+}
+
+export interface FeaturedTeachersResponse {
+  statusCode: number;
+  message: string;
+  data: FeaturedTeacher[];
+}
+
+// Form Data Types
+export interface BannerSlideData {
+  title: string;
+  description?: string;
+  imageUrl: string;
+  linkUrl?: string;
+  buttonText?: string;
+  isActive?: boolean;
+  order?: number;
+}
+
+export interface AboutFeatureData {
+  title: string;
+  description: string;
+  icon: string;
+  order?: number;
+  isActive?: boolean;
+}
+
+export interface TestimonialData {
+  name: string;
+  role: string;
+  content: string;
+  rating: number;
+  avatar?: string;
+  isActive?: boolean;
+  order?: number;
+}
+
+export interface StatisticData {
+  number: string;
+  label: string;
+  icon: string;
+  order?: number;
+  isActive?: boolean;
+}
+
+export interface FeaturedTeacherData {
+  teacherId: string;
+  order?: number;
+  isActive?: boolean;
+}
+
+
+
+// Posts Types (like FE-webcntt-main)
+export interface Post {
+  post_id: string;
+  title: string;
+  content: string;
+  author: string;
+  create_at: string;
+  file_dto: Array<{
+    downloadUrl: string;
+    fileName: string;
+    fileType: string;
+  }>;
+}
+
+export interface PostsResponse {
+  statusCode: number;
+  message: string;
+  data: Post[];
+}
+
+// Events Types (like FE-webcntt-main)
+export interface Event {
+  eventId: string;
+  eventName: string;
+  description: string;
+  startAt: string;
+  endAt: string;
+  location: string;
+  organizedBy: string;
+  fileDTOList: Array<{
+    downloadUrl: string;
+    fileName: string;
+    fileType: string;
+  }>;
+}
+
+export interface EventsResponse {
+  statusCode: number;
+  message: string;
+  data: {
+    content: Event[];
+    totalElements: number;
+    totalPages: number;
+    size: number;
+    number: number;
+  };
 }

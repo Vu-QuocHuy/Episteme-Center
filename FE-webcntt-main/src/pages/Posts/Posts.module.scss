@@ -1,0 +1,389 @@
+.container {
+    margin-left: 50px;
+    font-family: Arial, sans-serif;
+    display: flex;
+
+    .my-post {
+        width: 20%;
+        height: fit-content;
+        margin-left: 50px;
+        margin-top: 40px;
+    }
+}
+
+.title {
+    text-align: center;
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.posts-list {
+    width: 70%;
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 20px;
+    /* Khoảng cách giữa các bài viết */
+}
+
+.post-item {
+    overflow: hidden;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    display: flex;
+    height: 190px;
+
+    &:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .post-image {
+        margin-right: 10px;
+        width: 35%;
+
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+    }
+
+    .post-content {
+        width: 100%;
+        padding: 20px;
+    }
+}
+
+.post-title {
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #282a2e;
+
+    &:hover {
+        text-decoration: underline;
+        cursor: pointer;
+    }
+}
+
+.post-meta {
+    font-size: 14px;
+    color: #888;
+    margin-bottom: 10px;
+}
+
+.post-excerpt {
+
+    h1,
+    strong,
+    h2,
+    h3,
+    h4 {
+
+        font-size: 16px;
+        color: #555;
+        margin-bottom: 15px;
+        word-wrap: break-word;
+        /* Cắt từ dài nếu cần thiết */
+        font-weight: normal;
+        /* Loại bỏ bold */
+        font-family: Arial, sans-serif;
+    }
+
+    font-size: inherit;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+
+    .read-more {
+        font-size: 14px;
+        color: #007bff;
+        text-decoration: none;
+        font-weight: bold;
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+
+    .delete-button {
+        background-color: #ff4d4d;
+        border: none;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+
+        &:hover {
+            background-color: #e60000;
+        }
+    }
+
+    .update-button {
+        margin-right: 8px;
+    }
+}
+
+// Modal container
+.update-modal {
+    position: fixed;
+    /* Đảm bảo modal luôn hiển thị trên màn hình */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    /* Căn giữa modal */
+    z-index: 1000;
+    /* Đưa modal lên trên các thành phần khác */
+    background-color: white;
+    /* Màu nền của modal */
+    padding: 20px;
+    /* Khoảng cách bên trong modal */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    /* Đổ bóng cho modal */
+    border-radius: 8px;
+    /* Bo góc */
+    max-height: 80vh;
+    /* Chiều cao tối đa của modal (80% chiều cao cửa sổ) */
+    overflow-y: auto;
+    /* Chiều rộng của modal */
+    scroll-behavior: smooth;
+
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    /* Màu nền mờ tối (50% opacity) */
+    z-index: 999;
+    /* Đặt ở lớp trên cùng */
+    width: 100%;
+    height: 100%;
+}
+
+
+
+// Header
+.update-modal h2 {
+    margin: 0;
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+    color: #333;
+}
+
+// Input fields
+.update-modal input,
+.update-modal textarea {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1rem;
+    box-sizing: border-box;
+}
+
+.update-modal textarea {
+    resize: vertical;
+    height: 100px;
+    /* Chiều cao mặc định */
+}
+
+// File list
+.update-modal .files {
+    margin-top: 20px;
+}
+
+.update-modal .file-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.update-modal .file-item img {
+    width: 20px;
+    height: 20px;
+    margin-right: 10px;
+}
+
+.update-modal .file-item button {
+    margin-left: auto;
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.update-modal .file-item button:hover {
+    background-color: #c0392b;
+}
+
+// Modal actions
+.update-modal .modal-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+.update-modal .modal-actions button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+.update-modal .modal-actions .confirm-button {
+    background-color: #27ae60;
+    color: white;
+}
+
+.update-modal .modal-actions .confirm-button:hover {
+    background-color: #2ecc71;
+}
+
+.update-modal .modal-actions .cancel-button {
+    background-color: #95a5a6;
+    color: white;
+}
+
+.update-modal .modal-actions .cancel-button:hover {
+    background-color: #7f8c8d;
+}
+
+// Background overlay
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    /* Làm tối nền */
+    z-index: 999;
+    /* Đưa overlay xuống dưới modal */
+}
+
+
+.loading {
+    text-align: center;
+    font-size: 16px;
+    color: #555;
+    margin-top: 20px;
+}
+
+.no-more-posts {
+    text-align: center;
+    font-size: 16px;
+    color: #999;
+    margin-top: 20px;
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    max-width: 400px;
+    width: 100%;
+}
+
+.modal-actions {
+    margin-top: 20px;
+    display: flex;
+    justify-content: space-around;
+}
+
+.confirm-button {
+    background-color: #28a745;
+    border: none;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+
+    &:hover {
+        background-color: #218838;
+    }
+}
+
+.cancel-button {
+    background-color: #dc3545;
+    border: none;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+
+    &:hover {
+        background-color: #c82333;
+    }
+}
+
+
+
+.pagination {
+    display: flex;
+    margin-top: 20px;
+    padding-bottom: 20px;
+    width: 100%;
+}
+
+.page-button {
+    margin: 0 5px;
+    padding: 10px 15px;
+    border: none;
+    background-color: #f0f0f0;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.page-button.active {
+    background-color: #007bff;
+    color: white;
+    font-weight: bold;
+}
+
+.page-button:hover {
+    background-color: #0056b3;
+    color: white;
+}

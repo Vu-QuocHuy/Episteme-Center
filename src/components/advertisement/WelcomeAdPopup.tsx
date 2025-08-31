@@ -7,9 +7,11 @@ interface WelcomeAdPopupProps {
   open: boolean;
   onClose: () => void;
   ads: Advertisement[];
+  width?: number;
+  height?: number;
 }
 
-const WelcomeAdPopup: React.FC<WelcomeAdPopupProps> = ({ open, onClose, ads }) => {
+const WelcomeAdPopup: React.FC<WelcomeAdPopupProps> = ({ open, onClose, ads, width = 400, height = 400 }) => {
   if (!ads || !Array.isArray(ads) || ads.length === 0) return null;
 
   // Chọn quảng cáo có priority nhỏ nhất, nếu cùng priority thì lấy createdAt sớm nhất
@@ -28,14 +30,15 @@ const WelcomeAdPopup: React.FC<WelcomeAdPopupProps> = ({ open, onClose, ads }) =
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth="sm"
-      fullWidth
+      maxWidth={false}
       PaperProps={{
         sx: {
           borderRadius: 3,
           bgcolor: 'transparent',
           boxShadow: 'none',
           overflow: 'visible',
+          width: width,
+          height: height,
         },
       }}
       sx={{
@@ -95,7 +98,7 @@ const WelcomeAdPopup: React.FC<WelcomeAdPopupProps> = ({ open, onClose, ads }) =
         >
           <CardMedia
             component="img"
-            height="400"
+            height={height}
             image={welcomeAd.imageUrl || welcomeAd.image}
             alt={welcomeAd.title}
             sx={{

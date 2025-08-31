@@ -21,7 +21,6 @@ import {
   Cancel as CancelIcon,
   Lock as LockIcon,
   VerifiedUser as VerifiedUserIcon,
-  CameraAlt as CameraIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import { updateUserAPI, updateTeacherAPI } from '../../services/api';
@@ -29,6 +28,7 @@ import { validateUserUpdate } from '../../validations/commonValidation';
 import { validateTeacherUpdate } from '../../validations/teacherValidation';
 import { commonStyles } from '../../utils/styles';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
+import { AvatarUpload } from '../../components/common';
 
 interface UserUpdateData {
   name: string;
@@ -199,14 +199,7 @@ const TeacherProfile: React.FC = () => {
     setIsEditing(false);
   };
 
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(word => word.charAt(0))
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
+
 
   if (!user) {
     return (
@@ -251,40 +244,16 @@ const TeacherProfile: React.FC = () => {
               }}>
                 <CardContent sx={{ p: 4, textAlign: 'center' }}>
                   {/* Profile Picture */}
-                  <Box sx={{ position: 'relative', display: 'inline-block', mb: 3 }}>
-              <Avatar
-                sx={{
-                        width: 120,
-                        height: 120,
-                  bgcolor: 'primary.main',
-                        fontSize: '3rem',
-                        border: '4px solid white',
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-                }}
-              >
-                {getInitials(user.name)}
-              </Avatar>
-                    <Box
-                      sx={{
-                        position: 'absolute',
-                        bottom: 0,
-                        right: 0,
-                        bgcolor: 'primary.main',
-                        borderRadius: '50%',
-                        width: 36,
-                        height: 36,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-                        '&:hover': {
-                          bgcolor: 'primary.dark',
-                        }
+                  <Box sx={{ mb: 3 }}>
+                    <AvatarUpload
+                      currentAvatar={user.avatar}
+                      userName={user.name}
+                      size={120}
+                      onAvatarUpdate={(newAvatarUrl) => {
+                        // Avatar will be updated through the context
+                        console.log('Avatar updated:', newAvatarUrl);
                       }}
-                    >
-                      <CameraIcon sx={{ color: 'white', fontSize: 20 }} />
-                    </Box>
+                    />
                   </Box>
 
                   {/* User Name */}

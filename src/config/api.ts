@@ -98,15 +98,7 @@ export interface ApiEndpoints {
     UPLOAD: string;
     DELETE: string;
   };
-  HOME_CONTENT: {
-    CREATE: string;
-    GET_ALL: string;
-    GET_BY_ID: (id: string) => string;
-    UPDATE: (id: string) => string;
-    DELETE: (id: string) => string;
-    GET_BY_SECTION: (section: string) => string;
-    GET_ACTIVE: string;
-  };
+
   DASHBOARD: {
     ADMIN: string;
     TEACHER: (id: string) => string;
@@ -119,6 +111,7 @@ export interface ApiEndpoints {
   MENUS: {
     CREATE: string;
     GET_ALL: string;
+    GET_BY_ID: (id: string) => string;
     UPDATE: (id: string) => string;
     DELETE: (id: string) => string;
   };
@@ -143,6 +136,25 @@ export interface ApiEndpoints {
     UPDATE: (id: string) => string;
     DELETE: (id: string) => string;
   };
+  // Posts endpoints (like FE-webcntt-main)
+  POSTS: {
+    GET_LATEST: string;
+    GET_ALL: string;
+    GET_BY_ID: (id: string) => string;
+    CREATE: string;
+    UPDATE: (id: string) => string;
+    DELETE: (id: string) => string;
+  };
+  // Events endpoints (like FE-webcntt-main)
+  EVENTS: {
+    GET_LATEST: string;
+    GET_ALL: string;
+    GET_BY_ID: (id: string) => string;
+    CREATE: string;
+    UPDATE: (id: string) => string;
+    DELETE: (id: string) => string;
+  };
+
 }
 
 export interface ApiConfig {
@@ -259,15 +271,8 @@ export const API_CONFIG: ApiConfig = {
       UPLOAD: '/files',
       DELETE: '/files',
     },
-    HOME_CONTENT: {
-      CREATE: '/home-content',
-      GET_ALL: '/home-content',
-      GET_BY_ID: (id: string) => `/home-content/${id}`,
-      UPDATE: (id: string) => `/home-content/${id}`,
-      DELETE: (id: string) => `/home-content/${id}`,
-      GET_BY_SECTION: (section: string) => `/home-content/section/${section}`,
-      GET_ACTIVE: '/home-content/active',
-    },
+    // Homepage Content Management
+
     DASHBOARD: {
       ADMIN: '/dashboard/admin',
       TEACHER: (id: string) => `/dashboard/teacher/${id}`,
@@ -281,6 +286,7 @@ export const API_CONFIG: ApiConfig = {
     MENUS: {
       CREATE: '/menus',
       GET_ALL: '/menus',
+      GET_BY_ID: (id: string) => `/menus/${id}`,
       UPDATE: (id: string) => `/menus/${id}`,
       DELETE: (id: string) => `/menus/${id}`,
     },
@@ -308,5 +314,24 @@ export const API_CONFIG: ApiConfig = {
       UPDATE: (id: string) => `/registrations/${id}`,
       DELETE: (id: string) => `/registrations/${id}`,
     },
+    // Posts endpoints (like FE-webcntt-main)
+    POSTS: {
+      GET_LATEST: '/posts/latest',
+      GET_ALL: '/posts',
+      GET_BY_ID: (id: string) => `/posts/${id}`,
+      CREATE: '/posts',
+      UPDATE: (id: string) => `/posts/${id}`,
+      DELETE: (id: string) => `/posts/${id}`,
+    },
+    // Events endpoints (like FE-webcntt-main)
+    EVENTS: {
+      GET_LATEST: '/events?page=0',
+      GET_ALL: '/events',
+      GET_BY_ID: (id: string) => `/events/${id}`,
+      CREATE: '/events',
+      UPDATE: (id: string) => `/events/${id}`,
+      DELETE: (id: string) => `/events/${id}`,
+    },
+
   },
 };

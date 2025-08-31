@@ -25,7 +25,7 @@ import { useNavigate } from 'react-router-dom';
 import { commonStyles } from '../../utils/styles';
 import { useAuth } from '../../contexts/AuthContext';
 import { useMenuItems } from '../../hooks/features/useMenuItems';
-import { MenuItem as MenuItemType } from '../../types';
+import { NavigationMenuItem } from '../../types';
 
 const scrollToSection = (id: string): void => {
   const el = document.getElementById(id);
@@ -42,7 +42,7 @@ const HomeHeader: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { user, logout } = useAuth();
-  const { menuItems } = useMenuItems();
+  const { menuItems, loading, error } = useMenuItems();
 
   const [scrolled, setScrolled] = useState<boolean>(false);
   const [activeSection, setActiveSection] = useState<string>('hero-section');
@@ -86,7 +86,7 @@ const HomeHeader: React.FC = () => {
     setMobileMenuAnchor(null);
   };
 
-  const handleMobileMenuItemClick = (menuItem: MenuItemType): void => {
+  const handleMobileMenuItemClick = (menuItem: NavigationMenuItem): void => {
     if (menuItem.isExternal) {
       window.open(menuItem.externalUrl, '_blank');
     } else {

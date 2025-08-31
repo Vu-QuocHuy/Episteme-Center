@@ -27,3 +27,4 @@ export { default as StatCard } from './StatCard';
 export { default as StatSection } from './StatSection';
 export type { StatItem } from './StatSection';
 export { default as LoadingErrorWrapper } from './LoadingErrorWrapper';
+export { default as AvatarUpload } from './AvatarUpload';

@@ -10,6 +10,9 @@ interface AdvertisementSliderProps {
   autoPlay?: boolean;
   interval?: number;
   ads: Advertisement[];
+  showArrows?: boolean;
+  showDots?: boolean;
+  height?: number;
 }
 
 interface ArrowProps {
@@ -79,7 +82,10 @@ const PrevArrow: React.FC<ArrowProps> = ({ style, onClick }) => {
 const AdvertisementSlider: React.FC<AdvertisementSliderProps> = ({
   autoPlay = true,
   interval = 8000,
-  ads
+  ads,
+  showArrows = true,
+  showDots = true,
+  height = 550
 }) => {
   if (!ads || ads.length === 0) return null;
 
@@ -96,24 +102,24 @@ const AdvertisementSlider: React.FC<AdvertisementSliderProps> = ({
     .slice(0, 5);
 
   const settings = {
-    dots: true,
+    dots: showDots,
     infinite: true,
     speed: 500,
     slidesToShow: 1,
     slidesToScroll: 1,
-    arrows: true,
+    arrows: showArrows,
     autoplay: autoPlay,
     autoplaySpeed: interval,
     cssEase: 'ease' as const,
-    nextArrow: <NextArrow />,
-    prevArrow: <PrevArrow />,
+    nextArrow: showArrows ? <NextArrow /> : undefined,
+    prevArrow: showArrows ? <PrevArrow /> : undefined,
   };
 
   return (
     <Box sx={{ position: 'relative' }}>
       <Slider {...settings}>
         {sortedAds.map((ad, idx) => (
-          <Box key={ad.id || idx} sx={{ position: 'relative', height: 550, overflow: 'hidden' }}>
+          <Box key={ad.id || idx} sx={{ position: 'relative', height: height, overflow: 'hidden' }}>
             <Card
               sx={{
                 height: '100%',

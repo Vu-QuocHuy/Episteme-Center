@@ -1,0 +1,74 @@
+.footer {
+    background: url("https://lh3.googleusercontent.com/p/AF1QipOE5Q-nAL1f9oDnnqfqq4VvLT5UH7j_dP0vgWMJ=s1360-w1360-h1020") no-repeat center center/cover;
+    color: #fff;
+    padding: 40px 20px;
+    position: relative;
+
+    // Lớp overlay làm tối ảnh nền
+    &::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6); // Màu đen với độ trong suốt 60%
+        z-index: 1; // Đảm bảo overlay nằm trên ảnh nền
+    }
+
+    .container {
+        position: relative; // Đảm bảo nội dung nằm trên overlay
+        z-index: 2;
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 20px;
+
+        .footer-section {
+            flex: 1;
+            min-width: 220px;
+
+            h3 {
+                margin-bottom: 10px;
+                border-bottom: 2px solid #fff;
+                display: inline-block;
+                padding-bottom: 5px;
+            }
+
+            ul {
+                list-style: none;
+                padding: 0;
+
+                li {
+                    margin-bottom: 8px;
+                }
+            }
+
+            &.contact {
+                p {
+                    margin-bottom: 10px;
+
+                    span {
+                        margin-right: 5px;
+                    }
+                }
+
+                .social-icons {
+                    margin-top: 10px;
+
+                    a {
+                        margin-right: 10px;
+                        color: #fff;
+                        font-size: 20px;
+                        transition: color 0.3s;
+
+                        &:hover {
+                            color: #ff9800;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+}

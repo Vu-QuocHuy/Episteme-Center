@@ -28,8 +28,15 @@ import ParentManagement from './pages/admin/ParentManagement';
 import Statistics from './pages/admin/Statistics';
 import FinancialStatistics from './pages/admin/FinancialStatistics';
 import StudentStatistics from './pages/admin/StudentStatistics';
-import HomeContentManagement from './pages/admin/HomeContentManagement';
+
+
 import MenuManagement from './pages/admin/MenuManagement';
+import HomepageManagement from './pages/admin/homepage/HomepageManagement';
+import BannerManagement from './pages/admin/homepage/BannerManagement';
+import AboutManagement from './pages/admin/homepage/AboutManagement';
+import FeaturedTeachersManagement from './pages/admin/homepage/FeaturedTeachersManagement';
+import TestimonialsManagement from './pages/admin/homepage/TestimonialsManagement';
+import FooterManagement from './pages/admin/homepage/FooterManagement';
 import AdminProfile from './pages/profile/AdminProfile';
 import AuditLog from './pages/admin/AuditLog';
 
@@ -54,6 +61,9 @@ import ParentProfile from './pages/profile/ParentProfile';
 
 import { USER_ROLES } from './constants';
 
+// Dynamic Menu Pages
+import DynamicMenuPage from './pages/DynamicMenuPage';
+
 const AppContent: React.FC = () => {
   const { user } = useAuth();
 
@@ -61,25 +71,29 @@ const AppContent: React.FC = () => {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Router>
-          <Routes>
-            {/* Trang chủ chung - hiển thị khác nhau tùy trạng thái đăng nhập */}
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/staff/login" element={<StaffLogin />} />
-            <Route path="/admin/login" element={<Navigate to="/staff/login" replace />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/auth/verify-email" element={<VerifyEmail />} />
-            <Route path="/unauthorized" element={<UnauthorizedAccess />} />
-            <Route path="/profile" element={
-              !user ? <Navigate to="/" replace /> : (
-                <Navigate to={
-                  user.role === USER_ROLES.ADMIN ? "/admin/profile" :
-                  user.role === USER_ROLES.TEACHER ? "/teacher/profile" :
-                  user.role === USER_ROLES.STUDENT ? "/student/profile" :
-                  user.role === USER_ROLES.PARENT ? "/parent/profile" : "/"
-                } replace />
-              )
-            } />
+        <Routes>
+          {/* Trang chủ chung - hiển thị khác nhau tùy trạng thái đăng nhập */}
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/staff/login" element={<StaffLogin />} />
+          <Route path="/admin/login" element={<Navigate to="/staff/login" replace />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/auth/verify-email" element={<VerifyEmail />} />
+          <Route path="/unauthorized" element={<UnauthorizedAccess />} />
+
+          {/* Dynamic Menu Routes */}
+          <Route path="/:slug" element={<DynamicMenuPage />} />
+
+          <Route path="/profile" element={
+            !user ? <Navigate to="/" replace /> : (
+              <Navigate to={
+                user.role === USER_ROLES.ADMIN ? "/admin/profile" :
+                user.role === USER_ROLES.TEACHER ? "/teacher/profile" :
+                user.role === USER_ROLES.STUDENT ? "/student/profile" :
+                user.role === USER_ROLES.PARENT ? "/parent/profile" : "/"
+              } replace />
+            )
+          } />
 
             {/* Admin Routes */}
             <Route
@@ -105,10 +119,19 @@ const AppContent: React.FC = () => {
                     <Route path="statistics" element={<Statistics />} />
                     <Route path="statistics/financial" element={<FinancialStatistics />} />
                     <Route path="statistics/students" element={<StudentStatistics />} />
-                    <Route path="audit-log" element={<AuditLog />} />
-                    <Route path="home-content" element={<HomeContentManagement />} />
-                    <Route path="menu" element={<MenuManagement />} />
-                    <Route path="profile" element={<AdminProfile />} />
+                                          <Route path="audit-log" element={<AuditLog />} />
+
+                      {/* Homepage Management Routes */}
+                      <Route path="homepage" element={<HomepageManagement />} />
+                      <Route path="homepage/banner" element={<BannerManagement />} />
+                      <Route path="homepage/about" element={<AboutManagement />} />
+                      <Route path="homepage/featured-teachers" element={<FeaturedTeachersManagement />} />
+                      <Route path="homepage/testimonials" element={<TestimonialsManagement />} />
+                      <Route path="homepage/footer" element={<FooterManagement />} />
+
+                      <Route path="menu" element={<MenuManagement />} />
+                     <Route path="menu-management" element={<MenuManagement />} />
+                     <Route path="profile" element={<AdminProfile />} />
                     <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
                     </Routes>
                 </ProtectedRoute>

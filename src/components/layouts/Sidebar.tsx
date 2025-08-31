@@ -15,6 +15,7 @@ import ListAltIcon from '@mui/icons-material/ListAlt';
 import PaymentIcon from '@mui/icons-material/Payment';
 import WebIcon from '@mui/icons-material/Web';
 import PeopleIcon from '@mui/icons-material/People';
+import MenuIcon from '@mui/icons-material/Menu';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSidebar } from '../../contexts/SidebarContext';
@@ -37,9 +38,11 @@ const getMenuItemsByRole = (role: string): MenuItem[] => {
         { text: 'Quản lý người dùng', icon: <PeopleIcon />, path: '/admin/users' },
         { text: 'Quản lý lớp học', icon: <ClassIcon />, path: '/admin/classes' },
         { text: 'Quản lý quảng cáo', icon: <CampaignIcon />, path: '/admin/advertisements' },
-        { text: 'Thống kê', icon: <AssessmentIcon />, path: '/admin/statistics' },
-        { text: 'Audit Logs', icon: <ListAltIcon />, path: '/admin/audit-log' },
-        { text: 'Quản lý nội dung trang chủ', icon: <WebIcon />, path: '/admin/home-content' },
+        { text: 'Quản lý Menu', icon: <MenuIcon />, path: '/admin/menu-management' },
+                  { text: 'Thống kê', icon: <AssessmentIcon />, path: '/admin/statistics' },
+          { text: 'Quản lý trang chủ', icon: <WebIcon />, path: '/admin/homepage' },
+          { text: 'Audit Logs', icon: <ListAltIcon />, path: '/admin/audit-log' },
+
       ];
     case 'teacher':
       return [
@@ -84,12 +87,14 @@ const Sidebar: React.FC<SidebarProps> = ({ open }) => {
   const menuItems = getMenuItemsByRole(role);
   const [statsOpen, setStatsOpen] = useState<boolean>(location.pathname.startsWith('/admin/statistics'));
   const [usersOpen, setUsersOpen] = useState<boolean>(location.pathname.startsWith('/admin/users'));
+  const [homepageOpen, setHomepageOpen] = useState<boolean>(location.pathname.startsWith('/admin/homepage'));
 
   // Đóng sub-menu khi sidebar đóng
   React.useEffect(() => {
     if (!open) {
       setStatsOpen(false);
       setUsersOpen(false);
+      setHomepageOpen(false);
     }
   }, [open]);
 
@@ -117,8 +122,9 @@ const Sidebar: React.FC<SidebarProps> = ({ open }) => {
           {menuItems.map((item) => {
             const isStatistics = item.path === '/admin/statistics';
             const isUsers = item.path === '/admin/users';
+            const isHomepage = item.path === '/admin/homepage';
 
-            if (!isStatistics && !isUsers) {
+            if (!isStatistics && !isUsers && !isHomepage) {
               return (
             <Tooltip key={item.text} title={!open ? item.text : ''} placement="right" arrow>
               <ListItem disablePadding sx={{ display: 'block' }}>
@@ -257,6 +263,170 @@ const Sidebar: React.FC<SidebarProps> = ({ open }) => {
                         }}
                       >
                         {open && <ListItemText primary="Phụ huynh" />}
+                      </ListItemButton>
+                    </List>
+                  )}
+                </Box>
+              );
+            }
+
+            // Homepage Management item with expandable sub-menu
+            if (isHomepage) {
+              return (
+                <Box key={item.text}>
+                  <ListItem disablePadding sx={{ display: 'block' }}>
+                    <ListItemButton
+                      selected={location.pathname.startsWith('/admin/homepage')}
+                      onClick={() => {
+                        if (!open) {
+                          openSidebar();
+                        }
+                        setHomepageOpen((v) => !v);
+                      }}
+                      sx={{
+                        minHeight: 48,
+                        justifyContent: open ? 'initial' : 'center',
+                        px: 2.5,
+                        borderRadius: 2,
+                        my: 0.5,
+                        transition: 'background 0.2s',
+                        '&.Mui-selected': {
+                          bgcolor: '#f5f5f5',
+                          color: COLORS.primary.main,
+                          '&:hover': { bgcolor: '#eeeeee' }
+                        },
+                        '&:hover': { bgcolor: '#f9f9f9' }
+                      }}
+                    >
+                      <ListItemIcon
+                        sx={{
+                          minWidth: 0,
+                          mr: open ? 2 : 'auto',
+                          justifyContent: 'center',
+                          color: location.pathname.startsWith('/admin/homepage') ? COLORS.primary.main : 'inherit',
+                        }}
+                      >
+                        <WebIcon />
+                      </ListItemIcon>
+                      {open && <ListItemText primary={item.text} sx={{ opacity: open ? 1 : 0, mr: 2 }} />}
+                      {open && (homepageOpen ? <ExpandLessIcon /> : <ExpandMoreIcon />)}
+                    </ListItemButton>
+                  </ListItem>
+                  {homepageOpen && (
+                    <List component="div" disablePadding sx={{ pl: open ? 4 : 0 }}>
+                      <ListItemButton
+                        selected={location.pathname === '/admin/homepage'}
+                        onClick={() => {
+                          if (!open) {
+                            openSidebar();
+                          }
+                          navigate('/admin/homepage');
+                        }}
+                        sx={{
+                          minHeight: 40,
+                          justifyContent: open ? 'initial' : 'center',
+                          px: 2.5,
+                          borderRadius: 2,
+                          ml: open ? 2 : 0,
+                          my: 0.25
+                        }}
+                      >
+                        {open && <ListItemText primary="Tổng quan" />}
+                      </ListItemButton>
+                      <ListItemButton
+                        selected={location.pathname === '/admin/homepage/banner'}
+                        onClick={() => {
+                          if (!open) {
+                            openSidebar();
+                          }
+                          navigate('/admin/homepage/banner');
+                        }}
+                        sx={{
+                          minHeight: 40,
+                          justifyContent: open ? 'initial' : 'center',
+                          px: 2.5,
+                          borderRadius: 2,
+                          ml: open ? 2 : 0,
+                          my: 0.25
+                        }}
+                      >
+                        {open && <ListItemText primary="Quản lý Banner" />}
+                      </ListItemButton>
+                      <ListItemButton
+                        selected={location.pathname === '/admin/homepage/about'}
+                        onClick={() => {
+                          if (!open) {
+                            openSidebar();
+                          }
+                          navigate('/admin/homepage/about');
+                        }}
+                        sx={{
+                          minHeight: 40,
+                          justifyContent: open ? 'initial' : 'center',
+                          px: 2.5,
+                          borderRadius: 2,
+                          ml: open ? 2 : 0,
+                          my: 0.25
+                        }}
+                      >
+                        {open && <ListItemText primary="Quản lý Giới thiệu" />}
+                      </ListItemButton>
+                      <ListItemButton
+                        selected={location.pathname === '/admin/homepage/featured-teachers'}
+                        onClick={() => {
+                          if (!open) {
+                            openSidebar();
+                          }
+                          navigate('/admin/homepage/featured-teachers');
+                        }}
+                        sx={{
+                          minHeight: 40,
+                          justifyContent: open ? 'initial' : 'center',
+                          px: 2.5,
+                          borderRadius: 2,
+                          ml: open ? 2 : 0,
+                          my: 0.25
+                        }}
+                      >
+                        {open && <ListItemText primary="Giảng viên nổi bật" />}
+                      </ListItemButton>
+                      <ListItemButton
+                        selected={location.pathname === '/admin/homepage/testimonials'}
+                        onClick={() => {
+                          if (!open) {
+                            openSidebar();
+                          }
+                          navigate('/admin/homepage/testimonials');
+                        }}
+                        sx={{
+                          minHeight: 40,
+                          justifyContent: open ? 'initial' : 'center',
+                          px: 2.5,
+                          borderRadius: 2,
+                          ml: open ? 2 : 0,
+                          my: 0.25
+                        }}
+                      >
+                        {open && <ListItemText primary="Đánh giá học viên" />}
+                      </ListItemButton>
+                      <ListItemButton
+                        selected={location.pathname === '/admin/homepage/footer'}
+                        onClick={() => {
+                          if (!open) {
+                            openSidebar();
+                          }
+                          navigate('/admin/homepage/footer');
+                        }}
+                        sx={{
+                          minHeight: 40,
+                          justifyContent: open ? 'initial' : 'center',
+                          px: 2.5,
+                          borderRadius: 2,
+                          ml: open ? 2 : 0,
+                          my: 0.25
+                        }}
+                      >
+                        {open && <ListItemText primary="Footer" />}
                       </ListItemButton>
                     </List>
                   )}

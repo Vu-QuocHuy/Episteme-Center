@@ -1,6 +1,11 @@
 import axiosInstance from '../utils/axios.customize';
 import { API_CONFIG } from '../config/api';
-import { ClassFormData, HomeContentFormData } from '../types';
+import {
+  ClassFormData,
+  MenuItem,
+  PostsResponse,
+  EventsResponse
+} from '../types';
 import { createQueryParams } from '../utils/apiHelpers';
 
 // Type definitions for API parameters and responses
@@ -596,62 +601,7 @@ export const updateAnnouncementAPI = (id: string, data: Partial<AnnouncementData
 export const deleteAnnouncementAPI = (id: string) =>
   axiosInstance.delete(API_CONFIG.ENDPOINTS.ANNOUNCEMENTS.DELETE(id));
 
-// Home Content APIs
-export const createHomeContentAPI = (data: HomeContentFormData) => {
-  return axiosInstance.post(API_CONFIG.ENDPOINTS.HOME_CONTENT.CREATE, data, {
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-    }
-  });
-};
 
-export const getAllHomeContentAPI = (params?: ApiParams) => {
-  const queryParams: any = {};
-  if (params?.page) queryParams.page = params.page;
-  if (params?.limit) queryParams.limit = params.limit;
-  if (params?.section) queryParams.section = params.section;
-
-  return axiosInstance.get(API_CONFIG.ENDPOINTS.HOME_CONTENT.GET_ALL, {
-    params: queryParams,
-    headers: {
-      'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-    }
-  });
-};
-
-export const getHomeContentByIdAPI = (id: string) => {
-  return axiosInstance.get(API_CONFIG.ENDPOINTS.HOME_CONTENT.GET_BY_ID(id), {
-    headers: {
-      'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-    }
-  });
-};
-
-export const updateHomeContentAPI = (id: string, data: Partial<HomeContentFormData>) => {
-  return axiosInstance.patch(API_CONFIG.ENDPOINTS.HOME_CONTENT.UPDATE(id), data, {
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-    }
-  });
-};
-
-export const deleteHomeContentAPI = (id: string) => {
-  return axiosInstance.delete(API_CONFIG.ENDPOINTS.HOME_CONTENT.DELETE(id), {
-    headers: {
-      'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-    }
-  });
-};
-
-export const getHomeContentBySectionAPI = (section: string) => {
-  return axiosInstance.get(API_CONFIG.ENDPOINTS.HOME_CONTENT.GET_BY_SECTION(section));
-};
-
-export const getActiveHomeContentAPI = () => {
-  return axiosInstance.get(API_CONFIG.ENDPOINTS.HOME_CONTENT.GET_ACTIVE);
-};
 
 // Refresh token
 export const refreshTokenAPI = () => {
@@ -681,14 +631,116 @@ export const updateUserAPI = (userId: string, data: UserUpdateData) => {
 // Menu APIs
 export interface MenuData {
   title: string;
-  url: string;
+  slug: string;
   parentId?: string;
+  order?: number;
+  isActive?: boolean;
 }
 
-export const createMenuAPI = (data: MenuData) => axiosInstance.post(API_CONFIG.ENDPOINTS.MENUS.CREATE, data);
-export const getAllMenusAPI = () => axiosInstance.get(API_CONFIG.ENDPOINTS.MENUS.GET_ALL);
-export const updateMenuAPI = (id: string, data: Partial<MenuData>) => axiosInstance.patch(API_CONFIG.ENDPOINTS.MENUS.UPDATE(id), data);
-export const deleteMenuAPI = (id: string) => axiosInstance.delete(API_CONFIG.ENDPOINTS.MENUS.DELETE(id));
+export interface MenuResponse {
+  statusCode: number;
+  message: string;
+  data: MenuItem;
+}
+
+export interface MenusListResponse {
+  statusCode: number;
+  message: string;
+  data: MenuItem[];
+}
+
+export const createMenuAPI = (data: MenuData) => {
+  const formData = new URLSearchParams();
+  formData.append('title', data.title);
+  formData.append('slug', data.slug);
+  if (data.parentId) formData.append('parentId', data.parentId);
+  if (data.order) formData.append('order', data.order.toString());
+  if (data.isActive !== undefined) formData.append('isActive', data.isActive.toString());
+
+  return axiosInstance.post<MenuResponse>(API_CONFIG.ENDPOINTS.MENUS.CREATE, formData, {
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+  });
+};
+
+export const getAllMenusAPI = (params?: { page?: number; limit?: number }) => {
+  const queryParams: any = {};
+  if (params?.page) queryParams.page = params.page;
+  if (params?.limit) queryParams.limit = params.limit;
+
+  return axiosInstance.get<MenusListResponse>(API_CONFIG.ENDPOINTS.MENUS.GET_ALL, {
+    params: queryParams
+  });
+};
+
+export const getMenuByIdAPI = (id: string) => {
+  return axiosInstance.get<MenuResponse>(API_CONFIG.ENDPOINTS.MENUS.GET_BY_ID(id));
+};
+
+export const updateMenuAPI = (id: string, data: Partial<MenuData>) => {
+  const formData = new URLSearchParams();
+  if (data.title) formData.append('title', data.title);
+  if (data.slug) formData.append('slug', data.slug);
+  if (data.parentId) formData.append('parentId', data.parentId);
+  if (data.order) formData.append('order', data.order.toString());
+  if (data.isActive !== undefined) formData.append('isActive', data.isActive.toString());
+
+  return axiosInstance.patch<MenuResponse>(API_CONFIG.ENDPOINTS.MENUS.UPDATE(id), formData, {
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+  });
+};
+
+export const deleteMenuAPI = (id: string) => {
+  return axiosInstance.delete(API_CONFIG.ENDPOINTS.MENUS.DELETE(id));
+};
+
+export const toggleMenuVisibilityAPI = (id: string, isActive: boolean) => {
+  const formData = new URLSearchParams();
+  formData.append('isActive', isActive.toString());
+
+  return axiosInstance.patch<MenuResponse>(API_CONFIG.ENDPOINTS.MENUS.UPDATE(id), formData, {
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+  });
+};
+
+// Posts APIs (like FE-webcntt-main)
+export const getLatestPostsAPI = (limit?: number) => {
+  return axiosInstance.get<PostsResponse>(API_CONFIG.ENDPOINTS.POSTS.GET_LATEST);
+};
+
+export const getAllPostsAPI = (params?: { page?: number; limit?: number }) => {
+  const queryParams: any = {};
+  if (params?.page) queryParams.page = params.page;
+  if (params?.limit) queryParams.limit = params.limit;
+
+  return axiosInstance.get<PostsResponse>(API_CONFIG.ENDPOINTS.POSTS.GET_ALL, {
+    params: queryParams
+  });
+};
+
+export const getPostByIdAPI = (id: string) => {
+  return axiosInstance.get<PostsResponse>(API_CONFIG.ENDPOINTS.POSTS.GET_BY_ID(id));
+};
+
+// Events APIs (like FE-webcntt-main)
+export const getLatestEventsAPI = (page?: number, limit?: number) => {
+  return axiosInstance.get<EventsResponse>(API_CONFIG.ENDPOINTS.EVENTS.GET_LATEST);
+};
+
+export const getAllEventsAPI = (params?: { page?: number; limit?: number }) => {
+  const queryParams: any = {};
+  if (params?.page) queryParams.page = params.page;
+  if (params?.limit) queryParams.limit = params.limit;
+
+  return axiosInstance.get<EventsResponse>(API_CONFIG.ENDPOINTS.EVENTS.GET_ALL, {
+    params: queryParams
+  });
+};
+
+export const getEventByIdAPI = (id: string) => {
+  return axiosInstance.get<EventsResponse>(API_CONFIG.ENDPOINTS.EVENTS.GET_BY_ID(id));
+};
+
+
 
 // Transaction APIs
 export interface TransactionData {
@@ -960,4 +1012,4 @@ export const getAuditLogsAPI = (params: { page?: number; limit?: number } = {}) 
   return axiosInstance.get<AuditLogResponse>(API_CONFIG.ENDPOINTS.AUDIT!.LOGS, {
     params: { page, limit },
   });
-};
+}
