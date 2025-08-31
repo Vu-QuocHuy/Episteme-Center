@@ -40,9 +40,11 @@ interface FormData {
   description: string;
   qualifications: string;
   specializations: string;
+  introduction: string;
   workExperience: string;
   salaryPerLesson: string;
   isActive: boolean;
+  typical: boolean;
 }
 
 interface FormErrors {
@@ -54,9 +56,11 @@ interface FormErrors {
   description?: string;
   qualifications?: string;
   specializations?: string;
+  introduction?: string;
   workExperience?: string;
   salaryPerLesson?: string;
   isActive?: boolean;
+  typical?: string;
 }
 
 const TeacherForm: React.FC<TeacherFormProps> = ({
@@ -77,9 +81,11 @@ const TeacherForm: React.FC<TeacherFormProps> = ({
     description: '',
     qualifications: '',
     specializations: '',
+    introduction: '',
     workExperience: '',
     salaryPerLesson: '',
-    isActive: true
+    isActive: true,
+    typical: false
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -105,9 +111,11 @@ const TeacherForm: React.FC<TeacherFormProps> = ({
         specializations: Array.isArray((teacher as any)?.specializations)
           ? (teacher as any)?.specializations.join(', ')
           : (teacher as any)?.specializations || '',
+        introduction: (teacher as any)?.introduction || '',
         workExperience: (teacher as any)?.workExperience || '',
         salaryPerLesson: (teacher as any)?.salaryPerLesson ? String((teacher as any).salaryPerLesson) : '',
-        isActive: (teacher as any)?.isActive ?? true
+        isActive: (teacher as any)?.isActive ?? true,
+        typical: (teacher as any)?.typical ?? false
       });
     } else if (!open) {
       // Reset only when dialog closes to keep inputs while open
@@ -128,9 +136,11 @@ const TeacherForm: React.FC<TeacherFormProps> = ({
       description: '',
       qualifications: '',
       specializations: '',
+      introduction: '',
       workExperience: '',
       salaryPerLesson: '',
-      isActive: true
+      isActive: true,
+      typical: false
     });
     setErrors({});
   };
@@ -171,10 +181,11 @@ const TeacherForm: React.FC<TeacherFormProps> = ({
         description: formData.description,
         qualifications: formData.qualifications ? formData.qualifications.split(',').map(q => q.trim()).filter(q => q) as any : [],
         specializations: formData.specializations ? formData.specializations.split(',').map(s => s.trim()).filter(s => s) as any : [],
-        // introduction: formData.introduction, // Commented out as it doesn't exist in Teacher interface
-        workExperience: Number(formData.workExperience),
+        introduction: formData.introduction,
+        workExperience: formData.workExperience || 'null',
         ...(formData.salaryPerLesson ? { salaryPerLesson: Number(formData.salaryPerLesson) } : {}),
-        isActive: formData.isActive
+        isActive: formData.isActive,
+        typical: formData.typical
       };
 
       await onSubmit(teacherData);
@@ -340,7 +351,20 @@ const TeacherForm: React.FC<TeacherFormProps> = ({
                     helperText={errors.description}
                     placeholder="Mô tả về kinh nghiệm giảng dạy, chuyên môn..."
                   />
-              </Grid>
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Giới thiệu"
+                    multiline
+                    rows={3}
+                    value={formData.introduction}
+                    onChange={(e) => handleInputChange('introduction', e.target.value)}
+                    error={!!errors.introduction}
+                    helperText={errors.introduction}
+                    placeholder="Giới thiệu ngắn gọn về giáo viên..."
+                  />
+                </Grid>
                 <Grid item xs={12}>
                   <TextField
                     fullWidth
@@ -376,7 +400,7 @@ const TeacherForm: React.FC<TeacherFormProps> = ({
                     placeholder="Business English, Speaking"
                   />
                 </Grid>
-                <Grid item xs={12}>
+                <Grid item xs={12} md={6}>
                   <FormControlLabel
                     control={
                       <Switch
@@ -386,6 +410,18 @@ const TeacherForm: React.FC<TeacherFormProps> = ({
                       />
                     }
                     label="Trạng thái hoạt động"
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={formData.typical}
+                        onChange={(e) => handleInputChange('typical', e.target.checked)}
+                        color="primary"
+                      />
+                    }
+                    label="Giáo viên tiêu biểu"
                   />
                 </Grid>
               </Grid>

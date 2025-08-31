@@ -3,8 +3,10 @@ import { API_CONFIG } from '../config/api';
 import {
   ClassFormData,
   MenuItem,
-  PostsResponse,
-  EventsResponse
+  CreateFeedbackRequest,
+  UpdateFeedbackRequest,
+  FeedbackResponse,
+  FeedbacksListResponse
 } from '../types';
 import { createQueryParams } from '../utils/apiHelpers';
 
@@ -71,6 +73,7 @@ export interface TeacherData {
   workExperience?: string;
   salaryPerLesson?: number;
   isActive?: boolean;
+  typical?: boolean;
 }
 
 export interface TeacherScheduleClass {
@@ -393,6 +396,10 @@ export const getAllTeachersAPI = (params?: ApiParams) => {
   });
 };
 
+export const getTypicalTeachersAPI = () => {
+  return axiosInstance.get('/teachers/typical');
+};
+
 export const getTeacherByIdAPI = (id: string) => {
   return axiosInstance.get(API_CONFIG.ENDPOINTS.TEACHERS.GET_BY_ID(id));
 };
@@ -540,13 +547,23 @@ export const payStudentAPI = (paymentId: string, data: PaymentData) => {
 };
 export const getAllTeacherPaymentsAPI = (params?: ApiParams) => {
   const queryParams = createQueryParams(params || {});
-  return axiosInstance.get('/teacher-payments/all', {
-    params: queryParams,
-    headers: {
-      'x-lang': 'vi'
-    }
+  return axiosInstance.get('/teacher-payments', {
+    params: queryParams
   });
 };
+
+// Teacher Payment APIs
+
+
+export const updateTeacherPaymentAPI = (id: string, data: {
+  method?: string;
+  amount?: number;
+  note?: string;
+}) => {
+  return axiosInstance.patch(`/api/v1/teacher-payments/${id}`, data);
+};
+
+
 
 // Backward compatibility
 export const getTeacherPaymentsAPI = getAllTeacherPaymentsAPI;
@@ -605,8 +622,8 @@ export const deleteAnnouncementAPI = (id: string) =>
 
 // Refresh token
 export const refreshTokenAPI = () => {
-  // Use HttpOnly cookie; no need to pass token explicitly
-  return axiosInstance.get(API_CONFIG.ENDPOINTS.AUTH.REFRESH_TOKEN, { withCredentials: true });
+  // Backend tự xử lý cookie
+  return axiosInstance.get(API_CONFIG.ENDPOINTS.AUTH.REFRESH_TOKEN);
 };
 
 // Gửi email xác thực
@@ -701,45 +718,6 @@ export const toggleMenuVisibilityAPI = (id: string, isActive: boolean) => {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
   });
 };
-
-// Posts APIs (like FE-webcntt-main)
-export const getLatestPostsAPI = (limit?: number) => {
-  return axiosInstance.get<PostsResponse>(API_CONFIG.ENDPOINTS.POSTS.GET_LATEST);
-};
-
-export const getAllPostsAPI = (params?: { page?: number; limit?: number }) => {
-  const queryParams: any = {};
-  if (params?.page) queryParams.page = params.page;
-  if (params?.limit) queryParams.limit = params.limit;
-
-  return axiosInstance.get<PostsResponse>(API_CONFIG.ENDPOINTS.POSTS.GET_ALL, {
-    params: queryParams
-  });
-};
-
-export const getPostByIdAPI = (id: string) => {
-  return axiosInstance.get<PostsResponse>(API_CONFIG.ENDPOINTS.POSTS.GET_BY_ID(id));
-};
-
-// Events APIs (like FE-webcntt-main)
-export const getLatestEventsAPI = (page?: number, limit?: number) => {
-  return axiosInstance.get<EventsResponse>(API_CONFIG.ENDPOINTS.EVENTS.GET_LATEST);
-};
-
-export const getAllEventsAPI = (params?: { page?: number; limit?: number }) => {
-  const queryParams: any = {};
-  if (params?.page) queryParams.page = params.page;
-  if (params?.limit) queryParams.limit = params.limit;
-
-  return axiosInstance.get<EventsResponse>(API_CONFIG.ENDPOINTS.EVENTS.GET_ALL, {
-    params: queryParams
-  });
-};
-
-export const getEventByIdAPI = (id: string) => {
-  return axiosInstance.get<EventsResponse>(API_CONFIG.ENDPOINTS.EVENTS.GET_BY_ID(id));
-};
-
 
 
 // Transaction APIs
@@ -859,7 +837,7 @@ export interface FileUploadResponse {
   message: string;
   data: {
     url: string;
-    publicId: string;
+    public_id: string;
   };
 }
 
@@ -945,6 +923,14 @@ export const getAdvertisementsAPI = (params?: { limit?: number; page?: number })
   });
 };
 
+export const getHomeBannersAPI = (limit: number = 3) => {
+  return axiosInstance.get<AdvertisementsListResponse>(`/advertisements/banners/${limit}`);
+};
+
+export const getHomePopupAPI = () => {
+  return axiosInstance.get<AdvertisementsListResponse>('/advertisements/popup');
+};
+
 export const getAdvertisementByIdAPI = (id: string) => {
   return axiosInstance.get<AdvertisementResponse>(API_CONFIG.ENDPOINTS.ADVERTISEMENTS.GET_BY_ID(id));
 };
@@ -1013,3 +999,48 @@ export const getAuditLogsAPI = (params: { page?: number; limit?: number } = {}) 
     params: { page, limit },
   });
 }
+
+// Feedback APIs
+export const createFeedbackAPI = (data: CreateFeedbackRequest) => {
+  const formData = new URLSearchParams();
+  formData.append('name', data.name);
+  formData.append('description', data.description);
+  if (data.imageUrl) formData.append('imageUrl', data.imageUrl);
+  if (data.publicId) formData.append('publicId', data.publicId);
+  if (data.socialUrl) formData.append('socialUrl', data.socialUrl);
+
+  return axiosInstance.post<FeedbackResponse>(API_CONFIG.ENDPOINTS.FEEDBACK!.CREATE, formData, {
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+  });
+};
+
+export const getFeedbacksAPI = (params?: { limit?: number; page?: number }) => {
+  const queryParams: any = {};
+  if (params?.page) queryParams.page = params.page;
+  if (params?.limit) queryParams.limit = params.limit;
+
+  return axiosInstance.get<FeedbacksListResponse>(API_CONFIG.ENDPOINTS.FEEDBACK!.GET_ALL, {
+    params: queryParams
+  });
+};
+
+export const getFeedbackByIdAPI = (id: string) => {
+  return axiosInstance.get<FeedbackResponse>(API_CONFIG.ENDPOINTS.FEEDBACK!.GET_BY_ID(id));
+};
+
+export const updateFeedbackAPI = (id: string, data: UpdateFeedbackRequest) => {
+  const formData = new URLSearchParams();
+  if (data.name !== undefined) formData.append('name', data.name);
+  if (data.description !== undefined) formData.append('description', data.description);
+  if (data.imageUrl !== undefined) formData.append('imageUrl', data.imageUrl);
+  if (data.publicId !== undefined) formData.append('publicId', data.publicId);
+  if (data.socialUrl !== undefined) formData.append('socialUrl', data.socialUrl);
+
+  return axiosInstance.patch<FeedbackResponse>(API_CONFIG.ENDPOINTS.FEEDBACK!.UPDATE(id), formData, {
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+  });
+};
+
+export const deleteFeedbackAPI = (id: string) => {
+  return axiosInstance.delete(API_CONFIG.ENDPOINTS.FEEDBACK!.DELETE(id));
+};

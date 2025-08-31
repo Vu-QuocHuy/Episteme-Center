@@ -22,8 +22,6 @@ interface HomepageSectionData {
 
 export const useHomepageManagement = () => {
   const [sections, setSections] = useState<HomepageSection[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   // Fixed sections configuration - NO API NEEDED
   const fixedSections = [
@@ -158,8 +156,6 @@ export const useHomepageManagement = () => {
 
   return {
     sections,
-    loading,
-    error,
     fixedSections,
     getSectionByType,
     updateSection,

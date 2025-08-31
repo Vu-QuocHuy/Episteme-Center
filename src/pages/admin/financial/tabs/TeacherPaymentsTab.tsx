@@ -1,12 +1,45 @@
 import React from 'react';
-import { Box, TextField, MenuItem, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Pagination } from '@mui/material';
+import {
+  Box,
+  TextField,
+  MenuItem,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Chip,
+  Pagination,
+  Button,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Grid,
+  FormControl,
+  InputLabel,
+  Select,
+  Alert
+} from '@mui/material';
+import { History as HistoryIcon, Payment as PaymentIcon } from '@mui/icons-material';
 import PaymentHistoryModal from '../../../../components/common/PaymentHistoryModal';
-import { getAllTeacherPaymentsAPI } from '../../../../services/api';
+import {
+  getAllTeacherPaymentsAPI,
+  updateTeacherPaymentAPI,
+} from '../../../../services/api';
 
 interface TeacherPayment {
   id: string;
   teacherId?: { id?: string; userId?: { id?: string; name?: string }; name?: string };
-  teacher?: { id: string; name: string; email: string; phone: string };
+  teacher?: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    salaryPerLesson?: number;
+  };
   month?: number;
   year?: number;
   salaryPerLesson?: number;
@@ -36,6 +69,19 @@ const TeacherPaymentsTab: React.FC<Props> = () => {
   const [historyOpen, setHistoryOpen] = React.useState<boolean>(false);
   const [selectedPaymentForHistory, setSelectedPaymentForHistory] = React.useState<TeacherPayment | null>(null);
 
+  // Edit states
+  const [dialogOpen, setDialogOpen] = React.useState<boolean>(false);
+  const [editingPayment, setEditingPayment] = React.useState<TeacherPayment | null>(null);
+  const [loading, setLoading] = React.useState<boolean>(false);
+  const [error, setError] = React.useState<string | null>(null);
+
+  // Form data
+  const [formData, setFormData] = React.useState({
+    method: 'banking',
+    amount: 0,
+    note: ''
+  });
+
   const fetchPayments = React.useCallback(async (page: number = 1) => {
     let params: any = { page, limit: 10 };
     if (paymentStatus !== 'all') params = { ...params, status: paymentStatus };
@@ -58,18 +104,72 @@ const TeacherPaymentsTab: React.FC<Props> = () => {
     setPagination({ page: meta.page || page, totalPages: meta.totalPages || 1 });
   }, [paymentStatus, periodType, selectedYear, selectedMonth, selectedQuarter, customStart, customEnd]);
 
-  React.useEffect(() => { fetchPayments(1); }, [fetchPayments]);
+  React.useEffect(() => {
+    fetchPayments(1);
+  }, [fetchPayments]);
 
   const onPageChange = (page: number) => fetchPayments(page);
+
+  // Edit functions
+  const handleOpenDialog = (payment: TeacherPayment) => {
+    setEditingPayment(payment);
+    setFormData({
+      method: 'banking',
+      amount: 0,
+      note: ''
+    });
+    setDialogOpen(true);
+    setError(null);
+  };
+
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
+    setEditingPayment(null);
+    setError(null);
+  };
+
+  const handleSubmit = async () => {
+    if (!editingPayment) return;
+
+    if (!formData.amount || formData.amount <= 0) {
+      setError('Vui lòng nhập số tiền thanh toán');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      await updateTeacherPaymentAPI(editingPayment.id, {
+        method: formData.method,
+        amount: formData.amount,
+        note: formData.note
+      });
+
+      handleCloseDialog();
+      fetchPayments(1);
+    } catch (err: any) {
+      setError(err?.response?.data?.message || 'Có lỗi xảy ra');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
 
   const openHistory = (payment: TeacherPayment) => {
     setSelectedPaymentForHistory(payment);
     setHistoryOpen(true);
   };
-  const closeHistory = () => { setHistoryOpen(false); setSelectedPaymentForHistory(null); };
+
+  const closeHistory = () => {
+    setHistoryOpen(false);
+    setSelectedPaymentForHistory(null);
+  };
   return (
     <>
-      <Box sx={{ mb: 3, display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
         <TextField select label="Trạng thái" value={paymentStatus} onChange={(e) => setPaymentStatus(e.target.value)} sx={{ minWidth: 150 }}>
           <MenuItem value="all">Tất cả</MenuItem>
           <MenuItem value="paid">Đã thanh toán</MenuItem>
@@ -115,6 +215,7 @@ const TeacherPaymentsTab: React.FC<Props> = () => {
             <TextField label="Đến ngày" type="date" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)} sx={{ minWidth: 150 }} InputLabelProps={{ shrink: true }} />
           </>
         )}
+        </Box>
       </Box>
 
       <TableContainer>
@@ -138,7 +239,7 @@ const TeacherPaymentsTab: React.FC<Props> = () => {
                   <span>{p.teacher?.name || p.teacherId?.userId?.name || p.teacherId?.name || 'Chưa có tên'}</span>
                 </TableCell>
                 <TableCell align="center">{p.month || 0}/{p.year || 0}</TableCell>
-                <TableCell align="right">{(p.salaryPerLesson ?? 0).toLocaleString()} ₫</TableCell>
+                <TableCell align="right">{(p.teacher?.salaryPerLesson ?? 0).toLocaleString()} ₫</TableCell>
                 <TableCell align="right">
                   {p.classes && Array.isArray(p.classes) ? p.classes.reduce((sum, c) => sum + (c.totalLessons || 0), 0) : 0}
                 </TableCell>
@@ -148,7 +249,14 @@ const TeacherPaymentsTab: React.FC<Props> = () => {
                   <Chip label={p.status === 'paid' ? 'Đã thanh toán' : p.status === 'partial' ? 'Nhận một phần' : p.status === 'pending' ? 'Chờ thanh toán' : 'Chưa thanh toán'} color={p.status === 'paid' ? 'success' : p.status === 'partial' ? 'warning' : p.status === 'pending' ? 'info' : 'error'} size="small" />
                 </TableCell>
                 <TableCell align="center">
-                  <Chip label="Lịch sử" size="small" onClick={() => openHistory(p)} />
+                  <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                    <IconButton size="small" onClick={() => handleOpenDialog(p)} color="primary">
+                      <PaymentIcon />
+                    </IconButton>
+                    <IconButton size="small" onClick={() => openHistory(p)} color="info">
+                      <HistoryIcon />
+                    </IconButton>
+                  </Box>
                 </TableCell>
               </TableRow>
             ))}
@@ -169,6 +277,72 @@ const TeacherPaymentsTab: React.FC<Props> = () => {
           teacherInfo={null as any}
         />
       )}
+
+      {/* Payment Dialog */}
+      <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          Thanh toán lương giáo viên
+        </DialogTitle>
+        <DialogContent>
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
+
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth>
+                <InputLabel>Phương thức thanh toán</InputLabel>
+                <Select
+                  value={formData.method}
+                  onChange={(e) => setFormData({ ...formData, method: e.target.value })}
+                  label="Phương thức thanh toán"
+                >
+                  <MenuItem value="banking">Chuyển khoản</MenuItem>
+                  <MenuItem value="cash">Tiền mặt</MenuItem>
+                  <MenuItem value="check">Séc</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Số tiền thanh toán"
+                type="number"
+                value={formData.amount}
+                onChange={(e) => setFormData({ ...formData, amount: Number(e.target.value) })}
+                inputProps={{ min: 0 }}
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Ghi chú"
+                multiline
+                rows={3}
+                value={formData.note}
+                onChange={(e) => setFormData({ ...formData, note: e.target.value })}
+                placeholder="Nhập ghi chú về khoản thanh toán này..."
+              />
+            </Grid>
+
+
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog}>Hủy</Button>
+          <Button
+            onClick={handleSubmit}
+            variant="contained"
+            disabled={loading}
+          >
+            {loading ? 'Đang xử lý...' : 'Thanh toán'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };

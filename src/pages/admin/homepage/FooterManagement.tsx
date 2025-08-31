@@ -2,18 +2,15 @@ import React, { useState } from 'react';
 import {
   Box, Typography, Grid, Card, CardContent, CardActions,
   Button, TextField, Switch, FormControlLabel, Dialog, DialogTitle,
-  DialogContent, DialogActions, Alert, IconButton, Chip, useTheme,
-  Divider, List, ListItem, ListItemText, ListItemSecondaryAction
+  DialogContent, DialogActions, IconButton, Chip,
+  Divider
 } from '@mui/material';
 import {
   Edit as EditIcon,
   Add as AddIcon,
   Delete as DeleteIcon,
-  ArrowBack as ArrowBackIcon,
-  Save as SaveIcon,
-  Link as LinkIcon
+  Save as SaveIcon
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../../components/layouts/DashboardLayout';
 import NotificationSnackbar from '../../../components/common/NotificationSnackbar';
 import { commonStyles } from '../../../utils/styles';
@@ -38,8 +35,6 @@ interface FooterContent {
 }
 
 const FooterManagement: React.FC = () => {
-  const theme = useTheme();
-  const navigate = useNavigate();
 
   // Mock data - in real app, this would come from API
   const [footerContent, setFooterContent] = useState<FooterContent>({
@@ -196,8 +191,8 @@ const FooterManagement: React.FC = () => {
     } else {
       // Add new link
       const newLink: FooterLink = {
-        id: Date.now().toString(),
-        ...linkFormData as FooterLink
+        ...linkFormData as FooterLink,
+        id: Date.now().toString()
       };
 
       if (linkType === 'social') {
@@ -272,14 +267,9 @@ const FooterManagement: React.FC = () => {
         <Box sx={commonStyles.contentContainer}>
           {/* Header */}
           <Box sx={commonStyles.pageHeader}>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <IconButton onClick={() => navigate('/admin/homepage')} sx={{ mr: 2 }}>
-                <ArrowBackIcon />
-              </IconButton>
-              <Typography sx={commonStyles.pageTitle}>
-                Quản lý Footer
-              </Typography>
-            </Box>
+            <Typography sx={commonStyles.pageTitle}>
+              Quản lý Footer
+            </Typography>
           </Box>
           <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
             Chỉnh sửa thông tin footer và các link liên kết

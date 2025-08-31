@@ -42,8 +42,10 @@ export interface Teacher extends BaseEntity {
   description: string;
   salary?: number; // Added salary field
   salaryPerLesson?: number; // Keep for backward compatibility
-  workExperience?: number; // Added work experience field
+  workExperience?: string; // Added work experience field
+  introduction?: string; // Added introduction field
   isActive: boolean;
+  typical?: boolean; // Added typical field
   role: {
     id: number;
     name: string;
@@ -359,8 +361,11 @@ export interface TeacherFormData {
   description: string;
   qualifications: string[];
   specializations: string[];
+  introduction?: string;
+  workExperience?: string;
   salaryPerLesson: number;
   isActive: boolean;
+  typical: boolean;
 }
 
 export interface TeacherValidationErrors {
@@ -374,8 +379,11 @@ export interface TeacherValidationErrors {
   description?: string;
   qualifications?: string;
   specializations?: string;
+  introduction?: string;
+  workExperience?: string;
   salaryPerLesson?: string;
   isActive?: string;
+  typical?: string;
 }
 
 export interface ParentUpdateData {
@@ -418,8 +426,11 @@ export interface TeacherUpdateData {
   description: string;
   qualifications: string[];
   specializations: string[];
+  introduction?: string;
+  workExperience?: string;
   salaryPerLesson: number;
   isActive: boolean;
+  typical: boolean;
 }
 
 export interface TeacherUpdateErrors {
@@ -432,8 +443,11 @@ export interface TeacherUpdateErrors {
   description?: string;
   qualifications?: string;
   specializations?: string;
+  introduction?: string;
+  workExperience?: string;
   salaryPerLesson?: string;
   isActive?: string;
+  typical?: string;
 }
 
 // Component Props Types
@@ -760,7 +774,11 @@ export interface MenuItem {
   isActive: boolean;
   isExternal: boolean;
   externalUrl: string;
+  children?: MenuItem[];
 }
+
+// Navigation Menu Item Type (alias for MenuItem)
+export interface NavigationMenuItem extends MenuItem {}
 
 // Detailed Content Types for Sections
 export interface BannerSlide {
@@ -948,4 +966,47 @@ export interface EventsResponse {
     size: number;
     number: number;
   };
+}
+
+// Feedback Types
+export interface Feedback extends BaseEntity {
+  name: string;
+  description: string;
+  imageUrl?: string;
+  publicId?: string;
+  socialUrl?: string;
+}
+
+export interface FeedbackResponse {
+  statusCode: number;
+  message: string;
+  data: Feedback;
+}
+
+export interface FeedbacksListResponse {
+  statusCode: number;
+  message: string;
+  data: {
+    result: Feedback[];
+    totalElements: number;
+    totalPages: number;
+    size: number;
+    number: number;
+  };
+}
+
+export interface CreateFeedbackRequest {
+  name: string;
+  description: string;
+  imageUrl?: string;
+  publicId?: string;
+  socialUrl?: string;
+}
+
+export interface UpdateFeedbackRequest {
+  name?: string;
+  description?: string;
+  imageUrl?: string;
+  publicId?: string;
+  socialUrl?: string;
 }

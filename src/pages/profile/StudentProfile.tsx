@@ -4,7 +4,6 @@ import {
   Typography,
   Card,
   CardContent,
-  Avatar,
   Button,
   TextField,
   Grid,

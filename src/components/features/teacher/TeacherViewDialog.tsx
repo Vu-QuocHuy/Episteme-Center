@@ -44,11 +44,11 @@ const TeacherViewDialog: React.FC<TeacherViewDialogProps> = ({
   if (loading) {
     return (
       <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-        <DialogContent sx={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center', 
-          minHeight: '200px' 
+        <DialogContent sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '200px'
         }}>
           <CircularProgress />
         </DialogContent>
@@ -188,7 +188,7 @@ const TeacherViewDialog: React.FC<TeacherViewDialogProps> = ({
                           Giới tính
                         </Typography>
                         <Typography variant="body1">
-                          {(teacher.gender || teacher.userId?.gender) === 'male' ? 'Nam' : 
+                          {(teacher.gender || teacher.userId?.gender) === 'male' ? 'Nam' :
                            (teacher.gender || teacher.userId?.gender) === 'female' ? 'Nữ' : 'N/A'}
                         </Typography>
                       </Grid>
@@ -241,6 +241,17 @@ const TeacherViewDialog: React.FC<TeacherViewDialogProps> = ({
                           sx={{ mt: 0.5 }}
                         />
                       </Grid>
+                      <Grid item xs={12}>
+                        <Typography variant="subtitle2" color="textSecondary">
+                          Giáo viên tiêu biểu
+                        </Typography>
+                        <Chip
+                          label={teacher.typical ? 'Tiêu biểu' : 'Thường'}
+                          color={teacher.typical ? 'warning' : 'default'}
+                          size="small"
+                          sx={{ mt: 0.5 }}
+                        />
+                      </Grid>
                       {teacher.salary && (
                         <Grid item xs={12}>
                           <Typography variant="subtitle2" color="textSecondary" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -248,9 +259,9 @@ const TeacherViewDialog: React.FC<TeacherViewDialogProps> = ({
                             Mức lương
                           </Typography>
                           <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                            {new Intl.NumberFormat('vi-VN', { 
-                              style: 'currency', 
-                              currency: 'VND' 
+                            {new Intl.NumberFormat('vi-VN', {
+                              style: 'currency',
+                              currency: 'VND'
                             }).format(teacher.salary)}
                           </Typography>
                         </Grid>
@@ -323,6 +334,41 @@ const TeacherViewDialog: React.FC<TeacherViewDialogProps> = ({
                     }}>
                       <Typography variant="body1">
                         {teacher.description}
+                      </Typography>
+                    </Box>
+                  </Paper>
+                </Grid>
+              )}
+
+              {/* Introduction Section */}
+              {teacher.introduction && (
+                <Grid item xs={12}>
+                  <Paper sx={{
+                    p: 3,
+                    borderRadius: 2,
+                    background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+                    border: '1px solid #e0e6ed',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                  }}>
+                    <Typography variant="h6" gutterBottom sx={{
+                      color: '#2c3e50',
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      mb: 2
+                    }}>
+                      <DescriptionIcon sx={{ fontSize: 20 }} />
+                      Giới thiệu
+                    </Typography>
+                    <Box sx={{
+                      p: 2,
+                      bgcolor: 'white',
+                      borderRadius: 1,
+                      border: '1px solid #e0e6ed'
+                    }}>
+                      <Typography variant="body1">
+                        {teacher.introduction}
                       </Typography>
                     </Box>
                   </Paper>
@@ -429,8 +475,8 @@ const TeacherViewDialog: React.FC<TeacherViewDialogProps> = ({
           </Box>
         </Box>
       </DialogContent>
-      <DialogActions sx={{ 
-        p: 3, 
+      <DialogActions sx={{
+        p: 3,
         borderTop: '1px solid #e0e6ed',
         backgroundColor: '#f8f9fa'
       }}>

@@ -26,7 +26,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { commonStyles } from '../../utils/styles';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
 import StatCard from '../../components/common/StatCard';
-// import { getAdminDashboardAPI } from '../../services/api'; // TODO: Uncomment khi API dashboard được triển khai
+import { getAdminDashboardAPI } from '../../services/api';
 
 interface PaymentInfo {
   totalRevenue: number;
@@ -98,67 +98,10 @@ const Dashboard: React.FC = () => {
     setLoading(true);
     setError('');
 
-    // TODO: Dashboard API chưa được triển khai, sử dụng mock data
-    console.log('📊 Using mock dashboard data (API not implemented yet)');
-
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    // Mock data for development
-    const mockData = {
-      totalStudent: 126,
-      totalTeacher: 15,
-      activeClasses: 8,
-      upcomingClasses: 3,
-      closedClasses: 12,
-      paymentInfo: {
-        totalRevenue: 50000000,
-        totalPaidAmount: 35000000,
-        totalUnPaidAmount: 15000000
-      },
-      teacherPaymentInfo: {
-        totalSalary: 25000000,
-        totalPaidAmount: 20000000,
-        totalUnPaidAmount: 5000000
-      },
-      recentlyPayment: [
-        {
-          name: 'Nguyễn Văn A',
-          paidAmount: 2000000,
-          status: 'paid'
-        },
-        {
-          name: 'Trần Thị B',
-          paidAmount: 1500000,
-          status: 'pending'
-        },
-        {
-          name: 'Lê Văn C',
-          paidAmount: 1800000,
-          status: 'paid'
-        }
-      ],
-      recentlySalary: [
-        {
-          name: 'Cô Hương',
-          paidAmount: 3000000,
-          status: 'paid'
-        },
-        {
-          name: 'Thầy Minh',
-          paidAmount: 3500000,
-          status: 'pending'
-        }
-      ]
-    };
-
-    setDashboardData(mockData);
-    setLoading(false);
-
-    /*
-    // TODO: Uncomment khi API dashboard được triển khai
     try {
       const response = await getAdminDashboardAPI();
+      console.log('📊 Dashboard API Response:', response);
+
       const data = response?.data?.data || response?.data || {};
 
       setDashboardData({
@@ -187,7 +130,6 @@ const Dashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
-    */
   };
 
   const formatCurrency = (amount: number): string => {
@@ -246,13 +188,7 @@ const Dashboard: React.FC = () => {
             Xin chào <strong>{user?.name || 'Admin'}</strong>, đây là tổng quan hệ thống
           </Typography>
 
-          {/* Development notice */}
-          {import.meta.env.DEV && (
-            <Alert severity="info" sx={{ mb: 3 }}>
-              📊 <strong>Chế độ phát triển:</strong> Dữ liệu dashboard hiện đang sử dụng mock data.
-              API dashboard sẽ được tích hợp khi backend hoàn tất.
-            </Alert>
-          )}
+
 
           {/* Stat Cards - First Row */}
           <Grid container spacing={3} sx={{ mb: 4 }}>

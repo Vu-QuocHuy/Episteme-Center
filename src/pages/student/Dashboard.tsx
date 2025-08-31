@@ -30,20 +30,26 @@ import { commonStyles } from '../../utils/styles';
 
 interface Attendance {
   totalSessions: number;
-  presentSessions: number;
-  absentSessions: number;
-  lateSessions: number;
+  attendedSessions: number;
   attendanceRate: number;
 }
 
+interface ClassSchedule {
+  start_date: string;
+  end_date: string;
+  days_of_week: string[];
+  time_slots: {
+    start_time: string;
+    end_time: string;
+  };
+}
+
 interface ClassItem {
-  id: string;
-  name: string;
-  teacher?: string;
-  schedule?: string;
+  className: string;
+  room: string;
+  schedule: ClassSchedule;
+  teacherName: string;
   status: string;
-  grade?: string;
-  section?: string;
 }
 
 interface DashboardData {
@@ -64,9 +70,7 @@ const Dashboard: React.FC = () => {
     completedClasses: 0,
     attendance: {
       totalSessions: 0,
-      presentSessions: 0,
-      absentSessions: 0,
-      lateSessions: 0,
+      attendedSessions: 0,
       attendanceRate: 0
     },
     classList: []
@@ -99,9 +103,7 @@ const Dashboard: React.FC = () => {
         completedClasses: data.completedClasses || 0,
         attendance: data.attendance || {
           totalSessions: 0,
-          presentSessions: 0,
-          absentSessions: 0,
-          lateSessions: 0,
+          attendedSessions: 0,
           attendanceRate: 0
         },
         classList: data.classList || []
@@ -125,18 +127,13 @@ const Dashboard: React.FC = () => {
     return days[dayNumber] || `T${dayNumber}`;
   };
 
-  const formatSchedule = (schedule: string): string => {
+  const formatSchedule = (schedule: ClassSchedule): string => {
     if (!schedule) return 'Chưa có lịch học';
-    try {
-      const scheduleObj = JSON.parse(schedule);
-      if (Array.isArray(scheduleObj) && scheduleObj.length > 0) {
-        const firstSchedule = scheduleObj[0];
-        return `${formatDayOfWeek(firstSchedule.dayOfWeek)} ${formatTime(firstSchedule.startTime)} - ${formatTime(firstSchedule.endTime)}`;
-      }
-      return schedule;
-    } catch {
-      return schedule;
-    }
+
+    const days = schedule.days_of_week.map(day => formatDayOfWeek(parseInt(day))).join(', ');
+    const timeRange = `${formatTime(schedule.time_slots.start_time)} - ${formatTime(schedule.time_slots.end_time)}`;
+
+    return `${days} | ${timeRange}`;
   };
 
   const getStatusColor = (status: string): 'success' | 'warning' | 'error' | 'default' => {
@@ -237,21 +234,15 @@ const Dashboard: React.FC = () => {
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                  <Typography variant="body2" color="success.main">Có mặt:</Typography>
+                  <Typography variant="body2" color="success.main">Đã tham gia:</Typography>
                   <Typography variant="body2" color="success.main" fontWeight="medium">
-                    {dashboardData.attendance.presentSessions}
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                  <Typography variant="body2" color="warning.main">Đi muộn:</Typography>
-                  <Typography variant="body2" color="warning.main" fontWeight="medium">
-                    {dashboardData.attendance.lateSessions}
+                    {dashboardData.attendance.attendedSessions}
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
                   <Typography variant="body2" color="error.main">Vắng mặt:</Typography>
                   <Typography variant="body2" color="error.main" fontWeight="medium">
-                    {dashboardData.attendance.absentSessions}
+                    {dashboardData.attendance.totalSessions - dashboardData.attendance.attendedSessions}
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -279,11 +270,11 @@ const Dashboard: React.FC = () => {
                 </Typography>
               ) : (
                 <Box>
-                  {dashboardData.classList.slice(0, 5).map((classItem) => (
-                    <Box key={classItem.id} sx={{ mb: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+                  {dashboardData.classList.slice(0, 5).map((classItem, index) => (
+                    <Box key={index} sx={{ mb: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                         <Typography variant="body1" fontWeight="medium">
-                          {classItem.name}
+                          {classItem.className}
                         </Typography>
                         <Chip
                           label={getStatusLabel(classItem.status)}
@@ -292,10 +283,13 @@ const Dashboard: React.FC = () => {
                         />
                       </Box>
                       <Typography variant="body2" color="text.secondary">
-                        {classItem.teacher ? `Giáo viên: ${classItem.teacher}` : 'Chưa có giáo viên'}
+                        Giáo viên: {classItem.teacherName}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        {formatSchedule(classItem.schedule || '')}
+                        Phòng: {classItem.room}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {formatSchedule(classItem.schedule)}
                       </Typography>
                     </Box>
                   ))}
@@ -334,20 +328,18 @@ const Dashboard: React.FC = () => {
                     </TableHead>
                     <TableBody>
                       {dashboardData.classList.map((classItem, index) => (
-                        <TableRow key={classItem.id} hover>
+                        <TableRow key={index} hover>
                           <TableCell>{index + 1}</TableCell>
                           <TableCell>
                             <Typography variant="body1" fontWeight="medium">
-                              {classItem.name}
+                              {classItem.className}
                             </Typography>
-                            {classItem.grade && (
-                              <Typography variant="body2" color="text.secondary">
-                                {classItem.grade} {classItem.section}
-                              </Typography>
-                            )}
+                            <Typography variant="body2" color="text.secondary">
+                              Phòng: {classItem.room}
+                            </Typography>
                           </TableCell>
-                          <TableCell>{classItem.teacher || 'Chưa có giáo viên'}</TableCell>
-                          <TableCell>{formatSchedule(classItem.schedule || '')}</TableCell>
+                          <TableCell>{classItem.teacherName}</TableCell>
+                          <TableCell>{formatSchedule(classItem.schedule)}</TableCell>
                           <TableCell align="center">
                             <Chip
                               label={getStatusLabel(classItem.status)}

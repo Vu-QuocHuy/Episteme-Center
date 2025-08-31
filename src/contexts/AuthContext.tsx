@@ -169,8 +169,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
       dispatch({ type: 'SET_LOADING', payload: false });
     } else if (userData) {
-      // Always try refresh using HttpOnly cookie when we have userData
-      // FE không cần truyền refresh token, backend sẽ đọc từ cookie
+      // Always try refresh when we have userData
+      // Backend tự xử lý cookie
       (async () => {
         try {
           let user: User = JSON.parse(userData);
@@ -202,7 +202,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           }
           if (newAccessToken) {
             localStorage.setItem('access_token', newAccessToken);
-            // refresh token kept in HttpOnly cookie now
+            // refresh token kept by backend
             dispatch({
               type: 'LOGIN_SUCCESS',
               payload: { user, accessToken: newAccessToken, refreshToken: newRefreshToken || undefined }
@@ -404,7 +404,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const refreshToken = async (): Promise<string | null> => {
     try {
-      // FE không cần đọc refresh token từ localStorage; backend dùng HttpOnly cookie
+      // Backend tự xử lý cookie
       const response = await refreshTokenAPI();
 
       let newAccessToken: string | null = null;
@@ -448,7 +448,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       // Cập nhật localStorage
       localStorage.setItem('access_token', newAccessToken);
-      // refresh token kept in HttpOnly cookie now
+      // refresh token kept by backend
 
       // Cập nhật state
       dispatch({

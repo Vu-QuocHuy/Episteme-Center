@@ -18,7 +18,7 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  Alert,
+
   CircularProgress,
   Grid,
   MenuItem as MuiMenuItem,
@@ -31,8 +31,7 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   ExpandMore as ExpandMoreIcon,
-  Visibility as VisibilityIcon,
-  VisibilityOff as VisibilityOffIcon,
+
   SubdirectoryArrowRight as SubMenuIcon,
 } from '@mui/icons-material';
 import {
@@ -205,9 +204,9 @@ const MenuManagement: React.FC = () => {
     if (item) {
       setCurrentItem(item);
       setFormData({
-        title: item.title,
-        slug: item.slug,
-        parentId: item.parentId,
+        title: item.label,
+        slug: item.sectionId,
+        parentId: item.id,
         order: item.order,
         isActive: item.isActive,
       });
@@ -274,7 +273,7 @@ const MenuManagement: React.FC = () => {
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               {level > 0 && <SubMenuIcon color="action" />}
-              <Typography variant="subtitle1">{item.title}</Typography>
+              <Typography variant="subtitle1">{item.label}</Typography>
               <Chip
                 label={item.isActive ? 'Hiện' : 'Ẩn'}
                 color={item.isActive ? 'success' : 'default'}
@@ -286,7 +285,7 @@ const MenuManagement: React.FC = () => {
                 size="small"
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleOpenDialog(null, item.id);
+                  handleOpenDialog(undefined, item.id);
                 }}
                 title="Tạo submenu"
               >
@@ -329,7 +328,7 @@ const MenuManagement: React.FC = () => {
         <AccordionDetails>
           <Box sx={{ pl: 2 }}>
             <Typography variant="body2" color="text.secondary">
-              <strong>Slug:</strong> {item.slug}
+              <strong>Slug:</strong> {item.sectionId}
             </Typography>
             <Typography variant="body2" color="text.secondary">
               <strong>Thứ tự:</strong> {item.order}
@@ -431,7 +430,7 @@ const MenuManagement: React.FC = () => {
                     </MuiMenuItem>
                     {getParentOptions().map((item) => (
                       <MuiMenuItem key={item.id} value={item.id}>
-                        {item.title}
+                        {item.label}
                       </MuiMenuItem>
                     ))}
                   </Select>

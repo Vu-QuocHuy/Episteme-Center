@@ -1,17 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Navigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import {
   Box, Typography, Container, CircularProgress, Alert,
   Grid, Card, CardContent, CardMedia, Button, Chip,
-  List, ListItem, ListItemText, ListItemIcon,
-  Accordion, AccordionSummary, AccordionDetails
+  List, ListItem, ListItemText, ListItemIcon
 } from '@mui/material';
 import {
   School as SchoolIcon,
   Book as BookIcon,
-  Event as EventIcon,
   Info as InfoIcon,
-  ExpandMore as ExpandMoreIcon,
   CheckCircle as CheckCircleIcon,
   Star as StarIcon,
   People as PeopleIcon
@@ -168,10 +165,12 @@ const DynamicMenuPage: React.FC = () => {
           // Fallback to mock data
           setMenuItem({
             id: slug,
-            title: slug.charAt(0).toUpperCase() + slug.slice(1).replace(/-/g, ' '),
-            slug: slug,
+            label: slug.charAt(0).toUpperCase() + slug.slice(1).replace(/-/g, ' '),
+            sectionId: slug,
             order: 1,
             isActive: true,
+            isExternal: false,
+            externalUrl: '',
             children: []
           });
         }

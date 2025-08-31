@@ -4,7 +4,6 @@ import {
   Typography,
   Card,
   CardContent,
-  Avatar,
   Button,
   TextField,
   Grid,
@@ -141,14 +140,7 @@ const AdminProfile: React.FC = () => {
     setIsEditing(false);
   };
 
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(word => word.charAt(0))
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
+
 
   const formatDate = (dateString: string) => {
     if (!dateString) return 'Chưa cập nhật';

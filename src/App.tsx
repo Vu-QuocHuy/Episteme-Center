@@ -11,7 +11,7 @@ import ProtectedRoute from './components/common/ProtectedRoute';
 import theme from './theme';
 
 // Pages
-import Home from './pages/Home';
+import Home from './pages/home/InteractiveHome';
 import Login from './pages/auth/Login';
 import StaffLogin from './pages/auth/StaffLogin';
 import ForgotPassword from './pages/auth/ForgotPassword';
@@ -31,7 +31,6 @@ import StudentStatistics from './pages/admin/StudentStatistics';
 
 
 import MenuManagement from './pages/admin/MenuManagement';
-import HomepageManagement from './pages/admin/homepage/HomepageManagement';
 import BannerManagement from './pages/admin/homepage/BannerManagement';
 import AboutManagement from './pages/admin/homepage/AboutManagement';
 import FeaturedTeachersManagement from './pages/admin/homepage/FeaturedTeachersManagement';
@@ -122,7 +121,7 @@ const AppContent: React.FC = () => {
                                           <Route path="audit-log" element={<AuditLog />} />
 
                       {/* Homepage Management Routes */}
-                      <Route path="homepage" element={<HomepageManagement />} />
+                      <Route path="homepage" element={<Navigate to="/admin/homepage/banner" replace />} />
                       <Route path="homepage/banner" element={<BannerManagement />} />
                       <Route path="homepage/about" element={<AboutManagement />} />
                       <Route path="homepage/featured-teachers" element={<FeaturedTeachersManagement />} />

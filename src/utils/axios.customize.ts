@@ -131,10 +131,9 @@ instance.interceptors.response.use(
                 isRefreshing = true;
 
                 try {
-                    // Gọi API refresh token: dùng HttpOnly cookie (withCredentials)
+                    // Gọi API refresh token: backend tự xử lý cookie
                     const response = await instance.get<RefreshTokenResponse>(
-                        '/auth/refresh',
-                        { withCredentials: true }
+                        '/auth/refresh'
                     );
 
                     let newAccessToken: string | null = null;

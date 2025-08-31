@@ -25,12 +25,12 @@ export const useMenuItems = () => {
   };
 
   // Transform menu items for navigation
-  const transformMenuItems = (items: MenuItem[]) => {
+  const transformMenuItems = (items: MenuItem[]): any[] => {
     return items
-      .filter(item => item.isActive && !item.isDeleted)
+      .filter(item => item.isActive)
       .map(item => ({
-        key: item.slug,
-        label: item.title,
+        key: item.sectionId,
+        label: item.label,
         children: item.children ? transformMenuItems(item.children) : undefined,
       }));
   };
@@ -44,7 +44,7 @@ export const useMenuItems = () => {
   const getMenuItemBySlug = (slug: string): MenuItem | null => {
     const findItem = (items: MenuItem[]): MenuItem | null => {
       for (const item of items) {
-        if (item.slug === slug) {
+        if (item.sectionId === slug) {
           return item;
         }
         if (item.children) {
@@ -66,7 +66,7 @@ export const useMenuItems = () => {
       for (const item of items) {
         const currentPath = [...path, item];
 
-        if (item.slug === targetSlug) {
+        if (item.sectionId === targetSlug) {
           breadcrumb.push(...currentPath);
           return true;
         }

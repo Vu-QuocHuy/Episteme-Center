@@ -42,7 +42,7 @@ const HomeHeader: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { user, logout } = useAuth();
-  const { menuItems, loading, error } = useMenuItems();
+  const { menuItems } = useMenuItems();
 
   const [scrolled, setScrolled] = useState<boolean>(false);
   const [activeSection, setActiveSection] = useState<string>('hero-section');
@@ -54,8 +54,20 @@ const HomeHeader: React.FC = () => {
     .filter(item => item.isActive)
     .sort((a, b) => a.order - b.order);
 
+  // Fallback menu items if no menu from API
+  const fallbackMenuItems = [
+    { id: '1', label: 'Trang chủ', sectionId: 'hero-section', order: 1, isActive: true, isExternal: false, externalUrl: '', children: [] },
+    { id: '2', label: 'Giới thiệu', sectionId: 'about-section', order: 2, isActive: true, isExternal: false, externalUrl: '', children: [] },
+    { id: '3', label: 'Giáo viên', sectionId: 'teachers-section', order: 3, isActive: true, isExternal: false, externalUrl: '', children: [] },
+    { id: '4', label: 'Khóa học', sectionId: 'courses-section', order: 4, isActive: true, isExternal: false, externalUrl: '', children: [] },
+    { id: '5', label: 'Liên hệ', sectionId: 'contact-section', order: 5, isActive: true, isExternal: false, externalUrl: '', children: [] }
+  ];
+
+  // Use fallback menu if no active menu items from API
+  const displayMenuItems = activeMenuItems.length > 0 ? activeMenuItems : fallbackMenuItems;
+
   // Get section IDs for scroll detection
-  const sectionIds = activeMenuItems
+  const sectionIds = displayMenuItems
     .filter(item => !item.isExternal)
     .map(item => ({ label: item.label, id: item.sectionId }));
 
@@ -243,7 +255,7 @@ const HomeHeader: React.FC = () => {
               onClose={handleMobileMenuClose}
               sx={{ mt: 1 }}
             >
-              {activeMenuItems.map((menuItem) => (
+              {displayMenuItems.map((menuItem) => (
                 <MenuItem key={menuItem.id} onClick={() => handleMobileMenuItemClick(menuItem)}>
                   {menuItem.label}
                 </MenuItem>
@@ -261,9 +273,9 @@ const HomeHeader: React.FC = () => {
                   </MenuItem>
                 </>
               ) : (
-              <MenuItem onClick={() => { navigate('/login'); handleMobileMenuClose(); }}>
-                Đăng nhập
-              </MenuItem>
+                <MenuItem onClick={() => { navigate('/login'); handleMobileMenuClose(); }}>
+                  Đăng nhập
+                </MenuItem>
               )}
             </Menu>
           </>
@@ -281,7 +293,7 @@ const HomeHeader: React.FC = () => {
               height: '100%',
               zIndex: 1,
             }}>
-              {activeMenuItems.map((menuItem) => (
+              {displayMenuItems.map((menuItem) => (
                 <Button
                   key={menuItem.id}
                   onClick={() => {

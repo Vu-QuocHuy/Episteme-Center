@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useBannerConfig } from '../../../hooks/useBannerConfig';
 import WelcomeAdPopup from '../../../components/advertisement/WelcomeAdPopup';
-import { getAdvertisementsAPI } from '../../../services/api';
+import { getHomePopupAPI } from '../../../services/api';
 import { Advertisement } from '../../../types';
 
 const HomeWelcomeAdPopup: React.FC = () => {
@@ -13,15 +13,13 @@ const HomeWelcomeAdPopup: React.FC = () => {
   useEffect(() => {
     const fetchAdvertisements = async () => {
       try {
-        const response = await getAdvertisementsAPI({ page: 1, limit: 100 });
+        const response = await getHomePopupAPI();
         if (response.data?.data?.result) {
-          const popupAds = response.data.data.result.filter(ad =>
-            ad.isActive && (ad as any).displayType === 'popup'
-          );
+          const popupAds = response.data.data.result;
           setAdvertisements(popupAds);
         }
       } catch (error) {
-        console.error('Error fetching advertisements:', error);
+        console.error('Error fetching popup advertisements:', error);
       }
     };
 

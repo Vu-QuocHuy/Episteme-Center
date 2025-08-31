@@ -3,11 +3,11 @@ import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
 import {
-  Box, Typography, Button, useTheme, useMediaQuery, Skeleton, Alert
+  Box, Typography, Button, useTheme, useMediaQuery, Skeleton
 } from '@mui/material';
 import { PlayArrow as PlayIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { getAllAdvertisementsAPI } from '../../../../services/api';
+import { getHomeBannersAPI } from '../../../../services/api';
 import { Advertisement } from '../../../../types';
 import { useBannerConfig } from '../../../../hooks/useBannerConfig';
 
@@ -24,22 +24,24 @@ const BannerCarousel: React.FC = () => {
   // Fetch advertisements data
   useEffect(() => {
     const fetchAdvertisements = async () => {
-      try {
-        setLoading(true);
-        const response = await getAllAdvertisementsAPI({
-          page: 1,
-          limit: 10,
-          type: 'banner',
-          isActive: true
-        });
+              try {
+          setLoading(true);
+          const response = await getHomeBannersAPI(10);
+          console.log('Banners API Response:', response);
 
-        if (response.data?.data) {
-          // Filter active banner advertisements
-          const bannerAds = response.data.data.filter(ad =>
-            ad.isActive && ad.displayType === 'banner'
-          );
+          // Handle different response formats
+          let bannerAds = [];
+          if (response.data?.data?.result) {
+            bannerAds = response.data.data.result;
+          } else if (Array.isArray(response.data)) {
+            bannerAds = response.data;
+          } else if (response.data && typeof response.data === 'object') {
+            // Handle case where response.data is an object with advertisements
+            bannerAds = (response.data as any).result || (response.data as any).advertisements || [];
+          }
+
+          console.log('Banners Data:', bannerAds);
           setAdvertisements(bannerAds.slice(0, bannerConfig.maxSlides)); // Use config
-        }
       } catch (error) {
         console.error('Error fetching advertisements:', error);
         setError('Không thể tải quảng cáo');
@@ -256,7 +258,7 @@ const BannerCarousel: React.FC = () => {
       </Slider>
 
       {/* Custom styles for slider */}
-      <style jsx>{`
+      <style>{`
         .slick-dots {
           bottom: 20px !important;
         }

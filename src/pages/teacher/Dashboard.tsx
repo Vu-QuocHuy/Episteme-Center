@@ -10,15 +10,8 @@ import {
   ListItemAvatar,
   Avatar,
   Divider,
-  Chip,
   LinearProgress,
   Alert,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
 } from '@mui/material';
 import {
   Class as ClassIcon,
@@ -35,11 +28,9 @@ import StatCard from '../../components/common/StatCard';
 import { getTeacherDashboardAPI } from '../../services/api';
 
 interface PaymentInfo {
-  month: number;
-  year: number;
-  totalAmount: number;
-  paidAmount: number;
-  status: string;
+  totalSalary: number;
+  totalPaidAmount: number;
+  totalUnPaidAmount: number;
 }
 
 interface ActiveClass {
@@ -53,9 +44,9 @@ interface ActiveClass {
 interface RecentlySalary {
   month: number;
   year: number;
-  totalAmount: number;
+  totalLessons: number;
+  salaryPerLesson: number;
   paidAmount: number;
-  status: string;
 }
 
 interface DashboardData {
@@ -63,7 +54,7 @@ interface DashboardData {
   teachingClasses: number;
   closedClasses: number;
   upcomingClasses: number;
-  paymentInfo: PaymentInfo[];
+  paymentInfo: PaymentInfo;
   activeClasses: ActiveClass[];
   recentlySalary: RecentlySalary;
 }
@@ -77,7 +68,11 @@ const Dashboard: React.FC = () => {
     teachingClasses: 0,
     closedClasses: 0,
     upcomingClasses: 0,
-    paymentInfo: [],
+    paymentInfo: {
+      totalSalary: 0,
+      totalPaidAmount: 0,
+      totalUnPaidAmount: 0
+    },
     activeClasses: [],
     recentlySalary: {} as RecentlySalary
   });
@@ -108,7 +103,11 @@ const Dashboard: React.FC = () => {
         teachingClasses: data.teachingClasses || 0,
         closedClasses: data.closedClasses || 0,
         upcomingClasses: data.upcomingClasses || 0,
-        paymentInfo: data.paymentInfo || [],
+        paymentInfo: data.paymentInfo || {
+          totalSalary: 0,
+          totalPaidAmount: 0,
+          totalUnPaidAmount: 0
+        },
         activeClasses: data.activeClasses || [],
         recentlySalary: data.recentlySalary || {}
       });
@@ -164,23 +163,7 @@ const Dashboard: React.FC = () => {
     return `Tháng ${month}/${year}`;
   };
 
-  const getStatusColor = (status: string): 'success' | 'warning' | 'error' | 'default' => {
-    switch (status) {
-      case 'paid': return 'success';
-      case 'partial': return 'warning';
-      case 'pending': return 'error';
-      default: return 'default';
-    }
-  };
 
-  const getStatusLabel = (status: string): string => {
-    switch (status) {
-      case 'paid': return 'Đã thanh toán';
-      case 'partial': return 'Thanh toán một phần';
-      case 'pending': return 'Chờ thanh toán';
-      default: return 'Không xác định';
-    }
-  };
 
   if (loading) {
     return (
@@ -309,13 +292,14 @@ const Dashboard: React.FC = () => {
                     {formatMonthYear(dashboardData.recentlySalary.month, dashboardData.recentlySalary.year)}
                   </Typography>
                   <Typography variant="h4" sx={{ my: 2 }}>
-                    {formatCurrency(dashboardData.recentlySalary.totalAmount)}
+                    {formatCurrency(dashboardData.recentlySalary.totalLessons * dashboardData.recentlySalary.salaryPerLesson)}
                   </Typography>
-                  <Chip
-                    label={getStatusLabel(dashboardData.recentlySalary.status)}
-                    color={getStatusColor(dashboardData.recentlySalary.status)}
-                    sx={{ mb: 2 }}
-                  />
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    Số buổi dạy: {dashboardData.recentlySalary.totalLessons}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    Lương/buổi: {formatCurrency(dashboardData.recentlySalary.salaryPerLesson)}
+                  </Typography>
                   <Typography variant="body2" color="text.secondary">
                     Đã thanh toán: {formatCurrency(dashboardData.recentlySalary.paidAmount)}
                   </Typography>
@@ -324,47 +308,45 @@ const Dashboard: React.FC = () => {
             </Paper>
           </Grid>
 
-          {/* Payment History */}
+          {/* Payment Overview */}
           <Grid item xs={12}>
             <Paper sx={{ p: 3 }}>
               <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <TrendingUpIcon color="primary" />
-                Lịch sử lương
+                Tổng quan lương
               </Typography>
-              {dashboardData.paymentInfo.length === 0 ? (
-                <Typography color="text.secondary" sx={{ textAlign: 'center', py: 3 }}>
-                  Chưa có lịch sử lương
-                </Typography>
-              ) : (
-                <TableContainer>
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Tháng/Năm</TableCell>
-                        <TableCell align="right">Tổng lương</TableCell>
-                        <TableCell align="right">Đã thanh toán</TableCell>
-                        <TableCell align="center">Trạng thái</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {dashboardData.paymentInfo.map((payment) => (
-                        <TableRow key={`${payment.month}-${payment.year}`}>
-                          <TableCell>{formatMonthYear(payment.month, payment.year)}</TableCell>
-                          <TableCell align="right">{formatCurrency(payment.totalAmount)}</TableCell>
-                          <TableCell align="right">{formatCurrency(payment.paidAmount)}</TableCell>
-                          <TableCell align="center">
-                            <Chip
-                              label={getStatusLabel(payment.status)}
-                              color={getStatusColor(payment.status)}
-                              size="small"
-                            />
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              )}
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={4}>
+                  <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'primary.light', borderRadius: 1 }}>
+                    <Typography variant="h6" color="primary">
+                      Tổng lương
+                    </Typography>
+                    <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+                      {formatCurrency(dashboardData.paymentInfo.totalSalary)}
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'success.light', borderRadius: 1 }}>
+                    <Typography variant="h6" color="success.main">
+                      Đã thanh toán
+                    </Typography>
+                    <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+                      {formatCurrency(dashboardData.paymentInfo.totalPaidAmount)}
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'warning.light', borderRadius: 1 }}>
+                    <Typography variant="h6" color="warning.main">
+                      Chưa thanh toán
+                    </Typography>
+                    <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+                      {formatCurrency(dashboardData.paymentInfo.totalUnPaidAmount)}
+                    </Typography>
+                  </Box>
+                </Grid>
+              </Grid>
             </Paper>
           </Grid>
         </Grid>

@@ -94,6 +94,13 @@ export interface ApiEndpoints {
     UPDATE: (id: string) => string;
     DELETE: (id: string) => string;
   };
+  FEEDBACK: {
+    CREATE: string;
+    GET_ALL: string;
+    GET_BY_ID: (id: string) => string;
+    UPDATE: (id: string) => string;
+    DELETE: (id: string) => string;
+  };
   FILES: {
     UPLOAD: string;
     DELETE: string;
@@ -266,6 +273,13 @@ export const API_CONFIG: ApiConfig = {
       GET_BY_ID: (id: string) => `/advertisements/${id}`,
       UPDATE: (id: string) => `/advertisements/${id}`,
       DELETE: (id: string) => `/advertisements/${id}`,
+    },
+    FEEDBACK: {
+      CREATE: '/feedback',
+      GET_ALL: '/feedback',
+      GET_BY_ID: (id: string) => `/feedback/${id}`,
+      UPDATE: (id: string) => `/feedback/${id}`,
+      DELETE: (id: string) => `/feedback/${id}`,
     },
     FILES: {
       UPLOAD: '/files',

@@ -2,9 +2,8 @@ import React, { useState, useEffect } from 'react';
 import {
   Box, Typography, Grid, Card, CardContent, CardActions,
   Button, TextField, Switch, FormControlLabel, Dialog, DialogTitle,
-  DialogContent, DialogActions, Alert, IconButton, Chip, useTheme,
-  Avatar, Checkbox, List, ListItem, ListItemAvatar, ListItemText,
-  ListItemSecondaryAction
+  DialogContent, DialogActions, IconButton, Chip,
+  Avatar
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -12,11 +11,7 @@ import {
   Delete as DeleteIcon,
   Visibility as VisibilityIcon,
   VisibilityOff as VisibilityOffIcon,
-  ArrowBack as ArrowBackIcon,
-  Save as SaveIcon,
-  DragIndicator as DragIndicatorIcon
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../../components/layouts/DashboardLayout';
 import NotificationSnackbar from '../../../components/common/NotificationSnackbar';
 import { getAllTeachersAPI } from '../../../services/api';
@@ -34,13 +29,9 @@ interface FeaturedTeacher {
 }
 
 const FeaturedTeachersManagement: React.FC = () => {
-  const theme = useTheme();
-  const navigate = useNavigate();
-
   // State
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [featuredTeachers, setFeaturedTeachers] = useState<FeaturedTeacher[]>([]);
-  const [loading, setLoading] = useState(true);
   const [openDialog, setOpenDialog] = useState(false);
   const [editingFeatured, setEditingFeatured] = useState<FeaturedTeacher | null>(null);
   const [notification, setNotification] = useState<{
@@ -66,20 +57,23 @@ const FeaturedTeachersManagement: React.FC = () => {
   useEffect(() => {
     const fetchTeachers = async () => {
       try {
-        setLoading(true);
         const response = await getAllTeachersAPI({ page: 1, limit: 100 });
-        if (response.data?.data) {
+        if (response.data?.data?.result) {
+          setTeachers(response.data.data.result);
+        } else if (response.data?.data && Array.isArray(response.data.data)) {
           setTeachers(response.data.data);
+        } else {
+          setTeachers([]);
+          console.warn('Unexpected API response structure:', response.data);
         }
       } catch (error) {
         console.error('Error fetching teachers:', error);
+        setTeachers([]);
         setNotification({
           open: true,
           message: 'Không thể tải danh sách giảng viên',
           severity: 'error'
         });
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -131,7 +125,7 @@ const FeaturedTeachersManagement: React.FC = () => {
       return;
     }
 
-    const selectedTeacher = teachers.find(t => t.id === formData.teacherId);
+    const selectedTeacher = (teachers || []).find(t => t.id === formData.teacherId);
     if (!selectedTeacher) {
       setNotification({
         open: true,
@@ -201,7 +195,7 @@ const FeaturedTeachersManagement: React.FC = () => {
   };
 
   // Get available teachers (not already featured)
-  const availableTeachers = teachers.filter(teacher =>
+  const availableTeachers = (teachers || []).filter(teacher =>
     !featuredTeachers.some(featured => featured.teacherId === teacher.id)
   );
 
@@ -211,228 +205,212 @@ const FeaturedTeachersManagement: React.FC = () => {
         <Box sx={commonStyles.contentContainer}>
           {/* Header */}
           <Box sx={commonStyles.pageHeader}>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <IconButton onClick={() => navigate('/admin/homepage')} sx={{ mr: 2 }}>
-                <ArrowBackIcon />
-              </IconButton>
-              <Typography sx={commonStyles.pageTitle}>
-                Quản lý Giảng viên nổi bật
-              </Typography>
-            </Box>
+            <Typography sx={commonStyles.pageTitle}>
+              Quản lý Giảng viên nổi bật
+            </Typography>
           </Box>
           <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
             Chọn và sắp xếp giảng viên hiển thị trong section nổi bật trên trang chủ
           </Typography>
 
-        {/* Add Featured Teacher Button */}
-        <Box sx={{ mb: 3 }}>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => handleOpenDialog()}
-            disabled={availableTeachers.length === 0}
-            sx={{ mb: 2 }}
-          >
-            Thêm giảng viên nổi bật
-          </Button>
-          {availableTeachers.length === 0 && (
-            <Typography variant="body2" color="text.secondary">
-              Tất cả giảng viên đã được thêm vào danh sách nổi bật
-            </Typography>
-          )}
-        </Box>
-
-        {/* Featured Teachers List */}
-        <Grid container spacing={3}>
-          {featuredTeachers.map((featured) => (
-            <Grid item xs={12} md={6} key={featured.id}>
-              <Card>
-                <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
-                    <Avatar
-                      src={featured.teacher.avatar}
-                      sx={{ width: 60, height: 60 }}
-                    />
-                    <Box sx={{ flex: 1 }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                        <Typography variant="h6" fontWeight="bold">
-                          {featured.customTitle || featured.teacher.name}
-                        </Typography>
-                        <Chip
-                          label={featured.isActive ? 'Đang hiển thị' : 'Đã ẩn'}
-                          color={featured.isActive ? 'success' : 'default'}
-                          size="small"
-                        />
-                      </Box>
-
-                      <Typography variant="body2" color="text.secondary" paragraph>
-                        {featured.customDescription || featured.teacher.description}
-                      </Typography>
-
-                      <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-                        <Chip label={`Thứ tự: ${featured.order}`} size="small" variant="outlined" />
-                        <Chip
-                          label={featured.teacher.specializations?.join(', ') || 'Tiếng Anh'}
-                          size="small"
-                          variant="outlined"
-                        />
-                      </Box>
-
-                      <Typography variant="caption" color="text.secondary">
-                        Email: {featured.teacher.email}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </CardContent>
-
-                <CardActions sx={{ justifyContent: 'space-between' }}>
-                  <Box>
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={featured.isActive}
-                          onChange={(e) => handleToggleVisibility(featured.id, e.target.checked)}
-                          size="small"
-                        />
-                      }
-                      label=""
-                    />
-                    {featured.isActive ? (
-                      <VisibilityIcon color="success" fontSize="small" />
-                    ) : (
-                      <VisibilityOffIcon color="action" fontSize="small" />
-                    )}
-                  </Box>
-
-                  <Box>
-                    <IconButton
-                      size="small"
-                      onClick={() => handleOpenDialog(featured)}
-                      color="primary"
-                    >
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      onClick={() => handleDeleteFeatured(featured.id)}
-                      color="error"
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </Box>
-                </CardActions>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-
-        {/* Empty State */}
-        {featuredTeachers.length === 0 && (
-          <Box sx={{ textAlign: 'center', py: 8 }}>
-            <Typography variant="h6" color="text.secondary" gutterBottom>
-              Chưa có giảng viên nổi bật nào
-            </Typography>
-            <Typography variant="body2" color="text.secondary" paragraph>
-              Hãy thêm giảng viên đầu tiên để hiển thị trong section nổi bật
-            </Typography>
+          {/* Add Featured Teacher Button */}
+          <Box sx={{ mb: 3 }}>
             <Button
               variant="contained"
               startIcon={<AddIcon />}
               onClick={() => handleOpenDialog()}
               disabled={availableTeachers.length === 0}
+              sx={{ mb: 2 }}
             >
-              Thêm giảng viên đầu tiên
+              Thêm giảng viên nổi bật
             </Button>
+            {availableTeachers.length === 0 && (
+              <Typography variant="body2" color="text.secondary">
+                Tất cả giảng viên đã được thêm vào danh sách nổi bật
+              </Typography>
+            )}
           </Box>
-        )}
 
-        {/* Dialog for adding/editing featured teacher */}
-        <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
-          <DialogTitle>
-            {editingFeatured ? 'Chỉnh sửa giảng viên nổi bật' : 'Thêm giảng viên nổi bật'}
-          </DialogTitle>
-          <DialogContent>
-            <Grid container spacing={2} sx={{ mt: 1 }}>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  select
-                  label="Chọn giảng viên *"
-                  value={formData.teacherId || ''}
-                  onChange={(e) => setFormData({ ...formData, teacherId: e.target.value })}
-                  margin="normal"
-                  required
-                >
-                  {availableTeachers.map((teacher) => (
-                    <option key={teacher.id} value={teacher.id}>
-                      {teacher.name} - {teacher.email}
-                    </option>
-                  ))}
-                </TextField>
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Tiêu đề tùy chỉnh"
-                  value={formData.customTitle || ''}
-                  onChange={(e) => setFormData({ ...formData, customTitle: e.target.value })}
-                  margin="normal"
-                  placeholder="Để trống để sử dụng tên gốc"
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Mô tả tùy chỉnh"
-                  value={formData.customDescription || ''}
-                  onChange={(e) => setFormData({ ...formData, customDescription: e.target.value })}
-                  margin="normal"
-                  multiline
-                  rows={3}
-                  placeholder="Để trống để sử dụng mô tả gốc"
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <TextField
-                  fullWidth
-                  label="Thứ tự"
-                  type="number"
-                  value={formData.order || 1}
-                  onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) })}
-                  margin="normal"
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={formData.isActive || false}
-                      onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                    />
-                  }
-                  label="Hiển thị giảng viên nổi bật"
-                />
-              </Grid>
-            </Grid>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCloseDialog}>Hủy</Button>
-            <Button onClick={handleSubmit} variant="contained">
-              {editingFeatured ? 'Cập nhật' : 'Thêm'}
-            </Button>
-          </DialogActions>
-        </Dialog>
+          {/* Featured Teachers List */}
+          <Grid container spacing={3}>
+            {featuredTeachers.map((featured) => (
+              <Grid item xs={12} md={6} key={featured.id}>
+                <Card>
+                  <CardContent>
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+                      <Avatar
+                        src={featured.teacher.avatar || undefined}
+                        sx={{ width: 60, height: 60 }}
+                      />
+                      <Box sx={{ flex: 1 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                          <Typography variant="h6" fontWeight="bold">
+                            {featured.customTitle || featured.teacher.name}
+                          </Typography>
+                          <Chip
+                            label={featured.isActive ? 'Đang hiển thị' : 'Đã ẩn'}
+                            color={featured.isActive ? 'success' : 'default'}
+                            size="small"
+                          />
+                        </Box>
 
-                 <NotificationSnackbar
-           open={notification.open}
-           message={notification.message}
-           severity={notification.severity}
-           onClose={handleNotificationClose}
-         />
-       </Box>
-     </Box>
-   </DashboardLayout>
- );
+                        <Typography variant="body2" color="text.secondary" paragraph>
+                          {featured.customDescription || featured.teacher.description}
+                        </Typography>
+
+                        <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+                          <Chip label={`Thứ tự: ${featured.order}`} size="small" variant="outlined" />
+                          <Chip
+                            label={featured.teacher.specializations?.join(', ') || 'Tiếng Anh'}
+                            size="small"
+                            variant="outlined"
+                          />
+                        </Box>
+
+                        <Typography variant="caption" color="text.secondary">
+                          Email: {featured.teacher.email}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </CardContent>
+
+                  <CardActions sx={{ justifyContent: 'space-between' }}>
+                    <Box>
+                      <IconButton
+                        onClick={() => handleOpenDialog(featured)}
+                        color="primary"
+                        size="small"
+                      >
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton
+                        onClick={() => handleDeleteFeatured(featured.id)}
+                        color="error"
+                        size="small"
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Box>
+                    <IconButton
+                      onClick={() => handleToggleVisibility(featured.id, !featured.isActive)}
+                      color={featured.isActive ? 'success' : 'default'}
+                      size="small"
+                    >
+                      {featured.isActive ? <VisibilityIcon /> : <VisibilityOffIcon />}
+                    </IconButton>
+                  </CardActions>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+
+          {/* Empty State */}
+          {featuredTeachers.length === 0 && (
+            <Box sx={{ textAlign: 'center', py: 4 }}>
+              <Typography variant="h6" color="text.secondary" gutterBottom>
+                Chưa có giảng viên nổi bật nào
+              </Typography>
+              <Typography variant="body2" color="text.secondary" paragraph>
+                Thêm giảng viên đầu tiên để hiển thị trong section nổi bật trên trang chủ
+              </Typography>
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => handleOpenDialog()}
+                disabled={availableTeachers.length === 0}
+              >
+                Thêm giảng viên đầu tiên
+              </Button>
+            </Box>
+          )}
+
+          {/* Dialog for adding/editing featured teacher */}
+          <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
+            <DialogTitle>
+              {editingFeatured ? 'Chỉnh sửa giảng viên nổi bật' : 'Thêm giảng viên nổi bật'}
+            </DialogTitle>
+            <DialogContent>
+              <Grid container spacing={2} sx={{ mt: 1 }}>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    select
+                    label="Chọn giảng viên *"
+                    value={formData.teacherId || ''}
+                    onChange={(e) => setFormData({ ...formData, teacherId: e.target.value })}
+                    margin="normal"
+                    required
+                  >
+                    {availableTeachers.map((teacher) => (
+                      <option key={teacher.id} value={teacher.id}>
+                        {teacher.name} - {teacher.email}
+                      </option>
+                    ))}
+                  </TextField>
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Tiêu đề tùy chỉnh"
+                    value={formData.customTitle || ''}
+                    onChange={(e) => setFormData({ ...formData, customTitle: e.target.value })}
+                    margin="normal"
+                    placeholder="Để trống để sử dụng tên gốc"
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Mô tả tùy chỉnh"
+                    value={formData.customDescription || ''}
+                    onChange={(e) => setFormData({ ...formData, customDescription: e.target.value })}
+                    margin="normal"
+                    multiline
+                    rows={3}
+                    placeholder="Để trống để sử dụng mô tả gốc"
+                  />
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField
+                    fullWidth
+                    label="Thứ tự"
+                    type="number"
+                    value={formData.order || 1}
+                    onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) })}
+                    margin="normal"
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={formData.isActive || false}
+                        onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                      />
+                    }
+                    label="Hiển thị giảng viên nổi bật"
+                  />
+                </Grid>
+              </Grid>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleCloseDialog}>Hủy</Button>
+              <Button onClick={handleSubmit} variant="contained">
+                {editingFeatured ? 'Cập nhật' : 'Thêm'}
+              </Button>
+            </DialogActions>
+          </Dialog>
+
+          <NotificationSnackbar
+            open={notification.open}
+            message={notification.message}
+            severity={notification.severity}
+            onClose={handleNotificationClose}
+          />
+        </Box>
+      </Box>
+    </DashboardLayout>
+  );
 };
 
 export default FeaturedTeachersManagement;

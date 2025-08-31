@@ -244,7 +244,7 @@ const AdvertisementManagement: React.FC = () => {
         setImageUploading(true);
         const uploadRes = await uploadFileAPI(file);
         setUploadedImageUrl(uploadRes.data.data.url);
-        setUploadedPublicId(uploadRes.data.data.publicId);
+        setUploadedPublicId(uploadRes.data.data.public_id);
       } catch (_err) {
         setSnackbar({ open: true, message: 'Tải ảnh thất bại, vui lòng thử lại', severity: 'error' });
         setUploadedImageUrl(undefined);
@@ -275,7 +275,7 @@ const AdvertisementManagement: React.FC = () => {
         setImageUploading(true);
         const uploadRes = await uploadFileAPI(formData.image);
         imageUrl = uploadRes.data.data.url;
-        publicId = uploadRes.data.data.publicId;
+        publicId = uploadRes.data.data.public_id;
         setImageUploading(false);
       }
 
@@ -291,15 +291,13 @@ const AdvertisementManagement: React.FC = () => {
           classId: classId || undefined,
         });
         // If a new image was uploaded in this session, delete old file when it changes
-        // Prefer comparing publicId; fallback to imageUrl comparison
-        if (
-          (uploadedPublicId && previousPublicId && uploadedPublicId !== previousPublicId) ||
-          (uploadedImageUrl && editingAd.imageUrl && uploadedImageUrl !== editingAd.imageUrl && previousPublicId)
-        ) {
+        if (previousPublicId && uploadedPublicId && uploadedPublicId !== previousPublicId) {
           try {
             await deleteFileAPI(previousPublicId);
-          } catch (_e) {
-            // swallow error - not critical for UX
+            console.log('Old file deleted successfully:', previousPublicId);
+          } catch (fileError) {
+            console.error('Error deleting old file:', fileError);
+            // Don't show error to user if file deletion fails
           }
         }
         setSnackbar({ open: true, message: 'Cập nhật quảng cáo thành công!', severity: 'success' });
@@ -329,7 +327,23 @@ const AdvertisementManagement: React.FC = () => {
   const handleDeleteAd = async (id: string): Promise<void> => {
     if (window.confirm('Bạn có chắc chắn muốn xóa quảng cáo này?')) {
       try {
+        // Find the advertisement to get its publicId
+        const advertisement = advertisements.find(ad => ad.id === id);
+
+        // Delete the advertisement first
         await deleteAdvertisementAPI(id);
+
+        // If advertisement has publicId, delete the file
+        if (advertisement?.publicId) {
+          try {
+            await deleteFileAPI(advertisement.publicId);
+            console.log('File deleted successfully:', advertisement.publicId);
+          } catch (fileError) {
+            console.error('Error deleting file:', fileError);
+            // Don't show error to user if file deletion fails, as advertisement is already deleted
+          }
+        }
+
         setSnackbar({ open: true, message: 'Xóa quảng cáo thành công!', severity: 'success' });
         fetchAdvertisements();
       } catch (err: any) {

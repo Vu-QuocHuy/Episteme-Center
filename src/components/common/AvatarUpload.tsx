@@ -95,12 +95,11 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({
       const cloudinaryData = await uploadToCloudinary(selectedFile);
 
       // Then, update avatar in your backend
-      const avatarData = {
-        imageUrl: cloudinaryData.secure_url,
-        publicId: cloudinaryData.public_id,
-      };
+      const formData = new FormData();
+      formData.append('imageUrl', cloudinaryData.secure_url);
+      formData.append('publicId', cloudinaryData.public_id);
 
-      const response = await uploadAvatarAPI(avatarData);
+      const response = await uploadAvatarAPI(formData);
 
       if (response.data) {
         // Update user context

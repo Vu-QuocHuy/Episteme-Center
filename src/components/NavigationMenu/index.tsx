@@ -7,7 +7,6 @@ import {
   ListItemText,
   Collapse,
   List,
-  ListItemButton,
   ListItem,
   Typography,
   Skeleton,
@@ -151,7 +150,7 @@ const NavigationMenu: React.FC<NavigationMenuProps> = ({
           </Typography>
         </MenuItem>
       ) : (
-        menuItems.map((item) => renderMenuItem(item))
+        menuItems.map((item: any) => renderMenuItem(item))
       )}
     </Menu>
   );

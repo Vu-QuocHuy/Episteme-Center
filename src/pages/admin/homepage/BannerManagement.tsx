@@ -1,22 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Box, Typography, Grid, Card, CardContent, CardActions,
-  Button, TextField, Switch, FormControlLabel, Dialog, DialogTitle,
-  DialogContent, DialogActions, Alert, IconButton, Chip, useTheme,
-  Tabs, Tab, Divider, Slider, FormControl, InputLabel, Select, MenuItem
+  Box, Typography, Grid, Card, CardContent,
+  Button, Switch, FormControlLabel,
+  Tabs, Tab, Slider, FormControl, InputLabel, Select, MenuItem
 } from '@mui/material';
 import {
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Visibility as VisibilityIcon,
-  VisibilityOff as VisibilityOffIcon,
-  ArrowBack as ArrowBackIcon,
-  Upload as UploadIcon,
-  Settings as SettingsIcon,
   Preview as PreviewIcon
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../../components/layouts/DashboardLayout';
 import NotificationSnackbar from '../../../components/common/NotificationSnackbar';
 import { commonStyles } from '../../../utils/styles';
@@ -55,15 +45,12 @@ function TabPanel(props: TabPanelProps) {
 }
 
 const BannerManagement: React.FC = () => {
-  const theme = useTheme();
-  const navigate = useNavigate();
-
   // State
   const [tabValue, setTabValue] = useState(0);
   const [advertisements, setAdvertisements] = useState<Advertisement[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showPreview, setShowPreview] = useState(false);
   const [showPopupPreview, setShowPopupPreview] = useState(false);
+  const [bannerFilter, setBannerFilter] = useState('banner');
+  const [popupFilter, setPopupFilter] = useState('popup');
   const [notification, setNotification] = useState<{
     open: boolean;
     message: string;
@@ -81,7 +68,6 @@ const BannerManagement: React.FC = () => {
   useEffect(() => {
     const fetchAdvertisements = async () => {
       try {
-        setLoading(true);
         const response = await getAdvertisementsAPI({ page: 1, limit: 100 });
         if (response.data?.data?.result) {
           setAdvertisements(response.data.data.result);
@@ -93,15 +79,13 @@ const BannerManagement: React.FC = () => {
           message: 'Không thể tải danh sách quảng cáo',
           severity: 'error'
         });
-      } finally {
-        setLoading(false);
       }
     };
 
     fetchAdvertisements();
   }, []);
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
 
@@ -143,8 +127,9 @@ const BannerManagement: React.FC = () => {
     setNotification(prev => ({ ...prev, open: false }));
   };
 
-  // Filter active advertisements
-  const activeAdvertisements = advertisements.filter(ad => ad.isActive);
+  // Filter advertisements by type
+  const bannerAdvertisements = advertisements.filter(ad => ad.isActive && ad.type === bannerFilter);
+  const popupAdvertisements = advertisements.filter(ad => ad.isActive && ad.type === popupFilter);
 
   return (
     <DashboardLayout role="admin">
@@ -152,14 +137,9 @@ const BannerManagement: React.FC = () => {
         <Box sx={commonStyles.contentContainer}>
           {/* Header */}
           <Box sx={commonStyles.pageHeader}>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <IconButton onClick={() => navigate('/admin/homepage')} sx={{ mr: 2 }}>
-                <ArrowBackIcon />
-              </IconButton>
-              <Typography sx={commonStyles.pageTitle}>
-                Quản lý Banner & Popup
-              </Typography>
-            </Box>
+            <Typography sx={commonStyles.pageTitle}>
+              Quản lý Banner & Popup
+            </Typography>
           </Box>
           <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
             Cấu hình banner quảng cáo và popup chào mừng trên trang chủ
@@ -194,7 +174,7 @@ const BannerManagement: React.FC = () => {
                         <Typography gutterBottom>Chiều cao banner (px)</Typography>
                         <Slider
                           value={bannerConfig.height}
-                          onChange={(e, value) => handleBannerConfigChange('height', value)}
+                          onChange={(_e, value) => handleBannerConfigChange('height', value)}
                           min={300}
                           max={800}
                           step={10}
@@ -224,7 +204,7 @@ const BannerManagement: React.FC = () => {
                           <Typography gutterBottom>Thời gian chuyển slide (ms)</Typography>
                           <Slider
                             value={bannerConfig.interval}
-                            onChange={(e, value) => handleBannerConfigChange('interval', value)}
+                            onChange={(_e, value) => handleBannerConfigChange('interval', value)}
                             min={3000}
                             max={15000}
                             step={500}
@@ -242,7 +222,7 @@ const BannerManagement: React.FC = () => {
                         <Typography gutterBottom>Số lượng quảng cáo tối đa</Typography>
                         <Slider
                           value={bannerConfig.maxSlides}
-                          onChange={(e, value) => handleBannerConfigChange('maxSlides', value)}
+                          onChange={(_e, value) => handleBannerConfigChange('maxSlides', value)}
                           min={1}
                           max={10}
                           step={1}
@@ -313,11 +293,27 @@ const BannerManagement: React.FC = () => {
                       Cách banner sẽ hiển thị trên trang chủ
                     </Typography>
 
+                    {/* Filter for Banner Preview */}
+                    <Box sx={{ mb: 3 }}>
+                      <FormControl fullWidth>
+                        <InputLabel>Loại quảng cáo</InputLabel>
+                        <Select
+                          value={bannerFilter}
+                          onChange={(e) => setBannerFilter(e.target.value)}
+                          label="Loại quảng cáo"
+                        >
+                          <MenuItem value="banner">Banner</MenuItem>
+                          <MenuItem value="popup">Popup</MenuItem>
+                          <MenuItem value="slide">Slide</MenuItem>
+                        </Select>
+                      </FormControl>
+                    </Box>
+
                     <Box sx={{ mt: 3, border: '1px solid #ddd', borderRadius: 1, overflow: 'hidden' }}>
-                      {bannerConfig.isActive && activeAdvertisements.length > 0 ? (
+                      {bannerConfig.isActive && bannerAdvertisements.length > 0 ? (
                         <Box sx={{ height: bannerConfig.height }}>
                           <AdvertisementSlider
-                            ads={activeAdvertisements.slice(0, bannerConfig.maxSlides)}
+                            ads={bannerAdvertisements.slice(0, bannerConfig.maxSlides)}
                             autoPlay={bannerConfig.autoPlay}
                             interval={bannerConfig.interval}
                             showArrows={bannerConfig.showArrows}
@@ -334,8 +330,8 @@ const BannerManagement: React.FC = () => {
                           bgcolor: 'grey.100'
                         }}>
                           <Typography color="text.secondary">
-                            {activeAdvertisements.length === 0
-                              ? 'Chưa có quảng cáo nào'
+                            {bannerAdvertisements.length === 0
+                              ? `Chưa có quảng cáo loại "${bannerFilter}" nào`
                               : 'Banner đã bị tắt'
                             }
                           </Typography>
@@ -345,10 +341,10 @@ const BannerManagement: React.FC = () => {
 
                     <Box sx={{ mt: 2 }}>
                       <Typography variant="body2" color="text.secondary">
-                        Số quảng cáo hiện có: {activeAdvertisements.length}
+                        Số quảng cáo loại "{bannerFilter}" hiện có: {bannerAdvertisements.length}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        Số quảng cáo sẽ hiển thị: {Math.min(activeAdvertisements.length, bannerConfig.maxSlides)}
+                        Số quảng cáo sẽ hiển thị: {Math.min(bannerAdvertisements.length, bannerConfig.maxSlides)}
                       </Typography>
                     </Box>
                   </CardContent>
@@ -377,7 +373,7 @@ const BannerManagement: React.FC = () => {
                         <Typography gutterBottom>Chiều rộng popup (px)</Typography>
                         <Slider
                           value={popupConfig.width}
-                          onChange={(e, value) => handlePopupConfigChange('width', value)}
+                          onChange={(_e, value) => handlePopupConfigChange('width', value)}
                           min={300}
                           max={800}
                           step={50}
@@ -394,7 +390,7 @@ const BannerManagement: React.FC = () => {
                         <Typography gutterBottom>Chiều cao popup (px)</Typography>
                         <Slider
                           value={popupConfig.height}
-                          onChange={(e, value) => handlePopupConfigChange('height', value)}
+                          onChange={(_e, value) => handlePopupConfigChange('height', value)}
                           min={300}
                           max={600}
                           step={50}
@@ -423,7 +419,7 @@ const BannerManagement: React.FC = () => {
                         <Typography gutterBottom>Độ trễ hiển thị (ms)</Typography>
                         <Slider
                           value={popupConfig.showDelay}
-                          onChange={(e, value) => handlePopupConfigChange('showDelay', value)}
+                          onChange={(_e, value) => handlePopupConfigChange('showDelay', value)}
                           min={0}
                           max={10000}
                           step={500}
@@ -470,8 +466,24 @@ const BannerManagement: React.FC = () => {
                       Cách popup sẽ hiển thị
                     </Typography>
 
+                    {/* Filter for Popup Preview */}
+                    <Box sx={{ mb: 3 }}>
+                      <FormControl fullWidth>
+                        <InputLabel>Loại quảng cáo</InputLabel>
+                        <Select
+                          value={popupFilter}
+                          onChange={(e) => setPopupFilter(e.target.value)}
+                          label="Loại quảng cáo"
+                        >
+                          <MenuItem value="popup">Popup</MenuItem>
+                          <MenuItem value="banner">Banner</MenuItem>
+                          <MenuItem value="slide">Slide</MenuItem>
+                        </Select>
+                      </FormControl>
+                    </Box>
+
                     <Box sx={{ mt: 3 }}>
-                      {popupConfig.isActive && activeAdvertisements.length > 0 ? (
+                      {popupConfig.isActive && popupAdvertisements.length > 0 ? (
                         <Box sx={{
                           border: '1px solid #ddd',
                           borderRadius: 1,
@@ -483,7 +495,7 @@ const BannerManagement: React.FC = () => {
                           <WelcomeAdPopup
                             open={showPopupPreview}
                             onClose={() => setShowPopupPreview(false)}
-                            ads={activeAdvertisements}
+                            ads={popupAdvertisements}
                             width={popupConfig.width}
                             height={popupConfig.height}
                           />
@@ -514,8 +526,8 @@ const BannerManagement: React.FC = () => {
                           bgcolor: 'grey.100'
                         }}>
                           <Typography color="text.secondary">
-                            {activeAdvertisements.length === 0
-                              ? 'Chưa có quảng cáo nào'
+                            {popupAdvertisements.length === 0
+                              ? `Chưa có quảng cáo loại "${popupFilter}" nào`
                               : 'Popup đã bị tắt'
                             }
                           </Typography>
@@ -558,7 +570,7 @@ const BannerManagement: React.FC = () => {
                       <Box sx={{ border: '1px solid #ddd', borderRadius: 1, overflow: 'hidden' }}>
                         <Box sx={{ height: bannerConfig.height }}>
                           <AdvertisementSlider
-                            ads={activeAdvertisements.slice(0, bannerConfig.maxSlides)}
+                            ads={bannerAdvertisements.slice(0, bannerConfig.maxSlides)}
                             autoPlay={bannerConfig.autoPlay}
                             interval={bannerConfig.interval}
                           />
@@ -568,7 +580,7 @@ const BannerManagement: React.FC = () => {
                   )}
 
                   {/* Popup Preview */}
-                  {popupConfig.isActive && activeAdvertisements.length > 0 && (
+                  {popupConfig.isActive && popupAdvertisements.length > 0 && (
                     <Box>
                       <Typography variant="subtitle1" gutterBottom fontWeight="bold">
                         Welcome Popup
@@ -586,7 +598,7 @@ const BannerManagement: React.FC = () => {
                   <WelcomeAdPopup
                     open={showPopupPreview}
                     onClose={() => setShowPopupPreview(false)}
-                    ads={activeAdvertisements}
+                    ads={popupAdvertisements}
                     width={popupConfig.width}
                     height={popupConfig.height}
                   />

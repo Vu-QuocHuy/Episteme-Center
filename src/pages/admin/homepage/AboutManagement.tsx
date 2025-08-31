@@ -2,17 +2,15 @@ import React, { useState } from 'react';
 import {
   Box, Typography, Grid, Card, CardContent, CardActions,
   Button, TextField, Switch, FormControlLabel, Dialog, DialogTitle,
-  DialogContent, DialogActions, Alert, IconButton, Chip, useTheme,
+  DialogContent, DialogActions, IconButton, Chip,
   Divider
 } from '@mui/material';
 import {
   Edit as EditIcon,
   Add as AddIcon,
   Delete as DeleteIcon,
-  ArrowBack as ArrowBackIcon,
   Save as SaveIcon
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../../components/layouts/DashboardLayout';
 import NotificationSnackbar from '../../../components/common/NotificationSnackbar';
 import { commonStyles } from '../../../utils/styles';
@@ -34,8 +32,6 @@ interface AboutContent {
 }
 
 const AboutManagement: React.FC = () => {
-  const theme = useTheme();
-  const navigate = useNavigate();
 
   // Mock data - in real app, this would come from API
   const [aboutContent, setAboutContent] = useState<AboutContent>({
@@ -165,8 +161,8 @@ const AboutManagement: React.FC = () => {
     } else {
       // Add new feature
       const newFeature: AboutFeature = {
-        id: Date.now().toString(),
-        ...featureFormData as AboutFeature
+        ...featureFormData as AboutFeature,
+        id: Date.now().toString()
       };
       setAboutContent(prev => ({
         ...prev,
@@ -226,14 +222,9 @@ const AboutManagement: React.FC = () => {
         <Box sx={commonStyles.contentContainer}>
           {/* Header */}
           <Box sx={commonStyles.pageHeader}>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <IconButton onClick={() => navigate('/admin/homepage')} sx={{ mr: 2 }}>
-                <ArrowBackIcon />
-              </IconButton>
-              <Typography sx={commonStyles.pageTitle}>
-                Quản lý Giới thiệu
-              </Typography>
-            </Box>
+            <Typography sx={commonStyles.pageTitle}>
+              Quản lý Giới thiệu
+            </Typography>
           </Box>
           <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
             Chỉnh sửa thông tin về trung tâm và các đặc điểm nổi bật

@@ -84,6 +84,7 @@ const TeacherTable: React.FC<TeacherTableProps> = ({
               <TableCell sx={{ color: 'black', fontWeight: 'bold' }}>Bằng cấp</TableCell>
               <TableCell sx={{ color: 'black', fontWeight: 'bold' }}>Chuyên môn</TableCell>
               <TableCell sx={{ color: 'black', fontWeight: 'bold' }}>Trạng thái</TableCell>
+              <TableCell sx={{ color: 'black', fontWeight: 'bold' }}>Tiêu biểu</TableCell>
               <TableCell sx={{ color: 'black', fontWeight: 'bold' }}>Thao tác</TableCell>
             </TableRow>
           </TableHead>
@@ -161,6 +162,22 @@ const TeacherTable: React.FC<TeacherTableProps> = ({
                     }}
                   >
                     {teacher.isActive ? 'Đang hoạt động' : 'Không hoạt động'}
+                  </Button>
+                </TableCell>
+                <TableCell>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    sx={{
+                      backgroundColor: teacher.typical ? '#ff9800' : '#9e9e9e',
+                      color: 'white',
+                      borderRadius: '20px',
+                      '&:hover': {
+                        backgroundColor: teacher.typical ? '#f57c00' : '#757575'
+                      }
+                    }}
+                  >
+                    {teacher.typical ? 'Tiêu biểu' : 'Thường'}
                   </Button>
                 </TableCell>
                 <TableCell>

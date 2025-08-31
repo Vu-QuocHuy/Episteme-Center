@@ -38,13 +38,34 @@ export const useMenuManagement = (): UseMenuManagementReturn => {
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      // Import mock data dynamically to avoid circular dependencies
-      const { mockMenuItems } = await import('../../utils/mockData');
+      // Mock data for development
+      const mockMenuItems: MenuItem[] = [
+        {
+          id: '1',
+          label: 'Trang chủ',
+          sectionId: 'hero-section',
+          order: 1,
+          isActive: true,
+          isExternal: false,
+          externalUrl: '',
+          children: []
+        },
+        {
+          id: '2',
+          label: 'Giới thiệu',
+          sectionId: 'about-section',
+          order: 2,
+          isActive: true,
+          isExternal: false,
+          externalUrl: '',
+          children: []
+        }
+      ];
 
       // Filter by search query
       let filteredItems = mockMenuItems;
       if (debouncedSearch) {
-        filteredItems = mockMenuItems.filter(item =>
+        filteredItems = mockMenuItems.filter((item: MenuItem) =>
           item.label.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
           item.sectionId.toLowerCase().includes(debouncedSearch.toLowerCase())
         );
@@ -140,4 +161,3 @@ export const useMenuManagement = (): UseMenuManagementReturn => {
     toggleMenuItemActive,
   };
 };
-
