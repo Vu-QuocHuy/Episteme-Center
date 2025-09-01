@@ -60,7 +60,7 @@ const Dashboard: React.FC = () => {
 
     try {
       const response = await getParentDashboardAPI(user?.id || '');
-      console.log('📊 Parent Dashboard API Response:', response);
+
 
       const data = response?.data?.data || response?.data || {};
 

@@ -397,11 +397,21 @@ export const getAllTeachersAPI = (params?: ApiParams) => {
 };
 
 export const getTypicalTeachersAPI = () => {
-  return axiosInstance.get('/teachers/typical');
+  const timestamp = Date.now();
+  return axiosInstance.get(`/teachers/typical?_t=${timestamp}`, {
+    headers: {
+      'Cache-Control': 'no-cache',
+      'Pragma': 'no-cache'
+    }
+  });
 };
 
 export const getTeacherByIdAPI = (id: string) => {
   return axiosInstance.get(API_CONFIG.ENDPOINTS.TEACHERS.GET_BY_ID(id));
+};
+
+export const getTeacherBySlugAPI = (slug: string) => {
+  return axiosInstance.get(`/teachers/slug/${slug}`);
 };
 
 export const updateTeacherAPI = (id: string, data: Partial<TeacherData>) => {
@@ -557,10 +567,11 @@ export const getAllTeacherPaymentsAPI = (params?: ApiParams) => {
 
 export const updateTeacherPaymentAPI = (id: string, data: {
   method?: string;
-  amount?: number;
+  paidAmount?: number;
   note?: string;
 }) => {
-  return axiosInstance.patch(`/api/v1/teacher-payments/${id}`, data);
+  // Fix duplicated /api/v1 in path; axiosInstance baseURL already includes prefix when needed
+  return axiosInstance.patch(`/teacher-payments/${id}`, data);
 };
 
 
@@ -583,6 +594,8 @@ export const payTeacherAPI = (id: string, data: PaymentData, params: ApiParams =
   });
 };
 export const getTeacherPaymentByIdAPI = (id: string) => axiosInstance.get(`/teacher-payments/${id}`);
+// Typical teacher detail (homepage featured teachers)
+export const getTypicalTeacherDetailAPI = (id: string) => axiosInstance.get(`/teachers/typical/${id}`);
 export const getAttendanceListAPI = (params: { classId: string; limit?: number; page?: number }) => {
   const { classId, ...queryParams } = params;
   return axiosInstance.get(`/sessions/all/${classId}`, { params: queryParams });
@@ -924,11 +937,23 @@ export const getAdvertisementsAPI = (params?: { limit?: number; page?: number })
 };
 
 export const getHomeBannersAPI = (limit: number = 3) => {
-  return axiosInstance.get<AdvertisementsListResponse>(`/advertisements/banners/${limit}`);
+  const timestamp = Date.now();
+  return axiosInstance.get<AdvertisementsListResponse>(`/advertisements/banners/${limit}?_t=${timestamp}`, {
+    headers: {
+      'Cache-Control': 'no-cache',
+      'Pragma': 'no-cache'
+    }
+  });
 };
 
 export const getHomePopupAPI = () => {
-  return axiosInstance.get<AdvertisementsListResponse>('/advertisements/popup');
+  const timestamp = Date.now();
+  return axiosInstance.get<AdvertisementsListResponse>(`/advertisements/popup?_t=${timestamp}`, {
+    headers: {
+      'Cache-Control': 'no-cache',
+      'Pragma': 'no-cache'
+    }
+  });
 };
 
 export const getAdvertisementByIdAPI = (id: string) => {

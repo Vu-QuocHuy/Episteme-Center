@@ -170,9 +170,9 @@ const FeedbackHome: React.FC = () => {
   const sliderRef = useRef<Slider>(null);
 
   // Khi slider chuyển, cập nhật current
-  const handleBeforeChange = (_: number, newIndex: number): void => {
+  const handleBeforeChange = (_: number, _newIndex: number): void => {
     // Update current slide for potential future use
-    console.log('Current slide:', newIndex);
+
   };
 
   // Xử lý điều hướng mũi tên

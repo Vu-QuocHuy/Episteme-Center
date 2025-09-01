@@ -100,7 +100,7 @@ const Dashboard: React.FC = () => {
 
     try {
       const response = await getAdminDashboardAPI();
-      console.log('📊 Dashboard API Response:', response);
+
 
       const data = response?.data?.data || response?.data || {};
 

@@ -204,14 +204,14 @@ const ClassManagement: React.FC = () => {
               const classItem = classes.find(c => c.id === classId);
               if (classItem) handleOpenDeleteDialog(classItem);
             }}
-            onViewDetails={(classItem) => {
-              console.log('View details:', classItem);
+            onViewDetails={(_classItem) => {
+              // Handle view details
             }}
-            onViewStudents={(classItem) => {
-              console.log('View students:', classItem);
+            onViewStudents={(_classItem) => {
+              // Handle view students
             }}
-            onViewSchedule={(classItem) => {
-              console.log('View schedule:', classItem);
+            onViewSchedule={(_classItem) => {
+              // Handle view schedule
             }}
           />
 

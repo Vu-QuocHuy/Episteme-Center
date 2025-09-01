@@ -154,9 +154,12 @@ const BannerManagement: React.FC = () => {
             </Tabs>
           </Box>
 
+          {/* Content Container with max width */}
+          <Box sx={{ maxWidth: '100%', overflow: 'hidden' }}>
+
           {/* Banner Slider Tab */}
           <TabPanel value={tabValue} index={0}>
-            <Grid container spacing={4}>
+            <Grid container spacing={3}>
               {/* Banner Configuration */}
               <Grid item xs={12}>
                 <Card>
@@ -309,25 +312,39 @@ const BannerManagement: React.FC = () => {
                       </FormControl>
                     </Box>
 
-                    <Box sx={{ mt: 3, border: '1px solid #ddd', borderRadius: 1, overflow: 'hidden' }}>
+                    <Box sx={{
+                      mt: 3,
+                      border: '1px solid #ddd',
+                      borderRadius: 1,
+                      overflow: 'hidden',
+                      maxWidth: '600px',
+                      width: '100%',
+                      mx: 'auto'
+                    }}>
                       {bannerConfig.isActive && bannerAdvertisements.length > 0 ? (
-                        <Box sx={{ height: bannerConfig.height }}>
+                        <Box sx={{
+                          height: Math.min(bannerConfig.height, 200),
+                          maxWidth: '100%',
+                          width: '100%'
+                        }}>
                           <AdvertisementSlider
                             ads={bannerAdvertisements.slice(0, bannerConfig.maxSlides)}
                             autoPlay={bannerConfig.autoPlay}
                             interval={bannerConfig.interval}
                             showArrows={bannerConfig.showArrows}
                             showDots={bannerConfig.showDots}
-                            height={bannerConfig.height}
+                            height={Math.min(bannerConfig.height, 200)}
                           />
                         </Box>
                       ) : (
                         <Box sx={{
-                          height: bannerConfig.height,
+                          height: Math.min(bannerConfig.height, 200),
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          bgcolor: 'grey.100'
+                          bgcolor: 'grey.100',
+                          maxWidth: '100%',
+                          width: '100%'
                         }}>
                           <Typography color="text.secondary">
                             {bannerAdvertisements.length === 0
@@ -355,9 +372,9 @@ const BannerManagement: React.FC = () => {
 
           {/* Welcome Popup Tab */}
           <TabPanel value={tabValue} index={1}>
-            <Grid container spacing={4}>
+            <Grid container spacing={3}>
               {/* Popup Configuration */}
-              <Grid item xs={12} md={6}>
+              <Grid item xs={12} lg={6}>
                 <Card>
                   <CardContent>
                     <Typography variant="h6" gutterBottom fontWeight="bold">
@@ -456,7 +473,7 @@ const BannerManagement: React.FC = () => {
               </Grid>
 
               {/* Popup Preview */}
-              <Grid item xs={12} md={6}>
+              <Grid item xs={12} lg={6}>
                 <Card>
                   <CardContent>
                     <Typography variant="h6" gutterBottom fontWeight="bold">
@@ -567,12 +584,19 @@ const BannerManagement: React.FC = () => {
                       <Typography variant="subtitle1" gutterBottom fontWeight="bold">
                         Banner Slider
                       </Typography>
-                      <Box sx={{ border: '1px solid #ddd', borderRadius: 1, overflow: 'hidden' }}>
-                        <Box sx={{ height: bannerConfig.height }}>
+                      <Box sx={{
+                        border: '1px solid #ddd',
+                        borderRadius: 1,
+                        overflow: 'hidden',
+                        maxWidth: '600px',
+                        mx: 'auto'
+                      }}>
+                        <Box sx={{ height: Math.min(bannerConfig.height, 200) }}>
                           <AdvertisementSlider
                             ads={bannerAdvertisements.slice(0, bannerConfig.maxSlides)}
                             autoPlay={bannerConfig.autoPlay}
                             interval={bannerConfig.interval}
+                            height={Math.min(bannerConfig.height, 200)}
                           />
                         </Box>
                       </Box>
@@ -606,6 +630,7 @@ const BannerManagement: React.FC = () => {
               </CardContent>
             </Card>
           </TabPanel>
+          </Box>
 
           <NotificationSnackbar
             open={notification.open}

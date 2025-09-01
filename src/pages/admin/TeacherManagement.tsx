@@ -19,7 +19,7 @@ import NotificationSnackbar from '../../components/common/NotificationSnackbar';
 import { Teacher } from '../../types';
 import { useTeacherManagement } from '../../hooks/features/useTeacherManagement';
 import { useTeacherForm } from '../../hooks/features/useTeacherForm';
-import { createTeacherAPI, updateTeacherAPI } from '../../services/api';
+import { createTeacherAPI } from '../../services/api';
 
 // Components
 import TeacherForm from '../../components/features/teacher/TeacherForm';
@@ -62,6 +62,7 @@ const TeacherManagement: React.FC = () => {
     loading: formLoading,
     setFormData,
     resetForm,
+    handleSubmit,
   } = useTeacherForm();
 
   // Local state
@@ -132,8 +133,6 @@ const TeacherManagement: React.FC = () => {
   };
 
   const handleAskDeleteTeacher = (teacher: Teacher): void => {
-    console.log('🔍 Teacher to delete:', teacher);
-    console.log('🔍 Teacher ID:', teacher.id);
     setTeacherToDelete(teacher);
     setOpenDeleteDialog(true);
   };
@@ -146,9 +145,14 @@ const TeacherManagement: React.FC = () => {
   const handleFormSubmit = async (teacherData: Partial<Teacher>): Promise<void> => {
     try {
       if (selectedTeacher) {
-        // Update existing teacher
-        await updateTeacherAPI(selectedTeacher.id, teacherData as any);
-        setSnackbar({ open: true, message: 'Cập nhật giáo viên thành công!', severity: 'success' });
+        // Update existing teacher - pass original data to compare changes
+        const result = await handleSubmit(teacherData as Teacher, undefined, selectedTeacher!);
+        if (result.success) {
+          setSnackbar({ open: true, message: result.message || 'Cập nhật giáo viên thành công!', severity: 'success' });
+        } else {
+          setSnackbar({ open: true, message: result.message || 'Có lỗi xảy ra khi cập nhật giáo viên', severity: 'error' });
+          return;
+        }
       } else {
         // Create new teacher
         await createTeacherAPI(teacherData as any);
@@ -170,7 +174,6 @@ const TeacherManagement: React.FC = () => {
     if (!teacherToDelete || !deleteTeacher) return;
 
     const teacherId = teacherToDelete.id || teacherToDelete.teacher_id;
-    console.log('🗑️ Deleting teacher with ID:', teacherId);
     const result = await deleteTeacher(teacherId);
 
     if (result.success) {

@@ -455,7 +455,14 @@ const TestimonialsManagement: React.FC = () => {
               <Typography variant="h6" gutterBottom color="text.secondary">
                 Xem trước giao diện feedback trên trang chủ
               </Typography>
-              <FeedbackHome />
+              <Box sx={{
+                width: '100%',
+                maxWidth: '1200px',
+                mx: 'auto',
+                overflow: 'hidden'
+              }}>
+                <FeedbackHome />
+              </Box>
             </Box>
           )}
 

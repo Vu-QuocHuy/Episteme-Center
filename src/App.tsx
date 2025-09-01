@@ -44,6 +44,7 @@ import TeacherDashboard from './pages/teacher/Dashboard';
 import TeacherMyClasses from './pages/teacher/MyClasses';
 import TeacherSchedule from './pages/teacher/Schedule';
 import TeacherProfile from './pages/profile/TeacherProfile';
+import TeacherDetail from './pages/teacher/TeacherDetail';
 import Salary from './pages/teacher/Salary';
 
 // Student Pages
@@ -83,7 +84,7 @@ const AppContent: React.FC = () => {
           {/* Dynamic Menu Routes */}
           <Route path="/:slug" element={<DynamicMenuPage />} />
 
-          <Route path="/profile" element={
+                    <Route path="/profile" element={
             !user ? <Navigate to="/" replace /> : (
               <Navigate to={
                 user.role === USER_ROLES.ADMIN ? "/admin/profile" :
@@ -99,7 +100,7 @@ const AppContent: React.FC = () => {
               path="/admin/*"
               element={
                 <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
-                    <Routes>
+                  <Routes>
                     <Route path="dashboard" element={<AdminDashboard />} />
                       <Route path="advertisements" element={<AdvertisementManagement />} />
                     <Route path="classes" element={<ClassManagement />} />
@@ -136,6 +137,9 @@ const AppContent: React.FC = () => {
                 </ProtectedRoute>
               }
             />
+
+                      {/* Teacher Detail Route - Public (must be before /teacher/*) */}
+          <Route path="/teacher/:slug" element={<TeacherDetail />} />
 
             {/* Teacher Routes */}
             <Route

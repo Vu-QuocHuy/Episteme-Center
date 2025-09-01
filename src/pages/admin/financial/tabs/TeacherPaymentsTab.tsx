@@ -18,16 +18,20 @@ import {
   DialogContent,
   DialogActions,
   Grid,
+  Paper,
+  Divider,
   FormControl,
   InputLabel,
   Select,
-  Alert
+  Alert,
+  InputAdornment
 } from '@mui/material';
-import { History as HistoryIcon, Payment as PaymentIcon } from '@mui/icons-material';
+import { History as HistoryIcon, Payment as PaymentIcon, AttachMoney as AttachMoneyIcon, Paid as PaidIcon, AccountBalanceWallet as WalletIcon } from '@mui/icons-material';
 import PaymentHistoryModal from '../../../../components/common/PaymentHistoryModal';
 import {
   getAllTeacherPaymentsAPI,
   updateTeacherPaymentAPI,
+  getTeacherPaymentByIdAPI,
 } from '../../../../services/api';
 
 interface TeacherPayment {
@@ -74,11 +78,12 @@ const TeacherPaymentsTab: React.FC<Props> = () => {
   const [editingPayment, setEditingPayment] = React.useState<TeacherPayment | null>(null);
   const [loading, setLoading] = React.useState<boolean>(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [dialogSummary, setDialogSummary] = React.useState<{ totalAmount: number; paidAmount: number; remainingAmount: number } | null>(null);
 
   // Form data
   const [formData, setFormData] = React.useState({
     method: 'banking',
-    amount: 0,
+    paidAmount: 0,
     note: ''
   });
 
@@ -111,28 +116,49 @@ const TeacherPaymentsTab: React.FC<Props> = () => {
   const onPageChange = (page: number) => fetchPayments(page);
 
   // Edit functions
-  const handleOpenDialog = (payment: TeacherPayment) => {
-    setEditingPayment(payment);
-    setFormData({
-      method: 'banking',
-      amount: 0,
-      note: ''
-    });
-    setDialogOpen(true);
+  const handleOpenDialog = async (payment: TeacherPayment) => {
     setError(null);
+    setLoading(true);
+    try {
+      // Fetch latest summary for the selected payment
+      const res = await getTeacherPaymentByIdAPI(payment.id);
+      const data: any = (res as any)?.data?.data || (res as any)?.data || {};
+      const totalAmount = Number(data.totalAmount || payment.totalAmount || 0);
+      const paidAmount = Number(data.paidAmount || payment.paidAmount || 0);
+      const remainingAmount = Math.max(totalAmount - paidAmount, 0);
+
+      setEditingPayment({ ...payment, totalAmount, paidAmount } as any);
+      setDialogSummary({ totalAmount, paidAmount, remainingAmount });
+
+      setFormData({
+        method: 'banking',
+        paidAmount: 0,
+        note: ''
+      });
+      setDialogOpen(true);
+    } catch (e: any) {
+      setError(e?.response?.data?.message || 'Không thể tải thông tin thanh toán');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setEditingPayment(null);
     setError(null);
+    setDialogSummary(null);
   };
 
   const handleSubmit = async () => {
     if (!editingPayment) return;
 
-    if (!formData.amount || formData.amount <= 0) {
+    if (!formData.paidAmount || formData.paidAmount <= 0) {
       setError('Vui lòng nhập số tiền thanh toán');
+      return;
+    }
+    if (dialogSummary && formData.paidAmount > dialogSummary.remainingAmount) {
+      setError(`Số tiền tối đa có thể thanh toán: ${dialogSummary.remainingAmount.toLocaleString()} ₫`);
       return;
     }
 
@@ -142,7 +168,7 @@ const TeacherPaymentsTab: React.FC<Props> = () => {
     try {
       await updateTeacherPaymentAPI(editingPayment.id, {
         method: formData.method,
-        amount: formData.amount,
+        paidAmount: formData.paidAmount,
         note: formData.note
       });
 
@@ -157,9 +183,56 @@ const TeacherPaymentsTab: React.FC<Props> = () => {
 
 
 
-  const openHistory = (payment: TeacherPayment) => {
-    setSelectedPaymentForHistory(payment);
-    setHistoryOpen(true);
+  const openHistory = async (payment: TeacherPayment) => {
+    try {
+      // Fetch latest payment details by ID
+      const res = await getTeacherPaymentByIdAPI(payment.id);
+      const payload: any = (res as any)?.data?.data || (res as any)?.data || {};
+
+      // Map API response to the structure expected by PaymentHistoryModal
+      const mapped: any = {
+        id: payload.id,
+        month: payload.month,
+        year: payload.year,
+        totalAmount: payload.totalAmount,
+        paidAmount: payload.paidAmount,
+        status: payload.status,
+        salaryPerLesson: payload?.teacher?.salaryPerLesson,
+        classes: Array.isArray(payload.classes)
+          ? payload.classes.map((c: any) => ({ totalLessons: c.totalLessons }))
+          : [],
+        teacherId: payload.teacher
+          ? {
+              id: payload.teacher.id,
+              name: payload.teacher.name,
+              email: payload.teacher.email,
+              phone: payload.teacher.phone,
+              userId: {
+                id: payload.teacher.id,
+                name: payload.teacher.name,
+                email: payload.teacher.email,
+                phone: payload.teacher.phone,
+              },
+            }
+          : undefined,
+        // PaymentHistoryModal reads paymentData.paymentHistory
+        paymentHistory: Array.isArray(payload.histories)
+          ? payload.histories.map((h: any, idx: number) => ({
+              id: String(idx),
+              amount: h.amount,
+              method: h.method,
+              note: h.note,
+              date: h.date,
+              status: 'completed',
+            }))
+          : [],
+      };
+
+      setSelectedPaymentForHistory(mapped as any);
+      setHistoryOpen(true);
+    } catch (err: any) {
+      setError(err?.response?.data?.message || 'Không thể tải lịch sử thanh toán');
+    }
   };
 
   const closeHistory = () => {
@@ -280,10 +353,55 @@ const TeacherPaymentsTab: React.FC<Props> = () => {
 
       {/* Payment Dialog */}
       <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          Thanh toán lương giáo viên
+        <DialogTitle sx={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          bgcolor: 'primary.main', color: 'primary.contrastText', py: 2
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <PaymentIcon />
+            <Box>
+              <Box sx={{ fontWeight: 700 }}>Thanh toán lương giáo viên</Box>
+              {editingPayment && (
+                <Box sx={{ fontSize: 12, opacity: 0.85 }}>
+                  {editingPayment.teacher?.name || editingPayment.teacherId?.userId?.name || editingPayment.teacherId?.name || ''}
+                </Box>
+              )}
+            </Box>
+          </Box>
         </DialogTitle>
         <DialogContent>
+          {/* Summary */}
+          {dialogSummary && (
+            <>
+              <Grid container spacing={2} sx={{ mb: 2 }}>
+                <Grid item xs={12} sm={4}>
+                  <Paper elevation={0} sx={{ p: 2, border: '1px solid #e0e0e0', borderRadius: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5, color: 'text.secondary', fontSize: 12 }}>
+                      <AttachMoneyIcon fontSize="small" /> Tổng lương
+                    </Box>
+                    <Box sx={{ fontWeight: 700, fontSize: 18 }}>{dialogSummary.totalAmount.toLocaleString()} ₫</Box>
+                  </Paper>
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <Paper elevation={0} sx={{ p: 2, border: '1px solid #e0e0e0', borderRadius: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5, color: 'text.secondary', fontSize: 12 }}>
+                      <PaidIcon fontSize="small" /> Đã thanh toán
+                    </Box>
+                    <Box sx={{ fontWeight: 700, fontSize: 18, color: 'success.main' }}>{dialogSummary.paidAmount.toLocaleString()} ₫</Box>
+                  </Paper>
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <Paper elevation={0} sx={{ p: 2, border: '1px solid #e0e0e0', borderRadius: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5, color: 'text.secondary', fontSize: 12 }}>
+                      <WalletIcon fontSize="small" /> Còn lại
+                    </Box>
+                    <Box sx={{ fontWeight: 700, fontSize: 18, color: 'error.main' }}>{dialogSummary.remainingAmount.toLocaleString()} ₫</Box>
+                  </Paper>
+                </Grid>
+              </Grid>
+              <Divider sx={{ mb: 2 }} />
+            </>
+          )}
           {error && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {error}
@@ -311,9 +429,11 @@ const TeacherPaymentsTab: React.FC<Props> = () => {
                 fullWidth
                 label="Số tiền thanh toán"
                 type="number"
-                value={formData.amount}
-                onChange={(e) => setFormData({ ...formData, amount: Number(e.target.value) })}
+                value={formData.paidAmount}
+                onChange={(e) => setFormData({ ...formData, paidAmount: Number(e.target.value) })}
                 inputProps={{ min: 0 }}
+                InputProps={{ startAdornment: <InputAdornment position="start">₫</InputAdornment> }}
+                helperText={dialogSummary ? `Tối đa: ${dialogSummary.remainingAmount.toLocaleString()} ₫` : undefined}
               />
             </Grid>
 
@@ -332,15 +452,22 @@ const TeacherPaymentsTab: React.FC<Props> = () => {
 
           </Grid>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog}>Hủy</Button>
-          <Button
-            onClick={handleSubmit}
-            variant="contained"
-            disabled={loading}
-          >
-            {loading ? 'Đang xử lý...' : 'Thanh toán'}
-          </Button>
+        <DialogActions sx={{ justifyContent: 'space-between' }}>
+          <Box sx={{ pl: 1, color: 'text.secondary', fontSize: 13 }}>
+            {dialogSummary && (
+              <>Sau thanh toán còn lại: <b>{Math.max(dialogSummary.remainingAmount - (formData.paidAmount || 0), 0).toLocaleString()} ₫</b></>
+            )}
+          </Box>
+          <Box>
+            <Button onClick={handleCloseDialog} sx={{ mr: 1 }}>Hủy</Button>
+            <Button
+              onClick={handleSubmit}
+              variant="contained"
+              disabled={loading}
+            >
+              {loading ? 'Đang xử lý...' : 'Xác nhận thanh toán'}
+            </Button>
+          </Box>
         </DialogActions>
       </Dialog>
     </>

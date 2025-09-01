@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { createTeacherAPI, updateTeacherAPI } from '../../services/api';
 import { Teacher, UseFormReturn, FormErrors } from '../../types';
-import { validateTeacher } from '../../validations/teacherValidation';
+import { validateTeacher, validateName, validateEmail, validatePhone, validateAddress, validateGender } from '../../validations/teacherValidation';
 
 export const useTeacherForm = (): UseFormReturn<Teacher> => {
   const [form, setForm] = useState<any>({
@@ -92,30 +92,79 @@ export const useTeacherForm = (): UseFormReturn<Teacher> => {
 
   const handleSubmit = useCallback(async (
     data?: Teacher,
-    onSuccess?: () => void
+    onSuccess?: () => void,
+    originalData?: Teacher
   ): Promise<{ success: boolean; message?: string }> => {
     const teacherData = data || form;
 
-    // Validate form
-    const teacherFormData = {
-      name: teacherData.userId?.name || '',
-      email: teacherData.userId?.email || '',
-      phone: teacherData.userId?.phone || '',
-      dayOfBirth: teacherData.userId?.dayOfBirth || '',
-      address: teacherData.userId?.address || '',
-      gender: teacherData.userId?.gender || '',
-      description: teacherData.description || '',
-      salaryPerLesson: 0,
-      qualifications: '',
-      specializations: teacherData.specialization || '',
-      introduction: '',
-      workExperience: 0,
-      isActive: true,
-    };
-    const errors = validateTeacher(teacherFormData as any);
-    if (Object.keys(errors).length > 0) {
-      setFormErrors(errors as any);
-      return { success: false, message: 'Vui lòng kiểm tra lại thông tin' };
+    // Validate form - different validation for create vs update
+    if (teacherData.id) {
+      // For update - only validate fields that are being changed
+      const updateData = getChangedFields(teacherData, originalData);
+      console.log('🔄 Changed fields for validation:', updateData);
+
+      // Only validate fields that are actually being updated
+      const validationErrors: any = {};
+
+      if (updateData.name !== undefined) {
+        const nameError = validateName(updateData.name);
+        if (nameError) validationErrors.name = nameError;
+      }
+
+      if (updateData.email !== undefined) {
+        const emailError = validateEmail(updateData.email);
+        if (emailError) validationErrors.email = emailError;
+      }
+
+      if (updateData.phone !== undefined) {
+        const phoneError = validatePhone(updateData.phone);
+        if (phoneError) validationErrors.phone = phoneError;
+      }
+
+      if (updateData.address !== undefined) {
+        const addressError = validateAddress(updateData.address);
+        if (addressError) validationErrors.address = addressError;
+      }
+
+      if (updateData.gender !== undefined) {
+        const genderError = validateGender(updateData.gender);
+        if (genderError) validationErrors.gender = genderError;
+      }
+
+      if (updateData.salaryPerLesson !== undefined) {
+        if (isNaN(Number(updateData.salaryPerLesson)) || Number(updateData.salaryPerLesson) < 0) {
+          validationErrors.salaryPerLesson = 'Lương phải là số lớn hơn hoặc bằng 0';
+        }
+      }
+
+      if (Object.keys(validationErrors).length > 0) {
+        console.log('❌ Validation errors:', validationErrors);
+        setFormErrors(validationErrors);
+        return { success: false, message: 'Vui lòng kiểm tra lại thông tin' };
+      }
+    } else {
+      // For create - validate all required fields
+      const teacherFormData = {
+        name: teacherData.userId?.name || '',
+        email: teacherData.userId?.email || '',
+        phone: teacherData.userId?.phone || '',
+        dayOfBirth: teacherData.userId?.dayOfBirth || '',
+        address: teacherData.userId?.address || '',
+        gender: teacherData.userId?.gender || '',
+        description: teacherData.description || '',
+        salaryPerLesson: 0,
+        qualifications: '',
+        specializations: teacherData.specialization || '',
+        introduction: '',
+        workExperience: 0,
+        isActive: true,
+      };
+      const errors = validateTeacher(teacherFormData as any);
+      if (Object.keys(errors).length > 0) {
+        console.log('❌ Validation errors for create:', errors);
+        setFormErrors(errors as any);
+        return { success: false, message: 'Vui lòng kiểm tra lại thông tin' };
+      }
     }
 
     setFormLoading(true);
@@ -123,8 +172,10 @@ export const useTeacherForm = (): UseFormReturn<Teacher> => {
 
     try {
       if (teacherData.id) {
-        // Update existing teacher
-        await updateTeacherAPI(teacherData.id, teacherData);
+        // Update existing teacher - only send changed fields
+        const updateData = getChangedFields(teacherData, originalData);
+        console.log('🔄 Sending only changed fields:', updateData);
+        await updateTeacherAPI(teacherData.id, updateData);
       } else {
         // Create new teacher
         const createData = {
@@ -150,6 +201,35 @@ export const useTeacherForm = (): UseFormReturn<Teacher> => {
       setFormLoading(false);
     }
   }, [form]);
+
+  // Helper function to get only changed fields
+  const getChangedFields = (newData: any, originalData?: any): any => {
+    if (!originalData) {
+      return newData; // If no original data, send all data (for create)
+    }
+
+    const changedFields: any = {};
+
+    // Check userId fields
+    if (newData.userId && originalData.userId) {
+      const userIdFields = ['name', 'email', 'phone', 'gender', 'dayOfBirth', 'address'];
+      userIdFields.forEach(field => {
+        if (newData.userId[field] !== originalData.userId[field]) {
+          changedFields[field] = newData.userId[field];
+        }
+      });
+    }
+
+    // Check direct fields
+    const directFields = ['description', 'qualifications', 'specializations', 'salaryPerLesson', 'typical', 'isActive'];
+    directFields.forEach(field => {
+      if (newData[field] !== originalData[field]) {
+        changedFields[field] = newData[field];
+      }
+    });
+
+    return changedFields;
+  };
 
   return {
     form,
