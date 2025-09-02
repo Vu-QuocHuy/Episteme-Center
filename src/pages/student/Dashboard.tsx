@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -28,49 +28,19 @@ import StatCard from '../../components/common/StatCard';
 import { getStudentDashboardAPI } from '../../services/api';
 import { commonStyles } from '../../utils/styles';
 
-interface Attendance {
-  totalSessions: number;
-  attendedSessions: number;
-  attendanceRate: number;
-}
-
-interface ClassSchedule {
-  start_date: string;
-  end_date: string;
-  days_of_week: string[];
-  time_slots: {
-    start_time: string;
-    end_time: string;
-  };
-}
-
-interface ClassItem {
-  className: string;
-  room: string;
-  schedule: ClassSchedule;
-  teacherName: string;
-  status: string;
-}
-
-interface DashboardData {
-  totalClasses: number;
-  activeClasses: number;
-  completedClasses: number;
-  attendance: Attendance;
-  classList: ClassItem[];
-}
-
-const Dashboard: React.FC = () => {
+const Dashboard = () => {
   const { user } = useAuth();
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string>('');
-  const [dashboardData, setDashboardData] = useState<DashboardData>({
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [dashboardData, setDashboardData] = useState<any>({
     totalClasses: 0,
     activeClasses: 0,
     completedClasses: 0,
     attendance: {
       totalSessions: 0,
-      attendedSessions: 0,
+      presentSessions: 0,
+      absentSessions: 0,
+      lateSessions: 0,
       attendanceRate: 0
     },
     classList: []
@@ -82,7 +52,7 @@ const Dashboard: React.FC = () => {
     }
   }, [user]);
 
-  const fetchDashboardData = async (): Promise<void> => {
+  const fetchDashboardData = async () => {
     setLoading(true);
     setError('');
 
@@ -103,7 +73,9 @@ const Dashboard: React.FC = () => {
         completedClasses: data.completedClasses || 0,
         attendance: data.attendance || {
           totalSessions: 0,
-          attendedSessions: 0,
+          presentSessions: 0,
+          absentSessions: 0,
+          lateSessions: 0,
           attendanceRate: 0
         },
         classList: data.classList || []
@@ -117,59 +89,39 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const formatTime = (timeString: string): string => {
+  const formatTime = (timeString: any) => {
     if (!timeString) return '';
     return timeString.substring(0, 5); // Get HH:MM format
   };
 
-  const formatDayOfWeek = (dayNumber: number): string => {
+  const formatDayOfWeek = (dayNumber: any) => {
     const days = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-    return days[dayNumber] || `T${dayNumber}`;
+    return days[dayNumber] || '';
   };
 
-  const formatSchedule = (schedule: ClassSchedule): string => {
-    if (!schedule) return 'Chưa có lịch học';
+  const formatSchedule = (schedule: any) => {
+    if (!schedule) return { days: 'Chưa có lịch', time: '' };
 
-    const days = schedule.days_of_week.map(day => formatDayOfWeek(parseInt(day))).join(', ');
-    const timeRange = `${formatTime(schedule.time_slots.start_time)} - ${formatTime(schedule.time_slots.end_time)}`;
+    const days = schedule.days_of_week || [];
+    const timeSlots = schedule.time_slots || {};
 
-    return `${days} | ${timeRange}`;
-  };
+    const dayText = days.length > 0
+      ? days.map((day: any) => formatDayOfWeek(day)).join(', ')
+      : 'Chưa có lịch';
 
-  const getStatusColor = (status: string): 'success' | 'warning' | 'error' | 'default' => {
-    switch (status) {
-      case 'active': return 'success';
-      case 'completed': return 'default';
-      case 'pending': return 'warning';
-      default: return 'default';
-    }
-  };
+    const timeText = timeSlots.start_time && timeSlots.end_time
+      ? `${formatTime(timeSlots.start_time)} - ${formatTime(timeSlots.end_time)}`
+      : '';
 
-  const getStatusLabel = (status: string): string => {
-    switch (status) {
-      case 'active': return 'Đang học';
-      case 'completed': return 'Đã hoàn thành';
-      case 'pending': return 'Chờ khai giảng';
-      default: return 'Không xác định';
-    }
+    return { days: dayText, time: timeText };
   };
 
   if (loading) {
     return (
       <DashboardLayout role="student">
-        <Box sx={{ p: 3 }}>
+        <Box sx={{ py: 4 }}>
           <LinearProgress />
-          <Typography sx={{ mt: 2 }}>Đang tải dữ liệu...</Typography>
-        </Box>
-      </DashboardLayout>
-    );
-  }
-
-  if (error) {
-    return (
-      <DashboardLayout role="student">
-        <Box sx={{ p: 3 }}>
-          <Alert severity="error">{error}</Alert>
+          <Typography sx={{ textAlign: 'center', mt: 2 }}>Đang tải dữ liệu dashboard...</Typography>
         </Box>
       </DashboardLayout>
     );
@@ -177,185 +129,182 @@ const Dashboard: React.FC = () => {
 
   return (
     <DashboardLayout role="student">
-      <Box sx={{ p: 3 }}>
-        <Typography variant="h4" gutterBottom sx={commonStyles.pageTitle}>
-          Dashboard Học Sinh
-        </Typography>
+      <Box sx={commonStyles.pageContainer}>
+        <Box sx={commonStyles.contentContainer}>
+          <Box sx={commonStyles.pageHeader}>
+            <Typography sx={commonStyles.pageTitle}>
+              Dashboard Học sinh
+            </Typography>
+          </Box>
 
-        {/* Statistics Cards */}
+          {error && (
+            <Alert severity="error" sx={{ mb: 3 }}>
+              {error}
+            </Alert>
+          )}
+
+          <Typography variant="subtitle1" color="text.secondary" gutterBottom sx={{ mb: 3 }}>
+            Xin chào <strong>{user?.name || 'Học sinh'}</strong>, đây là thông tin học tập của bạn
+          </Typography>
+
+        {/* Stat Cards */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} sm={6} md={3}>
+            <Grid item xs={12} sm={6} md={3}>
             <StatCard
-              title="Tổng số lớp"
-              value={dashboardData.totalClasses}
-              icon={<ClassIcon />}
+              title="Tổng lớp học"
+                value={dashboardData.totalClasses}
+              icon={<ClassIcon sx={{ fontSize: 40 }} />}
               color="primary"
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+            <Grid item xs={12} sm={6} md={3}>
             <StatCard
-              title="Lớp đang học"
-              value={dashboardData.activeClasses}
-              icon={<SchoolIcon />}
+                title="Lớp đang học"
+                value={dashboardData.activeClasses}
+                icon={<SchoolIcon sx={{ fontSize: 40 }} />}
               color="success"
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+            <Grid item xs={12} sm={6} md={3}>
             <StatCard
-              title="Lớp đã hoàn thành"
-              value={dashboardData.completedClasses}
-              icon={<TrendingUpIcon />}
+                title="Lớp hoàn thành"
+                value={dashboardData.completedClasses}
+                icon={<TrendingUpIcon sx={{ fontSize: 40 }} />}
               color="info"
             />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <StatCard
+                title="Tỷ lệ tham gia"
+                value={`${dashboardData.attendance.attendanceRate || 0}%`}
+                icon={<ScheduleIcon sx={{ fontSize: 40 }} />}
+                color="warning"
+              />
+            </Grid>
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+
+          {/* Attendance Stats */}
+          <Grid container spacing={3} sx={{ mb: 4 }}>
+            <Grid item xs={12} sm={6} md={3}>
             <StatCard
-              title="Tỷ lệ điểm danh"
-              value={`${dashboardData.attendance.attendanceRate}%`}
-              icon={<PersonIcon />}
-              color="warning"
+                title="Tổng số buổi"
+                value={dashboardData.attendance.totalSessions}
+              icon={<TimeIcon sx={{ fontSize: 40 }} />}
+                color="secondary"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <StatCard
+                title="Buổi có mặt"
+                value={dashboardData.attendance.presentSessions}
+                icon={<PersonIcon sx={{ fontSize: 40 }} />}
+              color="success"
+            />
+          </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <StatCard
+                title="Buổi vắng"
+                value={dashboardData.attendance.absentSessions}
+                icon={<PersonIcon sx={{ fontSize: 40 }} />}
+                color="error"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+            <StatCard
+                title="Buổi muộn"
+                value={dashboardData.attendance.lateSessions}
+                icon={<TimeIcon sx={{ fontSize: 40 }} />}
+                color="warning"
             />
           </Grid>
         </Grid>
 
-        <Grid container spacing={3}>
-          {/* Attendance Summary */}
-          <Grid item xs={12} md={6}>
-            <Paper sx={{ p: 3, height: 'fit-content' }}>
-              <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <ScheduleIcon color="primary" />
-                Thống kê điểm danh
-              </Typography>
-              <Box sx={{ mt: 2 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                  <Typography variant="body2">Tổng số buổi học:</Typography>
-                  <Typography variant="body2" fontWeight="medium">
-                    {dashboardData.attendance.totalSessions}
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                  <Typography variant="body2" color="success.main">Đã tham gia:</Typography>
-                  <Typography variant="body2" color="success.main" fontWeight="medium">
-                    {dashboardData.attendance.attendedSessions}
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                  <Typography variant="body2" color="error.main">Vắng mặt:</Typography>
-                  <Typography variant="body2" color="error.main" fontWeight="medium">
-                    {dashboardData.attendance.totalSessions - dashboardData.attendance.attendedSessions}
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Typography variant="body1" fontWeight="medium">Tỷ lệ điểm danh:</Typography>
-                  <Chip
-                    label={`${dashboardData.attendance.attendanceRate}%`}
-                    color={dashboardData.attendance.attendanceRate >= 80 ? 'success' : dashboardData.attendance.attendanceRate >= 60 ? 'warning' : 'error'}
-                    variant="outlined"
-                  />
-                </Box>
-              </Box>
-            </Paper>
-          </Grid>
-
           {/* Class List */}
-          <Grid item xs={12} md={6}>
-            <Paper sx={{ p: 3, height: 'fit-content' }}>
-              <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <ClassIcon color="primary" />
+          <Grid container spacing={3}>
+          <Grid item xs={12}>
+            <Paper sx={{ p: 3, borderRadius: 2, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, mb: 3 }}>
                 Danh sách lớp học
               </Typography>
-              {dashboardData.classList.length === 0 ? (
-                <Typography color="text.secondary" sx={{ textAlign: 'center', py: 3 }}>
-                  Chưa có lớp học nào
-                </Typography>
-              ) : (
-                <Box>
-                  {dashboardData.classList.slice(0, 5).map((classItem, index) => (
-                    <Box key={index} sx={{ mb: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                        <Typography variant="body1" fontWeight="medium">
-                          {classItem.className}
-                        </Typography>
-                        <Chip
-                          label={getStatusLabel(classItem.status)}
-                          color={getStatusColor(classItem.status)}
-                          size="small"
-                        />
-                      </Box>
-                      <Typography variant="body2" color="text.secondary">
-                        Giáo viên: {classItem.teacherName}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Phòng: {classItem.room}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {formatSchedule(classItem.schedule)}
-                      </Typography>
-                    </Box>
-                  ))}
-                  {dashboardData.classList.length > 5 && (
-                    <Typography variant="body2" color="primary" sx={{ textAlign: 'center', mt: 2 }}>
-                      Và {dashboardData.classList.length - 5} lớp khác...
-                    </Typography>
-                  )}
-                </Box>
-              )}
-            </Paper>
-          </Grid>
-
-          {/* Detailed Class Table */}
-          <Grid item xs={12}>
-            <Paper sx={{ p: 3 }}>
-              <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <TimeIcon color="primary" />
-                Chi tiết lớp học
-              </Typography>
-              {dashboardData.classList.length === 0 ? (
-                <Typography color="text.secondary" sx={{ textAlign: 'center', py: 3 }}>
-                  Chưa có lớp học nào
-                </Typography>
-              ) : (
-                <TableContainer>
-                  <Table>
+                {dashboardData.classList.length > 0 ? (
+                <Box mt={2} bgcolor="#f5f6fa" borderRadius={2} border="1px solid #e0e0e0" p={2}>
+                <TableContainer sx={commonStyles.tableContainer}>
+                  <Table size="small">
                     <TableHead>
                       <TableRow>
-                        <TableCell>STT</TableCell>
-                        <TableCell>Tên lớp</TableCell>
-                        <TableCell>Giáo viên</TableCell>
-                        <TableCell>Lịch học</TableCell>
-                        <TableCell align="center">Trạng thái</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold' }}>Lớp học</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold' }}>Giáo viên</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold' }}>Phòng học</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold' }}>Lịch học</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold' }}>Thời gian</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold' }}>Trạng thái</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {dashboardData.classList.map((classItem, index) => (
-                        <TableRow key={index} hover>
-                          <TableCell>{index + 1}</TableCell>
+                          {dashboardData.classList.map((classItem: any, index: number) => {
+                            const schedule = formatSchedule(classItem.schedule);
+                            return (
+                              <TableRow key={index} sx={commonStyles.tableRow}>
                           <TableCell>
-                            <Typography variant="body1" fontWeight="medium">
-                              {classItem.className}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              Phòng: {classItem.room}
+                            <Typography variant="body2" fontWeight="medium">
+                                    {classItem.className}
                             </Typography>
                           </TableCell>
-                          <TableCell>{classItem.teacherName}</TableCell>
-                          <TableCell>{formatSchedule(classItem.schedule)}</TableCell>
-                          <TableCell align="center">
+                          <TableCell>
+                            <Typography variant="body2">
+                                    {classItem.teacherName || 'Chưa phân công'}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="body2">
+                                    {classItem.room || 'N/A'}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="body2">
+                                    {schedule.days}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="body2">
+                                    {schedule.time}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
                             <Chip
-                              label={getStatusLabel(classItem.status)}
-                              color={getStatusColor(classItem.status)}
+                                    label={
+                                      classItem.status === 'active'
+                                        ? 'Đang học'
+                                        : classItem.status === 'completed'
+                                        ? 'Hoàn thành'
+                                        : classItem.status || 'N/A'
+                                    }
+                                    color={
+                                      classItem.status === 'active'
+                                        ? 'success'
+                                        : classItem.status === 'completed'
+                                        ? 'primary'
+                                        : 'default'
+                                    }
                               size="small"
                             />
                           </TableCell>
                         </TableRow>
-                      ))}
+                            );
+                          })}
                     </TableBody>
                   </Table>
                 </TableContainer>
+                </Box>
+              ) : (
+                <Typography color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
+                  Chưa có lớp học nào
+                </Typography>
               )}
             </Paper>
           </Grid>
         </Grid>
+        </Box>
       </Box>
     </DashboardLayout>
   );
