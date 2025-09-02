@@ -198,7 +198,7 @@ export const API_CONFIG: ApiConfig = {
       CREATE: '/users',
       UPDATE: (id: string) => `/users/${id}`,
       DELETE: (id: string) => `/users/${id}`,
-      UPLOAD_AVATAR: '/users/me/avatar',
+      UPLOAD_AVATAR: '/user/avatar',
     },
     // Teacher endpoints
     TEACHERS: {

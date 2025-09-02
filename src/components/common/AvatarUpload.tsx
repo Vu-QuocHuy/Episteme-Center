@@ -19,8 +19,7 @@ import {
   Close as CloseIcon,
   CloudUpload as CloudUploadIcon,
 } from '@mui/icons-material';
-import { uploadAvatarAPI } from '../../services/api';
-import { uploadToCloudinary } from '../../services/cloudinary';
+import { uploadAvatarAPI, uploadFileAPI, deleteFileAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface AvatarUploadProps {
@@ -36,11 +35,14 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({
   size = 120,
   onAvatarUpdate,
 }) => {
-  const { updateUser } = useAuth();
+  const { updateUser, user } = useAuth();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>('');
   const [uploading, setUploading] = useState(false);
+  const [fileUploading, setFileUploading] = useState(false);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string>('');
+  const [uploadedPublicId, setUploadedPublicId] = useState<string>('');
   const [error, setError] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -54,7 +56,8 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({
   };
 
   const handleAvatarClick = () => {
-    setIsDialogOpen(true);
+    // Click avatar -> mở chọn ảnh ngay
+    fileInputRef.current?.click();
   };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -78,8 +81,49 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({
 
     // Create preview
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       setPreviewUrl(e.target?.result as string);
+      setIsDialogOpen(true);
+
+      // Tải file lên ngay khi chọn (giống luồng quảng cáo): nhận imageUrl/publicId và lưu sẵn
+      try {
+        setFileUploading(true);
+        // Nếu trước đó đã có bản upload tạm (chưa cập nhật avatar), xóa nó trước để tránh rác
+        if (uploadedPublicId) {
+          try {
+            await deleteFileAPI(uploadedPublicId);
+          } catch (_) {
+            // ignore cleanup error
+          } finally {
+            setUploadedImageUrl('');
+            setUploadedPublicId('');
+          }
+        }
+        // Xóa avatar hiện tại của user ngay khi chọn ảnh mới
+        const currentAvatarPublicId = (user as any)?.avatarPublicId || (user as any)?.publicId || (user as any)?.avatar_public_id;
+        if (currentAvatarPublicId) {
+          try {
+            await deleteFileAPI(currentAvatarPublicId);
+          } catch (_) {
+            // ignore cleanup error
+          }
+        }
+        const fileRes = await uploadFileAPI(file);
+        const fileData = (fileRes as any)?.data?.data || (fileRes as any)?.data || {};
+        const imageUrl = fileData.url || fileData.imageUrl;
+        const publicId = fileData.public_id || fileData.publicId;
+        if (!imageUrl || !publicId) {
+          throw new Error('Không nhận được imageUrl/publicId từ API Upload file');
+        }
+        setUploadedImageUrl(imageUrl);
+        setUploadedPublicId(publicId);
+      } catch (err: any) {
+        setError(err.message || 'Tải file thất bại, vui lòng thử lại');
+        setUploadedImageUrl('');
+        setUploadedPublicId('');
+      } finally {
+        setFileUploading(false);
+      }
     };
     reader.readAsDataURL(file);
   };
@@ -91,15 +135,17 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({
     setError('');
 
     try {
-      // First, upload to Cloudinary
-      const cloudinaryData = await uploadToCloudinary(selectedFile);
+      // 2) Gọi Upload avatar bằng imageUrl/publicId đã có sẵn từ bước upload file
+      const imageUrl = uploadedImageUrl;
+      const publicId = uploadedPublicId;
+      if (!imageUrl || !publicId) {
+        throw new Error('Chưa sẵn sàng: vui lòng chờ tải file xong hoặc chọn lại ảnh');
+      }
 
-      // Then, update avatar in your backend
-      const formData = new FormData();
-      formData.append('imageUrl', cloudinaryData.secure_url);
-      formData.append('publicId', cloudinaryData.public_id);
+      // Keep old public id to delete later
+      const oldPublicId = (user as any)?.avatarPublicId || (user as any)?.publicId || (user as any)?.avatar_public_id;
 
-      const response = await uploadAvatarAPI(formData);
+      const response = await uploadAvatarAPI({ imageUrl, publicId });
 
       if (response.data) {
         // Update user context
@@ -109,13 +155,24 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({
 
         // Call callback if provided
         if (onAvatarUpdate) {
-          onAvatarUpdate(cloudinaryData.secure_url);
+          onAvatarUpdate(imageUrl);
+        }
+
+        // Remove old file if exists and different
+        if (oldPublicId && oldPublicId !== publicId) {
+          try {
+            await deleteFileAPI(oldPublicId);
+          } catch (_) {
+            // ignore cleanup error
+          }
         }
 
         // Close dialog
         setIsDialogOpen(false);
         setSelectedFile(null);
         setPreviewUrl('');
+        setUploadedImageUrl('');
+        setUploadedPublicId('');
       }
     } catch (err: any) {
       setError(err.message || 'Có lỗi xảy ra khi tải ảnh lên');
@@ -129,6 +186,13 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({
     setSelectedFile(null);
     setPreviewUrl('');
     setError('');
+    // Hủy bỏ upload tạm nếu chưa dùng để cập nhật avatar
+    if (uploadedPublicId) {
+      deleteFileAPI(uploadedPublicId).catch(() => {}).finally(() => {
+        setUploadedImageUrl('');
+        setUploadedPublicId('');
+      });
+    }
   };
 
   const handleFileInputClick = () => {
@@ -177,43 +241,71 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({
           <CameraIcon sx={{ color: 'white', fontSize: 20 }} />
         </IconButton>
       </Box>
+      {/* Hidden file input should be mounted even when dialog is closed */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileSelect}
+        style={{ display: 'none' }}
+      />
 
       <Dialog
         open={isDialogOpen}
         onClose={handleClose}
         maxWidth="sm"
         fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            overflow: 'hidden',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.15)'
+          }
+        }}
       >
-        <DialogTitle>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="h6">Cập nhật ảnh đại diện</Typography>
-            <IconButton onClick={handleClose}>
+        <DialogTitle sx={{ p: 0 }}>
+          <Box
+            sx={{
+              px: 3,
+              py: 2,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              color: '#fff'
+            }}
+          >
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>
+              Cập nhật ảnh đại diện
+            </Typography>
+            <IconButton onClick={handleClose} sx={{ color: '#fff' }}>
               <CloseIcon />
             </IconButton>
           </Box>
         </DialogTitle>
 
-        <DialogContent>
+        <DialogContent sx={{ p: 3, pt: 3 }}>
           {error && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {error}
             </Alert>
           )}
 
-          <Box sx={{ textAlign: 'center', mb: 3 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
             {previewUrl ? (
-              <Card sx={{ maxWidth: 300, mx: 'auto' }}>
-                <CardContent>
-                  <Typography variant="subtitle2" gutterBottom>
-                    Xem trước
+              <Card sx={{ width: '100%', maxWidth: 420, borderRadius: 3, border: '1px solid #e5e7eb' }}>
+                <CardContent sx={{ textAlign: 'center' }}>
+                  <Typography variant="subtitle2" gutterBottom sx={{ color: 'text.secondary' }}>
+                    Xem trước ảnh đại diện
                   </Typography>
                   <Avatar
                     src={previewUrl}
                     sx={{
-                      width: 150,
-                      height: 150,
+                      width: 180,
+                      height: 180,
                       mx: 'auto',
                       mb: 2,
+                      boxShadow: '0 6px 18px rgba(0,0,0,0.12)'
                     }}
                   >
                     {getInitials(userName)}
@@ -222,29 +314,27 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({
                     variant="outlined"
                     onClick={handleFileInputClick}
                     startIcon={<CloudUploadIcon />}
+                    sx={{ borderRadius: 2 }}
                   >
                     Chọn ảnh khác
                   </Button>
                 </CardContent>
               </Card>
             ) : (
-              <Card sx={{ maxWidth: 300, mx: 'auto' }}>
-                <CardContent>
-                  <CloudUploadIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
-                  <Typography variant="h6" gutterBottom>
+              <Card sx={{ width: '100%', maxWidth: 420, borderRadius: 3, border: '1px dashed #cbd5e1', background: '#f8fafc' }}>
+                <CardContent sx={{ textAlign: 'center' }}>
+                  <CloudUploadIcon sx={{ fontSize: 52, color: 'text.secondary', mb: 1 }} />
+                  <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
                     Chọn ảnh đại diện
                   </Typography>
                   <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Hỗ trợ: JPG, PNG, GIF
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Kích thước tối đa: 5MB
+                    Hỗ trợ: JPG, PNG, GIF — Tối đa 5MB
                   </Typography>
                   <Button
                     variant="contained"
                     onClick={handleFileInputClick}
                     startIcon={<CloudUploadIcon />}
-                    sx={{ mt: 2 }}
+                    sx={{ mt: 2, borderRadius: 2 }}
                   >
                     Chọn ảnh
                   </Button>
@@ -253,27 +343,27 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({
             )}
           </Box>
 
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleFileSelect}
-            style={{ display: 'none' }}
-          />
+          {/* file input moved outside dialog */}
         </DialogContent>
 
-        <DialogActions sx={{ p: 3 }}>
-          <Button onClick={handleClose} disabled={uploading}>
-            Hủy
-          </Button>
-          <Button
-            onClick={handleUpload}
-            variant="contained"
-            disabled={!selectedFile || uploading}
-            startIcon={uploading ? <CircularProgress size={16} /> : null}
-          >
-            {uploading ? 'Đang tải lên...' : 'Cập nhật'}
-          </Button>
+        <DialogActions sx={{ p: 3, pt: 0, justifyContent: 'space-between' }}>
+          <Typography variant="body2" color="text.secondary" sx={{ pl: 1 }}>
+            Mẹo: Dùng ảnh vuông (1:1) để hiển thị đẹp nhất.
+          </Typography>
+          <Box>
+            <Button onClick={handleClose} disabled={uploading} sx={{ mr: 1.5 }}>
+              Hủy
+            </Button>
+            <Button
+              onClick={handleUpload}
+              variant="contained"
+              disabled={!selectedFile || uploading}
+              startIcon={uploading ? <CircularProgress size={16} /> : null}
+              sx={{ borderRadius: 2 }}
+            >
+              {uploading ? 'Đang tải lên...' : 'Cập nhật'}
+            </Button>
+          </Box>
         </DialogActions>
       </Dialog>
     </>

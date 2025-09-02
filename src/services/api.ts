@@ -238,7 +238,14 @@ export const resetPasswordAPI = (email: string, code: string, password: string) 
 };
 
 // User APIs
-export const uploadAvatarAPI = (formData: FormData) => axiosInstance.post(API_CONFIG.ENDPOINTS.USERS.UPLOAD_AVATAR, formData);
+export const uploadAvatarAPI = (data: { imageUrl: string; publicId: string }) => {
+  const formData = new URLSearchParams();
+  formData.append('imageUrl', data.imageUrl);
+  formData.append('publicId', data.publicId);
+  return axiosInstance.patch(API_CONFIG.ENDPOINTS.USERS.UPLOAD_AVATAR, formData, {
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+  });
+};
 export const getUserByIdAPI = (id: string) => axiosInstance.get(API_CONFIG.ENDPOINTS.USERS.GET_BY_ID(id));
 
 // Class APIs
