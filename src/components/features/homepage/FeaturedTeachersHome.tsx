@@ -84,7 +84,7 @@ const FeaturedTeachersHome = () => {
   const handleTeacherClick = (teacher: Teacher) => {
     const slug = createSlug(teacher.name);
     // Pass a hint so detail page will use typical-teacher endpoint first
-    navigate(`/teacher/${slug}`, { state: { teacherId: teacher.id, isTypical: true } });
+    navigate(`/teacher/view/${slug}`, { state: { teacherId: teacher.id, isTypical: true } });
   };
 
   const handlePrevClick = () => {

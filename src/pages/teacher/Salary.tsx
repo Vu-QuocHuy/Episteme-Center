@@ -1,454 +1,480 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
-  Box, Typography, Grid, Card, CardContent, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Chip, LinearProgress, Alert, Button,
+  Box, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, CircularProgress, Grid, Button, IconButton, Tooltip, Dialog, DialogTitle, DialogContent, DialogActions
 } from '@mui/material';
-import {
-  Payment as PaymentIcon, TrendingUp as TrendingUpIcon, AccountBalance as AccountBalanceIcon,
-  CalendarToday as CalendarIcon, AttachMoney as MoneyIcon,
-} from '@mui/icons-material';
-import { useAuth } from '../../contexts/AuthContext';
+import { getTeacherPaymentsAPI, getTeacherPaymentByIdAPI } from '../../services/api';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
-import { getTeacherPaymentsAPI } from '../../services/api';
+import StatCard from '../../components/common/StatCard';
 import { commonStyles } from '../../utils/styles';
+import PaymentIcon from '@mui/icons-material/Payment';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import MoneyOffIcon from '@mui/icons-material/MoneyOff';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import HistoryIcon from '@mui/icons-material/History';
+import { useAuth } from '../../contexts/AuthContext';
 import PaymentHistoryModal from '../../components/common/PaymentHistoryModal';
 
-interface PaymentInfo {
-  id: string;
-  teacherId: string;
-  month: number;
-  year: number;
-  totalLessons: number;
-  totalAmount: number;
-  paidAmount: number;
-  discountAmount: number;
-  status: 'pending' | 'paid' | 'overdue';
-  createdAt: string;
-  updatedAt: string;
-  student?: {
-    id: string;
-    name: string;
-    email: string;
-    phone: string;
-  };
-  class?: {
-    id: string;
-    name: string;
-  };
-  histories?: Array<{
-    id: string;
-    amount: number;
-    paymentDate: string;
-    paymentMethod: string;
-    note?: string;
-  }>;
-}
-
-interface SalarySummary {
-  totalEarned: number;
-  totalPaid: number;
-  pendingAmount: number;
-  averageMonthlySalary: number;
-  totalClasses: number;
-  totalSessions: number;
-}
-
-interface SalaryData {
-  payments: PaymentInfo[];
-  summary: SalarySummary;
-}
-
-const Salary: React.FC = () => {
+const Salary = () => {
   const { user } = useAuth();
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string>('');
-  const [salaryData, setSalaryData] = useState<SalaryData>({
-    payments: [],
-    summary: {
-      totalEarned: 0,
-      totalPaid: 0,
-      pendingAmount: 0,
-      averageMonthlySalary: 0,
-      totalClasses: 0,
-      totalSessions: 0
-    }
-  });
-  const [selectedPayment, setSelectedPayment] = useState<PaymentInfo | null>(null);
-  const [paymentModalOpen, setPaymentModalOpen] = useState<boolean>(false);
+  const [payments, setPayments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState<any>(null);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [historyModalOpen, setHistoryModalOpen] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      fetchSalaryData();
-    }
+    const fetchPayments = async () => {
+      const teacherId = user?.id;
+      if (!teacherId) return;
+      setLoading(true);
+      try {
+        const res = await getTeacherPaymentsAPI({
+          teacherId: teacherId,
+          page: 1,
+          limit: 50
+        });
+        console.log('API getTeacherPaymentsAPI response:', res);
+
+        // Handle the response structure from Get All Teacher Payments API
+        if (res && res.data && res.data.data && res.data.data.result) {
+          setPayments(res.data.data.result);
+        } else {
+          setPayments([]);
+        }
+      } catch (err) {
+        console.error('Error fetching payments:', err);
+        setPayments([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPayments();
   }, [user]);
 
-  const fetchSalaryData = async (): Promise<void> => {
-    if (!user?.id) {
-      setError('Không tìm thấy thông tin giáo viên');
-      setLoading(false);
-      return;
-    }
+  // Tính toán số liệu thống kê
+  const totalSalary = payments.reduce((sum, payment) => sum + (payment.totalAmount ?? 0), 0);
+  const totalPaid = payments.reduce((sum, payment) => sum + (payment.paidAmount ?? 0), 0);
+  const totalUnpaid = totalSalary - totalPaid;
 
+  // Log state payments để kiểm tra dữ liệu render
+  console.log('Payments state:', payments);
+
+  const handleViewDetail = async (payment: any) => {
     try {
-      setLoading(true);
-      setError('');
+      // Gọi API Get Teacher Payment by ID để lấy thông tin chi tiết
+      const res = await getTeacherPaymentByIdAPI(payment.id);
+      console.log('API getTeacherPaymentByIdAPI response for detail:', res);
 
-      // Gọi API với teacherId filter
-      const paymentsResponse = await getTeacherPaymentsAPI({
-        teacherId: user.id,
-        page: 1,
-        limit: 50 // Lấy nhiều records để có đủ dữ liệu
-      });
-
-      console.log('📊 Teacher Payments Response:', paymentsResponse);
-
-      if (paymentsResponse.data?.data) {
-        const payments = paymentsResponse.data.data.result || [];
-
-        // Tính toán summary từ payments
-        const summary = calculateSalarySummary(payments);
-
-        setSalaryData({
-          payments: payments,
-          summary: summary
-        });
+      if (res && res.data && res.data.data) {
+        // Cập nhật selectedPayment với thông tin chi tiết từ API
+        setSelectedPayment(res.data.data);
+        setDetailModalOpen(true);
       } else {
-        setSalaryData({
-          payments: [],
-          summary: {
-            totalEarned: 0,
-            totalPaid: 0,
-            pendingAmount: 0,
-            averageMonthlySalary: 0,
-            totalClasses: 0,
-            totalSessions: 0
-          }
-        });
+        console.error('Invalid response from getTeacherPaymentByIdAPI');
+        // Fallback: sử dụng payment data hiện tại
+        setSelectedPayment(payment);
+        setDetailModalOpen(true);
       }
-    } catch (error: any) {
-      console.error('❌ Error fetching salary data:', error);
-      setError(error.response?.data?.message || 'Có lỗi xảy ra khi tải thông tin lương');
-    } finally {
-      setLoading(false);
+    } catch (err) {
+      console.error('Error fetching payment details:', err);
+      // Fallback: sử dụng payment data hiện tại
+      setSelectedPayment(payment);
+      setDetailModalOpen(true);
     }
   };
 
-  const calculateSalarySummary = (payments: PaymentInfo[]): SalarySummary => {
-    const totalEarned = payments.reduce((sum, payment) => sum + (payment.totalAmount || 0), 0);
-    const totalPaid = payments.reduce((sum, payment) => sum + (payment.paidAmount || 0), 0);
-    const pendingAmount = totalEarned - totalPaid;
+  const handleViewHistory = async (payment: any) => {
+    try {
+      // Gọi API Get Teacher Payment by ID để lấy thông tin chi tiết
+      const res = await getTeacherPaymentByIdAPI(payment.id);
+      console.log('API getTeacherPaymentByIdAPI response:', res);
 
-    // Tính average monthly salary (trung bình 6 tháng gần nhất)
-    const recentPayments = payments
-      .sort((a, b) => new Date(b.createdAt || '').getTime() - new Date(a.createdAt || '').getTime())
-      .slice(0, 6);
-    const averageMonthlySalary = recentPayments.length > 0
-      ? recentPayments.reduce((sum, payment) => sum + (payment.totalAmount || 0), 0) / recentPayments.length
-      : 0;
 
-    // Tính total classes và sessions từ payments
-    const totalClasses = payments.filter(payment => payment.class).length;
-    const totalSessions = payments.reduce((sum, payment) => sum + (payment.totalLessons || 0), 0);
-
-    return {
-      totalEarned,
-      totalPaid,
-      pendingAmount,
-      averageMonthlySalary,
-      totalClasses,
-      totalSessions
-    };
-  };
-
-  const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-    }).format(amount);
-  };
-
-  const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString('vi-VN');
-  };
-
-  const getStatusColor = (status: string): 'success' | 'warning' | 'error' | 'default' => {
-    switch (status.toLowerCase()) {
-      case 'paid':
-      case 'đã thanh toán':
-        return 'success';
-      case 'pending':
-      case 'chờ thanh toán':
-        return 'warning';
-      case 'overdue':
-      case 'quá hạn':
-        return 'error';
-      default:
-        return 'default';
+      if (res && res.data && res.data.data) {
+        // Cập nhật selectedPayment với thông tin chi tiết từ API
+        setSelectedPayment(res.data.data);
+        setHistoryModalOpen(true);
+      } else {
+        console.error('Invalid response from getTeacherPaymentByIdAPI');
+        // Fallback: sử dụng payment data hiện tại
+        setSelectedPayment(payment);
+        setHistoryModalOpen(true);
+      }
+    } catch (err) {
+      console.error('Error fetching payment details:', err);
+      // Fallback: sử dụng payment data hiện tại
+      setSelectedPayment(payment);
+      setHistoryModalOpen(true);
     }
   };
 
-  const getStatusLabel = (status: string): string => {
-    switch (status.toLowerCase()) {
-      case 'paid':
-      case 'đã thanh toán':
-        return 'Đã thanh toán';
-      case 'pending':
-      case 'chờ thanh toán':
-        return 'Chờ thanh toán';
-      case 'overdue':
-      case 'quá hạn':
-        return 'Quá hạn';
-      default:
-        return status;
-    }
-  };
-
-  const handleViewPaymentDetails = (payment: PaymentInfo): void => {
-    setSelectedPayment(payment);
-    setPaymentModalOpen(true);
-  };
-
-  const handleClosePaymentModal = (): void => {
-    setPaymentModalOpen(false);
+  const handleCloseDetailModal = () => {
+    setDetailModalOpen(false);
     setSelectedPayment(null);
   };
 
-  if (loading) {
-    return (
-      <DashboardLayout role="teacher">
-        <Box sx={commonStyles.container}>
-          <LinearProgress />
-        </Box>
-      </DashboardLayout>
-    );
-  }
-
-  if (error) {
-    return (
-      <DashboardLayout role="teacher">
-        <Box sx={commonStyles.container}>
-          <Alert severity="error">{error}</Alert>
-        </Box>
-      </DashboardLayout>
-    );
-  }
+  const handleCloseHistoryModal = () => {
+    setHistoryModalOpen(false);
+    setSelectedPayment(null);
+  };
 
   return (
     <DashboardLayout role="teacher">
-      <Box sx={commonStyles.container}>
-        <Typography variant="h4" gutterBottom>
-          Thông tin lương
-        </Typography>
-
-        {/* Summary Cards */}
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Box display="flex" alignItems="center">
-                  <MoneyIcon color="primary" sx={{ mr: 2, fontSize: 40 }} />
-                  <Box>
-                    <Typography variant="h4">{formatCurrency(salaryData.summary.totalEarned)}</Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      Tổng thu nhập
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Box display="flex" alignItems="center">
-                  <PaymentIcon color="success" sx={{ mr: 2, fontSize: 40 }} />
-                  <Box>
-                    <Typography variant="h4">{formatCurrency(salaryData.summary.totalPaid)}</Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      Đã thanh toán
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Box display="flex" alignItems="center">
-                  <TrendingUpIcon color="warning" sx={{ mr: 2, fontSize: 40 }} />
-                  <Box>
-                    <Typography variant="h4">{formatCurrency(salaryData.summary.pendingAmount)}</Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      Chờ thanh toán
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Box display="flex" alignItems="center">
-                  <AccountBalanceIcon color="info" sx={{ mr: 2, fontSize: 40 }} />
-                  <Box>
-                    <Typography variant="h4">{formatCurrency(salaryData.summary.averageMonthlySalary)}</Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      Lương TB/tháng
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
-
-        {/* Payment History Table */}
-        <Card>
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
-              Lịch sử thanh toán
+      <Box sx={commonStyles.pageContainer}>
+        <Box sx={commonStyles.contentContainer}>
+          <Box sx={commonStyles.pageHeader}>
+            <Typography sx={commonStyles.pageTitle}>
+              Lương của tôi
             </Typography>
-            <TableContainer>
+          </Box>
+        {/* Stat Cards */}
+        <Box sx={{ mb: 4 }}>
+          <Grid container spacing={3}>
+            <Grid item xs={12} sm={6} md={3}>
+              <StatCard
+                title="Số tháng có lương"
+                value={payments.length}
+                icon={<PaymentIcon sx={{ fontSize: 40 }} />}
+                color="primary"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <StatCard
+                title="Tổng lương"
+                value={totalSalary.toLocaleString() + ' ₫'}
+                icon={<PaymentIcon sx={{ fontSize: 40 }} />}
+                color="success"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <StatCard
+                title="Đã nhận"
+                value={totalPaid.toLocaleString() + ' ₫'}
+                icon={<CheckCircleIcon sx={{ fontSize: 40 }} />}
+                color="info"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <StatCard
+                title="Còn lại"
+                value={totalUnpaid.toLocaleString() + ' ₫'}
+                icon={<MoneyOffIcon sx={{ fontSize: 40 }} />}
+                color="warning"
+              />
+            </Grid>
+          </Grid>
+        </Box>
+        <Paper sx={{ p: 2 }}>
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200 }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <TableContainer sx={commonStyles.tableContainer}>
               <Table>
                 <TableHead>
                   <TableRow>
-                    <TableCell>Tháng/Năm</TableCell>
-                    <TableCell>Học sinh</TableCell>
-                    <TableCell>Lớp</TableCell>
+                    <TableCell align="center">Tháng/Năm</TableCell>
                     <TableCell align="right">Số buổi</TableCell>
+                    <TableCell align="right">Lương/buổi</TableCell>
                     <TableCell align="right">Tổng lương</TableCell>
-                    <TableCell align="right">Đã thanh toán</TableCell>
-                    <TableCell align="right">Còn lại</TableCell>
-                    <TableCell>Trạng thái</TableCell>
-                    <TableCell>Ngày thanh toán</TableCell>
+                    <TableCell align="right">Đã nhận</TableCell>
+                    <TableCell align="center">Trạng thái</TableCell>
                     <TableCell align="center">Thao tác</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {salaryData.payments.map((payment) => (
-                    <TableRow key={payment.id}>
-                      <TableCell>
-                        <Box display="flex" alignItems="center">
-                          <CalendarIcon sx={{ mr: 1, fontSize: 20 }} />
-                          {payment.month}/{payment.year}
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2">
-                          {payment.student?.name || 'N/A'}
-                        </Typography>
-                        <Typography variant="caption" color="textSecondary">
-                          {payment.student?.email || ''}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2">
-                          {payment.class?.name || 'N/A'}
-                        </Typography>
-                      </TableCell>
-                      <TableCell align="right">
-                        <Typography variant="body2">
-                          {payment.totalLessons}
-                        </Typography>
-                      </TableCell>
-                      <TableCell align="right">
-                        <Typography variant="body2" fontWeight="bold">
-                          {formatCurrency(payment.totalAmount)}
-                        </Typography>
-                      </TableCell>
-                      <TableCell align="right">
-                        <Typography variant="body2" color="success.main">
-                          {formatCurrency(payment.paidAmount)}
-                        </Typography>
-                      </TableCell>
-                      <TableCell align="right">
-                        <Typography variant="body2" color="warning.main">
-                          {formatCurrency(payment.totalAmount - payment.paidAmount)}
-                        </Typography>
-                        {payment.discountAmount > 0 && (
-                          <Typography variant="caption" color="error.main">
-                            Giảm: {formatCurrency(payment.discountAmount)}
-                          </Typography>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={getStatusLabel(payment.status)}
-                          color={getStatusColor(payment.status)}
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        {payment.histories && payment.histories.length > 0
-                          ? formatDate(payment.histories[0].paymentDate)
-                          : '-'}
-                      </TableCell>
-                      <TableCell align="center">
-                        <Button
-                          size="small"
-                          color="primary"
-                          onClick={() => handleViewPaymentDetails(payment)}
-                        >
-                          Chi tiết
-                        </Button>
-                      </TableCell>
+                  {payments.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} align="center">Không có dữ liệu lương</TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    payments.map((payment: any) => (
+                      <TableRow key={payment.id} hover sx={commonStyles.tableRow}>
+                        <TableCell align="center">{payment.month}/{payment.year}</TableCell>
+                        <TableCell align="right">
+                          {payment.classes && Array.isArray(payment.classes)
+                            ? payment.classes.reduce((sum: number, classItem: any) => sum + (classItem.totalLessons || 0), 0)
+                            : 0
+                          }
+                        </TableCell>
+                        <TableCell align="right">{(payment.teacher?.salaryPerLesson ?? 0).toLocaleString()} ₫</TableCell>
+                        <TableCell align="right">{(payment.totalAmount ?? 0).toLocaleString()} ₫</TableCell>
+                        <TableCell align="right">{(payment.paidAmount ?? 0).toLocaleString()} ₫</TableCell>
+                        <TableCell align="center">
+                          <Chip
+                            label={
+                              payment.status === 'paid' ? 'Đã nhận' :
+                              payment.status === 'partial' ? 'Nhận một phần' :
+                              payment.status === 'pending' ? 'Chờ nhận' :
+                              'Chưa nhận'
+                            }
+                            color={
+                              payment.status === 'paid' ? 'success' :
+                              payment.status === 'partial' ? 'warning' :
+                              payment.status === 'pending' ? 'info' :
+                              'error'
+                            }
+                            size="small"
+                          />
+                        </TableCell>
+                        <TableCell align="center">
+                          <Tooltip title="Xem chi tiết">
+                            <IconButton size="small" color="primary" onClick={() => handleViewDetail(payment)}>
+                              <VisibilityIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Lịch sử thanh toán">
+                            <IconButton size="small" color="info" onClick={() => handleViewHistory(payment)}>
+                              <HistoryIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </TableContainer>
+          )}
+        </Paper>
 
-            {salaryData.payments.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={10} align="center" sx={{ py: 4 }}>
-                  <Typography variant="h6" color="textSecondary">
-                    Chưa có lịch sử thanh toán
+        {/* Detail Modal */}
+        {selectedPayment && (
+          <Dialog
+            open={detailModalOpen}
+            onClose={handleCloseDetailModal}
+            maxWidth="md"
+            fullWidth
+            PaperProps={{
+              sx: {
+                borderRadius: 3,
+                boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+                overflow: 'hidden'
+              }
+            }}
+          >
+            <DialogTitle sx={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              color: 'white',
+              py: 3,
+              px: 4,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <Box>
+                <Typography variant="h5" sx={{ fontWeight: 600, mb: 0.5 }}>
+                  Chi tiết lương tháng {selectedPayment.month}/{selectedPayment.year}
+                </Typography>
+                <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                  Thông tin chi tiết về lương và các lớp đã dạy
+                </Typography>
+              </Box>
+              <Box sx={{
+                bgcolor: 'rgba(255,255,255,0.2)',
+                borderRadius: '50%',
+                p: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <PaymentIcon sx={{ fontSize: 28, color: 'white' }} />
+              </Box>
+            </DialogTitle>
+            <DialogContent sx={{ p: 0 }}>
+              <Box sx={{ p: 4 }}>
+                {/* Thông tin chung */}
+                <Paper sx={{
+                  p: 3,
+                  mb: 3,
+                  borderRadius: 2,
+                  background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+                  border: '1px solid #e0e6ed'
+                }}>
+                  <Typography variant="h6" gutterBottom sx={{
+                    color: '#2c3e50',
+                    fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    mb: 2
+                  }}>
+                    <Box sx={{
+                      width: 4,
+                      height: 20,
+                      bgcolor: '#667eea',
+                      borderRadius: 2
+                    }} />
+                    Thông tin chung
                   </Typography>
-                </TableCell>
-              </TableRow>
-            )}
-          </CardContent>
-        </Card>
+                  <Grid container spacing={3}>
+                    <Grid item xs={12} md={6}>
+                      <Box sx={{
+                        p: 2,
+                        bgcolor: 'white',
+                        borderRadius: 2,
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                      }}>
+                        <Typography variant="subtitle2" color="textSecondary" sx={{ mb: 1, fontWeight: 600 }}>
+                          Thông tin giáo viên
+                        </Typography>
+                        <Typography variant="body2" sx={{ mb: 1, display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ color: '#666' }}>Tên:</span>
+                          <span style={{ fontWeight: 500, color: '#2c3e50' }}>
+                            {selectedPayment.teacher?.name || '-'}
+                          </span>
+                        </Typography>
+                        <Typography variant="body2" sx={{ mb: 1, display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ color: '#666' }}>Email:</span>
+                          <span style={{ fontWeight: 500, color: '#2c3e50' }}>
+                            {selectedPayment.teacher?.email || '-'}
+                          </span>
+                        </Typography>
+                        <Typography variant="body2" sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ color: '#666' }}>SĐT:</span>
+                          <span style={{ fontWeight: 500, color: '#2c3e50' }}>
+                            {selectedPayment.teacher?.phone || '-'}
+                          </span>
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                      <Box sx={{
+                        p: 2,
+                        bgcolor: 'white',
+                        borderRadius: 2,
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                      }}>
+                        <Typography variant="subtitle2" color="textSecondary" sx={{ mb: 1, fontWeight: 600 }}>
+                          Thông tin lương
+                        </Typography>
+                        <Typography variant="body2" sx={{ mb: 1, display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ color: '#666' }}>Tháng/Năm:</span>
+                          <span style={{ fontWeight: 500, color: '#2c3e50' }}>
+                            {selectedPayment.month}/{selectedPayment.year}
+                          </span>
+                        </Typography>
+                        <Typography variant="body2" sx={{ mb: 1, display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ color: '#666' }}>Lương/buổi:</span>
+                          <span style={{ fontWeight: 600, color: '#27ae60' }}>
+                            {(selectedPayment.teacher?.salaryPerLesson ?? 0).toLocaleString()} ₫
+                          </span>
+                        </Typography>
+                        <Typography variant="body2" sx={{ mb: 1, display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ color: '#666' }}>Tổng lương:</span>
+                          <span style={{ fontWeight: 600, color: '#e74c3c' }}>
+                            {(selectedPayment.totalAmount ?? 0).toLocaleString()} ₫
+                          </span>
+                        </Typography>
+                        <Typography variant="body2" sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ color: '#666' }}>Đã nhận:</span>
+                          <span style={{ fontWeight: 600, color: '#27ae60' }}>
+                            {(selectedPayment.paidAmount ?? 0).toLocaleString()} ₫
+                          </span>
+                        </Typography>
+                      </Box>
+                    </Grid>
+                  </Grid>
+                </Paper>
+
+                {/* Chi tiết từng lớp */}
+                {selectedPayment.classes && Array.isArray(selectedPayment.classes) && (
+                  <Paper sx={{
+                    borderRadius: 2,
+                    overflow: 'hidden',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                  }}>
+                    <Box sx={{
+                      p: 3,
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      color: 'white'
+                    }}>
+                      <Typography variant="h6" sx={{
+                        fontWeight: 600,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1
+                      }}>
+                        <Box sx={{
+                          width: 4,
+                          height: 20,
+                          bgcolor: 'white',
+                          borderRadius: 2
+                        }} />
+                        Chi tiết từng lớp
+                      </Typography>
+                      <Typography variant="body2" sx={{ opacity: 0.9, mt: 0.5 }}>
+                        Thông tin chi tiết về số buổi dạy và lương từng lớp
+                      </Typography>
+                    </Box>
+                    <TableContainer sx={commonStyles.tableContainer}>
+                      <Table>
+                        <TableHead>
+                          <TableRow sx={{ bgcolor: '#f8f9fa' }}>
+                            <TableCell sx={{ fontWeight: 600, color: '#2c3e50' }}>Tên lớp</TableCell>
+                            <TableCell align="right" sx={{ fontWeight: 600, color: '#2c3e50' }}>Số buổi</TableCell>
+                            <TableCell align="right" sx={{ fontWeight: 600, color: '#2c3e50' }}>Lương/buổi</TableCell>
+                            <TableCell align="right" sx={{ fontWeight: 600, color: '#2c3e50' }}>Tổng lương</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {selectedPayment.classes.map((classItem: any, index: number) => (
+                            <TableRow
+                              key={index}
+                              hover
+                              sx={commonStyles.tableRow}
+                            >
+                              <TableCell sx={{ fontWeight: 500, color: '#2c3e50' }}>
+                                {classItem.name || 'N/A'}
+                              </TableCell>
+                              <TableCell align="right" sx={{ fontWeight: 500, color: '#2c3e50' }}>
+                                {classItem.totalLessons || 0}
+                              </TableCell>
+                              <TableCell align="right" sx={{ fontWeight: 500, color: '#27ae60' }}>
+                                {(selectedPayment.teacher?.salaryPerLesson ?? 0).toLocaleString()} ₫
+                              </TableCell>
+                              <TableCell align="right" sx={{ fontWeight: 600, color: '#e74c3c' }}>
+                                {((classItem.totalLessons || 0) * (selectedPayment.teacher?.salaryPerLesson ?? 0)).toLocaleString()} ₫
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </Paper>
+                )}
+              </Box>
+            </DialogContent>
+            <DialogActions sx={{ p: 3, bgcolor: '#f8f9fa' }}>
+              <Button
+                onClick={handleCloseDetailModal}
+                variant="contained"
+                sx={{
+                  bgcolor: '#667eea',
+                  '&:hover': { bgcolor: '#5a6fd8' },
+                  px: 3,
+                  py: 1,
+                  borderRadius: 2
+                }}
+              >
+                Đóng
+              </Button>
+            </DialogActions>
+          </Dialog>
+        )}
 
         {/* Payment History Modal */}
-        {selectedPayment && (
-          <PaymentHistoryModal
-            open={paymentModalOpen}
-            onClose={handleClosePaymentModal}
-            paymentData={{
-              teacherInfo: {
-                id: user?.id || '',
-                name: user?.name || '',
-                email: user?.email || ''
-              },
-              paymentDetails: {
-                month: selectedPayment.month,
-                year: selectedPayment.year,
-                totalAmount: selectedPayment.totalAmount,
-                paidAmount: selectedPayment.paidAmount,
-                status: selectedPayment.status,
-                paymentDate: selectedPayment.histories && selectedPayment.histories.length > 0
-                  ? selectedPayment.histories[0].paymentDate
-                  : undefined,
-                paymentMethod: selectedPayment.histories && selectedPayment.histories.length > 0
-                  ? selectedPayment.histories[0].paymentMethod
-                  : undefined,
-                description: selectedPayment.histories && selectedPayment.histories.length > 0
-                  ? selectedPayment.histories[0].note
-                  : undefined
-              },
-              transactions: selectedPayment.histories?.map(history => ({
-                id: history.id,
-                className: selectedPayment.class?.name || 'N/A',
-                sessions: selectedPayment.totalLessons,
-                amount: history.amount,
-                date: history.paymentDate
-              })) || []
-            }}
-          />
-        )}
+        <PaymentHistoryModal
+          open={historyModalOpen}
+          onClose={handleCloseHistoryModal}
+          paymentData={selectedPayment}
+          title="Lịch sử thanh toán lương"
+          showPaymentDetails={true}
+        />
+
+
+        </Box>
       </Box>
     </DashboardLayout>
   );

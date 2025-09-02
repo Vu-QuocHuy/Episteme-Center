@@ -73,6 +73,14 @@ interface PaymentData {
   discountAmount?: number;
   status?: string;
   paymentHistory?: PaymentTransaction[];
+  // New API structure
+  histories?: Array<{
+    id?: string;
+    date: string;
+    amount: number;
+    method: string;
+    note: string;
+  }>;
   paymentDetails?: {
     month: number;
     year: number;
@@ -113,8 +121,21 @@ interface PaymentData {
     name: string;
     email: string;
   };
+  // New API structure for teacher
+  teacher?: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    salaryPerLesson: number;
+  };
   classes?: Array<{
     totalLessons?: number;
+    id?: string;
+    name?: string;
+    grade?: number;
+    section?: number;
+    year?: number;
   }>;
   totalLessons?: number;
   salaryPerLesson?: number;
@@ -248,29 +269,41 @@ const PaymentHistoryModal: React.FC<PaymentHistoryModalProps> = ({
   const [paymentDetails, setPaymentDetails] = useState<PaymentDetails | null>(null);
 
   useEffect(() => {
-    if (open && paymentData) {
-      console.log('PaymentHistoryModal - paymentData:', paymentData);
-      console.log('PaymentHistoryModal - teacherInfo:', teacherInfo);
-      // Extract data from paymentData
-      let history = paymentData.paymentHistory || [];
-      if (history && !Array.isArray(history) && typeof history === 'object') {
-        history = [history];
-      }
-      setPaymentHistory(history);
+          if (open && paymentData) {
+        // Extract data from paymentData - handle both old and new API structure
+        let history: PaymentTransaction[] = [];
+
+        // Check for new API structure (histories)
+        if (paymentData.histories && Array.isArray(paymentData.histories)) {
+          history = paymentData.histories.map((item: any) => ({
+            id: item.id,
+            date: item.date,
+            amount: item.amount,
+            method: item.method,
+            note: item.note,
+            status: 'completed' // Assume completed for history items
+          }));
+        }
+        // Fallback to old API structure (paymentHistory)
+        else if (paymentData.paymentHistory) {
+          history = Array.isArray(paymentData.paymentHistory) ? paymentData.paymentHistory : [paymentData.paymentHistory];
+        }
+
+        setPaymentHistory(history);
 
       if (showPaymentDetails) {
         setPaymentDetails({
           paymentCode: `INV-${paymentData.month}/${paymentData.year}-${paymentData.id?.slice(-6)}`,
           totalAmount: paymentData.totalAmount || 0,
           paidAmount: paymentData.paidAmount || 0,
-          remainingAmount: paymentData.remainingAmount || 0,
-          finalAmount: paymentData.finalAmount || 0,
-          discountAmount: paymentData.discountAmount || 0,
+          remainingAmount: (paymentData.totalAmount || 0) - (paymentData.paidAmount || 0),
+          finalAmount: paymentData.totalAmount || 0,
+          discountAmount: 0, // No discount in new API
           status: paymentData.status || 'pending',
           month: paymentData.month || 1,
           year: paymentData.year || new Date().getFullYear(),
-          className: paymentData.classId?.name || 'N/A',
-          studentName: paymentData.studentId?.userId?.name || 'N/A'
+          className: paymentData.classes?.[0]?.name || 'N/A', // Use classes array from new API
+          studentName: 'N/A' // No student info in teacher payment
         });
       }
     }
@@ -377,38 +410,18 @@ const PaymentHistoryModal: React.FC<PaymentHistoryModalProps> = ({
                   boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
                 }}>
                   <Grid container spacing={2}>
-                    {paymentData.teacherId ? (
+                    {(paymentData.teacherId || paymentData.teacher) ? (
                       <>
                         <Grid item xs={12} md={6}>
                           <Box>
                             <Typography variant="subtitle2" color="textSecondary" gutterBottom sx={{ fontWeight: 600 }}>
-                              Giáo viên: {paymentData.teacherId.userId?.name || paymentData.teacherId.name}
+                              Giáo viên: {paymentData.teacher?.name || paymentData.teacherId?.userId?.name || paymentData.teacherId?.name}
                             </Typography>
                             <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 500, color: '#2c3e50' }}>
-                              Email: {(() => {
-                                console.log('Rendering email - teacherInfo:', teacherInfo);
-                                console.log('Rendering email - paymentData.teacherId:', paymentData.teacherId);
-                                // Dựa trên cấu trúc dữ liệu thực tế: teacherInfo.userId.email
-                                const email = teacherInfo?.userId?.email ||
-                                            teacherInfo?.email ||
-                                            paymentData.teacherId?.userId?.email ||
-                                            paymentData.teacherId?.email || '-';
-                                console.log('Final email value:', email);
-                                return email;
-                              })()}
+                              Email: {paymentData.teacher?.email || paymentData.teacherId?.userId?.email || paymentData.teacherId?.email || '-'}
                             </Typography>
                             <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 500, color: '#2c3e50' }}>
-                              SĐT: {(() => {
-                                console.log('Rendering phone - teacherInfo:', teacherInfo);
-                                console.log('Rendering phone - paymentData.teacherId:', paymentData.teacherId);
-                                // Dựa trên cấu trúc dữ liệu thực tế: teacherInfo.userId.phone
-                                const phone = teacherInfo?.userId?.phone ||
-                                            teacherInfo?.phone ||
-                                            paymentData.teacherId?.userId?.phone ||
-                                            paymentData.teacherId?.phone || '-';
-                                console.log('Final phone value:', phone);
-                                return phone;
-                              })()}
+                              SĐT: {paymentData.teacher?.phone || paymentData.teacherId?.userId?.phone || paymentData.teacherId?.phone || '-'}
                             </Typography>
                             <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 500, color: '#2c3e50' }}>
                               Tháng/Năm: {paymentData.month}/{paymentData.year}
@@ -426,7 +439,7 @@ const PaymentHistoryModal: React.FC<PaymentHistoryModalProps> = ({
                                 : paymentData.totalLessons || '-'}
                             </Typography>
                             <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 500, color: '#2c3e50' }}>
-                              Lương/buổi: {formatCurrency(paymentData.salaryPerLesson || 0)}
+                              Lương/buổi: {formatCurrency(paymentData.teacher?.salaryPerLesson || paymentData.salaryPerLesson || 0)}
                             </Typography>
                             <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 500, color: '#2c3e50' }}>
                               Tổng lương: {formatCurrency(paymentData.totalAmount || 0)}

@@ -138,9 +138,6 @@ const AppContent: React.FC = () => {
               }
             />
 
-                      {/* Teacher Detail Route - Public (must be before /teacher/*) */}
-          <Route path="/teacher/:slug" element={<TeacherDetail />} />
-
             {/* Teacher Routes */}
             <Route
               path="/teacher/*"
@@ -189,6 +186,9 @@ const AppContent: React.FC = () => {
                 </ProtectedRoute>
               }
             />
+
+            {/* Teacher Detail Route - Public (must be after all other routes) */}
+            <Route path="/teacher/view/:slug" element={<TeacherDetail />} />
 
             {/* Catch all route - redirect to home */}
             <Route path="*" element={<Navigate to="/" replace />} />

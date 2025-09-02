@@ -145,9 +145,20 @@ const Dashboard: React.FC = () => {
     return days[dayNumber] || `Thứ ${dayNumber}`;
   };
 
-  const formatSchedule = (schedule: string): string => {
+  const formatSchedule = (schedule: any): string => {
     if (!schedule) return '';
+
     try {
+      // Nếu schedule đã là object
+      if (typeof schedule === 'object') {
+        if (Array.isArray(schedule) && schedule.length > 0) {
+          const firstSchedule = schedule[0];
+          return `${formatDayOfWeek(firstSchedule.dayOfWeek)} ${formatTime(firstSchedule.startTime)} - ${formatTime(firstSchedule.endTime)}`;
+        }
+        return 'Lịch học đã được thiết lập';
+      }
+
+      // Nếu schedule là string, thử parse JSON
       const scheduleObj = JSON.parse(schedule);
       if (Array.isArray(scheduleObj) && scheduleObj.length > 0) {
         const firstSchedule = scheduleObj[0];
@@ -155,7 +166,7 @@ const Dashboard: React.FC = () => {
       }
       return schedule;
     } catch {
-      return schedule;
+      return typeof schedule === 'string' ? schedule : 'Lịch học đã được thiết lập';
     }
   };
 
@@ -252,15 +263,15 @@ const Dashboard: React.FC = () => {
                           </Avatar>
                         </ListItemAvatar>
                         <ListItemText
-                          primary={classItem.name}
+                          primary={typeof classItem.name === 'string' ? classItem.name : 'Tên lớp không xác định'}
                           secondary={
                             <Box>
                               <Typography variant="body2" color="text.secondary">
-                                {classItem.studentCount} học sinh • {formatSchedule(classItem.schedule)}
+                                {typeof classItem.studentCount === 'number' ? classItem.studentCount : 0} học sinh • {formatSchedule(classItem.schedule)}
                               </Typography>
                               {classItem.nextLesson && (
                                 <Typography variant="body2" color="primary">
-                                  Buổi tiếp theo: {classItem.nextLesson}
+                                  Buổi tiếp theo: {typeof classItem.nextLesson === 'string' ? classItem.nextLesson : 'Đã lên lịch'}
                                 </Typography>
                               )}
                             </Box>
@@ -289,19 +300,19 @@ const Dashboard: React.FC = () => {
               ) : (
                 <Box>
                   <Typography variant="h6" color="primary">
-                    {formatMonthYear(dashboardData.recentlySalary.month, dashboardData.recentlySalary.year)}
+                    {formatMonthYear(dashboardData.recentlySalary.month || 0, dashboardData.recentlySalary.year || 0)}
                   </Typography>
                   <Typography variant="h4" sx={{ my: 2 }}>
-                    {formatCurrency(dashboardData.recentlySalary.totalLessons * dashboardData.recentlySalary.salaryPerLesson)}
+                    {formatCurrency((dashboardData.recentlySalary.totalLessons || 0) * (dashboardData.recentlySalary.salaryPerLesson || 0))}
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                    Số buổi dạy: {dashboardData.recentlySalary.totalLessons}
+                    Số buổi dạy: {dashboardData.recentlySalary.totalLessons || 0}
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                    Lương/buổi: {formatCurrency(dashboardData.recentlySalary.salaryPerLesson)}
+                    Lương/buổi: {formatCurrency(dashboardData.recentlySalary.salaryPerLesson || 0)}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Đã thanh toán: {formatCurrency(dashboardData.recentlySalary.paidAmount)}
+                    Đã thanh toán: {formatCurrency(dashboardData.recentlySalary.paidAmount || 0)}
                   </Typography>
                 </Box>
               )}
@@ -322,7 +333,7 @@ const Dashboard: React.FC = () => {
                       Tổng lương
                     </Typography>
                     <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-                      {formatCurrency(dashboardData.paymentInfo.totalSalary)}
+                      {formatCurrency(dashboardData.paymentInfo.totalSalary || 0)}
                     </Typography>
                   </Box>
                 </Grid>
@@ -332,7 +343,7 @@ const Dashboard: React.FC = () => {
                       Đã thanh toán
                     </Typography>
                     <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-                      {formatCurrency(dashboardData.paymentInfo.totalPaidAmount)}
+                      {formatCurrency(dashboardData.paymentInfo.totalPaidAmount || 0)}
                     </Typography>
                   </Box>
                 </Grid>
@@ -342,7 +353,7 @@ const Dashboard: React.FC = () => {
                       Chưa thanh toán
                     </Typography>
                     <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-                      {formatCurrency(dashboardData.paymentInfo.totalUnPaidAmount)}
+                      {formatCurrency(dashboardData.paymentInfo.totalUnPaidAmount || 0)}
                     </Typography>
                   </Box>
                 </Grid>

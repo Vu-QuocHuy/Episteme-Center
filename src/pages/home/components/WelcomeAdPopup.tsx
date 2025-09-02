@@ -14,8 +14,9 @@ const HomeWelcomeAdPopup: React.FC = () => {
     const fetchAdvertisements = async () => {
       try {
         const response = await getHomePopupAPI();
-        if (response.data?.data?.result) {
-          const popupAds = response.data.data.result;
+        if (response.data?.data) {
+          // API trả về object đơn lẻ, wrap thành array
+          const popupAds = [response.data.data] as any;
           setAdvertisements(popupAds);
         }
       } catch (error) {
@@ -26,7 +27,7 @@ const HomeWelcomeAdPopup: React.FC = () => {
     fetchAdvertisements();
   }, []);
 
-  // Show popup after delay
+    // Show popup after delay
   useEffect(() => {
     if (popupConfig.isActive && advertisements.length > 0 && popupConfig.showOnFirstVisit) {
       const hasVisited = localStorage.getItem('hasVisitedHomepage');
@@ -42,7 +43,7 @@ const HomeWelcomeAdPopup: React.FC = () => {
     }
   }, [popupConfig, advertisements]);
 
-  if (!popupConfig.isActive || advertisements.length === 0) {
+    if (!popupConfig.isActive || advertisements.length === 0) {
     return null;
   }
 
