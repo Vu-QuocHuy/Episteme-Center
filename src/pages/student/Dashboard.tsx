@@ -145,43 +145,43 @@ const Dashboard = () => {
 
           <Typography variant="subtitle1" color="text.secondary" gutterBottom sx={{ mb: 3 }}>
             Xin chào <strong>{user?.name || 'Học sinh'}</strong>, đây là thông tin học tập của bạn
-          </Typography>
+        </Typography>
 
         {/* Stat Cards */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
-            <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={12} sm={6} md={3}>
             <StatCard
               title="Tổng lớp học"
-                value={dashboardData.totalClasses}
+              value={dashboardData.totalClasses}
               icon={<ClassIcon sx={{ fontSize: 40 }} />}
               color="primary"
             />
           </Grid>
-            <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={12} sm={6} md={3}>
             <StatCard
-                title="Lớp đang học"
-                value={dashboardData.activeClasses}
+              title="Lớp đang học"
+              value={dashboardData.activeClasses}
                 icon={<SchoolIcon sx={{ fontSize: 40 }} />}
               color="success"
             />
           </Grid>
-            <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={12} sm={6} md={3}>
             <StatCard
                 title="Lớp hoàn thành"
-                value={dashboardData.completedClasses}
+              value={dashboardData.completedClasses}
                 icon={<TrendingUpIcon sx={{ fontSize: 40 }} />}
               color="info"
             />
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <StatCard
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <StatCard
                 title="Tỷ lệ tham gia"
                 value={`${dashboardData.attendance.attendanceRate || 0}%`}
                 icon={<ScheduleIcon sx={{ fontSize: 40 }} />}
-                color="warning"
-              />
-            </Grid>
+              color="warning"
+            />
           </Grid>
+        </Grid>
 
           {/* Attendance Stats */}
           <Grid container spacing={3} sx={{ mb: 4 }}>
@@ -217,7 +217,7 @@ const Dashboard = () => {
                 color="warning"
             />
           </Grid>
-        </Grid>
+          </Grid>
 
           {/* Class List */}
           <Grid container spacing={3}>
@@ -268,7 +268,7 @@ const Dashboard = () => {
                           <TableCell>
                             <Typography variant="body2">
                                     {schedule.time}
-                            </Typography>
+                              </Typography>
                           </TableCell>
                           <TableCell>
                             <Chip

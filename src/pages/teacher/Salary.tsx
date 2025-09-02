@@ -30,7 +30,7 @@ const Salary = () => {
       try {
         const res = await getTeacherPaymentsAPI({
           teacherId: teacherId,
-          page: 1,
+        page: 1,
           limit: 50
         });
         console.log('API getTeacherPaymentsAPI response:', res);
@@ -38,16 +38,16 @@ const Salary = () => {
         // Handle the response structure from Get All Teacher Payments API
         if (res && res.data && res.data.data && res.data.data.result) {
           setPayments(res.data.data.result);
-        } else {
+      } else {
           setPayments([]);
         }
       } catch (err) {
         console.error('Error fetching payments:', err);
         setPayments([]);
-      } finally {
-        setLoading(false);
-      }
-    };
+    } finally {
+      setLoading(false);
+    }
+  };
     fetchPayments();
   }, [user]);
 
@@ -125,8 +125,8 @@ const Salary = () => {
           <Box sx={commonStyles.pageHeader}>
             <Typography sx={commonStyles.pageTitle}>
               Lương của tôi
-            </Typography>
-          </Box>
+                    </Typography>
+                  </Box>
         {/* Stat Cards */}
         <Box sx={{ mb: 4 }}>
           <Grid container spacing={3}>
@@ -137,24 +137,24 @@ const Salary = () => {
                 icon={<PaymentIcon sx={{ fontSize: 40 }} />}
                 color="primary"
               />
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
               <StatCard
                 title="Tổng lương"
                 value={totalSalary.toLocaleString() + ' ₫'}
                 icon={<PaymentIcon sx={{ fontSize: 40 }} />}
                 color="success"
               />
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
               <StatCard
                 title="Đã nhận"
                 value={totalPaid.toLocaleString() + ' ₫'}
                 icon={<CheckCircleIcon sx={{ fontSize: 40 }} />}
                 color="info"
               />
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
               <StatCard
                 title="Còn lại"
                 value={totalUnpaid.toLocaleString() + ' ₫'}
@@ -280,7 +280,7 @@ const Salary = () => {
                 justifyContent: 'center'
               }}>
                 <PaymentIcon sx={{ fontSize: 28, color: 'white' }} />
-              </Box>
+                        </Box>
             </DialogTitle>
             <DialogContent sx={{ p: 0 }}>
               <Box sx={{ p: 4 }}>
@@ -406,7 +406,7 @@ const Salary = () => {
                       </Typography>
                       <Typography variant="body2" sx={{ opacity: 0.9, mt: 0.5 }}>
                         Thông tin chi tiết về số buổi dạy và lương từng lớp
-                      </Typography>
+                          </Typography>
                     </Box>
                     <TableContainer sx={commonStyles.tableContainer}>
                       <Table>
@@ -427,21 +427,21 @@ const Salary = () => {
                             >
                               <TableCell sx={{ fontWeight: 500, color: '#2c3e50' }}>
                                 {classItem.name || 'N/A'}
-                              </TableCell>
+                      </TableCell>
                               <TableCell align="right" sx={{ fontWeight: 500, color: '#2c3e50' }}>
                                 {classItem.totalLessons || 0}
-                              </TableCell>
+                      </TableCell>
                               <TableCell align="right" sx={{ fontWeight: 500, color: '#27ae60' }}>
                                 {(selectedPayment.teacher?.salaryPerLesson ?? 0).toLocaleString()} ₫
-                              </TableCell>
+                      </TableCell>
                               <TableCell align="right" sx={{ fontWeight: 600, color: '#e74c3c' }}>
                                 {((classItem.totalLessons || 0) * (selectedPayment.teacher?.salaryPerLesson ?? 0)).toLocaleString()} ₫
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </TableContainer>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
                   </Paper>
                 )}
               </Box>
@@ -465,7 +465,7 @@ const Salary = () => {
         )}
 
         {/* Payment History Modal */}
-        <PaymentHistoryModal
+          <PaymentHistoryModal
           open={historyModalOpen}
           onClose={handleCloseHistoryModal}
           paymentData={selectedPayment}
