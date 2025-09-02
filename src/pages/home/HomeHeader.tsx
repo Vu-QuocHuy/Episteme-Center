@@ -54,17 +54,8 @@ const HomeHeader: React.FC = () => {
     .filter(item => item.isActive)
     .sort((a, b) => a.order - b.order);
 
-  // Fallback menu items if no menu from API
-  const fallbackMenuItems = [
-    { id: '1', label: 'Trang chủ', sectionId: 'hero-section', order: 1, isActive: true, isExternal: false, externalUrl: '', children: [] },
-    { id: '2', label: 'Giới thiệu', sectionId: 'about-section', order: 2, isActive: true, isExternal: false, externalUrl: '', children: [] },
-    { id: '3', label: 'Giáo viên', sectionId: 'teachers-section', order: 3, isActive: true, isExternal: false, externalUrl: '', children: [] },
-    { id: '4', label: 'Khóa học', sectionId: 'courses-section', order: 4, isActive: true, isExternal: false, externalUrl: '', children: [] },
-    { id: '5', label: 'Liên hệ', sectionId: 'contact-section', order: 5, isActive: true, isExternal: false, externalUrl: '', children: [] }
-  ];
-
-  // Use fallback menu if no active menu items from API
-  const displayMenuItems = activeMenuItems.length > 0 ? activeMenuItems : fallbackMenuItems;
+  // Không dùng menu tĩnh mặc định; chỉ hiển thị khi có menu từ API
+  const displayMenuItems = activeMenuItems;
 
   // Get section IDs for scroll detection
   const sectionIds = displayMenuItems

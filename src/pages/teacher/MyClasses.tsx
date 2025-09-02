@@ -30,7 +30,7 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
-import { getTeacherScheduleAPI, getTodayAttendanceAPI } from '../../services/api';
+import { getTeacherScheduleAPI } from '../../services/api';
 import ClassDetailModal from '../../components/features/teacher/ClassDetailModal';
 import AttendanceModal from '../../components/features/teacher/AttendanceModal';
 import AttendanceHistoryModal from '../../components/features/teacher/AttendanceHistoryModal';
@@ -110,7 +110,7 @@ const MyClasses: React.FC = () => {
   const [selectedClass, setSelectedClass] = useState<ClassData | null>(null);
   const [attendanceModalOpen, setAttendanceModalOpen] = useState<boolean>(false);
   const [historyModalOpen, setHistoryModalOpen] = useState<boolean>(false);
-  const [classesWithSessionToday, setClassesWithSessionToday] = useState<Set<string>>(new Set());
+  // Removed prefetch of today's session to avoid API call on page load
 
   // UI states
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -207,8 +207,7 @@ const MyClasses: React.FC = () => {
         totalStudents
       });
 
-      // Check which classes have sessions today
-      await checkTodaySessions(classes);
+      // Do not prefetch today's sessions here; we'll compute locally per class for UI
     } catch (error: any) {
       setError(error.response?.data?.message || error.message || 'Có lỗi xảy ra khi tải danh sách lớp học');
     } finally {
@@ -216,28 +215,7 @@ const MyClasses: React.FC = () => {
     }
   };
 
-  const checkTodaySessions = async (classes: ClassData[]): Promise<void> => {
-    const classesWithSession = new Set<string>();
-
-    for (const classItem of classes) {
-      if (normalizeStatus(classItem.status) === 'active') {
-        try {
-          const response = await getTodayAttendanceAPI(classItem.id);
-          const responseData = (response as any)?.data?.data || (response as any)?.data || {};
-
-          // If we get a valid response with session data, it means there's a session today
-          if (responseData?.id && responseData?.attendances) {
-            classesWithSession.add(classItem.id);
-          }
-        } catch (error) {
-          // If API returns 404 or error, it means no session today
-          console.log(`No session today for class ${classItem.id}`);
-        }
-      }
-    }
-
-    setClassesWithSessionToday(classesWithSession);
-  };
+  // Removed checkTodaySessions prefetch function
 
   // Handlers for modals
   const handleOpenDetail = (classItem: ClassData): void => {
@@ -373,7 +351,9 @@ const MyClasses: React.FC = () => {
             {filteredClasses.map((classItem) => {
               const statusConfig = getStatusConfig(classItem.status);
               const isActive = normalizeStatus(classItem.status) === 'active';
-              const hasSessionToday = classesWithSessionToday.has(classItem.id);
+              // Compute hasSessionToday locally without API: check schedule day
+              const todayIdx = new Date().getDay();
+              const hasSessionToday = !!classItem.schedule?.dayOfWeeks?.includes(todayIdx);
 
               return (
                 <Grid item xs={12} sm={6} md={4} key={classItem.id}>

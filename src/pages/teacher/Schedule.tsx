@@ -12,6 +12,7 @@ interface Lesson {
   date: string;
   className: string;
   time: string;
+  room?: string;
   teacher: string;
   type: string;
   classId: string;
@@ -65,6 +66,7 @@ const Schedule: React.FC = () => {
                     date: currentDate.format('YYYY-MM-DD'),
                     className: classItem.name,
                     time: `${schedule.time_slots.start_time} - ${schedule.time_slots.end_time}`,
+                    room: (classItem as any).room,
                     teacher: user.name,
                     type: 'teacher',
                     classId: classItem.id,
