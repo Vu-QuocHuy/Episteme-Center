@@ -40,7 +40,7 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>('');
   const [uploading, setUploading] = useState(false);
-  const [fileUploading, setFileUploading] = useState(false);
+
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string>('');
   const [uploadedPublicId, setUploadedPublicId] = useState<string>('');
   const [error, setError] = useState<string>('');
@@ -87,7 +87,6 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({
 
       // Tải file lên ngay khi chọn (giống luồng quảng cáo): nhận imageUrl/publicId và lưu sẵn
       try {
-        setFileUploading(true);
         // Nếu trước đó đã có bản upload tạm (chưa cập nhật avatar), xóa nó trước để tránh rác
         if (uploadedPublicId) {
           try {
@@ -109,9 +108,9 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({
           }
         }
         const fileRes = await uploadFileAPI(file);
-        const fileData = (fileRes as any)?.data?.data || (fileRes as any)?.data || {};
-        const imageUrl = fileData.url || fileData.imageUrl;
-        const publicId = fileData.public_id || fileData.publicId;
+        const fileData = fileRes.data?.data || fileRes.data || {};
+        const imageUrl = fileData.url;
+        const publicId = fileData.public_id;
         if (!imageUrl || !publicId) {
           throw new Error('Không nhận được imageUrl/publicId từ API Upload file');
         }
@@ -121,8 +120,6 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({
         setError(err.message || 'Tải file thất bại, vui lòng thử lại');
         setUploadedImageUrl('');
         setUploadedPublicId('');
-      } finally {
-        setFileUploading(false);
       }
     };
     reader.readAsDataURL(file);
@@ -149,7 +146,7 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({
 
       if (response.data) {
         // Update user context
-        if (updateUser) {
+        if (updateUser && response.data.user) {
           updateUser({ ...response.data.user });
         }
 
@@ -175,7 +172,14 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({
         setUploadedPublicId('');
       }
     } catch (err: any) {
-      setError(err.message || 'Có lỗi xảy ra khi tải ảnh lên');
+      console.error('Avatar upload error:', err);
+      if (err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else if (err.message) {
+        setError(err.message);
+      } else {
+        setError('Có lỗi xảy ra khi tải ảnh lên');
+      }
     } finally {
       setUploading(false);
     }

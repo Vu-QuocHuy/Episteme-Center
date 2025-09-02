@@ -135,8 +135,7 @@ const ClassFilters: React.FC<ClassFiltersProps> = ({
             >
               <MenuItem value="">Tất cả</MenuItem>
               <MenuItem value="active">Đang hoạt động</MenuItem>
-              <MenuItem value="upcoming">Sắp khai giảng</MenuItem>
-              <MenuItem value="closed">Đã kết thúc</MenuItem>
+              <MenuItem value="closed">Đã đóng</MenuItem>
             </Select>
           </FormControl>
         </Grid>

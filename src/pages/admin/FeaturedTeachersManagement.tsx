@@ -12,11 +12,11 @@ import {
   Visibility as VisibilityIcon,
   VisibilityOff as VisibilityOffIcon,
 } from '@mui/icons-material';
-import DashboardLayout from '../../../components/layouts/DashboardLayout';
-import NotificationSnackbar from '../../../components/common/NotificationSnackbar';
-import { getAllTeachersAPI } from '../../../services/api';
-import { Teacher } from '../../../types';
-import { commonStyles } from '../../../utils/styles';
+import DashboardLayout from '../../components/layouts/DashboardLayout';
+import NotificationSnackbar from '../../components/common/NotificationSnackbar';
+import { getAllTeachersAPI } from '../../services/api';
+import { Teacher } from '../../types';
+import { commonStyles } from '../../utils/styles';
 
 interface FeaturedTeacher {
   id: string;

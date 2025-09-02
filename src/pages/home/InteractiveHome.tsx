@@ -15,8 +15,8 @@ import {
 
 // Import components
 import BannerCarousel from './components/BannerCarousel';
-import FeedbackHome from '../../components/features/homepage/FeedbackHome';
-import FeaturedTeachersHome from '../../components/features/homepage/FeaturedTeachersHome';
+import FeedbackHome from '../../components/features/home/FeedbackHome';
+import FeaturedTeachersHome from '../../components/features/home/FeaturedTeachersHome';
 import HomeWelcomeAdPopup from './components/WelcomeAdPopup';
 import HomeHeader from './HomeHeader';
 

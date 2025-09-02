@@ -11,9 +11,9 @@ import {
   Delete as DeleteIcon,
   Save as SaveIcon
 } from '@mui/icons-material';
-import DashboardLayout from '../../../components/layouts/DashboardLayout';
-import NotificationSnackbar from '../../../components/common/NotificationSnackbar';
-import { commonStyles } from '../../../utils/styles';
+import DashboardLayout from '../../components/layouts/DashboardLayout';
+import NotificationSnackbar from '../../components/common/NotificationSnackbar';
+import { commonStyles } from '../../utils/styles';
 
 interface AboutFeature {
   id: string;

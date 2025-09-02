@@ -243,7 +243,10 @@ export const uploadAvatarAPI = (data: { imageUrl: string; publicId: string }) =>
   formData.append('imageUrl', data.imageUrl);
   formData.append('publicId', data.publicId);
   return axiosInstance.patch(API_CONFIG.ENDPOINTS.USERS.UPLOAD_AVATAR, formData, {
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+    }
   });
 };
 export const getUserByIdAPI = (id: string) => axiosInstance.get(API_CONFIG.ENDPOINTS.USERS.GET_BY_ID(id));
@@ -865,13 +868,19 @@ export const uploadFileAPI = (file: File) => {
   const formData = new FormData();
   formData.append('file', file);
   return axiosInstance.post<FileUploadResponse>(API_CONFIG.ENDPOINTS.FILES.UPLOAD, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
+    headers: {
+      'Content-Type': 'multipart/form-data',
+      'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+    }
   });
 };
 
 export const deleteFileAPI = (publicId: string) => {
   return axiosInstance.delete(API_CONFIG.ENDPOINTS.FILES.DELETE, {
-    params: { publicId }
+    params: { publicId },
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+    }
   });
 };
 

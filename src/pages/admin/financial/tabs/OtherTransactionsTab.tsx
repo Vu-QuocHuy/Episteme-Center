@@ -2,14 +2,16 @@ import React from 'react';
 import { Box, Button, TextField, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Paper, Pagination, Typography, IconButton, Tooltip, Dialog, DialogTitle, DialogContent, DialogActions, Grid, MenuItem, Card, CardContent } from '@mui/material';
 import FormDialog from '../../../../components/common/forms/FormDialog';
 import { getAllTransactionsAPI, createTransactionAPI, updateTransactionAPI, deleteTransactionAPI, getAllTransactionCategoriesAPI, createTransactionCategoryAPI, getTransactionCategoryByIdAPI, updateTransactionCategoryAPI, deleteTransactionCategoryAPI } from '../../../../services/api';
-import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import { Edit as EditIcon, Delete as DeleteIcon, Download as DownloadIcon } from '@mui/icons-material';
+import * as XLSX from 'xlsx';
 
 interface Transaction {
   id: string;
   amount: number;
   description: string;
   category: { id: number; name: string; type: 'revenue' | 'expense' };
-  transaction_at: string;
+  transaction_at?: string;
+  transactionAt?: string;
 }
 
 interface Props {}
@@ -17,8 +19,16 @@ interface Props {}
 const OtherTransactionsTab: React.FC<Props> = () => {
   const [transactions, setTransactions] = React.useState<Transaction[]>([]);
   const [pagination, setPagination] = React.useState<{ page: number; totalPages: number }>({ page: 1, totalPages: 1 });
+  const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
+  const months = Array.from({ length: 12 }, (_, i) => i + 1);
+  const quarters = [1, 2, 3, 4];
+  const [periodType, setPeriodType] = React.useState<string>('year');
+  const [selectedYear, setSelectedYear] = React.useState<number>(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = React.useState<number>(new Date().getMonth() + 1);
+  const [selectedQuarter, setSelectedQuarter] = React.useState<number>(1);
   const [customStart, setCustomStart] = React.useState<string>(new Date().toISOString().split('T')[0].substring(0, 8) + '01');
   const [customEnd, setCustomEnd] = React.useState<string>(new Date().toISOString().split('T')[0]);
+  const [typeFilter, setTypeFilter] = React.useState<'all' | 'revenue' | 'expense'>('all');
 
   const [openTransactionDialog, setOpenTransactionDialog] = React.useState<boolean>(false);
   const [transactionForm, setTransactionForm] = React.useState<{ amount: string; category_id: string; description: string }>({ amount: '', category_id: '', description: '' });
@@ -47,7 +57,39 @@ const OtherTransactionsTab: React.FC<Props> = () => {
   const [categoryLoading, setCategoryLoading] = React.useState<boolean>(false);
 
   const fetchOtherTransactions = React.useCallback(async (pageNum = 1) => {
-    const res = await getAllTransactionsAPI({ page: pageNum, limit: 10 });
+    // Build date range based on selected period
+    let startDate: string | undefined;
+    let endDate: string | undefined;
+    if (periodType === 'year') {
+      startDate = `${selectedYear}-01-01`;
+      endDate = `${selectedYear}-12-31`;
+    } else if (periodType === 'month') {
+      const year = selectedYear;
+      const month = selectedMonth;
+      const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
+      const lastDay = new Date(year, month, 0).getDate();
+      startDate = `${year}-${pad(month)}-01`;
+      endDate = `${year}-${pad(month)}-${pad(lastDay)}`;
+    } else if (periodType === 'quarter') {
+      const q = selectedQuarter;
+      const year = selectedYear;
+      const startMonth = q === 1 ? 1 : q === 2 ? 4 : q === 3 ? 7 : 10;
+      const endMonth = q === 1 ? 3 : q === 2 ? 6 : q === 3 ? 9 : 12;
+      const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
+      const lastDay = new Date(year, endMonth, 0).getDate();
+      startDate = `${year}-${pad(startMonth)}-01`;
+      endDate = `${year}-${pad(endMonth)}-${pad(lastDay)}`;
+    } else if (periodType === 'custom') {
+      startDate = customStart;
+      endDate = customEnd;
+    }
+
+    const params: any = { page: pageNum, limit: 10 };
+    if (startDate) params.start_date = startDate;
+    if (endDate) params.end_date = endDate;
+    if (typeFilter !== 'all') params.type = typeFilter;
+
+    const res = await getAllTransactionsAPI(params);
     const data = (res as any)?.data;
     if (data?.data?.result && Array.isArray(data.data.result)) {
       setTransactions(data.data.result);
@@ -75,6 +117,31 @@ const OtherTransactionsTab: React.FC<Props> = () => {
   }, []);
 
   React.useEffect(() => { fetchOtherTransactions(1); fetchCategories(); }, [fetchOtherTransactions, fetchCategories]);
+  React.useEffect(() => { fetchOtherTransactions(1); }, [periodType, selectedYear, selectedMonth, selectedQuarter, customStart, customEnd, typeFilter, fetchOtherTransactions]);
+  const exportToExcel = () => {
+    const rows = transactions.map((t) => ({
+      'Danh mục': t.category?.name || '-',
+      'Loại': t.category?.type === 'revenue' ? 'Thu' : 'Chi',
+      'Mô tả': t.description || '-',
+      'Ngày': (t.transactionAt || t.transaction_at) ? new Date(t.transactionAt || (t.transaction_at as string)).toLocaleDateString('vi-VN') : '-',
+      'Số tiền (₫)': t.amount || 0,
+    }));
+    const totalAmount = rows.reduce((s, r) => s + Number((r as any)['Số tiền (₫)'] || 0), 0);
+    rows.push({
+      'Danh mục': 'Tổng',
+      'Loại': '',
+      'Mô tả': '',
+      'Ngày': '',
+      'Số tiền (₫)': totalAmount,
+    } as any);
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const colWidths = Object.keys(rows[0] || {}).map((k) => ({ wch: Math.max(k.length, ...rows.map(r => String((r as any)[k] ?? '').length)) + 2 }));
+    (ws as any)['!cols'] = colWidths;
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'ThuChiKhac');
+    const now = new Date();
+    XLSX.writeFile(wb, `BaoCao_ThuChiKhac_${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}.xlsx`);
+  };
 
   const onPageChange = (p: number) => fetchOtherTransactions(p);
   const handleOpenTransactionDialog = () => setOpenTransactionDialog(true);
@@ -174,12 +241,57 @@ const OtherTransactionsTab: React.FC<Props> = () => {
 
   return (
     <>
-      <Box sx={{ mb: 2, display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
-        <TextField label="Từ ngày" type="date" value={customStart} onChange={(e) => setCustomStart(e.target.value)} sx={{ minWidth: 160 }} InputLabelProps={{ shrink: true }} />
-        <TextField label="Đến ngày" type="date" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)} sx={{ minWidth: 160 }} InputLabelProps={{ shrink: true }} />
+      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+          <TextField select label="Loại" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value as any)} sx={{ minWidth: 150 }}>
+            <MenuItem value="all">Tất cả</MenuItem>
+            <MenuItem value="revenue">Thu</MenuItem>
+            <MenuItem value="expense">Chi</MenuItem>
+          </TextField>
+          <TextField select label="Thời gian" value={periodType} onChange={(e) => setPeriodType(e.target.value)} sx={{ minWidth: 150 }}>
+            <MenuItem value="year">Năm</MenuItem>
+            <MenuItem value="month">Tháng</MenuItem>
+            <MenuItem value="quarter">Quý</MenuItem>
+            <MenuItem value="custom">Tùy chọn</MenuItem>
+          </TextField>
+          {periodType === 'year' && (
+            <TextField select label="Năm" value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} sx={{ minWidth: 120 }}>
+              {years.map((y) => (<MenuItem key={y} value={y}>{y}</MenuItem>))}
+            </TextField>
+          )}
+          {periodType === 'month' && (
+            <>
+              <TextField select label="Năm" value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} sx={{ minWidth: 120 }}>
+                {years.map((y) => (<MenuItem key={y} value={y}>{y}</MenuItem>))}
+              </TextField>
+              <TextField select label="Tháng" value={selectedMonth} onChange={(e) => setSelectedMonth(Number(e.target.value))} sx={{ minWidth: 120 }}>
+                {months.map((m) => (<MenuItem key={m} value={m}>{m}</MenuItem>))}
+              </TextField>
+            </>
+          )}
+          {periodType === 'quarter' && (
+            <>
+              <TextField select label="Năm" value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} sx={{ minWidth: 120 }}>
+                {years.map((y) => (<MenuItem key={y} value={y}>{y}</MenuItem>))}
+              </TextField>
+              <TextField select label="Quý" value={selectedQuarter} onChange={(e) => setSelectedQuarter(Number(e.target.value))} sx={{ minWidth: 120 }}>
+                {quarters.map((q) => (<MenuItem key={q} value={q}>Quý {q}</MenuItem>))}
+              </TextField>
+            </>
+          )}
+          {periodType === 'custom' && (
+            <>
+              <TextField label="Từ ngày" type="date" value={customStart} onChange={(e) => setCustomStart(e.target.value)} sx={{ minWidth: 160 }} InputLabelProps={{ shrink: true }} />
+              <TextField label="Đến ngày" type="date" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)} sx={{ minWidth: 160 }} InputLabelProps={{ shrink: true }} />
+            </>
+          )}
+        </Box>
+        <Box>
+          <Button variant="outlined" startIcon={<DownloadIcon />} onClick={exportToExcel}>Xuất Excel</Button>
+        </Box>
       </Box>
 
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 2 }}>
         <Box sx={{ display: 'flex', gap: 2 }}>
           <Button variant="outlined" onClick={handleOpenCategoryManagementDialog} sx={{ borderRadius: 2 }}>Quản lý danh mục</Button>
           <Button variant="outlined" onClick={handleOpenTransactionDialog} sx={{ borderRadius: 2 }}>Tạo hóa đơn</Button>
@@ -204,7 +316,7 @@ const OtherTransactionsTab: React.FC<Props> = () => {
                 <TableCell><Typography variant="body2" fontWeight={500}>{t.category?.name || '-'}</Typography></TableCell>
                 <TableCell><Chip label={t.category?.type === 'revenue' ? 'Thu' : 'Chi'} color={t.category?.type === 'revenue' ? 'success' : 'error'} size="small" /></TableCell>
                 <TableCell><Typography variant="body2">{t.description || '-'}</Typography></TableCell>
-                <TableCell><Typography variant="body2" color="text.secondary">{t.transaction_at ? new Date(t.transaction_at).toLocaleDateString('vi-VN') : '-'}</Typography></TableCell>
+                <TableCell><Typography variant="body2" color="text.secondary">{(t.transactionAt || t.transaction_at) ? new Date(t.transactionAt || (t.transaction_at as string)).toLocaleDateString('vi-VN') : '-'}</Typography></TableCell>
                 <TableCell align="right"><Typography variant="body2" fontWeight={600} color={t.category?.type === 'revenue' ? 'success.main' : 'error.main'}>{t.amount ? t.amount.toLocaleString() : '0'} ₫</Typography></TableCell>
                 <TableCell align="center">
                   <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>

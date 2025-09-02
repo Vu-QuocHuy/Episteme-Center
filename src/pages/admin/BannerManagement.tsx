@@ -1,20 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Box, Typography, Grid, Card, CardContent,
   Button, Switch, FormControlLabel,
-  Tabs, Tab, Slider, FormControl, InputLabel, Select, MenuItem
+  Tabs, Tab, Slider
 } from '@mui/material';
-import {
-  Preview as PreviewIcon
-} from '@mui/icons-material';
-import DashboardLayout from '../../../components/layouts/DashboardLayout';
-import NotificationSnackbar from '../../../components/common/NotificationSnackbar';
-import { commonStyles } from '../../../utils/styles';
-import AdvertisementSlider from '../../../components/advertisement/AdvertisementSlider';
-import WelcomeAdPopup from '../../../components/advertisement/WelcomeAdPopup';
-import { getAdvertisementsAPI } from '../../../services/api';
-import { Advertisement } from '../../../types';
-import { useBannerConfig, BannerConfig, PopupConfig } from '../../../hooks/useBannerConfig';
+// Removed preview imports
+import DashboardLayout from '../../components/layouts/DashboardLayout';
+import NotificationSnackbar from '../../components/common/NotificationSnackbar';
+import { commonStyles } from '../../utils/styles';
+// Removed preview components and advertisement API/types
+import { useBannerConfig, BannerConfig, PopupConfig } from '../../hooks/useBannerConfig';
 
 
 
@@ -47,10 +42,7 @@ function TabPanel(props: TabPanelProps) {
 const BannerManagement: React.FC = () => {
   // State
   const [tabValue, setTabValue] = useState(0);
-  const [advertisements, setAdvertisements] = useState<Advertisement[]>([]);
-  const [showPopupPreview, setShowPopupPreview] = useState(false);
-  const [bannerFilter, setBannerFilter] = useState('banner');
-  const [popupFilter, setPopupFilter] = useState('popup');
+  // Preview-related states removed
   const [notification, setNotification] = useState<{
     open: boolean;
     message: string;
@@ -64,26 +56,7 @@ const BannerManagement: React.FC = () => {
   // Banner Configuration
   const { bannerConfig, popupConfig, saveBannerConfig: saveBannerConfigToStorage, savePopupConfig: savePopupConfigToStorage } = useBannerConfig();
 
-  // Fetch advertisements
-  useEffect(() => {
-    const fetchAdvertisements = async () => {
-      try {
-        const response = await getAdvertisementsAPI({ page: 1, limit: 100 });
-        if (response.data?.data?.result) {
-          setAdvertisements(response.data.data.result);
-        }
-      } catch (error) {
-        console.error('Error fetching advertisements:', error);
-        setNotification({
-          open: true,
-          message: 'Không thể tải danh sách quảng cáo',
-          severity: 'error'
-        });
-      }
-    };
-
-    fetchAdvertisements();
-  }, []);
+  // Removed advertisements fetching
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
@@ -127,9 +100,7 @@ const BannerManagement: React.FC = () => {
     setNotification(prev => ({ ...prev, open: false }));
   };
 
-  // Filter advertisements by type
-  const bannerAdvertisements = advertisements.filter(ad => ad.isActive && ad.type === bannerFilter);
-  const popupAdvertisements = advertisements.filter(ad => ad.isActive && ad.type === popupFilter);
+  // Removed advertisement filters
 
   return (
     <DashboardLayout role="admin">
@@ -150,7 +121,6 @@ const BannerManagement: React.FC = () => {
             <Tabs value={tabValue} onChange={handleTabChange} aria-label="banner management tabs">
               <Tab label="Banner Slider" />
               <Tab label="Welcome Popup" />
-              <Tab label="Xem trước" />
             </Tabs>
           </Box>
 
@@ -285,88 +255,7 @@ const BannerManagement: React.FC = () => {
                 </Card>
               </Grid>
 
-              {/* Banner Preview */}
-              <Grid item xs={12}>
-                <Card>
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom fontWeight="bold">
-                      Xem trước Banner
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" paragraph>
-                      Cách banner sẽ hiển thị trên trang chủ
-                    </Typography>
 
-                    {/* Filter for Banner Preview */}
-                    <Box sx={{ mb: 3 }}>
-                      <FormControl fullWidth>
-                        <InputLabel>Loại quảng cáo</InputLabel>
-                        <Select
-                          value={bannerFilter}
-                          onChange={(e) => setBannerFilter(e.target.value)}
-                          label="Loại quảng cáo"
-                        >
-                          <MenuItem value="banner">Banner</MenuItem>
-                          <MenuItem value="popup">Popup</MenuItem>
-                          <MenuItem value="slide">Slide</MenuItem>
-                        </Select>
-                      </FormControl>
-                    </Box>
-
-                    <Box sx={{
-                      mt: 3,
-                      border: '1px solid #ddd',
-                      borderRadius: 1,
-                      overflow: 'hidden',
-                      maxWidth: '600px',
-                      width: '100%',
-                      mx: 'auto'
-                    }}>
-                      {bannerConfig.isActive && bannerAdvertisements.length > 0 ? (
-                        <Box sx={{
-                          height: Math.min(bannerConfig.height, 200),
-                          maxWidth: '100%',
-                          width: '100%'
-                        }}>
-                          <AdvertisementSlider
-                            ads={bannerAdvertisements.slice(0, bannerConfig.maxSlides)}
-                            autoPlay={bannerConfig.autoPlay}
-                            interval={bannerConfig.interval}
-                            showArrows={bannerConfig.showArrows}
-                            showDots={bannerConfig.showDots}
-                            height={Math.min(bannerConfig.height, 200)}
-                          />
-                        </Box>
-                      ) : (
-                        <Box sx={{
-                          height: Math.min(bannerConfig.height, 200),
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          bgcolor: 'grey.100',
-                          maxWidth: '100%',
-                          width: '100%'
-                        }}>
-                          <Typography color="text.secondary">
-                            {bannerAdvertisements.length === 0
-                              ? `Chưa có quảng cáo loại "${bannerFilter}" nào`
-                              : 'Banner đã bị tắt'
-                            }
-                          </Typography>
-                        </Box>
-                      )}
-                    </Box>
-
-                    <Box sx={{ mt: 2 }}>
-                      <Typography variant="body2" color="text.secondary">
-                        Số quảng cáo loại "{bannerFilter}" hiện có: {bannerAdvertisements.length}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Số quảng cáo sẽ hiển thị: {Math.min(bannerAdvertisements.length, bannerConfig.maxSlides)}
-                      </Typography>
-                    </Box>
-                  </CardContent>
-                </Card>
-              </Grid>
             </Grid>
           </TabPanel>
 
@@ -374,7 +263,7 @@ const BannerManagement: React.FC = () => {
           <TabPanel value={tabValue} index={1}>
             <Grid container spacing={3}>
               {/* Popup Configuration */}
-              <Grid item xs={12} lg={6}>
+              <Grid item xs={12}>
                 <Card>
                   <CardContent>
                     <Typography variant="h6" gutterBottom fontWeight="bold">
@@ -472,164 +361,11 @@ const BannerManagement: React.FC = () => {
                 </Card>
               </Grid>
 
-              {/* Popup Preview */}
-              <Grid item xs={12} lg={6}>
-                <Card>
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom fontWeight="bold">
-                      Xem trước Popup
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" paragraph>
-                      Cách popup sẽ hiển thị
-                    </Typography>
 
-                    {/* Filter for Popup Preview */}
-                    <Box sx={{ mb: 3 }}>
-                      <FormControl fullWidth>
-                        <InputLabel>Loại quảng cáo</InputLabel>
-                        <Select
-                          value={popupFilter}
-                          onChange={(e) => setPopupFilter(e.target.value)}
-                          label="Loại quảng cáo"
-                        >
-                          <MenuItem value="popup">Popup</MenuItem>
-                          <MenuItem value="banner">Banner</MenuItem>
-                          <MenuItem value="slide">Slide</MenuItem>
-                        </Select>
-                      </FormControl>
-                    </Box>
-
-                    <Box sx={{ mt: 3 }}>
-                      {popupConfig.isActive && popupAdvertisements.length > 0 ? (
-                        <Box sx={{
-                          border: '1px solid #ddd',
-                          borderRadius: 1,
-                          overflow: 'hidden',
-                          width: popupConfig.width,
-                          height: popupConfig.height,
-                          position: 'relative'
-                        }}>
-                          <WelcomeAdPopup
-                            open={showPopupPreview}
-                            onClose={() => setShowPopupPreview(false)}
-                            ads={popupAdvertisements}
-                            width={popupConfig.width}
-                            height={popupConfig.height}
-                          />
-                          <Box sx={{
-                            height: '100%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            bgcolor: 'grey.100'
-                          }}>
-                            <Button
-                              variant="outlined"
-                              onClick={() => setShowPopupPreview(true)}
-                            >
-                              Xem popup
-                            </Button>
-                          </Box>
-                        </Box>
-                      ) : (
-                        <Box sx={{
-                          border: '1px solid #ddd',
-                          borderRadius: 1,
-                          width: popupConfig.width,
-                          height: popupConfig.height,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          bgcolor: 'grey.100'
-                        }}>
-                          <Typography color="text.secondary">
-                            {popupAdvertisements.length === 0
-                              ? `Chưa có quảng cáo loại "${popupFilter}" nào`
-                              : 'Popup đã bị tắt'
-                            }
-                          </Typography>
-                        </Box>
-                      )}
-                    </Box>
-
-                    <Box sx={{ mt: 2 }}>
-                      <Typography variant="body2" color="text.secondary">
-                        Kích thước: {popupConfig.width} x {popupConfig.height}px
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Độ trễ: {popupConfig.showDelay}ms
-                      </Typography>
-                    </Box>
-                  </CardContent>
-                </Card>
-              </Grid>
             </Grid>
           </TabPanel>
 
-          {/* Preview Tab */}
-          <TabPanel value={tabValue} index={2}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom fontWeight="bold">
-                  Xem trước tổng thể
-                </Typography>
-                <Typography variant="body2" color="text.secondary" paragraph>
-                  Mô phỏng cách banner và popup sẽ hiển thị trên trang chủ
-                </Typography>
 
-                <Box sx={{ mt: 3 }}>
-                  {/* Banner Preview */}
-                  {bannerConfig.isActive && (
-                    <Box sx={{ mb: 4 }}>
-                      <Typography variant="subtitle1" gutterBottom fontWeight="bold">
-                        Banner Slider
-                      </Typography>
-                      <Box sx={{
-                        border: '1px solid #ddd',
-                        borderRadius: 1,
-                        overflow: 'hidden',
-                        maxWidth: '600px',
-                        mx: 'auto'
-                      }}>
-                        <Box sx={{ height: Math.min(bannerConfig.height, 200) }}>
-                          <AdvertisementSlider
-                            ads={bannerAdvertisements.slice(0, bannerConfig.maxSlides)}
-                            autoPlay={bannerConfig.autoPlay}
-                            interval={bannerConfig.interval}
-                            height={Math.min(bannerConfig.height, 200)}
-                          />
-                        </Box>
-                      </Box>
-                    </Box>
-                  )}
-
-                  {/* Popup Preview */}
-                  {popupConfig.isActive && popupAdvertisements.length > 0 && (
-                    <Box>
-                      <Typography variant="subtitle1" gutterBottom fontWeight="bold">
-                        Welcome Popup
-                      </Typography>
-                      <Button
-                        variant="contained"
-                        onClick={() => setShowPopupPreview(true)}
-                        startIcon={<PreviewIcon />}
-                      >
-                        Hiển thị popup
-                      </Button>
-                    </Box>
-                  )}
-
-                  <WelcomeAdPopup
-                    open={showPopupPreview}
-                    onClose={() => setShowPopupPreview(false)}
-                    ads={popupAdvertisements}
-                    width={popupConfig.width}
-                    height={popupConfig.height}
-                  />
-                </Box>
-              </CardContent>
-            </Card>
-          </TabPanel>
           </Box>
 
           <NotificationSnackbar

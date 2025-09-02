@@ -172,8 +172,24 @@ const ClassManagement: React.FC = () => {
                   label="Khối"
                   value={gradeFilter}
                   onChange={(e) => setGradeFilter(e.target.value)}
-                  type="number"
-                />
+                  select
+                  SelectProps={{ native: true }}
+                  InputLabelProps={{ shrink: true }}
+                >
+                  <option value="">Tất cả</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                  <option value="6">6</option>
+                  <option value="7">7</option>
+                  <option value="8">8</option>
+                  <option value="9">9</option>
+                  <option value="10">10</option>
+                  <option value="11">11</option>
+                  <option value="12">12</option>
+                </TextField>
               </Grid>
               <Grid item xs={12} md={3}>
                 <TextField
@@ -183,13 +199,11 @@ const ClassManagement: React.FC = () => {
                   onChange={(e) => setStatusFilter(e.target.value)}
                   select
                   SelectProps={{ native: true }}
+                  InputLabelProps={{ shrink: true }}
                 >
                   <option value="">Tất cả</option>
                   <option value="active">Đang hoạt động</option>
-                  <option value="inactive">Không hoạt động</option>
                   <option value="closed">Đã đóng</option>
-                  <option value="completed">Đã kết thúc</option>
-                  <option value="cancelled">Đã hủy</option>
                 </TextField>
               </Grid>
             </Grid>

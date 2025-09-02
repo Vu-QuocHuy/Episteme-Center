@@ -26,7 +26,9 @@ import {
   Alert,
   InputAdornment
 } from '@mui/material';
-import { History as HistoryIcon, Payment as PaymentIcon, AttachMoney as AttachMoneyIcon, Paid as PaidIcon, AccountBalanceWallet as WalletIcon } from '@mui/icons-material';
+import { History as HistoryIcon, Payment as PaymentIcon, AttachMoney as AttachMoneyIcon, Paid as PaidIcon, AccountBalanceWallet as WalletIcon, Download as DownloadIcon } from '@mui/icons-material';
+// @ts-ignore: Allow using xlsx without local type resolution
+import * as XLSX from 'xlsx';
 import PaymentHistoryModal from '../../../../components/common/PaymentHistoryModal';
 import {
   getAllTeacherPaymentsAPI,
@@ -114,6 +116,41 @@ const TeacherPaymentsTab: React.FC<Props> = () => {
   }, [fetchPayments]);
 
   const onPageChange = (page: number) => fetchPayments(page);
+  const exportToExcel = () => {
+    const rows = payments.map((p) => ({
+      'Giáo viên': p.teacher?.name || p.teacherId?.userId?.name || p.teacherId?.name || '',
+      'Tháng/Năm': `${p.month || ''}/${p.year || ''}`,
+      'Lương/buổi (₫)': p.teacher?.salaryPerLesson ?? 0,
+      'Số buổi dạy': p.classes && Array.isArray(p.classes) ? p.classes.reduce((s, c) => s + (c.totalLessons || 0), 0) : 0,
+      'Tổng lương (₫)': p.totalAmount ?? 0,
+      'Đã trả (₫)': p.paidAmount ?? 0,
+      'Trạng thái': p.status === 'paid' ? 'Đã thanh toán' : p.status === 'partial' ? 'Nhận một phần' : p.status === 'pending' ? 'Chờ thanh toán' : 'Chưa thanh toán',
+    }));
+
+    // Totals row
+    const totalLessons = rows.reduce((s, r) => s + Number((r as any)['Số buổi dạy'] || 0), 0);
+    const totalAmount = rows.reduce((s, r) => s + Number((r as any)['Tổng lương (₫)'] || 0), 0);
+    const totalPaid = rows.reduce((s, r) => s + Number((r as any)['Đã trả (₫)'] || 0), 0);
+    rows.push({
+      'Giáo viên': 'Tổng',
+      'Tháng/Năm': '',
+      'Lương/buổi (₫)': '',
+      'Số buổi dạy': totalLessons,
+      'Tổng lương (₫)': totalAmount,
+      'Đã trả (₫)': totalPaid,
+      'Trạng thái': '',
+    } as any);
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    // Auto width
+    const colWidths = Object.keys(rows[0] || {}).map((k) => ({ wch: Math.max(k.length, ...rows.map(r => String((r as any)[k] ?? '').length)) + 2 }));
+    ws['!cols'] = colWidths;
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'ChiTietGiaoVien');
+    const now = new Date();
+    const fileName = `BaoCao_GiaoVien_${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+  };
 
   // Edit functions
   const handleOpenDialog = async (payment: TeacherPayment) => {
@@ -278,7 +315,7 @@ const TeacherPaymentsTab: React.FC<Props> = () => {
               {years.map((y) => (<MenuItem key={y} value={y}>{y}</MenuItem>))}
             </TextField>
             <TextField select label="Quý" value={selectedQuarter} onChange={(e) => setSelectedQuarter(Number(e.target.value))} sx={{ minWidth: 120 }}>
-              {quarters.map((q) => (<MenuItem key={q} value={q}>Q{q}</MenuItem>))}
+              {quarters.map((q) => (<MenuItem key={q} value={q}>Quý {q}</MenuItem>))}
             </TextField>
           </>
         )}
@@ -288,6 +325,9 @@ const TeacherPaymentsTab: React.FC<Props> = () => {
             <TextField label="Đến ngày" type="date" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)} sx={{ minWidth: 150 }} InputLabelProps={{ shrink: true }} />
           </>
         )}
+        </Box>
+        <Box>
+          <Button variant="outlined" startIcon={<DownloadIcon />} onClick={exportToExcel}>Xuất Excel</Button>
         </Box>
       </Box>
 

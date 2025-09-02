@@ -1,5 +1,7 @@
 import React from 'react';
 import { Box, TextField, MenuItem, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Pagination, IconButton, Tooltip, Dialog, DialogTitle, DialogContent, DialogActions, Button, CircularProgress, Typography } from '@mui/material';
+import { Download as DownloadIcon } from '@mui/icons-material';
+import * as XLSX from 'xlsx';
 import { History as HistoryIcon, Payment as PaymentIcon } from '@mui/icons-material';
 import PaymentHistoryModal from '../../../../components/common/PaymentHistoryModal';
 import { getAllPaymentsAPI, payStudentAPI } from '../../../../services/api';
@@ -93,6 +95,45 @@ const StudentPaymentsTab: React.FC<Props> = ({ onTotalsChange }) => {
   React.useEffect(() => { fetchPayments(1); }, [fetchPayments]);
 
   const onPageChange = (page: number) => fetchPayments(page);
+  const exportToExcel = () => {
+    const rows = payments.map((p) => ({
+      'Học sinh': p.student?.name || '',
+      'Lớp': p.class?.name || '',
+      'Tháng/Năm': `${p.month}/${p.year}`,
+      'Số buổi học': p.totalLessons || 0,
+      'Số tiền gốc (₫)': p.totalAmount || 0,
+      'Giảm giá (₫)': p.discountAmount || 0,
+      'Số tiền cuối (₫)': (p.totalAmount || 0) - (p.discountAmount || 0),
+      'Đã đóng (₫)': p.paidAmount || 0,
+      'Còn thiếu (₫)': ((p.totalAmount || 0) - (p.discountAmount || 0)) - (p.paidAmount || 0),
+      'Trạng thái': p.status === 'paid' ? 'Đã đóng đủ' : p.status === 'partial' ? 'Đóng một phần' : 'Chưa đóng',
+    }));
+    const totalLessons = rows.reduce((s, r) => s + Number((r as any)['Số buổi học'] || 0), 0);
+    const totalOriginal = rows.reduce((s, r) => s + Number((r as any)['Số tiền gốc (₫)'] || 0), 0);
+    const totalDiscount = rows.reduce((s, r) => s + Number((r as any)['Giảm giá (₫)'] || 0), 0);
+    const totalFinal = rows.reduce((s, r) => s + Number((r as any)['Số tiền cuối (₫)'] || 0), 0);
+    const totalPaid = rows.reduce((s, r) => s + Number((r as any)['Đã đóng (₫)'] || 0), 0);
+    const totalRemaining = rows.reduce((s, r) => s + Number((r as any)['Còn thiếu (₫)'] || 0), 0);
+    rows.push({
+      'Học sinh': 'Tổng',
+      'Lớp': '',
+      'Tháng/Năm': '',
+      'Số buổi học': totalLessons,
+      'Số tiền gốc (₫)': totalOriginal,
+      'Giảm giá (₫)': totalDiscount,
+      'Số tiền cuối (₫)': totalFinal,
+      'Đã đóng (₫)': totalPaid,
+      'Còn thiếu (₫)': totalRemaining,
+      'Trạng thái': '',
+    } as any);
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const colWidths = Object.keys(rows[0] || {}).map((k) => ({ wch: Math.max(k.length, ...rows.map(r => String((r as any)[k] ?? '').length)) + 2 }));
+    (ws as any)['!cols'] = colWidths;
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'ChiTietHocSinh');
+    const now = new Date();
+    XLSX.writeFile(wb, `BaoCao_HocSinh_${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}.xlsx`);
+  };
 
   const onOpenHistory = (payment: any) => {
     setSelectedPaymentForHistory(payment);
@@ -128,7 +169,8 @@ const StudentPaymentsTab: React.FC<Props> = ({ onTotalsChange }) => {
   };
   return (
     <>
-      <Box sx={{ mb: 3, display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
         <TextField select label="Trạng thái" value={paymentStatus} onChange={(e) => setPaymentStatus(e.target.value)} sx={{ minWidth: 150 }}>
           <MenuItem value="all">Tất cả</MenuItem>
           <MenuItem value="paid">Đã thanh toán</MenuItem>
@@ -162,7 +204,7 @@ const StudentPaymentsTab: React.FC<Props> = ({ onTotalsChange }) => {
               {years.map((y) => (<MenuItem key={y} value={y}>{y}</MenuItem>))}
             </TextField>
             <TextField select label="Quý" value={selectedQuarter} onChange={(e) => setSelectedQuarter(Number(e.target.value))} sx={{ minWidth: 120 }}>
-              {quarters.map((q) => (<MenuItem key={q} value={q}>Q{q}</MenuItem>))}
+              {quarters.map((q) => (<MenuItem key={q} value={q}>Quý {q}</MenuItem>))}
             </TextField>
           </>
         )}
@@ -172,6 +214,10 @@ const StudentPaymentsTab: React.FC<Props> = ({ onTotalsChange }) => {
             <TextField label="Đến ngày" type="date" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)} sx={{ minWidth: 150 }} InputLabelProps={{ shrink: true }} />
           </>
         )}
+        </Box>
+        <Box>
+          <Button variant="outlined" startIcon={<DownloadIcon />} onClick={exportToExcel}>Xuất Excel</Button>
+        </Box>
       </Box>
 
       <TableContainer>

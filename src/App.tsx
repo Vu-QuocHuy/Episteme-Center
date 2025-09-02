@@ -31,11 +31,11 @@ import StudentStatistics from './pages/admin/StudentStatistics';
 
 
 import MenuManagement from './pages/admin/MenuManagement';
-import BannerManagement from './pages/admin/homepage/BannerManagement';
-import AboutManagement from './pages/admin/homepage/AboutManagement';
-import FeaturedTeachersManagement from './pages/admin/homepage/FeaturedTeachersManagement';
-import TestimonialsManagement from './pages/admin/homepage/TestimonialsManagement';
-import FooterManagement from './pages/admin/homepage/FooterManagement';
+import BannerManagement from './pages/admin/BannerManagement';
+import AboutManagement from './pages/admin/AboutManagement';
+import FeaturedTeachersManagement from './pages/admin/FeaturedTeachersManagement';
+import TestimonialsManagement from './pages/admin/TestimonialsManagement';
+import FooterManagement from './pages/admin/FooterManagement';
 import AdminProfile from './pages/profile/AdminProfile';
 import AuditLog from './pages/admin/AuditLog';
 
