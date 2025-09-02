@@ -201,7 +201,8 @@ const AttendanceModal: React.FC<AttendanceModalProps> = ({
         const isModified = currentStatus !== originalStatus;
 
         return {
-          studentId: Number(student.id),
+          // Use string id from API (UUID). Avoid Number() which becomes NaN → null in JSON.
+          studentId: student.id,
           status: currentStatus,
           isModified: isModified,
           note: attendanceNote[student.id] || undefined

@@ -134,7 +134,7 @@ export interface ParentData {
 }
 
 export interface AttendanceData {
-  studentId: number;
+  studentId: string | number;
   status: 'present' | 'absent' | 'late' | 'excused';
   isModified?: boolean;
   note?: string;

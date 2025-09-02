@@ -1,111 +1,146 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
-  Box, Typography, Grid, Card, CardContent, List, ListItem, ListItemText, ListItemAvatar, Avatar,
-  Divider, Chip, LinearProgress, Alert, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
+  Box,
+  Typography,
+  Grid,
+  Chip,
+  Avatar,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  LinearProgress,
+  Alert,
 } from '@mui/material';
-import {
-  FamilyRestroom as FamilyIcon, TrendingUp as TrendingUpIcon,
-  Payment as PaymentIcon, Person as PersonIcon,
-} from '@mui/icons-material';
+// import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
-import StatCard from '../../components/common/StatCard';
-import { getParentDashboardAPI } from '../../services/api';
+import SchoolIcon from '@mui/icons-material/School';
+import PaymentIcon from '@mui/icons-material/Payment';
+import PersonIcon from '@mui/icons-material/Person';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import WarningIcon from '@mui/icons-material/Warning';
 import { commonStyles } from '../../utils/styles';
+import StatCard from '../../components/common/StatCard';
+import {
+  getParentDashboardAPI,
+  getStudentScheduleAPI,
+} from '../../services/api';
 
-interface StudentPayment {
-  studentId: string;
-  studentName: string;
-  studentEmail: string;
-  totalAmount: number;
-  totalPaidAmount: number;
-  totalUnPaidAmount: number;
-}
-
-interface PaymentInfo {
-  totalRevenue: number;
-  totalPaidAmount: number;
-  totalUnPaidAmount: number;
-}
-
-interface DashboardData {
-  totalChildren: number;
-  paymentInfo: PaymentInfo;
-  studentPayments: StudentPayment[];
-}
-
-const Dashboard: React.FC = () => {
+const Dashboard = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
-  const [dashboardData, setDashboardData] = useState<DashboardData>({
+
+  // const [dashboardData, setDashboardData] = useState<any>(null);
+  const [childrenSchedules, setChildrenSchedules] = useState<any[]>([]);
+  const [stats, setStats] = useState<any>({
     totalChildren: 0,
-    paymentInfo: {
-      totalRevenue: 0,
-      totalPaidAmount: 0,
-      totalUnPaidAmount: 0
-    },
-    studentPayments: []
+    totalClasses: 0,
+    totalFees: 0,
+    paidFees: 0,
+    pendingPayments: 0,
   });
 
   useEffect(() => {
     if (user) {
-      fetchDashboardData();
+      fetchParentData();
     }
   }, [user]);
 
-  const fetchDashboardData = async (): Promise<void> => {
+  const fetchParentData = async () => {
     setLoading(true);
     setError('');
 
     try {
-      const response = await getParentDashboardAPI(user?.id || '');
+      // Get parent ID from user data
+      const parentId = (user as any)?.parentId || (user as any)?.id || localStorage.getItem('parent_id');
 
+      if (!parentId) {
+        setError('Không tìm thấy thông tin phụ huynh');
+        setLoading(false);
+        return;
+      }
 
-      const data = response?.data?.data || response?.data || {};
+      // Call parent dashboard API
+      const parentDashboardRes = await getParentDashboardAPI(parentId);
+      const dash = (parentDashboardRes as any)?.data?.data || (parentDashboardRes as any)?.data || {};
 
-      setDashboardData({
-        totalChildren: data.totalChildren || 0,
-        paymentInfo: data.paymentInfo || {
-          totalRevenue: 0,
-          totalPaidAmount: 0,
-          totalUnPaidAmount: 0
-        },
-        studentPayments: data.studentPayments || []
+      // Fetch schedules for each child in payment list (if available)
+      const studentPayments: any[] = dash.studentPayments || [];
+      const schedulesPromises = studentPayments.map(async (studentPayment: any) => {
+        try {
+          const scheduleRes = await getStudentScheduleAPI(studentPayment.studentId);
+          const scheduleData = (scheduleRes as any)?.data?.data || (scheduleRes as any)?.data || {};
+          // Normalize to array of schedules; support both array and object shapes
+          const schedules = (scheduleData as any).schedules || (Array.isArray(scheduleData) ? scheduleData : []);
+          const totalActiveClasses = (scheduleData as any).totalActiveClasses || 0;
+          return {
+            ...studentPayment,
+            schedules,
+            totalActiveClasses,
+          };
+        } catch (err) {
+          return {
+            ...studentPayment,
+            schedules: [],
+            totalActiveClasses: 0,
+          };
+        }
       });
 
-    } catch (err: any) {
-      console.error('Error fetching parent dashboard data:', err);
+      const childrenWithSchedules = await Promise.all(schedulesPromises);
+      setChildrenSchedules(childrenWithSchedules);
+
+      // Calculate statistics from dashboard data
+      const paymentInfo = dash.paymentInfo || {};
+      const calculatedStats = {
+        totalChildren: dash.totalChildren || childrenWithSchedules.length || 0,
+        totalClasses: childrenWithSchedules.reduce((total: number, child: any) => total + (child.totalActiveClasses || 0), 0),
+        totalFees: paymentInfo.totalRevenue || 0,
+        paidFees: paymentInfo.totalPaidAmount || 0,
+        pendingPayments: paymentInfo.totalUnPaidAmount || 0,
+      };
+      setStats(calculatedStats);
+
+    } catch (err) {
       setError('Không thể tải dữ liệu dashboard');
+      setStats({
+        totalChildren: 0,
+        totalClasses: 0,
+        totalFees: 0,
+        paidFees: 0,
+        pendingPayments: 0,
+      });
+      setChildrenSchedules([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const formatCurrency = (amount: number): string => {
+  const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: 'VND'
-    }).format(amount);
+    }).format(amount || 0);
   };
 
-
+  const formatDayOfWeek = (dayNumber: any) => {
+    const days = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+    // Support number or string day indices
+    const idx = typeof dayNumber === 'string' ? Number(dayNumber) : dayNumber;
+    return days[idx] || '';
+  };
 
   if (loading) {
     return (
       <DashboardLayout role="parent">
-        <Box sx={commonStyles.container}>
+        <Box sx={{ py: 4 }}>
           <LinearProgress />
-        </Box>
-      </DashboardLayout>
-    );
-  }
-
-  if (error) {
-    return (
-      <DashboardLayout role="parent">
-        <Box sx={commonStyles.container}>
-          <Alert severity="error">{error}</Alert>
+          <Typography sx={{ textAlign: 'center', mt: 2 }}>Đang tải dữ liệu dashboard...</Typography>
         </Box>
       </DashboardLayout>
     );
@@ -113,215 +148,206 @@ const Dashboard: React.FC = () => {
 
   return (
     <DashboardLayout role="parent">
-      <Box sx={commonStyles.container}>
-        <Typography variant="h4" gutterBottom>
-          Dashboard
-        </Typography>
+      <Box sx={commonStyles.pageContainer}>
+        <Box sx={commonStyles.contentContainer}>
+          <Box sx={commonStyles.pageHeader}>
+            <Typography sx={commonStyles.pageTitle}>
+              Dashboard Phụ huynh
+            </Typography>
+          </Box>
 
-        {/* Summary Cards */}
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} sm={6} md={3}>
-            <StatCard
-              title="Tổng con"
-              value={dashboardData.totalChildren}
-              icon={<FamilyIcon />}
-              color="primary"
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <StatCard
-              title="Tổng doanh thu"
-              value={formatCurrency(dashboardData.paymentInfo.totalRevenue)}
-              icon={<TrendingUpIcon />}
-              color="success"
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <StatCard
-              title="Đã thanh toán"
-              value={formatCurrency(dashboardData.paymentInfo.totalPaidAmount)}
-              icon={<PaymentIcon />}
-              color="info"
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <StatCard
-              title="Chưa thanh toán"
-              value={formatCurrency(dashboardData.paymentInfo.totalUnPaidAmount)}
-              icon={<PaymentIcon />}
-              color="warning"
-            />
-          </Grid>
-        </Grid>
+          {error && (
+            <Alert severity="error" sx={{ mb: 3 }}>
+              {error}
+            </Alert>
+          )}
 
-        <Grid container spacing={3}>
-          {/* Student Payments */}
-          <Grid item xs={12} md={6}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Thanh toán của con
-                </Typography>
-                <List>
-                  {dashboardData.studentPayments.map((student, index) => (
-                    <React.Fragment key={student.studentId}>
-                      <ListItem>
-                        <ListItemAvatar>
-                          <Avatar>
-                            <PersonIcon />
-                          </Avatar>
-                        </ListItemAvatar>
-                        <ListItemText
-                          primary={student.studentName}
-                          secondary={
-                            <Box>
-                              <Typography variant="body2" color="textSecondary">
-                                {student.studentEmail}
-                              </Typography>
-                              <Box display="flex" alignItems="center" mt={1}>
-                                <Typography variant="body2" sx={{ mr: 2 }}>
-                                  Tổng: {formatCurrency(student.totalAmount)}
+          <Typography variant="subtitle1" color="text.secondary" gutterBottom sx={{ mb: 3 }}>
+            Xin chào {(user as any)?.name || (user as any)?.userId?.name || 'Phụ huynh'}, đây là thông tin học tập và thanh toán của con bạn
+          </Typography>
+
+          {/* Stat Cards */}
+          <Grid container spacing={3} sx={{ mb: 4 }}>
+            <Grid item xs={12} sm={6} md={2.4 as any}>
+              <StatCard
+                title="Số con đang học"
+                value={stats.totalChildren || 0}
+                icon={<PersonIcon sx={{ fontSize: 40 }} />}
+                color="primary"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={2.4 as any}>
+              <StatCard
+                title="Tổng số lớp"
+                value={stats.totalClasses || 0}
+                icon={<SchoolIcon sx={{ fontSize: 40 }} />}
+                color="success"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={2.4 as any}>
+              <StatCard
+                title="Tổng học phí"
+                value={formatCurrency(stats.totalFees || 0)}
+                icon={<PaymentIcon sx={{ fontSize: 40 }} />}
+                color="warning"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={2.4 as any}>
+              <StatCard
+                title="Đã thanh toán"
+                value={formatCurrency(stats.paidFees || 0)}
+                icon={<CheckCircleIcon sx={{ fontSize: 40 }} />}
+                color="info"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={2.4 as any}>
+              <StatCard
+                title="Còn thiếu"
+                value={formatCurrency(stats.pendingPayments || 0)}
+                icon={<WarningIcon sx={{ fontSize: 40 }} />}
+                color="error"
+              />
+            </Grid>
+          </Grid>
+
+          {/* Children Information with Schedules */}
+          <Grid container spacing={3}>
+            {childrenSchedules.map((child: any, childIndex: number) => (
+              <Grid item xs={12} key={child.studentId || childIndex}>
+                <Paper sx={{ p: 3, borderRadius: 2, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                    <Avatar sx={{ bgcolor: 'primary.main', mr: 2 }}>
+                      {child.studentName?.charAt(0)?.toUpperCase() || 'N'}
+                    </Avatar>
+                    <Box>
+                      <Typography variant="h6" fontWeight="bold">
+                        {child.studentName || 'N/A'}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {child.studentEmail || 'N/A'}
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  {/* Child's Schedules */}
+                  {child.schedules && child.schedules.length > 0 ? (
+                    <TableContainer sx={commonStyles.tableContainer}>
+                      <Table size="small">
+                        <TableHead>
+                          <TableRow>
+                            <TableCell sx={{ fontWeight: 'bold' }}>Lớp học</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold' }}>Giáo viên</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold' }}>Phòng học</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold' }}>Lịch học</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold' }}>Thời gian</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold' }}>Trạng thái</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {child.schedules.map((scheduleItem: any, scheduleIndex: number) => (
+                            <TableRow key={scheduleIndex} sx={commonStyles.tableRow}>
+                              <TableCell>
+                                <Typography variant="body2" fontWeight="medium">
+                                  {scheduleItem.class?.name || 'N/A'}
                                 </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  Lớp {scheduleItem.class?.grade || ''} - Năm {scheduleItem.class?.year || ''}
+                                </Typography>
+                              </TableCell>
+                              <TableCell>
                                 <Typography variant="body2">
-                                  Đã trả: {formatCurrency(student.totalPaidAmount)}
+                                  {scheduleItem.teacher?.name || 'Chưa phân công'}
                                 </Typography>
-                              </Box>
-                              <Box display="flex" alignItems="center" mt={1}>
+                              </TableCell>
+                              <TableCell>
+                                <Typography variant="body2">
+                                  {scheduleItem.class?.room || 'N/A'}
+                                </Typography>
+                              </TableCell>
+                              <TableCell>
+                                <Typography variant="body2">
+                                  {(scheduleItem.schedule?.dayOfWeeks || scheduleItem.schedule?.days_of_week || [])
+                                    .map((d: any) => formatDayOfWeek(d)).join(', ')}
+                                </Typography>
+                              </TableCell>
+                              <TableCell>
+                                <Typography variant="body2">
+                                  {(scheduleItem.schedule?.timeSlots?.startTime || scheduleItem.schedule?.time_slots?.start_time || '')}
+                                  {' '}
+                                  -
+                                  {' '}
+                                  {(scheduleItem.schedule?.timeSlots?.endTime || scheduleItem.schedule?.time_slots?.end_time || '')}
+                                </Typography>
+                              </TableCell>
+                              <TableCell>
                                 <Chip
-                                  label={`Còn lại: ${formatCurrency(student.totalUnPaidAmount)}`}
-                                  color={student.totalUnPaidAmount > 0 ? 'warning' : 'success'}
+                                  label={
+                                    scheduleItem.class?.status === 'active'
+                                      ? 'Đang học'
+                                      : scheduleItem.class?.status === 'completed'
+                                        ? 'Đã hoàn thành'
+                                        : scheduleItem.class?.status || 'N/A'
+                                  }
+                                  color={
+                                    scheduleItem.class?.status === 'active'
+                                      ? 'success'
+                                      : scheduleItem.class?.status === 'completed'
+                                        ? 'default'
+                                        : 'default'
+                                  }
                                   size="small"
                                 />
-                              </Box>
-                            </Box>
-                          }
-                        />
-                      </ListItem>
-                      {index < dashboardData.studentPayments.length - 1 && <Divider />}
-                    </React.Fragment>
-                  ))}
-                </List>
-                {dashboardData.studentPayments.length === 0 && (
-                  <Box textAlign="center" py={2}>
-                    <Typography variant="body2" color="textSecondary">
-                      Chưa có thông tin thanh toán
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  ) : (
+                    <Typography color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
+                      Chưa có lịch học nào
                     </Typography>
+                  )}
+
+                  {/* Payment Summary */}
+                  <Box sx={{ mt: 3, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+                    <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+                      Tóm tắt thanh toán
+                    </Typography>
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} sm={4}>
+                        <Typography variant="body2" color="text.secondary">
+                          Tổng học phí: <strong>{formatCurrency(child.totalAmount || 0)}</strong>
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={12} sm={4}>
+                        <Typography variant="body2" color="text.secondary">
+                          Đã thanh toán: <strong style={{ color: 'green' }}>{formatCurrency(child.totalPaidAmount || 0)}</strong>
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={12} sm={4}>
+                        <Typography variant="body2" color="text.secondary">
+                          Còn thiếu: <strong style={{ color: 'red' }}>{formatCurrency(child.totalUnPaidAmount || 0)}</strong>
+                        </Typography>
+                      </Grid>
+                    </Grid>
                   </Box>
-                )}
-              </CardContent>
-            </Card>
+                </Paper>
+              </Grid>
+            ))}
           </Grid>
 
-          {/* Payment Overview */}
-          <Grid item xs={12} md={6}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Tổng quan thanh toán
-                </Typography>
-                <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1, mb: 2 }}>
-                  <Typography variant="h6" color="primary" gutterBottom>
-                    Thống kê tổng quan
-                  </Typography>
-                  <Grid container spacing={2}>
-                    <Grid item xs={6}>
-                      <Typography variant="body2" color="textSecondary">
-                        Tổng doanh thu
-                      </Typography>
-                      <Typography variant="h6" color="success.main">
-                        {formatCurrency(dashboardData.paymentInfo.totalRevenue)}
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Typography variant="body2" color="textSecondary">
-                        Đã thanh toán
-                      </Typography>
-                      <Typography variant="h6" color="info.main">
-                        {formatCurrency(dashboardData.paymentInfo.totalPaidAmount)}
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Typography variant="body2" color="textSecondary">
-                        Chưa thanh toán
-                      </Typography>
-                      <Typography variant="h6" color="warning.main">
-                        {formatCurrency(dashboardData.paymentInfo.totalUnPaidAmount)}
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Typography variant="body2" color="textSecondary">
-                        Số con
-                      </Typography>
-                      <Typography variant="h6" color="primary.main">
-                        {dashboardData.totalChildren}
-                      </Typography>
-                    </Grid>
-                  </Grid>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          {/* Student Payments Table */}
-          <Grid item xs={12}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Chi tiết thanh toán của con
-                </Typography>
-                <TableContainer>
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Tên học sinh</TableCell>
-                        <TableCell>Email</TableCell>
-                        <TableCell align="right">Tổng tiền</TableCell>
-                        <TableCell align="right">Đã thanh toán</TableCell>
-                        <TableCell align="right">Chưa thanh toán</TableCell>
-                        <TableCell>Trạng thái</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {dashboardData.studentPayments.map((student) => (
-                        <TableRow key={student.studentId}>
-                          <TableCell>
-                            <Typography variant="body1" fontWeight="medium">
-                              {student.studentName}
-                            </Typography>
-                          </TableCell>
-                          <TableCell>{student.studentEmail}</TableCell>
-                          <TableCell align="right">
-                            {formatCurrency(student.totalAmount)}
-                          </TableCell>
-                          <TableCell align="right">
-                            {formatCurrency(student.totalPaidAmount)}
-                          </TableCell>
-                          <TableCell align="right">
-                            {formatCurrency(student.totalUnPaidAmount)}
-                          </TableCell>
-                          <TableCell>
-                            <Chip
-                              label={student.totalUnPaidAmount > 0 ? 'Chưa thanh toán' : 'Đã thanh toán'}
-                              color={student.totalUnPaidAmount > 0 ? 'warning' : 'success'}
-                              size="small"
-                            />
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-                {dashboardData.studentPayments.length === 0 && (
-                  <Box textAlign="center" py={2}>
-                    <Typography variant="body2" color="textSecondary">
-                      Chưa có thông tin thanh toán
-                    </Typography>
-                  </Box>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
+          {childrenSchedules.length === 0 && (
+            <Paper sx={{ p: 4, textAlign: 'center', borderRadius: 2, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+              <Typography variant="h6" color="text.secondary" gutterBottom>
+                Chưa có con nào được đăng ký
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Vui lòng liên hệ admin để thêm con vào hệ thống.
+              </Typography>
+            </Paper>
+          )}
+        </Box>
       </Box>
     </DashboardLayout>
   );
