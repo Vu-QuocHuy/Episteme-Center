@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Typography, Button } from '@mui/material';
+import { Box, Typography, Button, Pagination } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import { commonStyles } from '../../utils/styles';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
@@ -31,14 +31,14 @@ const StudentManagement: React.FC = () => {
     students,
     loading,
     loadingTable,
-    // page,
-    // totalPages,
+    page,
+    totalPages,
     searchQuery,
     setSearchQuery,
     parentDetails,
     fetchStudents,
     deleteStudent,
-    // handlePageChange,
+    handlePageChange,
   } = useStudentManagement();
 
   const {
@@ -186,6 +186,19 @@ const StudentManagement: React.FC = () => {
             }}
             onViewDetails={handleOpenViewDialog}
           />
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+              <Pagination
+                count={totalPages}
+                page={page}
+                onChange={(_event, value) => handlePageChange(_event as React.SyntheticEvent, value)}
+                color="primary"
+                size="large"
+              />
+            </Box>
+          )}
         </Box>
       </Box>
 

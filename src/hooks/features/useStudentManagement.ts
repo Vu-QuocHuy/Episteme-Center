@@ -13,9 +13,10 @@ interface UseStudentManagementReturn {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   parentDetails: Record<string, string>;
-  fetchStudents: () => Promise<void>;
+  fetchStudents: (pageNum?: number) => Promise<void>;
   deleteStudent: (studentId: string) => Promise<{ success: boolean; message: string }>;
   handlePageChange: (event: React.SyntheticEvent, value: number) => void;
+  resetFilters: () => void;
 }
 
 export const useStudentManagement = (): UseStudentManagementReturn => {
@@ -25,7 +26,7 @@ export const useStudentManagement = (): UseStudentManagementReturn => {
   const [error, setError] = useState<string>('');
   const [page, setPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
-  const [totalRecords] = useState<number>(0);
+  const [totalRecords, setTotalRecords] = useState<number>(0);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [debouncedSearch, setDebouncedSearch] = useState<string>('');
   const [parentDetails, setParentDetails] = useState<Record<string, string>>({});
@@ -38,12 +39,12 @@ export const useStudentManagement = (): UseStudentManagementReturn => {
     return () => clearTimeout(handler);
   }, [searchQuery]);
 
-  const fetchStudents = async (): Promise<void> => {
+  const fetchStudents = async (pageNum: number = 1): Promise<void> => {
     setLoading(true);
     setLoadingTable(true);
     try {
       const params: any = {
-        page: page,
+        page: pageNum,
         limit: 10,
       };
 
@@ -54,13 +55,14 @@ export const useStudentManagement = (): UseStudentManagementReturn => {
 
       const response = await getAllStudentsAPI(params);
 
-            if (response && response.data && response.data.data) {
+      if (response && response.data && response.data.data) {
         // Handle actual API response structure: { statusCode, message, data: { meta, result } }
         const { data } = response.data;
         const studentsArray = data.result || [];
 
         setStudents(studentsArray);
         setTotalPages(data.meta?.totalPages || 1);
+        setTotalRecords(data.meta?.totalItems || 0);
 
         // Extract parent information directly from response
         const parentMap: Record<string, string> = {};
@@ -84,7 +86,7 @@ export const useStudentManagement = (): UseStudentManagementReturn => {
     setLoading(true);
     try {
       await deleteStudentAPI(studentId);
-      await fetchStudents(); // Refresh student list
+      await fetchStudents(page); // Refresh student list with current page
       return { success: true, message: 'Xóa học sinh thành công!' };
     } catch (error: any) {
       return {
@@ -100,9 +102,19 @@ export const useStudentManagement = (): UseStudentManagementReturn => {
     setPage(value);
   };
 
+  const resetFilters = (): void => {
+    setSearchQuery('');
+    setPage(1);
+  };
+
+  // Fetch students on initial mount
+  useEffect(() => {
+    fetchStudents(1);
+  }, []); // Only run once on mount
+
   // Fetch students when dependencies change
   useEffect(() => {
-    fetchStudents();
+    fetchStudents(page);
   }, [page, debouncedSearch]);
 
   return {
@@ -119,5 +131,6 @@ export const useStudentManagement = (): UseStudentManagementReturn => {
     fetchStudents,
     deleteStudent,
     handlePageChange,
+    resetFilters,
   };
 };

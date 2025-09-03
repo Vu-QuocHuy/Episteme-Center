@@ -4,6 +4,7 @@ import {
   Typography,
   Button,
   Grid,
+  Pagination,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -48,13 +49,16 @@ const TeacherManagement: React.FC = () => {
     loading,
     loadingDetail,
     totalRecords,
+    page,
+    totalPages,
     searchQuery,
     setSearchQuery,
     isActiveFilter,
     setIsActiveFilter,
     fetchTeachers,
     getTeacherById,
-    deleteTeacher
+    deleteTeacher,
+    handlePageChange
   } = useTeacherManagement();
 
   // Teacher form hook
@@ -265,6 +269,19 @@ const TeacherManagement: React.FC = () => {
             onDelete={handleAskDeleteTeacher}
             onViewDetails={handleOpenViewDialog}
           />
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+              <Pagination
+                count={totalPages}
+                page={page}
+                onChange={(_event, value) => handlePageChange(_event as React.SyntheticEvent, value)}
+                color="primary"
+                size="large"
+              />
+            </Box>
+          )}
         </Box>
       </Box>
 

@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { Box, Typography, Button } from '@mui/material';
+import { Box, Typography, Button, Pagination } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import { commonStyles } from '../../utils/styles';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
@@ -29,7 +29,19 @@ const ParentManagement: React.FC = () => {
   const [selectedParentForEdit, setSelectedParentForEdit] = useState<Parent | null>(null);
 
   // Custom hooks
-  const { parents, loading, loadingTable, searchQuery, setSearchQuery, deleteParent, getParentById, fetchParents } = useParentManagement();
+  const {
+    parents,
+    loading,
+    loadingTable,
+    page,
+    totalPages,
+    searchQuery,
+    setSearchQuery,
+    deleteParent,
+    getParentById,
+    fetchParents,
+    handlePageChange
+  } = useParentManagement();
   const { handleSubmit } = useParentForm();
 
   // Dialog handlers with useCallback
@@ -100,20 +112,32 @@ const ParentManagement: React.FC = () => {
             setSearchQuery={setSearchQuery}
           />
 
-                     <ParentTable
-             parents={parents}
-             loading={loadingTable}
-             onEdit={handleOpenDialog}
-             onDelete={(parentId: string) => {
-               const parent = parents.find(p => p.id === parentId);
-               if (parent) handleOpenDeleteDialog(parent);
-             }}
-             onViewDetails={(parent: Parent) => {
-               setSelectedParentForView({ id: parent.id, name: parent.name, email: parent.email, phone: parent.phone } as Parent);
-               setOpenViewDialog(true);
-             }}
+          <ParentTable
+            parents={parents}
+            loading={loadingTable}
+            onEdit={handleOpenDialog}
+            onDelete={(parentId: string) => {
+              const parent = parents.find(p => p.id === parentId);
+              if (parent) handleOpenDeleteDialog(parent);
+            }}
+            onViewDetails={(parent: Parent) => {
+              setSelectedParentForView({ id: parent.id, name: parent.name, email: parent.email, phone: parent.phone } as Parent);
+              setOpenViewDialog(true);
+            }}
+          />
 
-           />
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+              <Pagination
+                count={totalPages}
+                page={page}
+                onChange={(_event, value) => handlePageChange(_event as React.SyntheticEvent, value)}
+                color="primary"
+                size="large"
+              />
+            </Box>
+          )}
         </Box>
       </Box>
 
