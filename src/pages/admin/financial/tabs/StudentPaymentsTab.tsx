@@ -1,10 +1,10 @@
 import React from 'react';
 import { Box, TextField, MenuItem, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Pagination, IconButton, Tooltip, Dialog, DialogTitle, DialogContent, DialogActions, Button, CircularProgress, Typography } from '@mui/material';
 import { Download as DownloadIcon } from '@mui/icons-material';
-import * as XLSX from 'xlsx';
 import { History as HistoryIcon, Payment as PaymentIcon } from '@mui/icons-material';
 import PaymentHistoryModal from '../../../../components/common/PaymentHistoryModal';
-import { getAllPaymentsAPI, payStudentAPI } from '../../../../services/api';
+import { getAllPaymentsAPI, payStudentAPI, exportPaymentsReportAPI } from '../../../../services/api';
+import * as XLSX from 'xlsx';
 
 interface StudentPayment {
   id: string;
@@ -45,6 +45,7 @@ const StudentPaymentsTab: React.FC<Props> = ({ onTotalsChange }) => {
   const [selectedPayment, setSelectedPayment] = React.useState<StudentPayment | null>(null);
   const [studentPaymentForm, setStudentPaymentForm] = React.useState<{ amount: string; method: string; note: string }>({ amount: '', method: 'cash', note: '' });
   const [studentPaymentLoading, setStudentPaymentLoading] = React.useState<boolean>(false);
+  const [exportLoading, setExportLoading] = React.useState<boolean>(false);
 
   const computeAndEmitTotals = React.useCallback((list: StudentPayment[]) => {
     const totalStudentFees = list.reduce((t, p) => t + (p.totalAmount ?? 0), 0);
@@ -95,44 +96,80 @@ const StudentPaymentsTab: React.FC<Props> = ({ onTotalsChange }) => {
   React.useEffect(() => { fetchPayments(1); }, [fetchPayments]);
 
   const onPageChange = (page: number) => fetchPayments(page);
-  const exportToExcel = () => {
-    const rows = payments.map((p) => ({
-      'Học sinh': p.student?.name || '',
-      'Lớp': p.class?.name || '',
-      'Tháng/Năm': `${p.month}/${p.year}`,
-      'Số buổi học': p.totalLessons || 0,
-      'Số tiền gốc (₫)': p.totalAmount || 0,
-      'Giảm giá (₫)': p.discountAmount || 0,
-      'Số tiền cuối (₫)': (p.totalAmount || 0) - (p.discountAmount || 0),
-      'Đã đóng (₫)': p.paidAmount || 0,
-      'Còn thiếu (₫)': ((p.totalAmount || 0) - (p.discountAmount || 0)) - (p.paidAmount || 0),
-      'Trạng thái': p.status === 'paid' ? 'Đã đóng đủ' : p.status === 'partial' ? 'Đóng một phần' : 'Chưa đóng',
-    }));
-    const totalLessons = rows.reduce((s, r) => s + Number((r as any)['Số buổi học'] || 0), 0);
-    const totalOriginal = rows.reduce((s, r) => s + Number((r as any)['Số tiền gốc (₫)'] || 0), 0);
-    const totalDiscount = rows.reduce((s, r) => s + Number((r as any)['Giảm giá (₫)'] || 0), 0);
-    const totalFinal = rows.reduce((s, r) => s + Number((r as any)['Số tiền cuối (₫)'] || 0), 0);
-    const totalPaid = rows.reduce((s, r) => s + Number((r as any)['Đã đóng (₫)'] || 0), 0);
-    const totalRemaining = rows.reduce((s, r) => s + Number((r as any)['Còn thiếu (₫)'] || 0), 0);
-    rows.push({
-      'Học sinh': 'Tổng',
-      'Lớp': '',
-      'Tháng/Năm': '',
-      'Số buổi học': totalLessons,
-      'Số tiền gốc (₫)': totalOriginal,
-      'Giảm giá (₫)': totalDiscount,
-      'Số tiền cuối (₫)': totalFinal,
-      'Đã đóng (₫)': totalPaid,
-      'Còn thiếu (₫)': totalRemaining,
-      'Trạng thái': '',
-    } as any);
-    const ws = XLSX.utils.json_to_sheet(rows);
-    const colWidths = Object.keys(rows[0] || {}).map((k) => ({ wch: Math.max(k.length, ...rows.map(r => String((r as any)[k] ?? '').length)) + 2 }));
-    (ws as any)['!cols'] = colWidths;
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'ChiTietHocSinh');
-    const now = new Date();
-    XLSX.writeFile(wb, `BaoCao_HocSinh_${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}.xlsx`);
+  const exportToExcel = async () => {
+    setExportLoading(true);
+    try {
+      const filters: any = {};
+      if (paymentStatus !== 'all') filters.status = paymentStatus;
+      if (periodType === 'month') {
+        filters.month = selectedMonth;
+        filters.year = selectedYear;
+      } else if (periodType === 'quarter') {
+        const getQuarterMonths = (q: number) => q === 1 ? { startMonth: 1, endMonth: 3 } : q === 2 ? { startMonth: 4, endMonth: 6 } : q === 3 ? { startMonth: 7, endMonth: 9 } : { startMonth: 10, endMonth: 12 };
+        const { startMonth, endMonth } = getQuarterMonths(selectedQuarter);
+        filters.startMonth = startMonth;
+        filters.endMonth = endMonth;
+        filters.year = selectedYear;
+      } else if (periodType === 'year') {
+        filters.year = selectedYear;
+      } else if (periodType === 'custom') {
+        const year = new Date(customStart).getFullYear();
+        const startMonth = new Date(customStart).getMonth() + 1;
+        const endMonth = new Date(customEnd).getMonth() + 1;
+        filters.startMonth = startMonth;
+        filters.endMonth = endMonth;
+        filters.year = year;
+      }
+
+      // Backend returns JSON: { statusCode, message, data: { meta, result } }
+      const res = await exportPaymentsReportAPI(filters);
+      const data = (res as any)?.data?.data || (res as any)?.data || {};
+      const list = Array.isArray(data.result) ? (data.result as StudentPayment[]) : [];
+
+      const rows = list.map((p) => ({
+        'Học sinh': p.student?.name || '',
+        'Lớp': p.class?.name || '',
+        'Tháng/Năm': `${p.month}/${p.year}`,
+        'Số buổi học': p.totalLessons || 0,
+        'Số tiền gốc (₫)': p.totalAmount || 0,
+        'Giảm giá (₫)': p.discountAmount || 0,
+        'Số tiền cuối (₫)': (p.totalAmount || 0) - (p.discountAmount || 0),
+        'Đã đóng (₫)': p.paidAmount || 0,
+        'Còn thiếu (₫)': ((p.totalAmount || 0) - (p.discountAmount || 0)) - (p.paidAmount || 0),
+        'Trạng thái': p.status === 'paid' ? 'Đã đóng đủ' : p.status === 'partial' ? 'Đóng một phần' : 'Chưa đóng',
+      }));
+      const totalLessons = rows.reduce((s, r) => s + Number((r as any)['Số buổi học'] || 0), 0);
+      const totalOriginal = rows.reduce((s, r) => s + Number((r as any)['Số tiền gốc (₫)'] || 0), 0);
+      const totalDiscount = rows.reduce((s, r) => s + Number((r as any)['Giảm giá (₫)'] || 0), 0);
+      const totalFinal = rows.reduce((s, r) => s + Number((r as any)['Số tiền cuối (₫)'] || 0), 0);
+      const totalPaid = rows.reduce((s, r) => s + Number((r as any)['Đã đóng (₫)'] || 0), 0);
+      const totalRemaining = rows.reduce((s, r) => s + Number((r as any)['Còn thiếu (₫)'] || 0), 0);
+      rows.push({
+        'Học sinh': 'Tổng',
+        'Lớp': '',
+        'Tháng/Năm': '',
+        'Số buổi học': totalLessons,
+        'Số tiền gốc (₫)': totalOriginal,
+        'Giảm giá (₫)': totalDiscount,
+        'Số tiền cuối (₫)': totalFinal,
+        'Đã đóng (₫)': totalPaid,
+        'Còn thiếu (₫)': totalRemaining,
+        'Trạng thái': '',
+      } as any);
+
+      const ws = XLSX.utils.json_to_sheet(rows);
+      const colWidths = Object.keys(rows[0] || {}).map((k) => ({ wch: Math.max(k.length, ...rows.map(r => String((r as any)[k] ?? '').length)) + 2 }));
+      (ws as any)['!cols'] = colWidths;
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'ChiTietHocSinh');
+      const now = new Date();
+      XLSX.writeFile(wb, `BaoCao_HocSinh_${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}.xlsx`);
+    } catch (error) {
+      console.error('Lỗi khi xuất báo cáo:', error);
+      alert('Có lỗi xảy ra khi xuất báo cáo. Vui lòng thử lại.');
+    } finally {
+      setExportLoading(false);
+    }
   };
 
   const onOpenHistory = (payment: any) => {
@@ -216,7 +253,14 @@ const StudentPaymentsTab: React.FC<Props> = ({ onTotalsChange }) => {
         )}
         </Box>
         <Box>
-          <Button variant="outlined" startIcon={<DownloadIcon />} onClick={exportToExcel}>Xuất Excel</Button>
+          <Button
+            variant="outlined"
+            startIcon={exportLoading ? <CircularProgress size={16} /> : <DownloadIcon />}
+            onClick={exportToExcel}
+            disabled={exportLoading}
+          >
+            {exportLoading ? 'Đang xuất...' : 'Xuất Excel'}
+          </Button>
         </Box>
       </Box>
 

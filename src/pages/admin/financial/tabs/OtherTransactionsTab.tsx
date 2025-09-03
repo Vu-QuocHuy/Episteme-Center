@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Button, TextField, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Paper, Pagination, Typography, IconButton, Tooltip, Dialog, DialogTitle, DialogContent, DialogActions, Grid, MenuItem, Card, CardContent } from '@mui/material';
 import FormDialog from '../../../../components/common/forms/FormDialog';
-import { getAllTransactionsAPI, createTransactionAPI, updateTransactionAPI, deleteTransactionAPI, getAllTransactionCategoriesAPI, createTransactionCategoryAPI, getTransactionCategoryByIdAPI, updateTransactionCategoryAPI, deleteTransactionCategoryAPI } from '../../../../services/api';
+import { getAllTransactionsAPI, createTransactionAPI, updateTransactionAPI, deleteTransactionAPI, getAllTransactionCategoriesAPI, createTransactionCategoryAPI, getTransactionCategoryByIdAPI, updateTransactionCategoryAPI, deleteTransactionCategoryAPI, exportTransactionsReportAPI } from '../../../../services/api';
 import { Edit as EditIcon, Delete as DeleteIcon, Download as DownloadIcon } from '@mui/icons-material';
 import * as XLSX from 'xlsx';
 
@@ -60,33 +60,46 @@ const OtherTransactionsTab: React.FC<Props> = () => {
     // Build date range based on selected period
     let startDate: string | undefined;
     let endDate: string | undefined;
+
+    // Helper: format to MM/DD/YYYY
+    const toMDY = (y: number, m: number, d: number) => {
+      const mm = m < 10 ? `0${m}` : `${m}`;
+      const dd = d < 10 ? `0${d}` : `${d}`;
+      return `${mm}/${dd}/${y}`;
+    };
+
     if (periodType === 'year') {
-      startDate = `${selectedYear}-01-01`;
-      endDate = `${selectedYear}-12-31`;
+      startDate = toMDY(selectedYear, 1, 1);
+      endDate = toMDY(selectedYear, 12, 31);
     } else if (periodType === 'month') {
       const year = selectedYear;
       const month = selectedMonth;
-      const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
       const lastDay = new Date(year, month, 0).getDate();
-      startDate = `${year}-${pad(month)}-01`;
-      endDate = `${year}-${pad(month)}-${pad(lastDay)}`;
+      startDate = toMDY(year, month, 1);
+      endDate = toMDY(year, month, lastDay);
     } else if (periodType === 'quarter') {
       const q = selectedQuarter;
       const year = selectedYear;
       const startMonth = q === 1 ? 1 : q === 2 ? 4 : q === 3 ? 7 : 10;
       const endMonth = q === 1 ? 3 : q === 2 ? 6 : q === 3 ? 9 : 12;
-      const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
       const lastDay = new Date(year, endMonth, 0).getDate();
-      startDate = `${year}-${pad(startMonth)}-01`;
-      endDate = `${year}-${pad(endMonth)}-${pad(lastDay)}`;
+      startDate = toMDY(year, startMonth, 1);
+      endDate = toMDY(year, endMonth, lastDay);
     } else if (periodType === 'custom') {
-      startDate = customStart;
-      endDate = customEnd;
+      // customStart/customEnd are YYYY-MM-DD → convert to MM/DD/YYYY
+      if (customStart) {
+        const [y, m, d] = customStart.split('-').map(Number);
+        startDate = toMDY(y, m, d);
+      }
+      if (customEnd) {
+        const [y, m, d] = customEnd.split('-').map(Number);
+        endDate = toMDY(y, m, d);
+      }
     }
 
     const params: any = { page: pageNum, limit: 10 };
-    if (startDate) params.start_date = startDate;
-    if (endDate) params.end_date = endDate;
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
     if (typeFilter !== 'all') params.type = typeFilter;
 
     const res = await getAllTransactionsAPI(params);
@@ -99,7 +112,7 @@ const OtherTransactionsTab: React.FC<Props> = () => {
       setTransactions([]);
       setPagination({ page: 1, totalPages: 1 });
     }
-  }, []);
+  }, [periodType, selectedYear, selectedMonth, selectedQuarter, customStart, customEnd, typeFilter]);
 
   const fetchCategories = React.useCallback(async () => {
     setCategoriesLoading(true);
@@ -116,10 +129,51 @@ const OtherTransactionsTab: React.FC<Props> = () => {
     }
   }, []);
 
-  React.useEffect(() => { fetchOtherTransactions(1); fetchCategories(); }, [fetchOtherTransactions, fetchCategories]);
+  React.useEffect(() => { fetchOtherTransactions(1); /* fetchCategories(); */ }, [fetchOtherTransactions, fetchCategories]);
   React.useEffect(() => { fetchOtherTransactions(1); }, [periodType, selectedYear, selectedMonth, selectedQuarter, customStart, customEnd, typeFilter, fetchOtherTransactions]);
-  const exportToExcel = () => {
-    const rows = transactions.map((t) => ({
+  const exportToExcel = async () => {
+    // Reuse current date range logic to pass as query for export
+    let startDate: string | undefined;
+    let endDate: string | undefined;
+    const toMDY = (y: number, m: number, d: number) => {
+      const mm = m < 10 ? `0${m}` : `${m}`;
+      const dd = d < 10 ? `0${d}` : `${d}`;
+      return `${mm}/${dd}/${y}`;
+    };
+    if (periodType === 'year') {
+      startDate = toMDY(selectedYear, 1, 1);
+      endDate = toMDY(selectedYear, 12, 31);
+    } else if (periodType === 'month') {
+      const lastDay = new Date(selectedYear, selectedMonth, 0).getDate();
+      startDate = toMDY(selectedYear, selectedMonth, 1);
+      endDate = toMDY(selectedYear, selectedMonth, lastDay);
+    } else if (periodType === 'quarter') {
+      const startMonth = selectedQuarter === 1 ? 1 : selectedQuarter === 2 ? 4 : selectedQuarter === 3 ? 7 : 10;
+      const endMonth = selectedQuarter === 1 ? 3 : selectedQuarter === 2 ? 6 : selectedQuarter === 3 ? 9 : 12;
+      const lastDay = new Date(selectedYear, endMonth, 0).getDate();
+      startDate = toMDY(selectedYear, startMonth, 1);
+      endDate = toMDY(selectedYear, endMonth, lastDay);
+    } else if (periodType === 'custom') {
+      if (customStart) {
+        const [y, m, d] = customStart.split('-').map(Number);
+        startDate = toMDY(y, m, d);
+      }
+      if (customEnd) {
+        const [y, m, d] = customEnd.split('-').map(Number);
+        endDate = toMDY(y, m, d);
+      }
+    }
+
+    const params: any = {};
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    if (typeFilter !== 'all') params.type = typeFilter;
+
+    const res = await exportTransactionsReportAPI(params);
+    const payload = (res as any)?.data?.data || (res as any)?.data || {};
+    const list = Array.isArray(payload.result) ? payload.result as Transaction[] : transactions;
+
+    const rows = list.map((t) => ({
       'Danh mục': t.category?.name || '-',
       'Loại': t.category?.type === 'revenue' ? 'Thu' : 'Chi',
       'Mô tả': t.description || '-',
@@ -144,7 +198,12 @@ const OtherTransactionsTab: React.FC<Props> = () => {
   };
 
   const onPageChange = (p: number) => fetchOtherTransactions(p);
-  const handleOpenTransactionDialog = () => setOpenTransactionDialog(true);
+  const handleOpenTransactionDialog = async () => {
+    if (!categories || categories.length === 0) {
+      await fetchCategories();
+    }
+    setOpenTransactionDialog(true);
+  };
   const handleCloseTransactionDialog = () => setOpenTransactionDialog(false);
   const handleChangeTransactionField = (key: 'amount' | 'category_id' | 'description', value: string) => setTransactionForm(prev => ({ ...prev, [key]: value }));
   const handleSubmitTransaction = async () => {
@@ -160,7 +219,10 @@ const OtherTransactionsTab: React.FC<Props> = () => {
     }
   };
 
-  const handleEditTransaction = (transaction: Transaction) => {
+  const handleEditTransaction = async (transaction: Transaction) => {
+    if (!categories || categories.length === 0) {
+      await fetchCategories();
+    }
     setTransactionToEdit(transaction);
     setEditTransactionForm({
       amount: transaction.amount.toString(),
@@ -202,7 +264,12 @@ const OtherTransactionsTab: React.FC<Props> = () => {
     }
   };
 
-  const handleOpenCategoryManagementDialog = () => setOpenCategoryManagementDialog(true);
+  const handleOpenCategoryManagementDialog = async () => {
+    if (!categories || categories.length === 0) {
+      await fetchCategories();
+    }
+    setOpenCategoryManagementDialog(true);
+  };
   const handleCloseCategoryManagementDialog = () => setOpenCategoryManagementDialog(false);
   const handleOpenCreateCategoryFromManagement = () => { setOpenCategoryManagementDialog(false); setOpenCategoryDialog(true); };
   const handleChangeCategoryField = (key: 'type' | 'name', value: string) => setCategoryForm(prev => ({ ...prev, [key]: value }));

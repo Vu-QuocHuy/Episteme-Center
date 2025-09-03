@@ -14,26 +14,30 @@ export const createFilterString = (filters: Record<string, any>): string => {
  * Returns: { page: 1, limit: 10, filters: JSON string }
  */
 export const createQueryParams = (params: Record<string, any>): Record<string, any> => {
-  const { page, limit, name, email, ...otherParams } = params;
+  const { page, limit, name, email, filters: rawFilters, ...otherParams } = params;
 
   const queryParams: Record<string, any> = {};
 
   if (page) queryParams.page = page;
   if (limit) queryParams.limit = limit;
 
-  // Create filters object
+  // If filters is already provided by caller, pass it through as-is
+  if (rawFilters !== undefined && rawFilters !== null && rawFilters !== '') {
+    queryParams.filters = typeof rawFilters === 'string' ? rawFilters : createFilterString(rawFilters);
+    return queryParams;
+  }
+
+  // Otherwise, build filters from known keys and other params
   const filters: Record<string, any> = {};
   if (name) filters.name = name;
   if (email) filters.email = email;
 
-  // Add other filter params
   Object.entries(otherParams).forEach(([key, value]) => {
     if (value !== undefined && value !== null && value !== '') {
       filters[key] = value;
     }
   });
 
-  // Create JSON filter string if there are filters
   if (Object.keys(filters).length > 0) {
     queryParams.filters = createFilterString(filters);
   }

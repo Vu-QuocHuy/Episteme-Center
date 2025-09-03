@@ -34,6 +34,7 @@ import {
   getAllTeacherPaymentsAPI,
   updateTeacherPaymentAPI,
   getTeacherPaymentByIdAPI,
+  exportTeacherPaymentsReportAPI,
 } from '../../../../services/api';
 
 interface TeacherPayment {
@@ -116,40 +117,67 @@ const TeacherPaymentsTab: React.FC<Props> = () => {
   }, [fetchPayments]);
 
   const onPageChange = (page: number) => fetchPayments(page);
-  const exportToExcel = () => {
-    const rows = payments.map((p) => ({
-      'Giáo viên': p.teacher?.name || p.teacherId?.userId?.name || p.teacherId?.name || '',
-      'Tháng/Năm': `${p.month || ''}/${p.year || ''}`,
-      'Lương/buổi (₫)': p.teacher?.salaryPerLesson ?? 0,
-      'Số buổi dạy': p.classes && Array.isArray(p.classes) ? p.classes.reduce((s, c) => s + (c.totalLessons || 0), 0) : 0,
-      'Tổng lương (₫)': p.totalAmount ?? 0,
-      'Đã trả (₫)': p.paidAmount ?? 0,
-      'Trạng thái': p.status === 'paid' ? 'Đã thanh toán' : p.status === 'partial' ? 'Nhận một phần' : p.status === 'pending' ? 'Chờ thanh toán' : 'Chưa thanh toán',
-    }));
+  const exportToExcel = async () => {
+    try {
+      const filters: any = {};
+      if (paymentStatus !== 'all') filters.status = paymentStatus;
+      if (periodType === 'month') {
+        filters.month = selectedMonth;
+        filters.year = selectedYear;
+      } else if (periodType === 'quarter') {
+        const getQuarterMonths = (q: number) => q === 1 ? { startMonth: 1, endMonth: 3 } : q === 2 ? { startMonth: 4, endMonth: 6 } : q === 3 ? { startMonth: 7, endMonth: 9 } : { startMonth: 10, endMonth: 12 };
+        const { startMonth, endMonth } = getQuarterMonths(selectedQuarter);
+        filters.startMonth = startMonth;
+        filters.endMonth = endMonth;
+        filters.year = selectedYear;
+      } else if (periodType === 'year') {
+        filters.year = selectedYear;
+      } else if (periodType === 'custom') {
+        const year = new Date(customStart).getFullYear();
+        const startMonth = new Date(customStart).getMonth() + 1;
+        const endMonth = new Date(customEnd).getMonth() + 1;
+        filters.startMonth = startMonth;
+        filters.endMonth = endMonth;
+        filters.year = year;
+      }
 
-    // Totals row
-    const totalLessons = rows.reduce((s, r) => s + Number((r as any)['Số buổi dạy'] || 0), 0);
-    const totalAmount = rows.reduce((s, r) => s + Number((r as any)['Tổng lương (₫)'] || 0), 0);
-    const totalPaid = rows.reduce((s, r) => s + Number((r as any)['Đã trả (₫)'] || 0), 0);
-    rows.push({
-      'Giáo viên': 'Tổng',
-      'Tháng/Năm': '',
-      'Lương/buổi (₫)': '',
-      'Số buổi dạy': totalLessons,
-      'Tổng lương (₫)': totalAmount,
-      'Đã trả (₫)': totalPaid,
-      'Trạng thái': '',
-    } as any);
+      const res = await exportTeacherPaymentsReportAPI(filters);
+      const payload = (res as any)?.data?.data || (res as any)?.data || {};
+      const list = Array.isArray(payload.result) ? payload.result as TeacherPayment[] : payments;
 
-    const ws = XLSX.utils.json_to_sheet(rows);
-    // Auto width
-    const colWidths = Object.keys(rows[0] || {}).map((k) => ({ wch: Math.max(k.length, ...rows.map(r => String((r as any)[k] ?? '').length)) + 2 }));
-    ws['!cols'] = colWidths;
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'ChiTietGiaoVien');
-    const now = new Date();
-    const fileName = `BaoCao_GiaoVien_${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}.xlsx`;
-    XLSX.writeFile(wb, fileName);
+      const rows = list.map((p) => ({
+        'Giáo viên': p.teacher?.name || p.teacherId?.userId?.name || p.teacherId?.name || '',
+        'Tháng/Năm': `${p.month || ''}/${p.year || ''}`,
+        'Lương/buổi (₫)': p.teacher?.salaryPerLesson ?? p.salaryPerLesson ?? 0,
+        'Số buổi dạy': p.classes && Array.isArray(p.classes) ? p.classes.reduce((s, c) => s + (c.totalLessons || 0), 0) : 0,
+        'Tổng lương (₫)': p.totalAmount ?? 0,
+        'Đã trả (₫)': p.paidAmount ?? 0,
+        'Trạng thái': p.status === 'paid' ? 'Đã thanh toán' : p.status === 'partial' ? 'Nhận một phần' : p.status === 'pending' ? 'Chờ thanh toán' : 'Chưa thanh toán',
+      }));
+
+      const totalLessons = rows.reduce((s, r) => s + Number((r as any)['Số buổi dạy'] || 0), 0);
+      const totalAmount = rows.reduce((s, r) => s + Number((r as any)['Tổng lương (₫)'] || 0), 0);
+      const totalPaid = rows.reduce((s, r) => s + Number((r as any)['Đã trả (₫)'] || 0), 0);
+      rows.push({
+        'Giáo viên': 'Tổng',
+        'Tháng/Năm': '',
+        'Lương/buổi (₫)': '',
+        'Số buổi dạy': totalLessons,
+        'Tổng lương (₫)': totalAmount,
+        'Đã trả (₫)': totalPaid,
+        'Trạng thái': '',
+      } as any);
+
+      const ws = XLSX.utils.json_to_sheet(rows);
+      const colWidths = Object.keys(rows[0] || {}).map((k) => ({ wch: Math.max(k.length, ...rows.map(r => String((r as any)[k] ?? '').length)) + 2 }));
+      (ws as any)['!cols'] = colWidths;
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'ChiTietGiaoVien');
+      const now = new Date();
+      XLSX.writeFile(wb, `BaoCao_GiaoVien_${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}.xlsx`);
+    } catch (e) {
+      console.error('Export teacher payments error:', e);
+    }
   };
 
   // Edit functions

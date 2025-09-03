@@ -76,6 +76,8 @@ export interface ApiEndpoints {
     GET_BY_STUDENT: (id: string) => string;
     PAY_STUDENT: (id: string) => string;
     GET_TEACHER_PAYMENTS: string;
+    EXPORT_REPORT: string;
+    TEACHER_EXPORT_REPORT: string;
   };
   SCHEDULES: {
     GET_STUDENT_SCHEDULE: string;
@@ -128,6 +130,7 @@ export interface ApiEndpoints {
     GET_BY_ID: (id: string) => string;
     UPDATE: (id: string) => string;
     DELETE: (id: string) => string;
+    REPORT: string;
   };
   TRANSACTION_CATEGORIES: {
     CREATE: string;
@@ -256,6 +259,8 @@ export const API_CONFIG: ApiConfig = {
       GET_BY_STUDENT: (id: string) => `/payments/students/${id}`,
       PAY_STUDENT: (id: string) => `/payments/pay-student/${id}`,
       GET_TEACHER_PAYMENTS: '/teacher-payments/all',
+      EXPORT_REPORT: '/payments/report',
+      TEACHER_EXPORT_REPORT: '/teacher-payments/report',
     },
     SCHEDULES: {
       GET_STUDENT_SCHEDULE: '/schedules/student/me',
@@ -311,6 +316,7 @@ export const API_CONFIG: ApiConfig = {
       GET_BY_ID: (id: string) => `/transactions/${id}`,
       UPDATE: (id: string) => `/transactions/${id}`,
       DELETE: (id: string) => `/transactions/${id}`,
+      REPORT: '/transactions/report',
     },
     // Transaction Categories endpoints
     TRANSACTION_CATEGORIES: {

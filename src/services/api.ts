@@ -593,6 +593,20 @@ export const getPaymentsAPI = getAllPaymentsAPI;
 export const getTotalPaymentsAPI = () => axiosInstance.get('/payments/total');
 export const getPaymentsByStudentAPI = (studentId: string, params?: ApiParams) =>
   axiosInstance.get(`/payments/students/${studentId}`, { params });
+
+export const exportPaymentsReportAPI = (filters?: Record<string, any>) => {
+  const params: Record<string, any> = {};
+  if (filters && Object.keys(filters).length > 0) {
+    params.filters = typeof filters === 'string' ? filters : JSON.stringify(filters);
+  }
+  return axiosInstance.get(API_CONFIG.ENDPOINTS.PAYMENTS.EXPORT_REPORT, {
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+      'Accept': 'application/json'
+    },
+    params
+  });
+};
 export const payTeacherAPI = (id: string, data: PaymentData, params: ApiParams = {}) => {
   const formData = new URLSearchParams();
   formData.append('amount', String(Number(data.amount)));
@@ -1084,4 +1098,32 @@ export const updateFeedbackAPI = (id: string, data: UpdateFeedbackRequest) => {
 
 export const deleteFeedbackAPI = (id: string) => {
   return axiosInstance.delete(API_CONFIG.ENDPOINTS.FEEDBACK!.DELETE(id));
+};
+
+export const exportTeacherPaymentsReportAPI = (filters?: Record<string, any>) => {
+  const params: Record<string, any> = {};
+  if (filters && Object.keys(filters).length > 0) {
+    params.filters = typeof filters === 'string' ? filters : JSON.stringify(filters);
+  }
+  return axiosInstance.get(API_CONFIG.ENDPOINTS.PAYMENTS.TEACHER_EXPORT_REPORT, {
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+      'Accept': 'application/json'
+    },
+    params
+  });
+};
+
+export const exportTransactionsReportAPI = (params?: ApiParams & { startDate?: string; endDate?: string; type?: 'revenue' | 'expense' }) => {
+  const queryParams = createQueryParams(params || {});
+  // remove page/limit if undefined to keep them optional
+  if (!params?.page) delete (queryParams as any).page;
+  if (!params?.limit) delete (queryParams as any).limit;
+  return axiosInstance.get(API_CONFIG.ENDPOINTS.TRANSACTIONS.REPORT, {
+    headers: {
+      'x-lang': 'vi',
+      'Accept': 'application/json'
+    },
+    params: queryParams
+  });
 };
