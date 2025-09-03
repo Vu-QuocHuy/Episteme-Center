@@ -39,25 +39,28 @@ export const useMenuManagement = (): UseMenuManagementReturn => {
       await new Promise(resolve => setTimeout(resolve, 500));
 
       // Mock data for development
+      const now = new Date().toISOString();
       const mockMenuItems: MenuItem[] = [
         {
           id: '1',
-          label: 'Trang chủ',
-          sectionId: 'hero-section',
+          slug: 'hero-section',
+          title: 'Trang chủ',
           order: 1,
           isActive: true,
-          isExternal: false,
-          externalUrl: '',
+          createdAt: now,
+          updatedAt: now,
+          deletedAt: null,
           children: []
         },
         {
           id: '2',
-          label: 'Giới thiệu',
-          sectionId: 'about-section',
+          slug: 'about-section',
+          title: 'Giới thiệu',
           order: 2,
           isActive: true,
-          isExternal: false,
-          externalUrl: '',
+          createdAt: now,
+          updatedAt: now,
+          deletedAt: null,
           children: []
         }
       ];
@@ -65,9 +68,10 @@ export const useMenuManagement = (): UseMenuManagementReturn => {
       // Filter by search query
       let filteredItems = mockMenuItems;
       if (debouncedSearch) {
+        const q = debouncedSearch.toLowerCase();
         filteredItems = mockMenuItems.filter((item: MenuItem) =>
-          item.label.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-          item.sectionId.toLowerCase().includes(debouncedSearch.toLowerCase())
+          item.title.toLowerCase().includes(q) ||
+          (item.slug || '').toLowerCase().includes(q)
         );
       }
 

@@ -65,13 +65,13 @@ const Breadcrumb: React.FC = () => {
 
           return isLast ? (
             <Typography key={item.id} color="text.primary" variant="body2">
-              {item.label}
+              {item.title}
             </Typography>
           ) : (
             <Link
               key={item.id}
               component={RouterLink}
-              to={`/${item.sectionId}`}
+              to={`/${item.slug}`}
               color="inherit"
               sx={{
                 textDecoration: 'none',
@@ -80,7 +80,7 @@ const Breadcrumb: React.FC = () => {
                 },
               }}
             >
-              {item.label}
+              {item.title}
             </Link>
           );
         })}

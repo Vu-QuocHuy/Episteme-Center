@@ -685,10 +685,8 @@ export const updateUserAPI = (userId: string, data: UserUpdateData) => {
 // Menu APIs
 export interface MenuData {
   title: string;
-  slug: string;
+  slug?: string;
   parentId?: string;
-  order?: number;
-  isActive?: boolean;
 }
 
 export interface MenuResponse {
@@ -704,16 +702,7 @@ export interface MenusListResponse {
 }
 
 export const createMenuAPI = (data: MenuData) => {
-  const formData = new URLSearchParams();
-  formData.append('title', data.title);
-  formData.append('slug', data.slug);
-  if (data.parentId) formData.append('parentId', data.parentId);
-  if (data.order) formData.append('order', data.order.toString());
-  if (data.isActive !== undefined) formData.append('isActive', data.isActive.toString());
-
-  return axiosInstance.post<MenuResponse>(API_CONFIG.ENDPOINTS.MENUS.CREATE, formData, {
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-  });
+  return axiosInstance.post<MenuResponse>('/menus', data);
 };
 
 export const getAllMenusAPI = (params?: { page?: number; limit?: number }) => {
@@ -721,8 +710,11 @@ export const getAllMenusAPI = (params?: { page?: number; limit?: number }) => {
   if (params?.page) queryParams.page = params.page;
   if (params?.limit) queryParams.limit = params.limit;
 
-  return axiosInstance.get<MenusListResponse>(API_CONFIG.ENDPOINTS.MENUS.GET_ALL, {
-    params: queryParams
+  return axiosInstance.get<MenusListResponse>('/menus', {
+    params: queryParams,
+    headers: {
+      'x-lang': 'vi'
+    }
   });
 };
 
@@ -731,29 +723,15 @@ export const getMenuByIdAPI = (id: string) => {
 };
 
 export const updateMenuAPI = (id: string, data: Partial<MenuData>) => {
-  const formData = new URLSearchParams();
-  if (data.title) formData.append('title', data.title);
-  if (data.slug) formData.append('slug', data.slug);
-  if (data.parentId) formData.append('parentId', data.parentId);
-  if (data.order) formData.append('order', data.order.toString());
-  if (data.isActive !== undefined) formData.append('isActive', data.isActive.toString());
-
-  return axiosInstance.patch<MenuResponse>(API_CONFIG.ENDPOINTS.MENUS.UPDATE(id), formData, {
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-  });
+  return axiosInstance.patch<MenuResponse>(`/menus/${id}`, data);
 };
 
 export const deleteMenuAPI = (id: string) => {
-  return axiosInstance.delete(API_CONFIG.ENDPOINTS.MENUS.DELETE(id));
+  return axiosInstance.delete(`/menus/${id}`);
 };
 
 export const toggleMenuVisibilityAPI = (id: string, isActive: boolean) => {
-  const formData = new URLSearchParams();
-  formData.append('isActive', isActive.toString());
-
-  return axiosInstance.patch<MenuResponse>(API_CONFIG.ENDPOINTS.MENUS.UPDATE(id), formData, {
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-  });
+  return axiosInstance.patch<MenuResponse>(`/menus/${id}`, { isActive });
 };
 
 
@@ -1126,4 +1104,17 @@ export const exportTransactionsReportAPI = (params?: ApiParams & { startDate?: s
     },
     params: queryParams
   });
+};
+
+// Article APIs
+export const createArticleAPI = (formData: FormData) => {
+  return axiosInstance.post('/articles', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+};
+
+export const getArticlesByMenuSlugAPI = (slug: string) => {
+  return axiosInstance.get(`/public/${slug}/articles`);
 };

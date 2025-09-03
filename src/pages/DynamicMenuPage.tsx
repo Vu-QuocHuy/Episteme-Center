@@ -13,7 +13,7 @@ import {
   Star as StarIcon,
   People as PeopleIcon
 } from '@mui/icons-material';
-import { getMenuByIdAPI } from '../services/api';
+import { getMenuByIdAPI, getArticlesByMenuSlugAPI } from '../services/api';
 import { MenuItem } from '../types';
 
 // Mock content data based on menu slug
@@ -149,6 +149,8 @@ const DynamicMenuPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [content, setContent] = useState<any>(null);
+  const [articles, setArticles] = useState<any[]>([]);
+  const [selectedArticle, setSelectedArticle] = useState<any>(null);
 
   useEffect(() => {
     const fetchMenuItem = async () => {
@@ -163,19 +165,30 @@ const DynamicMenuPage: React.FC = () => {
           setMenuItem(response.data.data);
         } else {
           // Fallback to mock data
-          setMenuItem({
-            id: slug,
-            label: slug.charAt(0).toUpperCase() + slug.slice(1).replace(/-/g, ' '),
-            sectionId: slug,
-            order: 1,
-            isActive: true,
-            isExternal: false,
-            externalUrl: '',
-            children: []
-          });
+                     setMenuItem({
+             id: slug,
+             slug: slug,
+             title: slug.charAt(0).toUpperCase() + slug.slice(1).replace(/-/g, ' '),
+             order: null,
+             isActive: true,
+             createdAt: new Date().toISOString(),
+             updatedAt: new Date().toISOString(),
+             deletedAt: null,
+             children: []
+           });
         }
 
-        // Get content based on slug
+        // Fetch articles for this menu
+        try {
+          const articlesResponse = await getArticlesByMenuSlugAPI(slug);
+          if (articlesResponse.data?.data) {
+            setArticles(articlesResponse.data.data);
+          }
+        } catch (articleError) {
+          console.log('No articles found for this menu, using mock content');
+        }
+
+        // Get content based on slug (fallback)
         const pageContent = getContentBySlug(slug);
         setContent(pageContent);
       } catch (error) {
@@ -380,6 +393,71 @@ const DynamicMenuPage: React.FC = () => {
   );
 
   const renderContent = () => {
+    // If we have articles, show them instead of mock content
+    if (articles.length > 0) {
+      if (articles.length === 1) {
+        // Single article - show content directly
+        return (
+          <Box>
+            <Button
+              variant="outlined"
+              onClick={() => setSelectedArticle(null)}
+              sx={{ mb: 2 }}
+            >
+              Quay lại
+            </Button>
+            <div dangerouslySetInnerHTML={{ __html: articles[0].content }} />
+          </Box>
+        );
+      } else {
+        // Multiple articles - show list
+        if (selectedArticle) {
+          return (
+            <Box>
+              <Button
+                variant="outlined"
+                onClick={() => setSelectedArticle(null)}
+                sx={{ mb: 2 }}
+              >
+                Quay lại danh sách
+              </Button>
+              <div dangerouslySetInnerHTML={{ __html: selectedArticle.content }} />
+            </Box>
+          );
+        } else {
+          return (
+            <Grid container spacing={3}>
+              {articles.map((article, index) => (
+                <Grid item xs={12} md={4} key={index}>
+                  <Card
+                    sx={{ height: '100%', cursor: 'pointer' }}
+                    onClick={() => setSelectedArticle(article)}
+                  >
+                    <CardMedia
+                      component="img"
+                      height="200"
+                      image={article.fileDTOList?.[0]?.downloadUrl || '/images/default-article.jpg'}
+                      alt={article.title}
+                      sx={{ objectFit: 'cover' }}
+                    />
+                    <CardContent>
+                      <Typography variant="h6" gutterBottom>
+                        {article.title}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {article.createAt ? new Date(article.createAt).toLocaleDateString('vi-VN') : 'Không có ngày'}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          );
+        }
+      }
+    }
+
+    // Fallback to mock content
     switch (content.type) {
       case 'courses':
         return renderCoursesContent();

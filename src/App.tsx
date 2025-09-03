@@ -63,6 +63,7 @@ import { USER_ROLES } from './constants';
 
 // Dynamic Menu Pages
 import DynamicMenuPage from './pages/DynamicMenuPage';
+import LayoutBuilder from './pages/admin/LayoutBuilder';
 
 const AppContent: React.FC = () => {
   const { user } = useAuth();
@@ -131,6 +132,7 @@ const AppContent: React.FC = () => {
 
                       <Route path="menu" element={<MenuManagement />} />
                      <Route path="menu-management" element={<MenuManagement />} />
+                     <Route path="layout-builder/:slug" element={<LayoutBuilder />} />
                      <Route path="profile" element={<AdminProfile />} />
                     <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
                     </Routes>

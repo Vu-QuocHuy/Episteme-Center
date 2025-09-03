@@ -52,15 +52,14 @@ const HomeHeader: React.FC = () => {
   // Get active menu items (filtered and sorted)
   const activeMenuItems = menuItems
     .filter(item => item.isActive)
-    .sort((a, b) => a.order - b.order);
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
 
   // Không dùng menu tĩnh mặc định; chỉ hiển thị khi có menu từ API
   const displayMenuItems = activeMenuItems;
 
   // Get section IDs for scroll detection
   const sectionIds = displayMenuItems
-    .filter(item => !item.isExternal)
-    .map(item => ({ label: item.label, id: item.sectionId }));
+    .map(item => ({ label: item.title, id: item.slug || item.title }));
 
   useEffect(() => {
     const handleScroll = (): void => {
@@ -90,11 +89,7 @@ const HomeHeader: React.FC = () => {
   };
 
   const handleMobileMenuItemClick = (menuItem: NavigationMenuItem): void => {
-    if (menuItem.isExternal) {
-      window.open(menuItem.externalUrl, '_blank');
-    } else {
-      scrollToSection(menuItem.sectionId);
-    }
+    scrollToSection(menuItem.slug || menuItem.title);
     handleMobileMenuClose();
   };
 
@@ -248,7 +243,7 @@ const HomeHeader: React.FC = () => {
             >
               {displayMenuItems.map((menuItem) => (
                 <MenuItem key={menuItem.id} onClick={() => handleMobileMenuItemClick(menuItem)}>
-                  {menuItem.label}
+                  {menuItem.title}
                 </MenuItem>
               ))}
               {user ? (
@@ -288,16 +283,12 @@ const HomeHeader: React.FC = () => {
                 <Button
                   key={menuItem.id}
                   onClick={() => {
-                    if (menuItem.isExternal) {
-                      window.open(menuItem.externalUrl, '_blank');
-                    } else {
-                      scrollToSection(menuItem.sectionId);
-                    }
+                    scrollToSection(menuItem.slug || menuItem.title);
                   }}
                   sx={{
                     mx: 1.5,
-                    color: !menuItem.isExternal && activeSection === menuItem.sectionId ? COLORS.primary.main : '#111',
-                    fontWeight: !menuItem.isExternal && activeSection === menuItem.sectionId ? 700 : 500,
+                    color: activeSection === (menuItem.slug || menuItem.title) ? COLORS.primary.main : '#111',
+                    fontWeight: activeSection === (menuItem.slug || menuItem.title) ? 700 : 500,
                     fontSize: '1rem',
                     borderRadius: 2,
                     bgcolor: 'transparent',
@@ -314,7 +305,7 @@ const HomeHeader: React.FC = () => {
                     },
                   }}
                 >
-                  {menuItem.label}
+                  {menuItem.title}
                 </Button>
               ))}
             </Box>

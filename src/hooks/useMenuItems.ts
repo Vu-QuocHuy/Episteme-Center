@@ -29,8 +29,8 @@ export const useMenuItems = () => {
     return items
       .filter(item => item.isActive)
       .map(item => ({
-        key: item.sectionId,
-        label: item.label,
+        key: item.slug || item.title,
+        label: item.title,
         children: item.children ? transformMenuItems(item.children) : undefined,
       }));
   };
@@ -44,7 +44,7 @@ export const useMenuItems = () => {
   const getMenuItemBySlug = (slug: string): MenuItem | null => {
     const findItem = (items: MenuItem[]): MenuItem | null => {
       for (const item of items) {
-        if (item.sectionId === slug) {
+        if ((item.slug || item.title) === slug) {
           return item;
         }
         if (item.children) {
@@ -66,7 +66,7 @@ export const useMenuItems = () => {
       for (const item of items) {
         const currentPath = [...path, item];
 
-        if (item.sectionId === targetSlug) {
+        if ((item.slug || item.title) === targetSlug) {
           breadcrumb.push(...currentPath);
           return true;
         }

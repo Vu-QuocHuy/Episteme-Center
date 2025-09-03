@@ -14,25 +14,27 @@ export const useMenuItems = () => {
       try {
         const response = await getAllMenusAPI();
         if (response.data?.data) {
-          // Transform API data to match the navigation format
-          const transformedItems = response.data.data.map((item: any) => ({
+          // Transform API data to match the new NavigationMenuItem shape
+          const transformedItems: NavigationMenuItem[] = response.data.data.map((item: any) => ({
             id: item.id,
-            label: item.title,
-            sectionId: item.slug, // Use slug as sectionId for now
+            slug: item.slug,
+            title: item.title,
             order: item.order,
             isActive: item.isActive,
-            isExternal: false, // Default to false, can be extended later
-            externalUrl: '',
-            children: item.children ? item.children.map((child: any) => ({
+            createdAt: item.createdAt,
+            updatedAt: item.updatedAt,
+            deletedAt: item.deletedAt,
+            children: (item.children || []).map((child: any) => ({
               id: child.id,
-              label: child.title,
-              sectionId: child.slug,
+              slug: child.slug,
+              title: child.title,
               order: child.order,
               isActive: child.isActive,
-              isExternal: false,
-              externalUrl: '',
+              createdAt: child.createdAt,
+              updatedAt: child.updatedAt,
+              deletedAt: child.deletedAt,
               children: []
-            })) : []
+            }))
           }));
           setMenuItems(transformedItems);
         }

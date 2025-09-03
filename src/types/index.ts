@@ -768,13 +768,14 @@ export interface Advertisement {
 // Menu Item Types for Navigation
 export interface MenuItem {
   id: string;
-  label: string;
-  sectionId: string;
-  order: number;
+  slug: string | null;
+  title: string;
+  order: number | null;
   isActive: boolean;
-  isExternal: boolean;
-  externalUrl: string;
-  children?: MenuItem[];
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+  children: MenuItem[];
 }
 
 // Navigation Menu Item Type (alias for MenuItem)

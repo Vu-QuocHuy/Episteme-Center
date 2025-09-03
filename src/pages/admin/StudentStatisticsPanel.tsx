@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, Paper, Grid, TextField, MenuItem, Card, CardContent, CircularProgress } from '@mui/material';
+import { commonStyles } from '../../utils/styles';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, LineChart, Line } from 'recharts';
 import { getMonthlyStudentChangeAPI } from '../../services/api';
 
@@ -161,12 +162,12 @@ const StudentStatisticsPanel: React.FC = () => {
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h5" fontWeight="bold" gutterBottom>
-        Thống kê học sinh
-      </Typography>
+    <Box>
+      <Box sx={commonStyles.pageHeader}>
+        <Typography sx={commonStyles.pageTitle}>Thống kê học sinh</Typography>
+      </Box>
 
-      <Paper sx={{ p: 2, mb: 3, bgcolor: 'grey.50', boxShadow: 'none' }}>
+      <Paper sx={{ p: 3, mb: 3 }}>
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={12} sm={3}>
             <TextField select fullWidth label="Năm" value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))}>
@@ -183,7 +184,8 @@ const StudentStatisticsPanel: React.FC = () => {
       )}
 
       {/* Summary Cards */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
+      <Paper sx={{ p: 3, mb: 3 }}>
+        <Grid container spacing={3}>
         <Grid item xs={12} md={3}>
           <Card>
             <CardContent>
@@ -235,7 +237,8 @@ const StudentStatisticsPanel: React.FC = () => {
             </CardContent>
           </Card>
         </Grid>
-      </Grid>
+        </Grid>
+      </Paper>
 
       {/* Charts */}
       <Grid container spacing={3}>

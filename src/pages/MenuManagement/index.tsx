@@ -1,30 +1,25 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
-  Container,
   Typography,
   Button,
-  Card,
-  CardContent,
   TextField,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   IconButton,
-  Switch,
-  FormControlLabel,
-  Chip,
   Accordion,
   AccordionSummary,
   AccordionDetails,
-
   CircularProgress,
   Grid,
   MenuItem as MuiMenuItem,
   Select,
   FormControl,
   InputLabel,
+  Paper
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -39,24 +34,27 @@ import {
   getAllMenusAPI,
   updateMenuAPI,
   deleteMenuAPI,
-  toggleMenuVisibilityAPI,
   MenuData,
 } from '../../services/api';
 import { MenuItem } from '../../types';
 import NotificationSnackbar from '../../components/common/NotificationSnackbar';
+import { commonStyles } from '../../utils/styles';
 
 const MenuManagement: React.FC = () => {
+  const navigate = useNavigate();
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [currentItem, setCurrentItem] = useState<MenuItem | null>(null);
   const [parentId, setParentId] = useState<string | null>(null);
-  const [formData, setFormData] = useState<MenuData>({
+  const [formData, setFormData] = useState<{
+    title: string;
+    slug: string;
+    parentId?: string;
+  }>({
     title: '',
     slug: '',
     parentId: undefined,
-    order: 1,
-    isActive: true,
   });
   const [notification, setNotification] = useState<{
     open: boolean;
@@ -180,45 +178,24 @@ const MenuManagement: React.FC = () => {
   };
 
   // Toggle visibility
-  const handleToggleVisibility = async (id: string, isActive: boolean) => {
-    try {
-      await toggleMenuVisibilityAPI(id, !isActive);
-      setNotification({
-        open: true,
-        message: 'Cập nhật trạng thái thành công',
-        severity: 'success',
-      });
-      fetchMenuItems();
-    } catch (error) {
-      console.error('Error toggling menu visibility:', error);
-      setNotification({
-        open: true,
-        message: 'Lỗi khi cập nhật trạng thái',
-        severity: 'error',
-      });
-    }
-  };
+  // Note: toggle visibility is currently unused in UI
 
   // Open dialog for create/edit
   const handleOpenDialog = (item?: MenuItem, parent?: string) => {
     if (item) {
       setCurrentItem(item);
-      setFormData({
-        title: item.label,
-        slug: item.sectionId,
-        parentId: item.id,
-        order: item.order,
-        isActive: item.isActive,
-      });
+              setFormData({
+          title: item.title,
+          slug: item.slug || item.title.toLowerCase().replace(/\s+/g, '-'),
+          parentId: item.id,
+        });
     } else {
       setCurrentItem(null);
-      setFormData({
-        title: '',
-        slug: '',
-        parentId: parent || undefined,
-        order: 1,
-        isActive: true,
-      });
+              setFormData({
+          title: '',
+          slug: '',
+          parentId: parent || undefined,
+        });
     }
     setParentId(parent || null);
     setDialogOpen(true);
@@ -233,8 +210,6 @@ const MenuManagement: React.FC = () => {
       title: '',
       slug: '',
       parentId: undefined,
-      order: 1,
-      isActive: true,
     });
   };
 
@@ -273,12 +248,7 @@ const MenuManagement: React.FC = () => {
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               {level > 0 && <SubMenuIcon color="action" />}
-              <Typography variant="subtitle1">{item.label}</Typography>
-              <Chip
-                label={item.isActive ? 'Hiện' : 'Ẩn'}
-                color={item.isActive ? 'success' : 'default'}
-                size="small"
-              />
+              <Typography variant="subtitle1">{item.title}</Typography>
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <IconButton
@@ -291,6 +261,18 @@ const MenuManagement: React.FC = () => {
               >
                 <AddIcon />
               </IconButton>
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/admin/layout-builder/${item.slug || item.title.toLowerCase().replace(/\s+/g, '-')}`);
+                }}
+                title="Tạo Layout"
+                sx={{ minWidth: 'auto', px: 1, py: 0.5, fontSize: '0.75rem' }}
+              >
+                Layout
+              </Button>
               <IconButton
                 size="small"
                 onClick={(e) => {
@@ -301,14 +283,7 @@ const MenuManagement: React.FC = () => {
               >
                 <EditIcon />
               </IconButton>
-              <Switch
-                checked={item.isActive}
-                onChange={(e) => {
-                  e.stopPropagation();
-                  handleToggleVisibility(item.id, item.isActive);
-                }}
-                size="small"
-              />
+
               <IconButton
                 size="small"
                 color="error"
@@ -327,12 +302,9 @@ const MenuManagement: React.FC = () => {
         </AccordionSummary>
         <AccordionDetails>
           <Box sx={{ pl: 2 }}>
-            <Typography variant="body2" color="text.secondary">
-              <strong>Slug:</strong> {item.sectionId}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              <strong>Thứ tự:</strong> {item.order}
-            </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                <strong>URL:</strong> {item.slug || `/${item.title.toLowerCase().replace(/\s+/g, '-')}`}
+              </Typography>
             {item.children && item.children.length > 0 && (
               <Box sx={{ mt: 2 }}>
                 <Typography variant="subtitle2" gutterBottom>
@@ -360,35 +332,30 @@ const MenuManagement: React.FC = () => {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          Quản lý Menu
-        </Typography>
+    <Box>
+      <Box sx={commonStyles.pageHeader}>
+        <Typography sx={commonStyles.pageTitle}>Quản lý Menu</Typography>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => handleOpenDialog()}
+          sx={commonStyles.primaryButton}
         >
           Thêm Menu
         </Button>
       </Box>
 
-
-
-      <Card>
-        <CardContent>
-          {menuItems.length === 0 ? (
-            <Box sx={{ textAlign: 'center', py: 4 }}>
-              <Typography variant="h6" color="text.secondary">
-                Chưa có menu nào. Hãy tạo menu đầu tiên!
-              </Typography>
-            </Box>
-          ) : (
-            renderMenuItems(menuItems)
-          )}
-        </CardContent>
-      </Card>
+      <Paper sx={{ p: 3, mb: 3 }}>
+        {menuItems.length === 0 ? (
+          <Box sx={{ textAlign: 'center', py: 4 }}>
+            <Typography variant="h6" color="text.secondary">
+              Chưa có menu nào. Hãy tạo menu đầu tiên!
+            </Typography>
+          </Box>
+        ) : (
+          renderMenuItems(menuItems)
+        )}
+      </Paper>
 
       {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
@@ -430,32 +397,16 @@ const MenuManagement: React.FC = () => {
                     </MuiMenuItem>
                     {getParentOptions().map((item) => (
                       <MuiMenuItem key={item.id} value={item.id}>
-                        {item.label}
+                        {item.title}
                       </MuiMenuItem>
                     ))}
                   </Select>
                 </FormControl>
               </Grid>
-              <Grid item xs={6}>
-                <TextField
-                  fullWidth
-                  label="Thứ tự"
-                  type="number"
-                  value={formData.order}
-                  onChange={(e) => handleInputChange('order', parseInt(e.target.value) || 1)}
-                  inputProps={{ min: 1 }}
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={formData.isActive}
-                      onChange={(e) => handleInputChange('isActive', e.target.checked)}
-                    />
-                  }
-                  label="Hiển thị"
-                />
+              <Grid item xs={12}>
+                <Typography variant="body2" color="text.secondary">
+                  URL sẽ được tự động tạo từ tiêu đề. Bạn có thể chỉnh sửa nếu cần.
+                </Typography>
               </Grid>
             </Grid>
           </Box>
@@ -479,7 +430,7 @@ const MenuManagement: React.FC = () => {
         message={notification.message}
         severity={notification.severity}
       />
-    </Container>
+    </Box>
   );
 };
 

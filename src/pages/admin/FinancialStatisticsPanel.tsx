@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { Box, Typography, Paper, Grid, Card, CardContent, Tabs, Tab } from '@mui/material';
+import { commonStyles } from '../../utils/styles';
 import TeacherPaymentsTab from './financial/tabs/TeacherPaymentsTab';
 import StudentPaymentsTab from './financial/tabs/StudentPaymentsTab';
 import OtherTransactionsTab from './financial/tabs/OtherTransactionsTab';
@@ -33,45 +34,47 @@ const FinancialStatisticsPanel: React.FC = () => {
   }, []);
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h5" fontWeight="bold" gutterBottom>
-        Thống kê tài chính
-      </Typography>
+    <Box>
+      <Box sx={commonStyles.pageHeader}>
+        <Typography sx={commonStyles.pageTitle}>Thống kê tài chính</Typography>
+      </Box>
 
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} md={3}>
-          <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>Tổng lương giáo viên</Typography>
-              <Typography variant="h5" color="error.main" fontWeight="bold">{fixedTotalTeacherSalary.toLocaleString()} ₫</Typography>
-            </CardContent>
-          </Card>
+      <Paper sx={{ p: 3, mb: 3 }}>
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={3}>
+            <Card>
+              <CardContent>
+                <Typography color="textSecondary" gutterBottom>Tổng lương giáo viên</Typography>
+                <Typography variant="h5" color="error.main" fontWeight="bold">{fixedTotalTeacherSalary.toLocaleString()} ₫</Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} md={3}>
+            <Card>
+              <CardContent>
+                <Typography color="textSecondary" gutterBottom>Tổng học phí</Typography>
+                <Typography variant="h5" color="info.main" fontWeight="bold">{totalStatistics.totalStudentFees.toLocaleString()} ₫</Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} md={3}>
+            <Card>
+              <CardContent>
+                <Typography color="textSecondary" gutterBottom>Đã thu</Typography>
+                <Typography variant="h5" color="success.main" fontWeight="bold">{totalStatistics.totalPaidAmount.toLocaleString()} ₫</Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} md={3}>
+            <Card>
+              <CardContent>
+                <Typography color="textSecondary" gutterBottom>Còn thiếu</Typography>
+                <Typography variant="h5" color="warning.main" fontWeight="bold">{totalStatistics.totalRemainingAmount.toLocaleString()} ₫</Typography>
+              </CardContent>
+            </Card>
+          </Grid>
         </Grid>
-        <Grid item xs={12} md={3}>
-          <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>Tổng học phí</Typography>
-              <Typography variant="h5" color="info.main" fontWeight="bold">{totalStatistics.totalStudentFees.toLocaleString()} ₫</Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} md={3}>
-          <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>Đã thu</Typography>
-              <Typography variant="h5" color="success.main" fontWeight="bold">{totalStatistics.totalPaidAmount.toLocaleString()} ₫</Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} md={3}>
-          <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>Còn thiếu</Typography>
-              <Typography variant="h5" color="warning.main" fontWeight="bold">{totalStatistics.totalRemainingAmount.toLocaleString()} ₫</Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+      </Paper>
 
       <Paper sx={{ mb: 3, boxShadow: 'none' }}>
         <Tabs value={tab} onChange={(_, v) => setTab(v)}>
