@@ -35,7 +35,6 @@ const StudentManagement: React.FC = () => {
     totalPages,
     searchQuery,
     setSearchQuery,
-    parentDetails,
     fetchStudents,
     deleteStudent,
     handlePageChange,
@@ -225,7 +224,6 @@ const StudentManagement: React.FC = () => {
         open={openViewDialog}
         onClose={handleCloseViewDialog}
         selectedStudent={selectedStudentForView as any}
-        parentDetails={parentDetails}
       />
 
       <NotificationSnackbar

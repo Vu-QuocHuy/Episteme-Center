@@ -31,7 +31,9 @@ type AuthAction =
   | { type: 'REFRESH_TOKEN_SUCCESS'; payload: { accessToken: string; refreshToken?: string } }
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'CLEAR_ERROR' }
-  | { type: 'UPDATE_USER'; payload: Partial<User> };
+  | { type: 'UPDATE_USER'; payload: Partial<User> }
+  | { type: 'SET_AUTHENTICATED'; payload: boolean }
+  | { type: 'SET_USER_DATA'; payload: { user: User; accessToken: string; refreshToken?: string } };
 
 interface AuthContextType extends Omit<AuthState, 'refreshToken'> {
   login: (credentials: LoginCredentials, isAdmin?: boolean) => Promise<LoginResponse | null>;
@@ -95,6 +97,7 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
         ...state,
         token: action.payload.accessToken,
         refreshToken: action.payload.refreshToken || null,
+        isAuthenticated: true, // Cập nhật isAuthenticated thành true
       };
     case 'SET_LOADING':
       return {
@@ -113,6 +116,21 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
           ...state.user,
           ...action.payload,
         } : null,
+      };
+    case 'SET_AUTHENTICATED':
+      return {
+        ...state,
+        isAuthenticated: action.payload
+      };
+    case 'SET_USER_DATA':
+      return {
+        ...state,
+        user: action.payload.user,
+        token: action.payload.accessToken,
+        refreshToken: action.payload.refreshToken || null,
+        isAuthenticated: false, // Ban đầu set false để cho phép interceptor xử lý
+        loading: false,
+        error: null
       };
     default:
       return state;
@@ -158,8 +176,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           localStorage.setItem('userData', JSON.stringify(user));
         }
 
+        // Ban đầu set isAuthenticated = false để cho phép interceptor xử lý refresh nếu cần
         dispatch({
-          type: 'LOGIN_SUCCESS',
+          type: 'SET_USER_DATA',
           payload: { user, accessToken: token, refreshToken: refreshToken || undefined }
         });
       } catch (error) {
@@ -228,10 +247,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       dispatch({ type: 'LOGOUT' });
     };
 
+    // Lắng nghe event refresh success từ axios interceptor
+    const handleRefreshSuccessEvent = (event: CustomEvent) => {
+      const { accessToken, refreshToken } = event.detail;
+      dispatch({
+        type: 'REFRESH_TOKEN_SUCCESS',
+        payload: { accessToken, refreshToken }
+      });
+      // Cập nhật isAuthenticated thành true
+      dispatch({
+        type: 'SET_AUTHENTICATED',
+        payload: true
+      });
+    };
+
     window.addEventListener('auth:logout', handleLogoutEvent as EventListener);
+    window.addEventListener('auth:refresh_success', handleRefreshSuccessEvent as EventListener);
 
     return () => {
       window.removeEventListener('auth:logout', handleLogoutEvent as EventListener);
+      window.removeEventListener('auth:refresh_success', handleRefreshSuccessEvent as EventListener);
     };
   }, []);
 

@@ -9,8 +9,7 @@ import {
   Paper,
   IconButton,
   Box,
-  Typography,
-  Button
+  Typography
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -61,19 +60,7 @@ const TeacherTable: React.FC<TeacherTableProps> = ({
 
   return (
     <>
-      <TableContainer
-        component={Paper}
-        elevation={2}
-        sx={{
-          backgroundColor: 'white',
-          '& .MuiTableBody-root .MuiTableCell-root': {
-            color: 'black !important'
-          },
-          '& .MuiTableBody-root .MuiTypography-root': {
-            color: 'inherit !important'
-          }
-        }}
-      >
+      <TableContainer component={Paper} elevation={2} sx={{ backgroundColor: 'white' }}>
         <Table>
           <TableHead>
             <TableRow sx={{ backgroundColor: theme.palette.primary.main }}>
@@ -89,14 +76,7 @@ const TeacherTable: React.FC<TeacherTableProps> = ({
           </TableHead>
           <TableBody>
             {teachers && Array.isArray(teachers) && teachers.map((teacher) => (
-              <TableRow key={teacher.id || teacher.teacher_id} hover sx={{
-                '& .MuiTableCell-root': { color: '#000000 !important' },
-                '& .MuiTypography-root': { color: '#000000 !important' },
-                '& .MuiTableCell-root .MuiTypography-root': { color: '#000000 !important' },
-                '& .MuiTableCell-root > *:not(.MuiSvgIcon-root):not(.MuiIconButton-root):not(.MuiChip-root)': {
-                  color: '#000000 !important'
-                }
-              }}>
+              <TableRow key={teacher.id || teacher.teacher_id} hover>
                 <TableCell>
                   <Typography variant="body2">
                     {teacher.name || teacher.userId?.name}
@@ -148,20 +128,24 @@ const TeacherTable: React.FC<TeacherTableProps> = ({
                   )}
                 </TableCell>
                 <TableCell>
-                  <Button
-                    variant="contained"
-                    size="small"
+                  <Box
+                    component="span"
                     sx={{
-                      backgroundColor: teacher.isActive ? '#4caf50' : '#f44336',
-                      color: 'white',
-                      borderRadius: '20px',
-                      '&:hover': {
-                        backgroundColor: teacher.isActive ? '#45a049' : '#d32f2f'
-                      }
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      px: 1.25,
+                      py: 0.25,
+                      borderRadius: 1,
+                      fontSize: '0.8125rem',
+                      fontWeight: 600,
+                      color: teacher.isActive ? '#2e7d32' : '#c62828',
+                      border: `1px solid ${teacher.isActive ? '#2e7d32' : '#c62828'}`,
+                      whiteSpace: 'nowrap'
                     }}
                   >
                     {teacher.isActive ? 'Đang hoạt động' : 'Không hoạt động'}
-                  </Button>
+                  </Box>
                 </TableCell>
                 <TableCell>
                   <Box sx={{ display: 'flex', gap: 1 }}>

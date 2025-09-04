@@ -22,7 +22,6 @@ import {
   IconButton,
   Avatar,
   Pagination,
-  Chip,
   Autocomplete,
   CircularProgress
 } from '@mui/material';
@@ -439,11 +438,24 @@ const AdvertisementManagement: React.FC = () => {
                           )}
                         </TableCell>
                         <TableCell>
-                          <Chip
-                            size="small"
-                            label={ad.isActive ? 'Đang hoạt động' : 'Ngừng hoạt động'}
-                            color={ad.isActive ? 'success' : 'default'}
-                          />
+                          <Box
+                            component="span"
+                            sx={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              px: 1.25,
+                              py: 0.25,
+                              borderRadius: 1,
+                              fontSize: '0.8125rem',
+                              fontWeight: 600,
+                              color: ad.isActive ? '#2e7d32' : '#c62828',
+                              border: `1px solid ${ad.isActive ? '#2e7d32' : '#c62828'}`,
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            {ad.isActive ? 'Đang hoạt động' : 'Ngừng hoạt động'}
+                          </Box>
                         </TableCell>
                         <TableCell>
                           <IconButton

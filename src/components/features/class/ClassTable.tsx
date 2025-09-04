@@ -178,25 +178,19 @@ const ClassTable: React.FC<ClassTableProps> = ({
   };
 
   const getStatusColor = (status: string) => {
-    const statusColors: { [key: string]: 'primary' | 'secondary' | 'success' | 'warning' | 'error' } = {
-      'active': 'success',
-      'inactive': 'error',
-      'pending': 'warning',
-      'completed': 'secondary',
-      'closed': 'error',
-      'cancelled': 'error'
+    const statusColors: { [key: string]: string } = {
+      'active': '#2e7d32',      // green
+      'upcoming': '#f9a825',    // yellow
+      'closed': '#c62828'       // red
     };
-    return statusColors[status] || 'default';
+    return statusColors[status] || 'inherit';
   };
 
   const getStatusText = (status: string) => {
     const statusMap: { [key: string]: string } = {
       'active': 'Đang hoạt động',
-      'inactive': 'Không hoạt động',
-      'pending': 'Chờ khai giảng',
-      'completed': 'Đã kết thúc',
-      'closed': 'Đã đóng',
-      'cancelled': 'Đã hủy'
+      'upcoming': 'Sắp mở',
+      'closed': 'Đã kết thúc'
     };
     return statusMap[status] || status;
   };
@@ -309,19 +303,24 @@ const ClassTable: React.FC<ClassTableProps> = ({
                   </Typography>
                 </TableCell>
                 <TableCell>
-                  <Button
-                    variant="contained"
-                    size="small"
+                  <Box
+                    component="span"
                     sx={{
-                      backgroundColor: getStatusColor(classItem.status) === 'error' ? '#d32f2f' : '#1976d2',
-                      color: 'white',
-                      '&:hover': {
-                        backgroundColor: getStatusColor(classItem.status) === 'error' ? '#c62828' : '#1565c0'
-                      }
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      px: 1.25,
+                      py: 0.25,
+                      borderRadius: 1,
+                      fontSize: '0.8125rem',
+                      fontWeight: 600,
+                      color: getStatusColor(classItem.status),
+                      border: `1px solid ${getStatusColor(classItem.status)}`,
+                      whiteSpace: 'nowrap'
                     }}
                   >
                     {getStatusText(classItem.status)}
-                  </Button>
+                  </Box>
                 </TableCell>
                 <TableCell>
                   <Box sx={{ display: 'flex', gap: 1 }}>

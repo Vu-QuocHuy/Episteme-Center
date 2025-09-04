@@ -16,15 +16,7 @@ import { Visibility as ViewIcon } from '@mui/icons-material';
 import { getStudentByIdAPI } from '../../../services/api';
 import { Student } from '../../../types';
 
-// Helper functions
-const renderParent = (studentId: string, parentDetails: Record<string, string>) => {
-  if (!studentId) return 'Không có phụ huynh';
-  const parentName = parentDetails[studentId];
-  if (parentName) {
-    return parentName;
-  }
-  return 'Không có phụ huynh';
-};
+
 
 const formatGender = (gender?: string) => {
   return gender === 'male' ? 'Nam' : gender === 'female' ? 'Nữ' : 'Không xác định';
@@ -44,14 +36,12 @@ interface StudentViewDialogProps {
   open: boolean;
   onClose: () => void;
   selectedStudent: Student | null;
-  parentDetails: Record<string, string>;
 }
 
 const StudentViewDialog: React.FC<StudentViewDialogProps> = ({
   open,
   onClose,
   selectedStudent,
-  parentDetails,
 }) => {
   const [studentData, setStudentData] = useState<Student | null>(null);
   const [loading, setLoading] = useState(false);
@@ -297,9 +287,23 @@ const StudentViewDialog: React.FC<StudentViewDialogProps> = ({
                       <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600, mb: 0.5 }}>
                         Phụ huynh
                       </Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 500, color: '#1976d2' }}>
-                          {renderParent(studentData.id, parentDetails)}
-                      </Typography>
+                      {studentData.parent ? (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                          <Typography variant="body1" sx={{ fontWeight: 500, color: '#1976d2' }}>
+                            {studentData.parent.name}
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: '#666', fontSize: '0.875rem' }}>
+                            Email: {studentData.parent.email}
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: '#666', fontSize: '0.875rem' }}>
+                            SĐT: {studentData.parent.phone}
+                          </Typography>
+                        </Box>
+                      ) : (
+                        <Typography variant="body1" sx={{ fontWeight: 500, color: '#1976d2' }}>
+                          Chưa có thông tin phụ huynh
+                        </Typography>
+                      )}
                     </Box>
 
                     <Box sx={{

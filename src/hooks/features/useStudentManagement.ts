@@ -12,7 +12,6 @@ interface UseStudentManagementReturn {
   totalRecords: number;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
-  parentDetails: Record<string, string>;
   fetchStudents: (pageNum?: number) => Promise<void>;
   deleteStudent: (studentId: string) => Promise<{ success: boolean; message: string }>;
   handlePageChange: (event: React.SyntheticEvent, value: number) => void;
@@ -29,7 +28,7 @@ export const useStudentManagement = (): UseStudentManagementReturn => {
   const [totalRecords, setTotalRecords] = useState<number>(0);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [debouncedSearch, setDebouncedSearch] = useState<string>('');
-  const [parentDetails, setParentDetails] = useState<Record<string, string>>({});
+
 
   // Debounce search input
   useEffect(() => {
@@ -64,15 +63,7 @@ export const useStudentManagement = (): UseStudentManagementReturn => {
         setTotalPages(data.meta?.totalPages || 1);
         setTotalRecords(data.meta?.totalItems || 0);
 
-        // Extract parent information directly from response
-        const parentMap: Record<string, string> = {};
-        studentsArray.forEach((student: Student) => {
-          // Note: API doesn't seem to include parent info in students endpoint
-          // Will need to fetch separately or use a different endpoint
-          parentMap[student.id] = 'Chưa có thông tin phụ huynh';
-        });
 
-        setParentDetails(parentMap);
       }
     } catch (error) {
       setError('Có lỗi xảy ra khi tải danh sách học sinh');
@@ -127,7 +118,6 @@ export const useStudentManagement = (): UseStudentManagementReturn => {
     totalRecords,
     searchQuery,
     setSearchQuery,
-    parentDetails,
     fetchStudents,
     deleteStudent,
     handlePageChange,

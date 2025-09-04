@@ -73,6 +73,12 @@ export interface Student extends BaseEntity {
     name: string;
   };
   classes?: any[];
+  parent?: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+  };
   // Legacy fields for compatibility
   userId?: User;
   parentId?: string;

@@ -117,6 +117,10 @@ instance.interceptors.response.use(
                 console.log('🔐 401 Unauthorized - attempting refresh token...');
                 console.log('Current access token exists:', !!localStorage.getItem('access_token'));
                 console.log('Current refresh token exists:', !!localStorage.getItem('refresh_token'));
+                console.log('Refresh token value:', localStorage.getItem('refresh_token'));
+                console.log('Request URL:', originalRequest.url);
+                console.log('Request method:', originalRequest.method);
+
                 if (isRefreshing) {
                     // Nếu đang refresh, thêm request vào queue
                     return new Promise<string>((resolve, reject) => {
@@ -134,44 +138,53 @@ instance.interceptors.response.use(
                 isRefreshing = true;
 
                 // Kiểm tra xem có refresh token không
+                // Backend có thể sử dụng httpOnly cookies thay vì localStorage
                 const refreshToken = localStorage.getItem('refresh_token');
                 if (!refreshToken) {
-                    console.log('❌ No refresh token found - logging out');
-                    processQueue(new Error('No refresh token'), null);
-                    localStorage.removeItem('access_token');
-                    localStorage.removeItem('refresh_token');
-                    localStorage.removeItem('userData');
-                    localStorage.removeItem('parent_id');
-                    createLogoutEvent();
-                    return Promise.reject(new Error('No refresh token'));
+                    console.log('⚠️ No refresh token in localStorage - backend likely uses httpOnly cookies');
+                    console.log('Proceeding with refresh attempt using cookies...');
+                    // Không logout ngay, để user thử lại
+                    // Backend có thể sử dụng cookie cho refresh token
                 }
 
                 // Kiểm tra xem refresh token có hết hạn không (nếu có thể decode)
-                try {
-                    const tokenParts = refreshToken.split('.');
-                    if (tokenParts.length === 3) {
-                        const payload = JSON.parse(atob(tokenParts[1]));
-                        const currentTime = Math.floor(Date.now() / 1000);
-                        if (payload.exp && payload.exp < currentTime) {
-                            console.log('❌ Refresh token expired - logging out');
-                            processQueue(new Error('Refresh token expired'), null);
-                            localStorage.removeItem('access_token');
-                            localStorage.removeItem('refresh_token');
-                            localStorage.removeItem('userData');
-                            localStorage.removeItem('parent_id');
-                            createLogoutEvent();
-                            return Promise.reject(new Error('Refresh token expired'));
+                // Chỉ kiểm tra nếu refreshToken tồn tại trong localStorage
+                if (refreshToken) {
+                    try {
+                        const tokenParts = refreshToken.split('.');
+                        if (tokenParts.length === 3) {
+                            const payload = JSON.parse(atob(tokenParts[1]));
+                            const currentTime = Math.floor(Date.now() / 1000);
+                            if (payload.exp && payload.exp < currentTime) {
+                                console.log('❌ Refresh token expired - logging out');
+                                processQueue(new Error('Refresh token expired'), null);
+                                localStorage.removeItem('access_token');
+                                localStorage.removeItem('refresh_token');
+                                localStorage.removeItem('userData');
+                                localStorage.removeItem('parent_id');
+                                createLogoutEvent();
+                                return Promise.reject(new Error('Refresh token expired'));
+                            }
                         }
+                    } catch (decodeError) {
+                        console.log('⚠️ Could not decode refresh token, proceeding anyway...');
                     }
-                } catch (decodeError) {
-                    console.log('⚠️ Could not decode refresh token, proceeding anyway...');
+                } else {
+                    console.log('ℹ️ No refresh token in localStorage, backend will use cookies');
                 }
 
                 try {
                     // Gọi API refresh token: backend tự xử lý cookie
+                    // Sử dụng axios gốc để tránh loop vô hạn
                     console.log('🔄 Attempting to refresh token...');
-                    const response = await instance.get<RefreshTokenResponse>(
-                        '/auth/refresh'
+                    const response = await axios.get<RefreshTokenResponse>(
+                        `${import.meta.env.DEV ? '/api' : (import.meta.env.VITE_API_BASE_URL || 'https://eng-center-nestjs.onrender.com/api/v1')}/auth/refresh`,
+                        {
+                            withCredentials: true, // Để gửi cookie
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
+                        }
                     );
                     console.log('✅ Refresh token response:', response.data);
 
@@ -214,6 +227,15 @@ instance.interceptors.response.use(
                             localStorage.setItem('refresh_token', newRefreshToken);
                         }
 
+                        // Dispatch event để AuthContext cập nhật isAuthenticated
+                        const authSuccessEvent = new CustomEvent('auth:refresh_success', {
+                            detail: {
+                                accessToken: newAccessToken,
+                                refreshToken: newRefreshToken
+                            }
+                        });
+                        window.dispatchEvent(authSuccessEvent);
+
                         // Cập nhật header cho request gốc
                         originalRequest.headers = originalRequest.headers || {};
                         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
@@ -226,18 +248,26 @@ instance.interceptors.response.use(
                     } else {
                         throw new Error('Invalid refresh token response');
                     }
-                } catch (refreshError) {
+                } catch (refreshError: any) {
                     console.error('❌ Refresh token failed:', refreshError);
+                    console.log('Refresh error details:', refreshError.response?.data);
+                    console.log('Refresh error status:', refreshError.response?.status);
+
                     // Xử lý queue với lỗi
                     processQueue(refreshError, null);
 
-                    // Logout user
-                    localStorage.removeItem('access_token');
-                    localStorage.removeItem('refresh_token');
-                    localStorage.removeItem('userData');
-                    localStorage.removeItem('parent_id');
-                    // Thông báo logout cho AuthContext
-                    createLogoutEvent();
+                    // Không logout ngay, để user thử lại
+                    // Chỉ logout khi refresh token thực sự hết hạn
+                    if (refreshError.response?.status === 401) {
+                        console.log('⚠️ Refresh token API returned 401 - this might be temporary');
+                        console.log('Not logging out immediately, allowing user to retry');
+                        // Không logout ngay, để user thử lại
+                        // Có thể là vấn đề tạm thời với backend
+                    } else {
+                        console.log('⚠️ Refresh token failed but not expired, allowing retry');
+                        // Không logout, để user thử lại
+                    }
+
                     return Promise.reject(refreshError);
                 } finally {
                     isRefreshing = false;

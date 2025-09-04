@@ -9,7 +9,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Chip,
+
   Pagination,
   Button,
   IconButton,
@@ -387,7 +387,24 @@ const TeacherPaymentsTab: React.FC<Props> = () => {
                 <TableCell align="right">{(p.totalAmount ?? 0).toLocaleString()} ₫</TableCell>
                 <TableCell align="right">{(p.paidAmount ?? 0).toLocaleString()} ₫</TableCell>
                 <TableCell align="center">
-                  <Chip label={p.status === 'paid' ? 'Đã thanh toán' : p.status === 'partial' ? 'Nhận một phần' : p.status === 'pending' ? 'Chờ thanh toán' : 'Chưa thanh toán'} color={p.status === 'paid' ? 'success' : p.status === 'partial' ? 'warning' : p.status === 'pending' ? 'info' : 'error'} size="small" />
+                  <Box
+                    component="span"
+                    sx={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      px: 1.25,
+                      py: 0.25,
+                      borderRadius: 1,
+                      fontSize: '0.8125rem',
+                      fontWeight: 600,
+                      color: p.status === 'paid' ? '#2e7d32' : p.status === 'partial' ? '#f9a825' : '#c62828',
+                      border: `1px solid ${p.status === 'paid' ? '#2e7d32' : p.status === 'partial' ? '#f9a825' : '#c62828'}`,
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {p.status === 'paid' ? 'Đã thanh toán' : p.status === 'partial' ? 'Nhận một phần' : p.status === 'pending' ? 'Chờ thanh toán' : 'Chưa thanh toán'}
+                  </Box>
                 </TableCell>
                 <TableCell align="center">
                   <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>

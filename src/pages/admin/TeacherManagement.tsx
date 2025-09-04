@@ -3,7 +3,6 @@ import {
   Box,
   Typography,
   Button,
-  Grid,
   Pagination,
 } from '@mui/material';
 import {
@@ -12,7 +11,6 @@ import {
 
 import DashboardLayout from '../../components/layouts/DashboardLayout';
 import { commonStyles } from '../../utils/styles';
-import StatCard from '../../components/common/StatCard';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import NotificationSnackbar from '../../components/common/NotificationSnackbar';
 
@@ -34,12 +32,6 @@ interface SnackbarState {
   severity: 'success' | 'error' | 'warning' | 'info';
 }
 
-interface Summary {
-  totalTeachers: number;
-  activeTeachers: number;
-  inactiveTeachers: number;
-  totalSalary: number;
-}
 
 const TeacherManagement: React.FC = () => {
   // Teacher management hook
@@ -48,7 +40,6 @@ const TeacherManagement: React.FC = () => {
     selectedTeacher: teacherDetail,
     loading,
     loadingDetail,
-    totalRecords,
     page,
     totalPages,
     searchQuery,
@@ -188,13 +179,6 @@ const TeacherManagement: React.FC = () => {
     }
   };
 
-  // Calculate summary
-  const summary: Summary = {
-    totalTeachers: totalRecords,
-    activeTeachers: teachers?.filter((t: any) => t.isActive).length || 0,
-    inactiveTeachers: teachers?.filter((t: any) => !t.isActive).length || 0,
-    totalSalary: teachers?.reduce((sum: number, t: any) => sum + (t.salaryPerLesson || 0), 0) || 0
-  };
 
   return (
     <DashboardLayout role="admin">
@@ -214,44 +198,7 @@ const TeacherManagement: React.FC = () => {
             </Button>
           </Box>
 
-          {/* Stat Cards */}
-          <Grid container spacing={3} sx={{ mb: 4 }}>
-            <Grid item xs={12} sm={6} md={3}>
-              <StatCard
-                title="Tổng giáo viên"
-                value={summary.totalTeachers}
-                icon={<AddIcon sx={{ fontSize: 40 }} />}
-                color="primary"
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <StatCard
-                title="Đang hoạt động"
-                value={summary.activeTeachers}
-                icon={<AddIcon sx={{ fontSize: 40 }} />}
-                color="success"
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <StatCard
-                title="Ngừng hoạt động"
-                value={summary.inactiveTeachers}
-                icon={<AddIcon sx={{ fontSize: 40 }} />}
-                color="error"
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <StatCard
-                title="Tổng lương"
-                value={new Intl.NumberFormat('vi-VN', {
-                  style: 'currency',
-                  currency: 'VND'
-                }).format(summary.totalSalary)}
-                icon={<AddIcon sx={{ fontSize: 40 }} />}
-                color="warning"
-              />
-            </Grid>
-          </Grid>
+          {/* Removed stat cards section as requested */}
 
           {/* Filters */}
           <TeacherFilters

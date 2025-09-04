@@ -79,8 +79,11 @@ const StudentForm: React.FC<StudentFormProps> = ({
         gender: student.gender || 'male'
       });
       const mapped = (student.classes || []).map((cls: any, index: number) => ({
-        classId: typeof cls.classId === 'object' ? cls.classId?.id : cls.classId,
-        className: cls.classId?.name || cls.name || `${cls.classId?.grade || ''}.${cls.classId?.section || ''}` || `Lớp ${index + 1}`,
+        classId: cls.class?.id || cls.classId?.id || cls.classId,
+        className: cls.class?.name || cls.classId?.name || cls.name ||
+                  (cls.class?.grade && cls.class?.section ? `${cls.class.grade}.${cls.class.section}` : '') ||
+                  (cls.classId?.grade && cls.classId?.section ? `${cls.classId.grade}.${cls.classId.section}` : '') ||
+                  `Lớp ${index + 1}`,
         discountPercent: Number(cls.discountPercent || cls.discount || 0),
         status: (cls.status as 'active' | 'completed') ?? 'active'
       }));
@@ -118,7 +121,7 @@ const StudentForm: React.FC<StudentFormProps> = ({
     }
   };
 
-  const handleClassChange = (index: number, field: 'className' | 'discountPercent' | 'status', value: any) => {
+  const handleClassChange = (index: number, field: 'discountPercent' | 'status', value: any) => {
     setClassEdits(prev => prev.map((item, i) => i === index ? { ...item, [field]: field === 'discountPercent' ? Number(value) : value } : item));
   };
 
@@ -141,7 +144,7 @@ const StudentForm: React.FC<StudentFormProps> = ({
               address: formData.address,
             },
             studentData: classEdits.map(edit => ({
-              classId: edit.classId || edit.className,
+              classId: edit.classId,
               status: edit.status,
               discountPercent: edit.discountPercent || 0
             }))
@@ -326,14 +329,22 @@ const StudentForm: React.FC<StudentFormProps> = ({
                 <Grid container spacing={2}>
                   {classEdits.map((item, idx) => (
                     <React.Fragment key={idx}>
-                      <Grid item xs={12} md={4}>
-                        <TextField
-                          fullWidth
-                          label="Tên lớp"
-                          value={item.className}
-                          onChange={(e) => handleClassChange(idx, 'className', e.target.value)}
-                        />
-            </Grid>
+                                             <Grid item xs={12} md={4}>
+                         <TextField
+                           fullWidth
+                           label="Tên lớp"
+                           value={item.className}
+                           InputProps={{
+                             readOnly: true
+                           }}
+                           sx={{
+                             '& .MuiInputBase-input': {
+                               backgroundColor: '#f5f5f5',
+                               cursor: 'not-allowed'
+                             }
+                           }}
+                         />
+             </Grid>
                       <Grid item xs={12} md={4}>
               <TextField
                 fullWidth
