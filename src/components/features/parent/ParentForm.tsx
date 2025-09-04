@@ -266,17 +266,7 @@ const ParentForm: React.FC<ParentFormProps> = ({ open, onClose, onSubmit, parent
             <Grid item xs={12} md={6}>
                     <TextField fullWidth label="Email" name="email" type="email" value={form.email} onChange={handleChange} />
             </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                       label="Mật khẩu"
-                       name="password"
-                       type="password"
-                       value={form.password}
-                       onChange={handleChange}
-                       helperText={!parent ? 'Mật khẩu bắt buộc khi tạo mới' : 'Để trống nếu không thay đổi'}
-              />
-            </Grid>
+
             <Grid item xs={12} md={6}>
                     <TextField fullWidth label="Ngày sinh" name="dayOfBirth" type="date" value={toDisplayDate(form.dayOfBirth)} onChange={handleChange} InputLabelProps={{ shrink: true }} />
             </Grid>

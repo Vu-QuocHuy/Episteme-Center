@@ -560,17 +560,13 @@ const ClassDetailsModal: React.FC<ClassDetailsModalProps> = ({
                   <Typography variant="body1">{daysText || '-'}</Typography>
                   <Typography variant="body2" color="text.secondary">{timeRange}</Typography>
                 </Box>
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary">Trạng thái lớp học</Typography>
+                  <Chip label={getStatusText(classItem.status)} color={classItem.status === 'closed' ? 'error' : 'success'} sx={{ fontWeight: 700 }} />
+                </Box>
               </Box>
             </Paper>
           </Box>
-        </Box>
-
-        {/* Trạng thái lớp học */}
-        <Box sx={{ mt: 3 }}>
-          <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 3, borderColor: classItem.status === 'closed' ? 'error.main' : 'primary.main', backgroundColor: '#fff' }}>
-            <Typography variant="h6" fontWeight={700} sx={{ mb: 1 }}>Trạng thái lớp học</Typography>
-            <Chip label={getStatusText(classItem.status)} color={classItem.status === 'closed' ? 'error' : 'success'} sx={{ fontWeight: 700 }} />
-          </Paper>
         </Box>
 
         {/* Lịch học chi tiết */}
@@ -623,11 +619,12 @@ const ClassDetailsModal: React.FC<ClassDetailsModalProps> = ({
                     <Typography variant="body2" color="primary" fontWeight={600}>
                       {idx + 1}. {s.student?.name || s?.name || s?.userId?.name || 'Không tên'}
                     </Typography>
-                    {s.discountPercent && (
-                      <Typography variant="caption" color="text.secondary">
-                        Giảm giá: {s.discountPercent}%
-                      </Typography>
-                    )}
+                    <Typography variant="caption" color="text.secondary">
+                      Giảm giá: {s.discountPercent || 0}%
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                      Trạng thái: {s.isActivce ? 'Đang học' : 'Đã nghỉ'}
+                    </Typography>
                   </Paper>
                 </Grid>
               ))}

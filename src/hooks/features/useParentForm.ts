@@ -28,7 +28,6 @@ export const useParentForm = (): UseParentFormReturn => {
   const [form, setForm] = useState<ParentFormData>({
     name: '',
     email: '',
-    password: '',
     dayOfBirth: '',
     phone: '',
     address: '',
@@ -56,7 +55,6 @@ export const useParentForm = (): UseParentFormReturn => {
       setForm({
         name: (parent as any).userId?.name || (parent as any).name || '',
         email: (parent as any).userId?.email || (parent as any).email || '',
-        password: '',
         dayOfBirth: (parent as any).userId?.dayOfBirth || (parent as any).dayOfBirth || '',
         phone: (parent as any).userId?.phone || (parent as any).phone || '',
         address: (parent as any).userId?.address || (parent as any).address || '',
@@ -68,7 +66,6 @@ export const useParentForm = (): UseParentFormReturn => {
       setForm({
         name: '',
         email: '',
-        password: '',
         dayOfBirth: '',
         phone: '',
         address: '',
@@ -82,7 +79,6 @@ export const useParentForm = (): UseParentFormReturn => {
     setForm({
       name: '',
       email: '',
-      password: '',
       dayOfBirth: '',
       phone: '',
       address: '',
@@ -141,7 +137,6 @@ export const useParentForm = (): UseParentFormReturn => {
         // Create new parent
         body = {
           email: form.email,
-          password: form.password,
           name: form.name,
           dayOfBirth: toAPIDateFormat(form.dayOfBirth),
           phone: form.phone,

@@ -1,9 +1,8 @@
-import { validateEmail, validatePhone, validateDayOfBirth, validateAddress, validateGender, validateName, validateChangePassword } from './commonValidation';
+import { validateEmail, validatePhone, validateDayOfBirth, validateAddress, validateGender, validateName } from './commonValidation';
 
 export interface ParentFormData {
   name: string;
   email: string;
-  password: string;
   phone: string;
   dayOfBirth: string;
   address: string;
@@ -18,7 +17,6 @@ export interface ParentUpdateData {
 export interface ParentValidationErrors {
   name?: string;
   email?: string;
-  password?: string;
   phone?: string;
   dayOfBirth?: string;
   address?: string;
@@ -66,5 +64,3 @@ export function validateParentUpdate(data: ParentUpdateData): ParentUpdateErrors
 
   return errors;
 }
-
-export { validateChangePassword };

@@ -24,7 +24,13 @@ const formatDate = (dateString?: string) => {
   if (!dateString) return '';
   try {
     const date = new Date(dateString);
-    return date.toLocaleDateString('vi-VN');
+    if (isNaN(date.getTime())) return '';
+
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+
+    return `${day}/${month}/${year}`;
   } catch {
     return dateString;
   }
@@ -247,4 +253,3 @@ const ParentViewDialog: React.FC<ParentViewDialogProps> = ({ open, onClose, sele
 };
 
 export default ParentViewDialog;
-

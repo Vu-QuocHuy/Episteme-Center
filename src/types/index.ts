@@ -271,7 +271,6 @@ export interface FormState {
 export interface ParentFormData {
   name: string;
   email: string;
-  password: string;
   dayOfBirth: string;
   phone: string;
   address: string;
@@ -282,7 +281,6 @@ export interface ParentFormData {
 export interface ParentValidationErrors {
   name?: string;
   email?: string;
-  password?: string;
   dayOfBirth?: string;
   phone?: string;
   address?: string;
