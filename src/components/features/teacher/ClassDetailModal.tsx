@@ -18,7 +18,6 @@ import {
   TableBody,
   TableRow,
   TableCell,
-  Avatar,
   LinearProgress,
 } from '@mui/material';
 import {
@@ -34,6 +33,8 @@ interface Schedule {
   dayOfWeeks: number[];
   startTime?: string;
   endTime?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 interface Teacher {
@@ -61,7 +62,6 @@ interface Student {
   name: string;
   email?: string;
   phone?: string;
-  avatar?: string;
   status?: string;
 }
 
@@ -133,6 +133,8 @@ const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
         dayOfWeeks: (payload.schedule.days_of_week || []).map((d: any) => Number(d)),
         startTime: payload.schedule.time_slots?.start_time || payload.schedule.start_time,
         endTime: payload.schedule.time_slots?.end_time || payload.schedule.end_time,
+        startDate: payload.schedule.start_date,
+        endDate: payload.schedule.end_date,
       } : undefined;
 
       const normalizedClass = {
@@ -162,8 +164,8 @@ const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
             name: s?.student?.name,
             email: s?.student?.email,
             phone: s?.student?.phone,
-            avatar: undefined,
-            status: undefined,
+            // Map trạng thái từ API: isActivce (boolean) -> 'active' | 'inactive'
+            status: s?.isActivce ? 'active' : 'inactive',
           }))
         : [];
       setStudentsDetail(mappedStudents);
@@ -183,15 +185,25 @@ const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
     setAttendanceModalOpen(false);
   };
 
+  const formatDate = (iso?: string): string => {
+    if (!iso) return '';
+    try {
+      return new Date(iso).toLocaleDateString('vi-VN');
+    } catch {
+      return iso;
+    }
+  };
+
   const formatSchedule = (schedule: Schedule | undefined): string => {
     if (!schedule) return '';
+    const parts: string[] = [];
     const days = (schedule.dayOfWeeks || [])
       .map(d => ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'][d])
       .join(', ');
-    const time = schedule.startTime && schedule.endTime
-      ? `${schedule.startTime} - ${schedule.endTime}`
-      : '';
-    return `${days} ${time}`.trim();
+    if (days) parts.push(days);
+    if (schedule.startTime && schedule.endTime) parts.push(`${schedule.startTime} - ${schedule.endTime}`);
+    if (schedule.startDate || schedule.endDate) parts.push(`${formatDate(schedule.startDate)} - ${formatDate(schedule.endDate)}`);
+    return parts.join(' | ');
   };
 
   const getStatusColor = (status: string | undefined): 'success' | 'warning' | 'error' | 'default' => {
@@ -362,7 +374,7 @@ const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
                     )}
 
                     {selectedClassDetail.description && (
-                      <Grid item xs={12} md={6}>
+                      <Grid item xs={12} md={12}>
                         <Paper sx={{ p: 3, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
                           <Typography variant="h6" gutterBottom sx={{ color: '#2c3e50', fontWeight: 600 }}>
                             Mô tả
@@ -372,35 +384,7 @@ const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
                       </Grid>
                     )}
 
-                    <Grid item xs={12} md={6}>
-                      <Paper sx={{ p: 3, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-                        <Typography variant="h6" gutterBottom sx={{ color: '#2c3e50', fontWeight: 600 }}>
-                          Giáo viên phụ trách
-                        </Typography>
-                        {selectedClassDetail.teacherId ? (
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                            <Avatar
-                              src={selectedClassDetail.teacherId.avatar}
-                              sx={{ width: 56, height: 56 }}
-                            >
-                              {selectedClassDetail.teacherId.name?.charAt(0)}
-                            </Avatar>
-                            <Box>
-                              <Typography variant="body1" fontWeight="medium">
-                                {selectedClassDetail.teacherId.name}
-                              </Typography>
-                              <Typography variant="body2" color="text.secondary">
-                                {selectedClassDetail.teacherId.email}
-                              </Typography>
-                            </Box>
-                          </Box>
-                        ) : (
-                          <Typography variant="body2" color="text.secondary">
-                            Chưa có giáo viên được phân công
-                          </Typography>
-                        )}
-                      </Paper>
-                    </Grid>
+
 
                   </Grid>
                 )}
@@ -435,17 +419,9 @@ const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
                             <TableRow key={student.id} hover>
                               <TableCell>{index + 1}</TableCell>
                               <TableCell>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                  <Avatar
-                                    src={student.avatar}
-                                    sx={{ width: 40, height: 40 }}
-                                  >
-                                    {student.name?.charAt(0)}
-                                  </Avatar>
-                                  <Typography variant="body1" fontWeight="medium">
-                                    {student.name}
-                                  </Typography>
-                                </Box>
+                                <Typography variant="body1" fontWeight="medium">
+                                  {student.name}
+                                </Typography>
                               </TableCell>
                               <TableCell>
                                 <Typography variant="body2">{student.email || 'Không có'}</Typography>

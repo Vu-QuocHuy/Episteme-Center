@@ -270,34 +270,30 @@ const ServerDay: React.FC<ServerDayProps> = ({ day, lessons, userType, selected,
   const isToday = dayjs().isSame(day, 'day');
   const isSelected = selected;
 
-  // Style ưu tiên selected nếu là today-selected
-  let dayStyle: any = {
+  // Style với độ ưu tiên cao bằng selector lớp của MUI
+  const dayStyle: any = {
     ...other.sx,
     position: 'relative',
     color: '#222',
+    boxShadow: 'none',
+    '&.Mui-selected': {
+      backgroundColor: '#1976d2',
+      color: '#fff',
+      border: '2px solid #1976d2',
+      fontWeight: 700,
+      boxShadow: 'none',
+      '&:hover': {
+        backgroundColor: '#1976d2',
+      }
+    },
+    '&.MuiPickersDay-today:not(.Mui-selected)': {
+      backgroundColor: '#E3F2FD', // light blue
+      border: '2px solid #9e9e9e',
+      color: '#222',
+      fontWeight: 700,
+      boxShadow: 'none',
+    },
   };
-
-  if (isSelected) {
-    // Ngày được chọn (ưu tiên hơn today)
-    dayStyle = {
-      ...dayStyle,
-      backgroundColor: '#1976d2', // primary.main
-      color: '#222',
-      border: '2px solid',
-      borderColor: '#1976d2',
-      fontWeight: 700,
-    };
-  } else if (isToday && !isSelected) {
-    // Ngày hôm nay (không phải selected)
-    dayStyle = {
-      ...dayStyle,
-      backgroundColor: '#fafdff', // xanh rất nhạt, gần như trắng
-      border: '2px solid',
-      borderColor: '#222', // viền đen
-      color: '#222',
-      fontWeight: 700,
-    };
-  }
 
   // Dấu chấm lịch học: luôn hiển thị trên nền, nếu là selected thì dùng màu trắng viền xanh đậm
   const dotStyle = hasLesson

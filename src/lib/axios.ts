@@ -32,36 +32,7 @@ api.interceptors.response.use(
     return response;
   },
   async (error) => {
-    const originalRequest = error.config;
-
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-
-      try {
-        const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
-
-        if (refreshToken) {
-          const response = await axios.post(
-            `${import.meta.env.VITE_API_URL}/auth/refresh`,
-            { refreshToken }
-          );
-
-          const { accessToken } = response.data;
-          localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
-
-          // Retry original request
-          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-          return api(originalRequest);
-        }
-      } catch (refreshError) {
-        // Refresh failed, redirect to login
-        localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
-        localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
-        localStorage.removeItem(STORAGE_KEYS.USER_DATA);
-        window.location.href = '/login';
-      }
-    }
-
+    // Legacy refresh logic disabled to rely on cookie-based refresh flow
     return Promise.reject(error);
   }
 );

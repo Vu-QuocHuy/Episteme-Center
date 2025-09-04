@@ -133,7 +133,6 @@ const ParentManagement: React.FC = () => {
                 count={totalPages}
                 page={page}
                 onChange={(_event, value) => handlePageChange(_event as React.SyntheticEvent, value)}
-                color="primary"
                 size="large"
               />
             </Box>

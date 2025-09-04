@@ -10,12 +10,12 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  FormHelperText,
   Box,
   Typography,
   CircularProgress,
   Grid,
   Chip,
-  Autocomplete,
   Paper
 } from '@mui/material';
 import {
@@ -62,7 +62,7 @@ const daysOfWeekOptions = [
   { value: '5', label: 'Thứ 6' },
   { value: '6', label: 'Thứ 7' },
   { value: '0', label: 'Chủ nhật' }
-];
+] as const;
 
 const timeSlotOptions = [
   { value: '07:00-08:30', label: '07:00 - 08:30' },
@@ -118,7 +118,16 @@ const ClassForm: React.FC<ClassFormProps> = ({
   }, [classItem, open]);
 
   const handleInputChange = (field: string, value: any) => {
-    if (field.includes('.')) {
+    if (field === 'schedule') {
+      // Handle schedule object updates
+      setFormData(prev => ({
+        ...prev,
+        schedule: {
+          ...prev.schedule,
+          ...value
+        }
+      }));
+    } else if (field.includes('.')) {
       const [parent, child] = field.split('.');
       setFormData(prev => ({
         ...prev,
@@ -131,7 +140,7 @@ const ClassForm: React.FC<ClassFormProps> = ({
       const timeField = field.split('.')[2];
       setFormData(prev => ({
         ...prev,
-      schedule: {
+        schedule: {
           ...prev.schedule,
           time_slots: {
             ...prev.schedule.time_slots,
@@ -140,10 +149,10 @@ const ClassForm: React.FC<ClassFormProps> = ({
         }
       }));
     } else {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+      setFormData(prev => ({
+        ...prev,
+        [field]: value
+      }));
     }
 
     // Clear error for this field
@@ -421,11 +430,12 @@ const ClassForm: React.FC<ClassFormProps> = ({
 
                     <TextField
                       fullWidth
-                      label="Ngày học trong tuần"
+                      label="Mô tả"
                       multiline
                       rows={2}
                       value={formData.description}
                       onChange={(e) => handleInputChange('description', e.target.value)}
+                      placeholder="Nhập mô tả về lớp học"
                     />
                   </Box>
             </Grid>
@@ -487,37 +497,53 @@ const ClassForm: React.FC<ClassFormProps> = ({
                 required
               />
 
-              <Autocomplete
-                multiple
-                options={daysOfWeekOptions}
-                getOptionLabel={(option) => option.label}
-                value={daysOfWeekOptions.filter(day => formData.schedule.days_of_week.includes(day.value))}
-                onChange={(_, newValue) => {
-                  handleInputChange('schedule', {
-                    ...formData.schedule,
-                    days_of_week: newValue.map(day => day.value)
-                  });
-                }}
-                renderTags={(value, getTagProps) =>
-                  value.map((option, index) => (
+              <Box>
+                <Typography variant="subtitle2" color="textSecondary" gutterBottom>
+                  Ngày học trong tuần *
+                </Typography>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 1 }}>
+                  {daysOfWeekOptions.map((day) => (
                     <Chip
-                      variant="outlined"
-                      label={option.label}
-                      {...getTagProps({ index })}
-                      key={option.value}
+                      key={day.value}
+                      label={day.label}
+                      variant={formData.schedule.days_of_week.includes(day.value) ? "filled" : "outlined"}
+                      color={formData.schedule.days_of_week.includes(day.value) ? "primary" : "default"}
+                      onClick={() => {
+                        const currentDays = [...formData.schedule.days_of_week];
+                        if (currentDays.includes(day.value)) {
+                          // Remove day if already selected
+                          const newDays = currentDays.filter(d => d !== day.value);
+                          handleInputChange('schedule', {
+                            ...formData.schedule,
+                            days_of_week: newDays
+                          });
+                        } else {
+                          // Add day if not selected
+                          const newDays = [...currentDays, day.value];
+                          handleInputChange('schedule', {
+                            ...formData.schedule,
+                            days_of_week: newDays
+                          });
+                        }
+                      }}
+                      sx={{
+                        cursor: 'pointer',
+                        '&:hover': {
+                          backgroundColor: formData.schedule.days_of_week.includes(day.value)
+                            ? 'primary.dark'
+                            : 'action.hover'
+                        }
+                      }}
                     />
-                  ))
-                }
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                          label="Ngày học trong tuần"
-                    placeholder="Chọn ngày trong tuần"
-                    error={!!errors.days_of_week}
-                    helperText={errors.days_of_week}
-                  />
+                  ))}
+                </Box>
+                {errors.days_of_week && (
+                  <FormHelperText error>{errors.days_of_week}</FormHelperText>
                 )}
-              />
+                <div style={{ fontSize: '12px', color: 'gray', marginTop: '4px' }}>
+                  Debug: Current value = [{formData.schedule.days_of_week.join(', ')}]
+                </div>
+              </Box>
                   </Box>
             </Grid>
           </Grid>

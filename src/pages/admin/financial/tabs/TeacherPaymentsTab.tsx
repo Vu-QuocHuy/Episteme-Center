@@ -422,7 +422,7 @@ const TeacherPaymentsTab: React.FC<Props> = () => {
         </Table>
       </TableContainer>
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-        <Pagination count={pagination.totalPages} page={pagination.page} onChange={(_, p) => onPageChange(p)} color="primary" />
+        <Pagination count={pagination.totalPages} page={pagination.page} onChange={(_, p) => onPageChange(p)} />
       </Box>
 
       {selectedPaymentForHistory && (
@@ -439,28 +439,36 @@ const TeacherPaymentsTab: React.FC<Props> = () => {
       {/* Payment Dialog */}
       <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
         <DialogTitle sx={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          bgcolor: 'primary.main', color: 'primary.contrastText', py: 2
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          color: 'white',
+          py: 2.5,
+          px: 3,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between'
         }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <PaymentIcon />
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Box sx={{ bgcolor: 'rgba(255,255,255,0.2)', borderRadius: '50%', p: 0.75, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <PaymentIcon htmlColor="#fff" />
+            </Box>
             <Box>
-              <Box sx={{ fontWeight: 700 }}>Thanh toán lương giáo viên</Box>
+              <Box sx={{ fontWeight: 700, fontSize: 16 }}>Thanh toán lương giáo viên</Box>
               {editingPayment && (
-                <Box sx={{ fontSize: 12, opacity: 0.85 }}>
+                <Box sx={{ fontSize: 12, opacity: 0.9 }}>
                   {editingPayment.teacher?.name || editingPayment.teacherId?.userId?.name || editingPayment.teacherId?.name || ''}
                 </Box>
               )}
             </Box>
           </Box>
         </DialogTitle>
-        <DialogContent>
+        <DialogContent sx={{ p: 0 }}>
+          <Box sx={{ p: 4 }}>
           {/* Summary */}
           {dialogSummary && (
             <>
               <Grid container spacing={2} sx={{ mb: 2 }}>
                 <Grid item xs={12} sm={4}>
-                  <Paper elevation={0} sx={{ p: 2, border: '1px solid #e0e0e0', borderRadius: 2 }}>
+                  <Paper elevation={0} sx={{ p: 2.5, border: '1px solid #e0e0e0', borderRadius: 2 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5, color: 'text.secondary', fontSize: 12 }}>
                       <AttachMoneyIcon fontSize="small" /> Tổng lương
                     </Box>
@@ -468,7 +476,7 @@ const TeacherPaymentsTab: React.FC<Props> = () => {
                   </Paper>
                 </Grid>
                 <Grid item xs={12} sm={4}>
-                  <Paper elevation={0} sx={{ p: 2, border: '1px solid #e0e0e0', borderRadius: 2 }}>
+                  <Paper elevation={0} sx={{ p: 2.5, border: '1px solid #e0e0e0', borderRadius: 2 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5, color: 'text.secondary', fontSize: 12 }}>
                       <PaidIcon fontSize="small" /> Đã thanh toán
                     </Box>
@@ -476,7 +484,7 @@ const TeacherPaymentsTab: React.FC<Props> = () => {
                   </Paper>
                 </Grid>
                 <Grid item xs={12} sm={4}>
-                  <Paper elevation={0} sx={{ p: 2, border: '1px solid #e0e0e0', borderRadius: 2 }}>
+                  <Paper elevation={0} sx={{ p: 2.5, border: '1px solid #e0e0e0', borderRadius: 2 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5, color: 'text.secondary', fontSize: 12 }}>
                       <WalletIcon fontSize="small" /> Còn lại
                     </Box>
@@ -536,8 +544,9 @@ const TeacherPaymentsTab: React.FC<Props> = () => {
 
 
           </Grid>
+          </Box>
         </DialogContent>
-        <DialogActions sx={{ justifyContent: 'space-between' }}>
+        <DialogActions sx={{ justifyContent: 'space-between', p: 3, borderTop: '1px solid #e0e6ed', backgroundColor: '#f8f9fa' }}>
           <Box sx={{ pl: 1, color: 'text.secondary', fontSize: 13 }}>
             {dialogSummary && (
               <>Sau thanh toán còn lại: <b>{Math.max(dialogSummary.remainingAmount - (formData.paidAmount || 0), 0).toLocaleString()} ₫</b></>

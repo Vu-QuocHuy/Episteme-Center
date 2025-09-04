@@ -508,7 +508,8 @@ const ClassDetailsModal: React.FC<ClassDetailsModalProps> = ({
           </Avatar>
         </Box>
       </DialogTitle>
-      <DialogContent sx={{ bgcolor: 'transparent', pt: 3 }}>
+      <DialogContent sx={{ bgcolor: 'transparent', p: 0 }}>
+        <Box sx={{ p: 4 }}>
         <Box display="grid" gridTemplateColumns={{ xs: '1fr', md: '1fr 1fr' }} gap={3}>
           {/* Thông tin cơ bản */}
           <Box component={Paper} elevation={0} sx={{ p: 2.5, borderRadius: 3, background: 'linear-gradient(180deg, #edf2ff, #e9eef9)' }}>
@@ -635,6 +636,7 @@ const ClassDetailsModal: React.FC<ClassDetailsModalProps> = ({
               )}
             </Grid>
           </Paper>
+        </Box>
         </Box>
       </DialogContent>
       <DialogActions sx={{ px: 3, py: 2 }}>

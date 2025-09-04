@@ -57,6 +57,7 @@ interface FailedQueueItem {
 const instance: AxiosInstance = axios.create({
     baseURL: import.meta.env.DEV ? '/api' : (import.meta.env.VITE_API_BASE_URL || 'https://eng-center-nestjs.onrender.com/api/v1'),
     timeout: 60000,
+    withCredentials: true,
     headers: {
         'Content-Type': 'application/json'
     }

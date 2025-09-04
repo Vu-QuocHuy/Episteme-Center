@@ -327,7 +327,7 @@ const StudentPaymentsTab: React.FC<Props> = ({ onTotalsChange }) => {
         </Table>
       </TableContainer>
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-        <Pagination count={pagination.totalPages} page={pagination.page} onChange={(_, p) => onPageChange(p)} color="primary" />
+        <Pagination count={pagination.totalPages} page={pagination.page} onChange={(_, p) => onPageChange(p)} />
       </Box>
 
       {/* Payment History Modal */}

@@ -479,7 +479,7 @@ const AdvertisementManagement: React.FC = () => {
                 </Table>
               </TableContainer>
               <Box display="flex" justifyContent="center" mt={2}>
-                <Pagination count={totalPages} page={page} onChange={(_, p) => setPage(p)} color="primary" />
+                <Pagination count={totalPages} page={page} onChange={(_, p) => setPage(p)} />
               </Box>
             </CardContent>
           </Card>
