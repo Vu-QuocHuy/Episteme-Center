@@ -783,7 +783,7 @@ export interface MenuItem {
 }
 
 // Navigation Menu Item Type (alias for MenuItem)
-export interface NavigationMenuItem extends MenuItem {}
+export interface NavigationMenuItem extends MenuItem { }
 
 // Detailed Content Types for Sections
 export interface BannerSlide {
@@ -1014,4 +1014,36 @@ export interface UpdateFeedbackRequest {
   imageUrl?: string;
   publicId?: string;
   socialUrl?: string;
+}
+
+// Role Management Types
+export interface Permission {
+  id: number;
+  path: string;
+  method: string;
+  description: string;
+  module: string;
+  version: number;
+}
+
+export interface Role {
+  id: number;
+  name: string;
+  description?: string;
+  isActive: boolean;
+  permissions: Permission[];
+}
+
+export interface CreateRoleRequest {
+  name: string;
+  description?: string;
+  isActive?: boolean;
+  permissionIds?: number[];
+}
+
+export interface UpdateRoleRequest {
+  name: string;
+  description?: string;
+  isActive?: boolean;
+  permissionIds?: number[];
 }

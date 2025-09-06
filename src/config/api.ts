@@ -107,6 +107,16 @@ export interface ApiEndpoints {
     UPLOAD: string;
     DELETE: string;
   };
+  ROLES: {
+    GET_ALL: string;
+    GET_BY_ID: (id: string) => string;
+    CREATE: string;
+    UPDATE: (id: string) => string;
+    DELETE: (id: string) => string;
+  };
+  PERMISSIONS: {
+    GET_ALL: string;
+  };
 
   DASHBOARD: {
     ADMIN: string;
@@ -289,6 +299,16 @@ export const API_CONFIG: ApiConfig = {
     FILES: {
       UPLOAD: '/files',
       DELETE: '/files',
+    },
+    ROLES: {
+      GET_ALL: '/roles',
+      GET_BY_ID: (id: string) => `/roles/${id}`,
+      CREATE: '/roles',
+      UPDATE: (id: string) => `/roles/${id}`,
+      DELETE: (id: string) => `/roles/${id}`,
+    },
+    PERMISSIONS: {
+      GET_ALL: '/permissions',
     },
     // Homepage Content Management
 

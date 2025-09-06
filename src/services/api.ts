@@ -6,7 +6,9 @@ import {
   CreateFeedbackRequest,
   UpdateFeedbackRequest,
   FeedbackResponse,
-  FeedbacksListResponse
+  FeedbacksListResponse,
+  CreateRoleRequest,
+  UpdateRoleRequest
 } from '../types';
 import { createQueryParams } from '../utils/apiHelpers';
 
@@ -331,7 +333,7 @@ export const getAvailableStudentsAPI = (classId: string, params?: ApiParams) => 
     }
   });
 };
-export const addStudentsToClassAPI = (classId: string, students: Array<{studentId: string, discountPercent?: number}>) => {
+export const addStudentsToClassAPI = (classId: string, students: Array<{ studentId: string, discountPercent?: number }>) => {
   // Try different formats based on API specification
   const requestData = students.map(student => ({
     studentId: student.studentId,
@@ -1117,4 +1119,33 @@ export const createArticleAPI = (formData: FormData) => {
 
 export const getArticlesByMenuSlugAPI = (slug: string) => {
   return axiosInstance.get(`/public/${slug}/articles`);
+};
+
+// Role Management APIs
+export const getAllRolesAPI = (params?: ApiParams) => {
+  const queryParams = createQueryParams(params || {});
+  return axiosInstance.get(API_CONFIG.ENDPOINTS.ROLES.GET_ALL, {
+    params: queryParams
+  });
+};
+
+export const getRoleByIdAPI = (id: string) => {
+  return axiosInstance.get(API_CONFIG.ENDPOINTS.ROLES.GET_BY_ID(id));
+};
+
+export const createRoleAPI = (data: CreateRoleRequest) => {
+  return axiosInstance.post(API_CONFIG.ENDPOINTS.ROLES.CREATE, data);
+};
+
+export const updateRoleAPI = (id: number, data: UpdateRoleRequest) => {
+  return axiosInstance.patch(API_CONFIG.ENDPOINTS.ROLES.UPDATE(id.toString()), data);
+};
+
+export const deleteRoleAPI = (id: number) => {
+  return axiosInstance.delete(API_CONFIG.ENDPOINTS.ROLES.DELETE(id.toString()));
+};
+
+// Permission APIs
+export const getAllPermissionsAPI = () => {
+  return axiosInstance.get(API_CONFIG.ENDPOINTS.PERMISSIONS.GET_ALL);
 };

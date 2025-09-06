@@ -16,6 +16,7 @@ import PaymentIcon from '@mui/icons-material/Payment';
 import WebIcon from '@mui/icons-material/Web';
 import PeopleIcon from '@mui/icons-material/People';
 import MenuIcon from '@mui/icons-material/Menu';
+import SecurityIcon from '@mui/icons-material/Security';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSidebar } from '../../contexts/SidebarContext';
@@ -39,9 +40,10 @@ const getMenuItemsByRole = (role: string): MenuItem[] => {
         { text: 'Quản lý lớp học', icon: <ClassIcon />, path: '/admin/classes' },
         { text: 'Quản lý quảng cáo', icon: <CampaignIcon />, path: '/admin/advertisements' },
         { text: 'Quản lý Menu', icon: <MenuIcon />, path: '/admin/menu-management' },
-                  { text: 'Thống kê', icon: <AssessmentIcon />, path: '/admin/statistics' },
-          { text: 'Quản lý trang chủ', icon: <WebIcon />, path: '/admin/homepage' },
-          { text: 'Audit Logs', icon: <ListAltIcon />, path: '/admin/audit-log' },
+        { text: 'Quản lý vai trò', icon: <SecurityIcon />, path: '/admin/roles-management' },
+        { text: 'Thống kê', icon: <AssessmentIcon />, path: '/admin/statistics' },
+        { text: 'Quản lý trang chủ', icon: <WebIcon />, path: '/admin/homepage' },
+        { text: 'Audit Logs', icon: <ListAltIcon />, path: '/admin/audit-log' },
 
       ];
     case 'teacher':
@@ -126,40 +128,40 @@ const Sidebar: React.FC<SidebarProps> = ({ open }) => {
 
             if (!isStatistics && !isUsers && !isHomepage) {
               return (
-            <Tooltip key={item.text} title={!open ? item.text : ''} placement="right" arrow>
-              <ListItem disablePadding sx={{ display: 'block' }}>
-            <ListItemButton
-                  selected={location.pathname === item.path}
-                  onClick={() => navigate(item.path)}
-              sx={{
-                    minHeight: 48,
-                    justifyContent: open ? 'initial' : 'center',
-                    px: 2.5,
-                    borderRadius: 2,
-                    my: 0.5,
-                    transition: 'background 0.2s',
-                '&.Mui-selected': {
-                      bgcolor: '#f5f5f5',
-                      color: COLORS.primary.main,
+                <Tooltip key={item.text} title={!open ? item.text : ''} placement="right" arrow>
+                  <ListItem disablePadding sx={{ display: 'block' }}>
+                    <ListItemButton
+                      selected={location.pathname === item.path}
+                      onClick={() => navigate(item.path)}
+                      sx={{
+                        minHeight: 48,
+                        justifyContent: open ? 'initial' : 'center',
+                        px: 2.5,
+                        borderRadius: 2,
+                        my: 0.5,
+                        transition: 'background 0.2s',
+                        '&.Mui-selected': {
+                          bgcolor: '#f5f5f5',
+                          color: COLORS.primary.main,
                           '&:hover': { bgcolor: '#eeeeee' }
                         },
                         '&:hover': { bgcolor: '#f9f9f9' }
-              }}
-            >
-                  <ListItemIcon
-                    sx={{
-                      minWidth: 0,
-                      mr: open ? 2 : 'auto',
-                      justifyContent: 'center',
-                      color: location.pathname === item.path ? COLORS.primary.main : 'inherit',
-                    }}
-                  >
-                    {item.icon}
-                    </ListItemIcon>
-                  {open && <ListItemText primary={item.text} sx={{ opacity: open ? 1 : 0 }} />}
-                  </ListItemButton>
-                </ListItem>
-            </Tooltip>
+                      }}
+                    >
+                      <ListItemIcon
+                        sx={{
+                          minWidth: 0,
+                          mr: open ? 2 : 'auto',
+                          justifyContent: 'center',
+                          color: location.pathname === item.path ? COLORS.primary.main : 'inherit',
+                        }}
+                      >
+                        {item.icon}
+                      </ListItemIcon>
+                      {open && <ListItemText primary={item.text} sx={{ opacity: open ? 1 : 0 }} />}
+                    </ListItemButton>
+                  </ListItem>
+                </Tooltip>
               );
             }
 
@@ -501,10 +503,10 @@ const Sidebar: React.FC<SidebarProps> = ({ open }) => {
               </Box>
             );
           })}
-            </List>
+        </List>
       </Box>
       <Divider />
-      </Drawer>
+    </Drawer>
   );
 };
 
