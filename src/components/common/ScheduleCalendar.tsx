@@ -267,7 +267,7 @@ const ServerDay: React.FC<ServerDayProps> = ({ day, lessons, userType, selected,
 
     return isMatchingDay && isCorrectType;
   });
-  const isToday = dayjs().isSame(day, 'day');
+  // const isToday = dayjs().isSame(day, 'day');
   const isSelected = selected;
 
   // Style với độ ưu tiên cao bằng selector lớp của MUI

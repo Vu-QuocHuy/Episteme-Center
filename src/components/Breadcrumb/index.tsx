@@ -4,34 +4,34 @@ import {
   Breadcrumbs,
   Link,
   Typography,
-  Skeleton,
 } from '@mui/material';
 import {
   NavigateNext as NavigateNextIcon,
   Home as HomeIcon,
 } from '@mui/icons-material';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
-import { useMenuItems } from '../../hooks/useMenuItems';
+// import { useMenuItems } from '../../hooks/useMenuItems';
 
 const Breadcrumb: React.FC = () => {
   const location = useLocation();
-  const { getBreadcrumb, loading } = useMenuItems();
+  // const { getBreadcrumb, loading } = useMenuItems();
 
   // Get current path segments
   const pathSegments = location.pathname.split('/').filter(Boolean);
 
-  // Get breadcrumb items
-  const breadcrumbItems = pathSegments.length > 0
-    ? getBreadcrumb(pathSegments[pathSegments.length - 1])
-    : [];
+  // Get breadcrumb items - simplified version
+  const breadcrumbItems: Array<{ label: string; path: string }> = pathSegments.map((segment, index) => ({
+    label: segment.charAt(0).toUpperCase() + segment.slice(1),
+    path: '/' + pathSegments.slice(0, index + 1).join('/')
+  }));
 
-  if (loading) {
-    return (
-      <Box sx={{ py: 2 }}>
-        <Skeleton width="60%" height={24} />
-      </Box>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <Box sx={{ py: 2 }}>
+  //       <Skeleton width="60%" height={24} />
+  //     </Box>
+  //   );
+  // }
 
   if (pathSegments.length === 0) {
     return null; // Don't show breadcrumb on home page
@@ -60,18 +60,18 @@ const Breadcrumb: React.FC = () => {
           Trang chủ
         </Link>
 
-        {breadcrumbItems.map((item, index) => {
+        {breadcrumbItems.map((item: { label: string; path: string }, index: number) => {
           const isLast = index === breadcrumbItems.length - 1;
 
           return isLast ? (
-            <Typography key={item.id} color="text.primary" variant="body2">
-              {item.title}
+            <Typography key={item.path} color="text.primary" variant="body2">
+              {item.label}
             </Typography>
           ) : (
             <Link
-              key={item.id}
+              key={item.path}
               component={RouterLink}
-              to={`/${item.slug}`}
+              to={item.path}
               color="inherit"
               sx={{
                 textDecoration: 'none',
@@ -80,7 +80,7 @@ const Breadcrumb: React.FC = () => {
                 },
               }}
             >
-              {item.title}
+              {item.label}
             </Link>
           );
         })}

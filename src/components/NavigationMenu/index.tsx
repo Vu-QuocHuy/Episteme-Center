@@ -17,7 +17,7 @@ import {
   ArrowForward as ArrowIcon,
 } from '@mui/icons-material';
 import { Link, useLocation } from 'react-router-dom';
-import { useMenuItems } from '../../hooks/useMenuItems';
+// import { useMenuItems } from '../../hooks/useMenuItems';
 
 interface NavigationMenuProps {
   anchorEl: HTMLElement | null;
@@ -31,10 +31,12 @@ const NavigationMenu: React.FC<NavigationMenuProps> = ({
   open,
 }) => {
   const location = useLocation();
-  const { getActiveMenuItems, loading } = useMenuItems();
+  // const { getActiveMenuItems, loading } = useMenuItems();
   const [expandedItems, setExpandedItems] = React.useState<Set<string>>(new Set());
 
-  const menuItems = getActiveMenuItems();
+  // Simplified menu items for now
+  const menuItems: any[] = [];
+  const loading = false;
 
   const handleToggleExpand = (key: string) => {
     const newExpanded = new Set(expandedItems);

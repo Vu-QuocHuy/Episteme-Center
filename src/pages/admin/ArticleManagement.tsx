@@ -4,12 +4,10 @@ import {
   Box,
   Typography,
   Button,
-  TextField,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  IconButton,
   Grid,
   Paper,
   FormControl,
@@ -31,7 +29,7 @@ import {
   DragIndicator as DragIcon
 } from '@mui/icons-material';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import { getAllMenusAPI, getAllArticlesAPI, updateArticleAPI, deleteArticleAPI, ArticleData } from '../../services/api';
+import { getAllMenusAPI, getAllArticlesAPI, updateArticleAPI, deleteArticleAPI } from '../../services/api';
 import { MenuItem as MenuItemType } from '../../types';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
 import { commonStyles } from '../../utils/styles';
@@ -41,8 +39,8 @@ interface Article {
   title: string;
   content: string;
   menuId: string;
-  order: number;
-  isActive: boolean;
+  order?: number;
+  isActive?: boolean;
   file?: string;
   publicId?: string;
   createdAt: string;
@@ -93,18 +91,20 @@ const ArticleManagement: React.FC = () => {
 
     try {
       setLoading(true);
-      const response = await getAllArticlesAPI({ menuId });
+      const response = await getAllArticlesAPI();
       const articlesList = response.data?.data?.result || [];
 
       // Sort by order, then by createdAt
-      const sortedArticles = articlesList.sort((a: Article, b: Article) => {
-        if (a.order !== b.order) {
-          return a.order - b.order;
+      const sortedArticles = articlesList.sort((a: any, b: any) => {
+        const orderA = a.order || 999;
+        const orderB = b.order || 999;
+        if (orderA !== orderB) {
+          return orderA - orderB;
         }
         return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
       });
 
-      setArticles(sortedArticles);
+      setArticles(sortedArticles as Article[]);
     } catch (error) {
       console.error('Error fetching articles:', error);
       setNotification({

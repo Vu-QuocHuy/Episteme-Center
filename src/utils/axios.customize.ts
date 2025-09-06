@@ -1,12 +1,12 @@
 import axios, { AxiosInstance, AxiosResponse, AxiosError } from 'axios';
 
 // Tạo custom event để thông báo logout
-const createLogoutEvent = (): void => {
-  const event = new CustomEvent('auth:logout', {
-    detail: { reason: 'token_expired' }
-  });
-  window.dispatchEvent(event);
-};
+// const createLogoutEvent = (): void => {
+//   const event = new CustomEvent('auth:logout', {
+//     detail: { reason: 'token_expired' }
+//   });
+//   window.dispatchEvent(event);
+// };
 
 interface RefreshTokenResponse {
   statusCode: number;
