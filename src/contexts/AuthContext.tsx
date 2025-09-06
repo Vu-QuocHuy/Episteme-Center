@@ -357,9 +357,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       localStorage.setItem('access_token', accessToken);
       localStorage.setItem('userData', JSON.stringify(userData));
-      if (refreshToken) {
-        localStorage.setItem('refresh_token', refreshToken);
-      }
+      // ✅ Không lưu refresh_token vào localStorage, backend sẽ set cookie
       if (userData.role === 'parent' && userData.parentId) {
         localStorage.setItem('parent_id', userData.parentId);
       }
@@ -423,14 +421,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = async (): Promise<void> => {
     try {
+      // ✅ Gọi logout API để backend xóa cookie
       const refreshToken = localStorage.getItem('refresh_token');
       if (refreshToken) {
         await logoutAPI(refreshToken);
       }
     } catch (error) {
+      // ✅ Logout API error (non-critical)
     } finally {
       localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
       localStorage.removeItem('userData');
       localStorage.removeItem('parent_id');
       dispatch({ type: 'LOGOUT' });
@@ -483,7 +482,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       // Cập nhật localStorage
       localStorage.setItem('access_token', newAccessToken);
-      // refresh token kept by backend
+      // ✅ refresh token được giữ trong cookie bởi backend
 
       // Cập nhật state
       dispatch({

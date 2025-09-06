@@ -115,12 +115,10 @@ instance.interceptors.response.use(
         if (error.response) {
             // Xử lý lỗi từ server
             if (error.response.status === 401 && !originalRequest._retry) {
+                // ✅ Chỉ log khi cần debug
+                if (import.meta.env.DEV) {
                 console.log('🔐 401 Unauthorized - attempting refresh token...');
-                console.log('Current access token exists:', !!localStorage.getItem('access_token'));
-                console.log('Current refresh token exists:', !!localStorage.getItem('refresh_token'));
-                console.log('Refresh token value:', localStorage.getItem('refresh_token'));
-                console.log('Request URL:', originalRequest.url);
-                console.log('Request method:', originalRequest.method);
+                }
 
                 if (isRefreshing) {
                     // Nếu đang refresh, thêm request vào queue
@@ -138,46 +136,14 @@ instance.interceptors.response.use(
                 originalRequest._retry = true;
                 isRefreshing = true;
 
-                // Kiểm tra xem có refresh token không
-                // Backend có thể sử dụng httpOnly cookies thay vì localStorage
-                const refreshToken = localStorage.getItem('refresh_token');
-                if (!refreshToken) {
-                    console.log('⚠️ No refresh token in localStorage - backend likely uses httpOnly cookies');
-                    console.log('Proceeding with refresh attempt using cookies...');
-                    // Không logout ngay, để user thử lại
-                    // Backend có thể sử dụng cookie cho refresh token
-                }
+                // ✅ Backend sử dụng httpOnly cookies, không cần kiểm tra localStorage
 
-                // Kiểm tra xem refresh token có hết hạn không (nếu có thể decode)
-                // Chỉ kiểm tra nếu refreshToken tồn tại trong localStorage
-                if (refreshToken) {
-                    try {
-                        const tokenParts = refreshToken.split('.');
-                        if (tokenParts.length === 3) {
-                            const payload = JSON.parse(atob(tokenParts[1]));
-                            const currentTime = Math.floor(Date.now() / 1000);
-                            if (payload.exp && payload.exp < currentTime) {
-                                console.log('❌ Refresh token expired - logging out');
-                                processQueue(new Error('Refresh token expired'), null);
-                                localStorage.removeItem('access_token');
-                                localStorage.removeItem('refresh_token');
-                                localStorage.removeItem('userData');
-                                localStorage.removeItem('parent_id');
-                                createLogoutEvent();
-                                return Promise.reject(new Error('Refresh token expired'));
-                            }
-                        }
-                    } catch (decodeError) {
-                        console.log('⚠️ Could not decode refresh token, proceeding anyway...');
-                    }
-                } else {
-                    console.log('ℹ️ No refresh token in localStorage, backend will use cookies');
-                }
+                // ✅ Không cần kiểm tra refresh token trong localStorage
+                // Backend sẽ xử lý cookie tự động
 
                 try {
                     // Gọi API refresh token: backend tự xử lý cookie
                     // Sử dụng axios gốc để tránh loop vô hạn
-                    console.log('🔄 Attempting to refresh token...');
                     const response = await axios.get<RefreshTokenResponse>(
                         `${import.meta.env.DEV ? '/api' : (import.meta.env.VITE_API_BASE_URL || 'https://eng-center-nestjs.onrender.com/api/v1')}/auth/refresh`,
                         {
@@ -187,7 +153,7 @@ instance.interceptors.response.use(
                             }
                         }
                     );
-                    console.log('✅ Refresh token response:', response.data);
+                    // ✅ Refresh token response received
 
                     let newAccessToken: string | null = null;
                     let newRefreshToken: string | null = null;
@@ -251,8 +217,7 @@ instance.interceptors.response.use(
                     }
                 } catch (refreshError: any) {
                     console.error('❌ Refresh token failed:', refreshError);
-                    console.log('Refresh error details:', refreshError.response?.data);
-                    console.log('Refresh error status:', refreshError.response?.status);
+                    // ✅ Refresh error occurred
 
                     // Xử lý queue với lỗi
                     processQueue(refreshError, null);
@@ -260,12 +225,11 @@ instance.interceptors.response.use(
                     // Không logout ngay, để user thử lại
                     // Chỉ logout khi refresh token thực sự hết hạn
                     if (refreshError.response?.status === 401) {
-                        console.log('⚠️ Refresh token API returned 401 - this might be temporary');
-                        console.log('Not logging out immediately, allowing user to retry');
+                        // ✅ Refresh token API returned 401 - might be temporary
                         // Không logout ngay, để user thử lại
                         // Có thể là vấn đề tạm thời với backend
                     } else {
-                        console.log('⚠️ Refresh token failed but not expired, allowing retry');
+                        // ✅ Refresh token failed but not expired, allowing retry
                         // Không logout, để user thử lại
                     }
 
@@ -289,7 +253,7 @@ instance.interceptors.response.use(
             if (!originalRequest._networkRetry &&
                 (error.code === 'ECONNRESET' || error.code === 'ENOTFOUND' || error.message.includes('timeout'))) {
                 originalRequest._networkRetry = true;
-                console.log('🔄 Retrying network request...');
+                // ✅ Retrying network request
 
                 // Wait a bit before retry
                 await new Promise(resolve => setTimeout(resolve, 1000));

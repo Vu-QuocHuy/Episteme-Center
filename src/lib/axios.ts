@@ -5,6 +5,7 @@ import { STORAGE_KEYS } from '@constants/index';
 const api: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
   timeout: 10000,
+  withCredentials: true, // ✅ Để gửi và nhận cookies
   headers: {
     'Content-Type': 'application/json',
   },

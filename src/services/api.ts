@@ -660,7 +660,9 @@ export const deleteAnnouncementAPI = (id: string) =>
 // Refresh token
 export const refreshTokenAPI = () => {
   // Backend tự xử lý cookie
-  return axiosInstance.get(API_CONFIG.ENDPOINTS.AUTH.REFRESH_TOKEN);
+  return axiosInstance.get(API_CONFIG.ENDPOINTS.AUTH.REFRESH_TOKEN, {
+    withCredentials: true // ✅ Đảm bảo gửi cookie
+  });
 };
 
 // Gửi email xác thực
@@ -1147,17 +1149,29 @@ export interface ArticlesListResponse {
 }
 
 export const createArticleAPI = (data: ArticleData) => {
-  const formData = new URLSearchParams();
-  formData.append('title', data.title);
-  formData.append('content', data.content);
-  formData.append('menuId', data.menuId);
-  if (data.order !== undefined) formData.append('order', data.order.toString());
-  if (data.isActive !== undefined) formData.append('isActive', data.isActive.toString());
-  if (data.file !== undefined) formData.append('file', data.file);
-  if (data.publicId !== undefined) formData.append('publicId', data.publicId);
+  // ✅ Sử dụng JSON thay vì URLSearchParams để gửi number
+  const payload: any = {
+    title: data.title,
+    content: data.content,
+    menuId: data.menuId
+  };
 
-  return axiosInstance.post<ArticleResponse>(API_CONFIG.ENDPOINTS.ARTICLES.CREATE, formData, {
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+  // ✅ Chỉ gửi các trường optional nếu có giá trị
+  if (data.order !== undefined && data.order !== null) {
+    payload.order = data.order; // Gửi dưới dạng number
+  }
+  if (data.isActive !== undefined && data.isActive !== null) {
+    payload.isActive = data.isActive; // Gửi dưới dạng boolean
+  }
+  if (data.file !== undefined && data.file !== null && data.file !== '') {
+    payload.file = data.file;
+  }
+  if (data.publicId !== undefined && data.publicId !== null && data.publicId !== '') {
+    payload.publicId = data.publicId;
+  }
+
+  return axiosInstance.post<ArticleResponse>(API_CONFIG.ENDPOINTS.ARTICLES.CREATE, payload, {
+    headers: { 'Content-Type': 'application/json' }
   });
 };
 
@@ -1176,17 +1190,34 @@ export const getArticleByIdAPI = (id: string) => {
 };
 
 export const updateArticleAPI = (id: string, data: Partial<ArticleData>) => {
-  const formData = new URLSearchParams();
-  if (data.title !== undefined) formData.append('title', data.title);
-  if (data.content !== undefined) formData.append('content', data.content);
-  if (data.menuId !== undefined) formData.append('menuId', data.menuId);
-  if (data.order !== undefined) formData.append('order', data.order.toString());
-  if (data.isActive !== undefined) formData.append('isActive', data.isActive.toString());
-  if (data.file !== undefined) formData.append('file', data.file);
-  if (data.publicId !== undefined) formData.append('publicId', data.publicId);
+  // ✅ Sử dụng JSON thay vì URLSearchParams để gửi number
+  const payload: any = {};
 
-  return axiosInstance.patch<ArticleResponse>(API_CONFIG.ENDPOINTS.ARTICLES.UPDATE(id), formData, {
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+  // ✅ Chỉ gửi các trường có giá trị
+  if (data.title !== undefined && data.title !== null && data.title !== '') {
+    payload.title = data.title;
+  }
+  if (data.content !== undefined && data.content !== null && data.content !== '') {
+    payload.content = data.content;
+  }
+  if (data.menuId !== undefined && data.menuId !== null && data.menuId !== '') {
+    payload.menuId = data.menuId;
+  }
+  if (data.order !== undefined && data.order !== null) {
+    payload.order = data.order; // Gửi dưới dạng number
+  }
+  if (data.isActive !== undefined && data.isActive !== null) {
+    payload.isActive = data.isActive; // Gửi dưới dạng boolean
+  }
+  if (data.file !== undefined && data.file !== null && data.file !== '') {
+    payload.file = data.file;
+  }
+  if (data.publicId !== undefined && data.publicId !== null && data.publicId !== '') {
+    payload.publicId = data.publicId;
+  }
+
+  return axiosInstance.patch<ArticleResponse>(API_CONFIG.ENDPOINTS.ARTICLES.UPDATE(id), payload, {
+    headers: { 'Content-Type': 'application/json' }
   });
 };
 
