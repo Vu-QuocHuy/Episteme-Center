@@ -182,7 +182,16 @@ const DynamicMenuPage: React.FC = () => {
         try {
           const articlesResponse = await getArticlesByMenuSlugAPI(slug);
           if (articlesResponse.data?.data) {
-            setArticles(articlesResponse.data.data);
+            // ✅ Sort articles by order, then by createdAt
+            const sortedArticles = articlesResponse.data.data
+              .filter((article: any) => article.isActive !== false) // Only active articles
+              .sort((a: any, b: any) => {
+                if (a.order !== b.order) {
+                  return (a.order || 999) - (b.order || 999); // Articles without order go last
+                }
+                return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+              });
+            setArticles(sortedArticles);
           }
         } catch (articleError) {
           console.log('No articles found for this menu, using mock content');

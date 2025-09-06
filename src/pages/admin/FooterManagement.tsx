@@ -1,93 +1,60 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
-  Box, Typography, Grid, Card, CardContent, CardActions,
-  Button, TextField, Switch, FormControlLabel, Dialog, DialogTitle,
-  DialogContent, DialogActions, IconButton, Chip,
-  Divider
+  Box, Typography, Grid, Button, TextField, Dialog, DialogTitle,
+  DialogContent, DialogActions, IconButton, Paper, Select, MenuItem, FormControl, InputLabel
 } from '@mui/material';
 import {
-  Edit as EditIcon,
   Add as AddIcon,
   Delete as DeleteIcon,
-  Save as SaveIcon
+  Save as SaveIcon,
+  Upload as UploadIcon
 } from '@mui/icons-material';
+import { Responsive, WidthProvider } from 'react-grid-layout';
+import 'react-grid-layout/css/styles.css';
+import 'react-resizable/css/styles.css';
+import { Editor } from '@tinymce/tinymce-react';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
 import NotificationSnackbar from '../../components/common/NotificationSnackbar';
+import { createArticleAPI, ArticleData, uploadFileAPI } from '../../services/api';
 import { commonStyles } from '../../utils/styles';
 
-interface FooterLink {
-  id: string;
-  title: string;
-  url: string;
-  order: number;
-  isActive: boolean;
+
+// Layout Builder interfaces
+interface LayoutItem {
+  i: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
 }
 
-interface FooterContent {
-  companyName: string;
-  description: string;
-  address: string;
-  phone: string;
-  email: string;
-  copyright: string;
-  socialLinks: FooterLink[];
-  quickLinks: FooterLink[];
+interface ContentItem {
+  i: string;
+  type: 'text' | 'image' | 'input';
+  content: string;
 }
+
+const ResponsiveGridLayout = WidthProvider(Responsive);
 
 const FooterManagement: React.FC = () => {
 
-  // Mock data - in real app, this would come from API
-  const [footerContent, setFooterContent] = useState<FooterContent>({
-    companyName: 'Trung tâm Anh ngữ ABC',
-    description: 'Chuyên đào tạo tiếng Anh chất lượng cao với đội ngũ giảng viên giàu kinh nghiệm.',
-    address: '123 Đường ABC, Quận 1, TP.HCM',
-    phone: '0123 456 789',
-    email: 'info@abcenter.edu.vn',
-    copyright: '© 2024 Trung tâm Anh ngữ ABC. Tất cả quyền được bảo lưu.',
-    socialLinks: [
-      {
-        id: '1',
-        title: 'Facebook',
-        url: 'https://facebook.com/abcenter',
-        order: 1,
-        isActive: true
-      },
-      {
-        id: '2',
-        title: 'YouTube',
-        url: 'https://youtube.com/abcenter',
-        order: 2,
-        isActive: true
-      }
-    ],
-    quickLinks: [
-      {
-        id: '1',
-        title: 'Về chúng tôi',
-        url: '/about',
-        order: 1,
-        isActive: true
-      },
-      {
-        id: '2',
-        title: 'Khóa học',
-        url: '/courses',
-        order: 2,
-        isActive: true
-      },
-      {
-        id: '3',
-        title: 'Liên hệ',
-        url: '/contact',
-        order: 3,
-        isActive: true
-      }
-    ]
+  // Layout Builder states
+  const [layouts, setLayouts] = useState<{ lg: LayoutItem[] }>({ lg: [] });
+  const [title, setTitle] = useState('');
+  const [items, setItems] = useState<ContentItem[]>([]);
+  const [newItem, setNewItem] = useState<{ i: string; type: 'text' | 'image' | 'input'; content: string }>({
+    i: '',
+    type: 'text',
+    content: ''
   });
+  const [editorContent, setEditorContent] = useState('');
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [fileList, setFileList] = useState<File[]>([]);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | undefined>();
+  const [uploadedPublicId, setUploadedPublicId] = useState<string | undefined>();
+  const [imageUploading, setImageUploading] = useState(false);
+  const itemRefs = useRef<{ [key: string]: React.RefObject<HTMLDivElement> }>({});
 
-  const [openLinkDialog, setOpenLinkDialog] = useState(false);
-  const [editingLink, setEditingLink] = useState<FooterLink | null>(null);
-  const [linkType, setLinkType] = useState<'social' | 'quick'>('social');
   const [notification, setNotification] = useState<{
     open: boolean;
     message: string;
@@ -98,167 +65,221 @@ const FooterManagement: React.FC = () => {
     severity: 'success'
   });
 
-  // Form state for main content
-  const [mainFormData, setMainFormData] = useState<Partial<FooterContent>>({
-    companyName: footerContent.companyName,
-    description: footerContent.description,
-    address: footerContent.address,
-    phone: footerContent.phone,
-    email: footerContent.email,
-    copyright: footerContent.copyright
-  });
 
-  // Form state for link
-  const [linkFormData, setLinkFormData] = useState<Partial<FooterLink>>({
-    title: '',
-    url: '',
-    order: 1,
-    isActive: true
-  });
-
-  const handleSaveMainContent = () => {
-    setFooterContent(prev => ({
-      ...prev,
-      ...mainFormData
-    }));
-    setNotification({
-      open: true,
-      message: 'Cập nhật thông tin footer thành công!',
-      severity: 'success'
-    });
+  const handleNotificationClose = () => {
+    setNotification(prev => ({ ...prev, open: false }));
   };
 
-  const handleOpenLinkDialog = (link?: FooterLink, type: 'social' | 'quick' = 'social') => {
-    setLinkType(type);
-    if (link) {
-      setEditingLink(link);
-      setLinkFormData(link);
-    } else {
-      setEditingLink(null);
-      setLinkFormData({
-        title: '',
-        url: '',
-        order: (type === 'social' ? footerContent.socialLinks : footerContent.quickLinks).length + 1,
-        isActive: true
-      });
-    }
-    setOpenLinkDialog(true);
-  };
+  // Layout Builder functions
+  const generateId = () => `item-${Date.now()}`;
 
-  const handleCloseLinkDialog = () => {
-    setOpenLinkDialog(false);
-    setEditingLink(null);
-    setLinkFormData({
-      title: '',
-      url: '',
-      order: 1,
-      isActive: true
-    });
-  };
-
-  const handleSaveLink = () => {
-    if (!linkFormData.title || !linkFormData.url) {
+  const addItem = () => {
+    if (!newItem.type) {
       setNotification({
         open: true,
-        message: 'Vui lòng điền đầy đủ thông tin bắt buộc',
-        severity: 'error'
+        message: 'Vui lòng chọn loại thành phần!',
+        severity: 'warning'
       });
       return;
     }
 
-    if (editingLink) {
-      // Update existing link
-      if (linkType === 'social') {
-        setFooterContent(prev => ({
-          ...prev,
-          socialLinks: prev.socialLinks.map(link =>
-            link.id === editingLink.id ? { ...link, ...linkFormData } : link
-          )
-        }));
-      } else {
-        setFooterContent(prev => ({
-          ...prev,
-          quickLinks: prev.quickLinks.map(link =>
-            link.id === editingLink.id ? { ...link, ...linkFormData } : link
-          )
-        }));
+    const id = newItem.i || generateId();
+    itemRefs.current[id] = React.createRef();
+
+    const nextY = layouts.lg.reduce((maxY, item) => Math.max(maxY, item.y + item.h), 0);
+
+    setLayouts(prev => ({
+      ...prev,
+      lg: [
+        ...prev.lg,
+        {
+          i: id,
+          x: 0,
+          y: nextY,
+          w: 6,
+          h: 2,
+        }
+      ]
+    }));
+
+    setItems(prev => [
+      ...prev,
+      {
+        i: id,
+        type: newItem.type,
+        content: newItem.type === 'text' ? editorContent : newItem.content
       }
+    ]);
+
+    setNewItem({ i: '', type: 'text', content: '' });
+    setEditorContent('');
+    setDialogOpen(false);
+  };
+
+  const removeItem = (id: string) => {
+    setLayouts(prev => ({
+      ...prev,
+      lg: prev.lg.filter(item => item.i !== id)
+    }));
+    setItems(prev => prev.filter(item => item.i !== id));
+    delete itemRefs.current[id];
+  };
+
+  const onLayoutChange = (currentLayout: LayoutItem[]) => {
+    setLayouts({ lg: currentLayout });
+  };
+
+  const generateHTML = () => {
+    let maxBottom = 0;
+
+    const layoutHTML = layouts.lg.map(layoutItem => {
+      const item = items.find(i => i.i === layoutItem.i);
+      if (!item) return '';
+
+      const x = layoutItem.x * 25;
+      const y = layoutItem.y * 50;
+      const width = layoutItem.w * 25;
+      const height = layoutItem.h * 50;
+      const bottom = y + height;
+
+      if (bottom > maxBottom) {
+        maxBottom = bottom;
+      }
+
+      let contentHTML = '';
+      switch (item.type) {
+        case 'text':
+          contentHTML = `<div>${item.content || 'Default Text'}</div>`;
+          break;
+        case 'input':
+          contentHTML = `<input type="text" value="${item.content || ''}" readonly style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" />`;
+          break;
+        case 'image':
+          contentHTML = `<img src="${item.content}" alt="Uploaded Image" style="width: 100%; height: 100%; object-fit: cover;" />`;
+          break;
+        default:
+          contentHTML = `<div>Invalid Type</div>`;
+      }
+
+      return `
+        <div
+          style="
+            position: absolute;
+            transform: translate(${x}px, ${y}px);
+            width: ${width - 20}px;
+            height: ${height}px;
+            box-sizing: border-box;
+          "
+        >
+          ${contentHTML}
+        </div>`;
+    });
+
+    return `
+      <div
+        style="
+          position: relative;
+          width: 100%;
+          height: ${maxBottom}px;
+          box-sizing: border-box;
+        "
+      >
+        ${layoutHTML.join('\n')}
+      </div>
+    `;
+  };
+
+  const saveLayout = async () => {
+    if (!title.trim()) {
       setNotification({
         open: true,
-        message: 'Cập nhật link thành công!',
-        severity: 'success'
+        message: 'Vui lòng nhập tiêu đề!',
+        severity: 'warning'
       });
-    } else {
-      // Add new link
-      const newLink: FooterLink = {
-        ...linkFormData as FooterLink,
-        id: Date.now().toString()
+      return;
+    }
+
+    if (items.length === 0) {
+      setNotification({
+        open: true,
+        message: 'Vui lòng thêm ít nhất một thành phần!',
+        severity: 'warning'
+      });
+      return;
+    }
+
+    try {
+      const htmlContent = generateHTML(); // Generate HTML for saving
+
+      // Prepare article data
+      const articleData: ArticleData = {
+        title: `Footer - ${title}`, // Prefix để phân biệt
+        content: htmlContent,
+        menuId: 'homepage-menu-uuid', // UUID của menu Homepage
+        order: 1, // ✅ Thứ tự hiển thị
+        isActive: true, // ✅ Trạng thái active
+        file: uploadedImageUrl ?? '',
+        publicId: uploadedPublicId ?? ''
       };
 
-      if (linkType === 'social') {
-        setFooterContent(prev => ({
-          ...prev,
-          socialLinks: [...prev.socialLinks, newLink]
-        }));
-      } else {
-        setFooterContent(prev => ({
-          ...prev,
-          quickLinks: [...prev.quickLinks, newLink]
-        }));
-      }
+      // Save to API
+      await createArticleAPI(articleData);
+
       setNotification({
         open: true,
-        message: 'Thêm link mới thành công!',
+        message: 'Lưu layout footer thành công!',
         severity: 'success'
       });
-    }
-    handleCloseLinkDialog();
-  };
-
-  const handleDeleteLink = (id: string, type: 'social' | 'quick') => {
-    if (type === 'social') {
-      setFooterContent(prev => ({
-        ...prev,
-        socialLinks: prev.socialLinks.filter(link => link.id !== id)
-      }));
-    } else {
-      setFooterContent(prev => ({
-        ...prev,
-        quickLinks: prev.quickLinks.filter(link => link.id !== id)
-      }));
-    }
+    } catch (error) {
+      console.error('Error saving layout:', error);
     setNotification({
       open: true,
-      message: 'Xóa link thành công!',
-      severity: 'success'
-    });
-  };
-
-  const handleToggleLinkVisibility = (id: string, isActive: boolean, type: 'social' | 'quick') => {
-    if (type === 'social') {
-      setFooterContent(prev => ({
-        ...prev,
-        socialLinks: prev.socialLinks.map(link =>
-          link.id === id ? { ...link, isActive } : link
-        )
-      }));
-    } else {
-      setFooterContent(prev => ({
-        ...prev,
-        quickLinks: prev.quickLinks.map(link =>
-          link.id === id ? { ...link, isActive } : link
-        )
-      }));
+        message: 'Lỗi khi lưu layout!',
+        severity: 'error'
+      });
     }
-    setNotification({
-      open: true,
-      message: `Đã ${isActive ? 'hiện' : 'ẩn'} link`,
-      severity: 'success'
-    });
   };
 
-  const handleNotificationClose = () => {
-    setNotification(prev => ({ ...prev, open: false }));
+  const renderItemContent = (layoutItem: LayoutItem) => {
+    const item = items.find(i => i.i === layoutItem.i);
+    if (!item) return <div style={{ color: 'red' }}>Invalid Item</div>;
+
+    return (
+      <div
+        ref={itemRefs.current[layoutItem.i]}
+        style={{
+          width: '100%',
+          height: '100%',
+          overflow: item.type === 'text' ? 'auto' : 'hidden',
+          padding: '8px'
+        }}
+      >
+        {item.type === 'text' && (
+          <div dangerouslySetInnerHTML={{ __html: item.content || '<p>Default Text</p>' }} />
+        )}
+        {item.type === 'image' && (
+          <img
+            src={item.content || ''}
+            alt="Uploaded"
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+        )}
+        {item.type === 'input' && (
+          <input
+            type="text"
+            value={item.content || ''}
+            readOnly
+            style={{
+              width: '100%',
+              padding: '8px',
+              border: '1px solid #ddd',
+              borderRadius: '4px',
+              backgroundColor: '#f5f5f5'
+            }}
+          />
+        )}
+      </div>
+    );
   };
 
   return (
@@ -271,324 +292,237 @@ const FooterManagement: React.FC = () => {
               Quản lý Footer
             </Typography>
           </Box>
-          <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-            Chỉnh sửa thông tin footer và các link liên kết
-          </Typography>
 
-        <Grid container spacing={4}>
-          {/* Main Content Section */}
-          <Grid item xs={12} md={6}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom fontWeight="bold">
-                  Thông tin chính
+          {/* Layout Builder */}
+            <Box>
+               <Box sx={{ mb: 4 }}>
+                 <Typography variant="body1" color="text.secondary">
+                   Kéo thả và tùy chỉnh các thành phần để tạo giao diện cho footer
                 </Typography>
-                <Typography variant="body2" color="text.secondary" paragraph>
-                  Chỉnh sửa thông tin công ty và liên hệ
-                </Typography>
+               </Box>
 
-                <Box sx={{ mt: 3 }}>
+              {/* Form Controls */}
+              <Paper sx={{ p: 3, mb: 3 }}>
+                <Grid container spacing={3} alignItems="center">
+                  <Grid item xs={12} md={4}>
                   <TextField
                     fullWidth
-                    label="Tên công ty"
-                    value={mainFormData.companyName || ''}
-                    onChange={(e) => setMainFormData({ ...mainFormData, companyName: e.target.value })}
-                    margin="normal"
+                      label="Tiêu đề footer"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
                     required
                   />
-                  <TextField
+                  </Grid>
+                  <Grid item xs={12} md={4}>
+                    <input
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      id="image-upload"
+                      type="file"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0] || null;
+                        setFileList(file ? [file] : []);
+                        if (file) {
+                          try {
+                            setImageUploading(true);
+                            const uploadRes = await uploadFileAPI(file);
+                            setUploadedImageUrl(uploadRes.data.data.url);
+                            setUploadedPublicId(uploadRes.data.data.public_id);
+                          } catch (err) {
+                            setNotification({
+                              open: true,
+                              message: 'Tải ảnh thất bại, vui lòng thử lại',
+                              severity: 'error'
+                            });
+                            setUploadedImageUrl(undefined);
+                            setUploadedPublicId(undefined);
+                          } finally {
+                            setImageUploading(false);
+                          }
+                        } else {
+                          setUploadedImageUrl(undefined);
+                          setUploadedPublicId(undefined);
+                        }
+                      }}
+                    />
+                    <label htmlFor="image-upload">
+                      <Button
+                        variant="outlined"
+                        component="span"
+                        startIcon={<UploadIcon />}
                     fullWidth
-                    label="Mô tả"
-                    value={mainFormData.description || ''}
-                    onChange={(e) => setMainFormData({ ...mainFormData, description: e.target.value })}
-                    margin="normal"
-                    multiline
-                    rows={3}
-                  />
-                  <TextField
+                        disabled={imageUploading}
+                      >
+                        {imageUploading
+                          ? 'Đang tải ảnh...'
+                          : uploadedImageUrl
+                            ? 'Ảnh đã tải thành công'
+                            : fileList.length > 0
+                              ? `${fileList.length} file đã chọn`
+                              : 'Chọn ảnh footer'
+                        }
+                      </Button>
+                    </label>
+                  </Grid>
+                  <Grid item xs={12} md={4}>
+                    <Button
+                      variant="contained"
+                      startIcon={<AddIcon />}
+                      onClick={() => setDialogOpen(true)}
                     fullWidth
-                    label="Địa chỉ"
-                    value={mainFormData.address || ''}
-                    onChange={(e) => setMainFormData({ ...mainFormData, address: e.target.value })}
-                    margin="normal"
-                  />
-                  <TextField
-                    fullWidth
-                    label="Số điện thoại"
-                    value={mainFormData.phone || ''}
-                    onChange={(e) => setMainFormData({ ...mainFormData, phone: e.target.value })}
-                    margin="normal"
-                  />
-                  <TextField
-                    fullWidth
-                    label="Email"
-                    value={mainFormData.email || ''}
-                    onChange={(e) => setMainFormData({ ...mainFormData, email: e.target.value })}
-                    margin="normal"
-                  />
-                  <TextField
-                    fullWidth
-                    label="Copyright"
-                    value={mainFormData.copyright || ''}
-                    onChange={(e) => setMainFormData({ ...mainFormData, copyright: e.target.value })}
-                    margin="normal"
-                  />
-                </Box>
+                    >
+                      Thêm thành phần
+                    </Button>
+                  </Grid>
+                </Grid>
+              </Paper>
 
-                <Box sx={{ mt: 3 }}>
+              {/* Layout Preview */}
+              <Paper sx={{ p: 3, mb: 3 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="h6">Xem trước Layout Footer</Typography>
                   <Button
                     variant="contained"
                     startIcon={<SaveIcon />}
-                    onClick={handleSaveMainContent}
-                    fullWidth
+                    onClick={saveLayout}
+                    color="success"
                   >
-                    Lưu thông tin chính
+                    Lưu Layout Footer
                   </Button>
                 </Box>
-              </CardContent>
-            </Card>
-          </Grid>
 
-          {/* Preview Section */}
-          <Grid item xs={12} md={6}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom fontWeight="bold">
-                  Xem trước Footer
-                </Typography>
-                <Typography variant="body2" color="text.secondary" paragraph>
-                  Cách footer sẽ hiển thị trên trang web
-                </Typography>
-
-                <Box sx={{ mt: 3, p: 2, bgcolor: 'grey.900', color: 'white', borderRadius: 1 }}>
-                  <Typography variant="h6" gutterBottom fontWeight="bold">
-                    {mainFormData.companyName || 'Tên công ty'}
-                  </Typography>
-                  <Typography variant="body2" paragraph>
-                    {mainFormData.description || 'Mô tả công ty...'}
-                  </Typography>
-
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="body2">📍 {mainFormData.address || 'Địa chỉ'}</Typography>
-                    <Typography variant="body2">📞 {mainFormData.phone || 'Số điện thoại'}</Typography>
-                    <Typography variant="body2">✉️ {mainFormData.email || 'Email'}</Typography>
-                  </Box>
-
-                  <Divider sx={{ bgcolor: 'grey.700', my: 2 }} />
-
-                  <Typography variant="caption" color="grey.400">
-                    {mainFormData.copyright || 'Copyright text...'}
-                  </Typography>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
-
-        <Divider sx={{ my: 4 }} />
-
-        {/* Social Links Section */}
-        <Box sx={{ mb: 3 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h5" fontWeight="bold">
-              Social Media Links
-            </Typography>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => handleOpenLinkDialog(undefined, 'social')}
-            >
-              Thêm social link
-            </Button>
-          </Box>
-          <Typography variant="body2" color="text.secondary">
-            Quản lý các link mạng xã hội
-          </Typography>
-        </Box>
-
-        <Grid container spacing={2} sx={{ mb: 4 }}>
-          {footerContent.socialLinks.map((link) => (
-            <Grid item xs={12} sm={6} md={4} key={link.id}>
-              <Card>
-                <CardContent>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                    <Typography variant="h6" fontWeight="bold">
-                      {link.title}
-                    </Typography>
-                    <Chip
-                      label={link.isActive ? 'Đang hiển thị' : 'Đã ẩn'}
-                      color={link.isActive ? 'success' : 'default'}
-                      size="small"
-                    />
-                  </Box>
-                  <Typography variant="body2" color="text.secondary" paragraph>
-                    {link.url}
-                  </Typography>
-                  <Chip label={`Thứ tự: ${link.order}`} size="small" variant="outlined" />
-                </CardContent>
-                <CardActions sx={{ justifyContent: 'space-between' }}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={link.isActive}
-                        onChange={(e) => handleToggleLinkVisibility(link.id, e.target.checked, 'social')}
-                        size="small"
-                      />
-                    }
-                    label=""
-                  />
-                  <Box>
+                <Box sx={{ border: '1px solid #ddd', borderRadius: 1, p: 2, minHeight: '400px' }}>
+                  <ResponsiveGridLayout
+                    className="layout"
+                    layouts={layouts}
+                    breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480 }}
+                    cols={{ lg: 24, md: 24, sm: 24, xs: 24 }}
+                    rowHeight={50}
+                    onLayoutChange={onLayoutChange}
+                    isDraggable={true}
+                    isResizable={true}
+                  >
+                    {layouts.lg.map(layoutItem => (
+                      <div key={layoutItem.i} style={{ position: 'relative' }}>
                     <IconButton
                       size="small"
-                      onClick={() => handleOpenLinkDialog(link, 'social')}
-                      color="primary"
-                    >
-                      <EditIcon />
+                          onClick={() => removeItem(layoutItem.i)}
+                          sx={{
+                            position: 'absolute',
+                            top: 0,
+                            right: 0,
+                            zIndex: 1000,
+                            backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                            '&:hover': {
+                              backgroundColor: 'rgba(255, 255, 255, 0.9)'
+                            }
+                          }}
+                        >
+                          <DeleteIcon fontSize="small" />
                     </IconButton>
-                    <IconButton
-                      size="small"
-                      onClick={() => handleDeleteLink(link.id, 'social')}
-                      color="error"
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </Box>
-                </CardActions>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-
-        {/* Quick Links Section */}
-        <Box sx={{ mb: 3 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h5" fontWeight="bold">
-              Quick Links
-            </Typography>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => handleOpenLinkDialog(undefined, 'quick')}
-            >
-              Thêm quick link
-            </Button>
+                        {renderItemContent(layoutItem)}
+                      </div>
+                    ))}
+                  </ResponsiveGridLayout>
           </Box>
-          <Typography variant="body2" color="text.secondary">
-            Quản lý các link nhanh trong footer
-          </Typography>
-        </Box>
+              </Paper>
 
+              {/* Add Item Dialog */}
+              <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="md" fullWidth>
+                <DialogTitle>Thêm thành phần footer mới</DialogTitle>
+                <DialogContent>
+                  <Box sx={{ pt: 2 }}>
         <Grid container spacing={2}>
-          {footerContent.quickLinks.map((link) => (
-            <Grid item xs={12} sm={6} md={4} key={link.id}>
-              <Card>
-                <CardContent>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                    <Typography variant="h6" fontWeight="bold">
-                      {link.title}
-                    </Typography>
-                    <Chip
-                      label={link.isActive ? 'Đang hiển thị' : 'Đã ẩn'}
-                      color={link.isActive ? 'success' : 'default'}
-                      size="small"
-                    />
-                  </Box>
-                  <Typography variant="body2" color="text.secondary" paragraph>
-                    {link.url}
-                  </Typography>
-                  <Chip label={`Thứ tự: ${link.order}`} size="small" variant="outlined" />
-                </CardContent>
-                <CardActions sx={{ justifyContent: 'space-between' }}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={link.isActive}
-                        onChange={(e) => handleToggleLinkVisibility(link.id, e.target.checked, 'quick')}
-                        size="small"
-                      />
-                    }
-                    label=""
-                  />
-                  <Box>
-                    <IconButton
-                      size="small"
-                      onClick={() => handleOpenLinkDialog(link, 'quick')}
-                      color="primary"
-                    >
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      onClick={() => handleDeleteLink(link.id, 'quick')}
-                      color="error"
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </Box>
-                </CardActions>
-              </Card>
-            </Grid>
-          ))}
+                      <Grid item xs={12} md={6}>
+                        <TextField
+                          fullWidth
+                          label="ID (tùy chọn)"
+                          value={newItem.i}
+                          onChange={(e) => setNewItem(prev => ({ ...prev, i: e.target.value }))}
+                          helperText="Để trống để tự động tạo ID"
+                        />
+                      </Grid>
+                      <Grid item xs={12} md={6}>
+                        <FormControl fullWidth>
+                          <InputLabel>Loại thành phần</InputLabel>
+                          <Select
+                            value={newItem.type}
+                            onChange={(e) => setNewItem(prev => ({ ...prev, type: e.target.value as any }))}
+                            label="Loại thành phần"
+                          >
+                            <MenuItem value="text">Văn bản</MenuItem>
+                            <MenuItem value="image">Hình ảnh</MenuItem>
+                            <MenuItem value="input">Input field</MenuItem>
+                          </Select>
+                        </FormControl>
         </Grid>
 
-        {/* Dialog for adding/editing link */}
-        <Dialog open={openLinkDialog} onClose={handleCloseLinkDialog} maxWidth="sm" fullWidth>
-          <DialogTitle>
-            {editingLink ? 'Chỉnh sửa link' : `Thêm ${linkType === 'social' ? 'social' : 'quick'} link`}
-          </DialogTitle>
-          <DialogContent>
-            <Grid container spacing={2} sx={{ mt: 1 }}>
+                      {newItem.type === 'text' && (
               <Grid item xs={12}>
+                          <Typography variant="subtitle2" gutterBottom>
+                            Nội dung văn bản:
+                          </Typography>
+                          <Editor
+                            apiKey="z7rs4ijsr5qcpob6tbzosk50cpg1otyearqb6i08r0c4s7og"
+                            initialValue=""
+                            init={{
+                              height: 300,
+                              menubar: false,
+                              plugins: [
+                                'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                                'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                                'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
+                              ],
+                              toolbar: 'undo redo | blocks | bold italic forecolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help',
+                              skin: 'oxide',
+                              content_css: 'default',
+                              promotion: false,
+                              referrer_policy: 'no-referrer'
+                            }}
+                            value={editorContent}
+                            onEditorChange={setEditorContent}
+                />
+              </Grid>
+                      )}
+
+                      {newItem.type === 'image' && (
+              <Grid item xs={12}>
+                          <Typography variant="subtitle2" gutterBottom>
+                            URL hình ảnh:
+                          </Typography>
                 <TextField
                   fullWidth
-                  label="Tiêu đề *"
-                  value={linkFormData.title || ''}
-                  onChange={(e) => setLinkFormData({ ...linkFormData, title: e.target.value })}
-                  margin="normal"
-                  required
+                            placeholder="Nhập URL hình ảnh hoặc đường dẫn"
+                            value={newItem.content}
+                            onChange={(e) => setNewItem(prev => ({ ...prev, content: e.target.value }))}
                 />
               </Grid>
-              <Grid item xs={12}>
+                      )}
+
+                      {newItem.type === 'input' && (
+                        <Grid item xs={12}>
+                          <Typography variant="subtitle2" gutterBottom>
+                            Giá trị mặc định:
+                          </Typography>
                 <TextField
                   fullWidth
-                  label="URL *"
-                  value={linkFormData.url || ''}
-                  onChange={(e) => setLinkFormData({ ...linkFormData, url: e.target.value })}
-                  margin="normal"
-                  required
-                  placeholder={linkType === 'social' ? 'https://facebook.com/...' : '/about'}
+                            placeholder="Nhập giá trị mặc định cho input field"
+                            value={newItem.content}
+                            onChange={(e) => setNewItem(prev => ({ ...prev, content: e.target.value }))}
                 />
               </Grid>
-              <Grid item xs={6}>
-                <TextField
-                  fullWidth
-                  label="Thứ tự"
-                  type="number"
-                  value={linkFormData.order || 1}
-                  onChange={(e) => setLinkFormData({ ...linkFormData, order: parseInt(e.target.value) })}
-                  margin="normal"
-                />
+                      )}
               </Grid>
-              <Grid item xs={12}>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={linkFormData.isActive || false}
-                      onChange={(e) => setLinkFormData({ ...linkFormData, isActive: e.target.checked })}
-                    />
-                  }
-                  label="Hiển thị link"
-                />
-              </Grid>
-            </Grid>
+                  </Box>
           </DialogContent>
           <DialogActions>
-            <Button onClick={handleCloseLinkDialog}>Hủy</Button>
-            <Button onClick={handleSaveLink} variant="contained">
-              {editingLink ? 'Cập nhật' : 'Thêm'}
+                  <Button onClick={() => setDialogOpen(false)}>Hủy</Button>
+                  <Button onClick={addItem} variant="contained">
+                    Thêm thành phần
             </Button>
           </DialogActions>
         </Dialog>
+            </Box>
 
                  <NotificationSnackbar
            open={notification.open}

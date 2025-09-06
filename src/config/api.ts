@@ -164,6 +164,14 @@ export interface ApiEndpoints {
     UPDATE: (id: string) => string;
     DELETE: (id: string) => string;
   };
+  // Articles endpoints for Layout Builder
+  ARTICLES: {
+    CREATE: string;
+    GET_ALL: string;
+    GET_BY_ID: (id: string) => string;
+    UPDATE: (id: string) => string;
+    DELETE: (id: string) => string;
+  };
 
 }
 
@@ -351,6 +359,14 @@ export const API_CONFIG: ApiConfig = {
       CREATE: '/events',
       UPDATE: (id: string) => `/events/${id}`,
       DELETE: (id: string) => `/events/${id}`,
+    },
+    // Articles endpoints for Layout Builder
+    ARTICLES: {
+      CREATE: '/articles',
+      GET_ALL: '/articles',
+      GET_BY_ID: (id: string) => `/articles/${id}`,
+      UPDATE: (id: string) => `/articles/${id}`,
+      DELETE: (id: string) => `/articles/${id}`,
     },
 
   },

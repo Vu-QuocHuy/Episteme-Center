@@ -266,7 +266,7 @@ const MenuManagement: React.FC = () => {
                 variant="outlined"
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigate(`/admin/layout-builder/${item.slug || item.title.toLowerCase().replace(/\s+/g, '-')}`);
+                  navigate(`/admin/layout-builder/${item.id}`); // ✅ Sử dụng UUID thay vì slug
                 }}
                 title="Tạo Layout"
                 sx={{ minWidth: 'auto', px: 1, py: 0.5, fontSize: '0.75rem' }}

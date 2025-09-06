@@ -20,7 +20,9 @@ import {
   Grid,
   Paper,
   Alert,
-  Snackbar
+  Snackbar,
+  FormControlLabel,
+  Checkbox
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -29,7 +31,7 @@ import {
   Upload as UploadIcon
 } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
-import { createArticleAPI } from '../../services/api';
+import { createArticleAPI, ArticleData, uploadFileAPI } from '../../services/api';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
 import { commonStyles } from '../../utils/styles';
 // Removed unused style imports
@@ -51,7 +53,7 @@ interface ContentItem {
 }
 
 const LayoutBuilder: React.FC = () => {
-  const { slug } = useParams<{ slug: string }>();
+  const { id } = useParams<{ id: string }>(); // ✅ Đổi từ slug thành id (UUID)
   const navigate = useNavigate();
   // const cx = classNames.bind(styles);
 
@@ -66,6 +68,11 @@ const LayoutBuilder: React.FC = () => {
   const [editorContent, setEditorContent] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [fileList, setFileList] = useState<File[]>([]);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | undefined>();
+  const [uploadedPublicId, setUploadedPublicId] = useState<string | undefined>();
+  const [imageUploading, setImageUploading] = useState(false);
+  const [articleOrder, setArticleOrder] = useState<number>(1);
+  const [isActive, setIsActive] = useState<boolean>(true);
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -219,16 +226,17 @@ const LayoutBuilder: React.FC = () => {
 
     try {
       const html = generateHTML();
-      const formData = new FormData();
-      formData.append('content', html);
-      formData.append('title', title);
-      formData.append('menuItemId', slug || '');
+      const articleData: ArticleData = {
+        title: title,
+        content: html,
+        menuId: id || '', // ✅ Sử dụng UUID từ URL params
+        order: articleOrder, // ✅ Thứ tự hiển thị
+        isActive: isActive, // ✅ Trạng thái active
+        file: uploadedImageUrl ?? '', // ✅ Gửi empty string nếu không có ảnh
+        publicId: uploadedPublicId ?? '' // ✅ Gửi empty string nếu không có ảnh
+      };
 
-      if (fileList.length > 0) {
-        formData.append('file', fileList[0]);
-      }
-
-      await createArticleAPI(formData);
+      await createArticleAPI(articleData);
 
       setSnackbar({
         open: true,
@@ -299,7 +307,7 @@ const LayoutBuilder: React.FC = () => {
         <Box sx={commonStyles.contentContainer}>
         <Box sx={{ mb: 4 }}>
           <Typography variant="h4" gutterBottom>
-            Tạo Layout cho Menu: {slug}
+            Tạo Layout cho Menu: {id}
           </Typography>
           <Typography variant="body1" color="text.secondary">
             Kéo thả và tùy chỉnh các thành phần để tạo giao diện cho trang này
@@ -324,7 +332,31 @@ const LayoutBuilder: React.FC = () => {
               style={{ display: 'none' }}
               id="image-upload"
               type="file"
-              onChange={(e) => setFileList(e.target.files ? Array.from(e.target.files) : [])}
+              onChange={async (e) => {
+                const file = e.target.files?.[0] || null;
+                setFileList(file ? [file] : []);
+                if (file) {
+                  try {
+                    setImageUploading(true);
+                    const uploadRes = await uploadFileAPI(file);
+                    setUploadedImageUrl(uploadRes.data.data.url);
+                    setUploadedPublicId(uploadRes.data.data.public_id);
+                  } catch (err) {
+                    setSnackbar({
+                      open: true,
+                      message: 'Tải ảnh thất bại, vui lòng thử lại',
+                      severity: 'error'
+                    });
+                    setUploadedImageUrl(undefined);
+                    setUploadedPublicId(undefined);
+                  } finally {
+                    setImageUploading(false);
+                  }
+                } else {
+                  setUploadedImageUrl(undefined);
+                  setUploadedPublicId(undefined);
+                }
+              }}
             />
             <label htmlFor="image-upload">
               <Button
@@ -332,8 +364,16 @@ const LayoutBuilder: React.FC = () => {
                 component="span"
                 startIcon={<UploadIcon />}
                 fullWidth
+                disabled={imageUploading}
               >
-                {fileList.length > 0 ? `${fileList.length} file đã chọn` : 'Chọn ảnh tiêu đề'}
+                {imageUploading
+                  ? 'Đang tải ảnh...'
+                  : uploadedImageUrl
+                    ? 'Ảnh đã tải thành công'
+                    : fileList.length > 0
+                      ? `${fileList.length} file đã chọn`
+                      : 'Chọn ảnh tiêu đề'
+                }
               </Button>
             </label>
           </Grid>
@@ -346,6 +386,32 @@ const LayoutBuilder: React.FC = () => {
             >
               Thêm thành phần
             </Button>
+          </Grid>
+        </Grid>
+
+        {/* Order và Status Controls */}
+        <Grid container spacing={3} alignItems="center" sx={{ mt: 2 }}>
+          <Grid item xs={12} md={3}>
+            <TextField
+              fullWidth
+              label="Thứ tự hiển thị"
+              type="number"
+              value={articleOrder}
+              onChange={(e) => setArticleOrder(Number(e.target.value))}
+              helperText="Số nhỏ hơn sẽ hiển thị trước"
+              inputProps={{ min: 1 }}
+            />
+          </Grid>
+          <Grid item xs={12} md={3}>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={isActive}
+                  onChange={(e) => setIsActive(e.target.checked)}
+                />
+              }
+              label="Trạng thái hoạt động"
+            />
           </Grid>
         </Grid>
       </Paper>

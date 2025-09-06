@@ -1107,14 +1107,94 @@ export const exportTransactionsReportAPI = (params?: ApiParams & { startDate?: s
 };
 
 // Article APIs
-export const createArticleAPI = (formData: FormData) => {
-  return axiosInstance.post('/articles', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
+export interface ArticleData {
+  title: string;
+  content: string;
+  menuId: string;
+  order?: number;
+  isActive?: boolean;
+  file?: string;
+  publicId?: string;
+}
+
+export interface ArticleResponse {
+  statusCode: number;
+  message: string;
+  data: {
+    id: string;
+    title: string;
+    content: string;
+    menuId: string;
+    file?: string;
+    publicId?: string;
+    createdAt: string;
+    updatedAt: string;
+  };
+}
+
+export interface ArticlesListResponse {
+  statusCode: number;
+  message: string;
+  data: {
+    meta: {
+      limit: number;
+      page: number;
+      totalPages: number;
+      totalItems: number;
+    };
+    result: ArticleResponse['data'][];
+  };
+}
+
+export const createArticleAPI = (data: ArticleData) => {
+  const formData = new URLSearchParams();
+  formData.append('title', data.title);
+  formData.append('content', data.content);
+  formData.append('menuId', data.menuId);
+  if (data.order !== undefined) formData.append('order', data.order.toString());
+  if (data.isActive !== undefined) formData.append('isActive', data.isActive.toString());
+  if (data.file !== undefined) formData.append('file', data.file);
+  if (data.publicId !== undefined) formData.append('publicId', data.publicId);
+
+  return axiosInstance.post<ArticleResponse>(API_CONFIG.ENDPOINTS.ARTICLES.CREATE, formData, {
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
   });
 };
 
+export const getAllArticlesAPI = (params?: { limit?: number; page?: number }) => {
+  const queryParams: any = {};
+  if (params?.page) queryParams.page = params.page;
+  if (params?.limit) queryParams.limit = params.limit;
+
+  return axiosInstance.get<ArticlesListResponse>(API_CONFIG.ENDPOINTS.ARTICLES.GET_ALL, {
+    params: queryParams
+  });
+};
+
+export const getArticleByIdAPI = (id: string) => {
+  return axiosInstance.get<ArticleResponse>(API_CONFIG.ENDPOINTS.ARTICLES.GET_BY_ID(id));
+};
+
+export const updateArticleAPI = (id: string, data: Partial<ArticleData>) => {
+  const formData = new URLSearchParams();
+  if (data.title !== undefined) formData.append('title', data.title);
+  if (data.content !== undefined) formData.append('content', data.content);
+  if (data.menuId !== undefined) formData.append('menuId', data.menuId);
+  if (data.order !== undefined) formData.append('order', data.order.toString());
+  if (data.isActive !== undefined) formData.append('isActive', data.isActive.toString());
+  if (data.file !== undefined) formData.append('file', data.file);
+  if (data.publicId !== undefined) formData.append('publicId', data.publicId);
+
+  return axiosInstance.patch<ArticleResponse>(API_CONFIG.ENDPOINTS.ARTICLES.UPDATE(id), formData, {
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+  });
+};
+
+export const deleteArticleAPI = (id: string) => {
+  return axiosInstance.delete(API_CONFIG.ENDPOINTS.ARTICLES.DELETE(id));
+};
+
+// Legacy API for backward compatibility
 export const getArticlesByMenuSlugAPI = (slug: string) => {
   return axiosInstance.get(`/public/${slug}/articles`);
 };
