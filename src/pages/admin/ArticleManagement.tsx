@@ -31,8 +31,6 @@ import {
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { getAllMenusAPI, getAllArticlesAPI, updateArticleAPI, deleteArticleAPI } from '../../services/api';
 import { MenuItem as MenuItemType } from '../../types';
-import DashboardLayout from '../../components/layouts/DashboardLayout';
-import { commonStyles } from '../../utils/styles';
 
 interface Article {
   id: string;
@@ -91,7 +89,11 @@ const ArticleManagement: React.FC = () => {
 
     try {
       setLoading(true);
-      const response = await getAllArticlesAPI();
+      const response = await getAllArticlesAPI({
+        page: 1,
+        limit: 100,
+        filters: { menuId }
+      });
       const articlesList = response.data?.data?.result || [];
 
       // Sort by order, then by createdAt
@@ -217,19 +219,16 @@ const ArticleManagement: React.FC = () => {
   const selectedMenuTitle = menuItems.find(menu => menu.id === selectedMenu)?.title || '';
 
   return (
-    <DashboardLayout role="admin">
-      <Box sx={commonStyles.pageContainer}>
-        <Box sx={commonStyles.contentContainer}>
+    <Box>
           {/* Header */}
-          <Box sx={commonStyles.pageHeader}>
-            <Typography sx={commonStyles.pageTitle}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+            <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
               Quản lý Bài viết
             </Typography>
             <Button
               variant="contained"
               startIcon={<AddIcon />}
               onClick={() => navigate('/admin/menu')}
-              sx={commonStyles.primaryButton}
             >
               Tạo Bài viết Mới
             </Button>
@@ -254,20 +253,19 @@ const ArticleManagement: React.FC = () => {
           </Paper>
 
           {selectedMenu && (
-            <Grid container spacing={3}>
-              {/* Article List */}
-              <Grid item xs={12} md={8}>
-                <Paper sx={{ p: 3 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                    <Typography variant="h6">
-                      Danh sách Bài viết - {selectedMenuTitle}
-                    </Typography>
-                    <Chip
-                      label={`${articles.length} bài viết`}
-                      color="primary"
-                      variant="outlined"
-                    />
-                  </Box>
+            <>
+              {/* Article List - Full Width */}
+              <Paper sx={{ p: 3, mb: 3 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="h6">
+                    Danh sách Bài viết - {selectedMenuTitle}
+                  </Typography>
+                  <Chip
+                    label={`${articles.length} bài viết`}
+                    color="primary"
+                    variant="outlined"
+                  />
+                </Box>
 
                   {loading ? (
                     <Box sx={{ textAlign: 'center', py: 4 }}>
@@ -372,37 +370,34 @@ const ArticleManagement: React.FC = () => {
                         )}
                       </Droppable>
                     </DragDropContext>
-                  )}
-                </Paper>
-              </Grid>
+                )}
+              </Paper>
 
-              {/* Preview Panel */}
-              <Grid item xs={12} md={4}>
-                <Paper sx={{ p: 3, position: 'sticky', top: 20 }}>
-                  <Typography variant="h6" gutterBottom>
-                    Xem trước Trang
-                  </Typography>
-                  <Box sx={{
-                    border: '1px solid #ddd',
-                    borderRadius: 1,
-                    p: 2,
-                    minHeight: '400px',
-                    maxHeight: '600px',
-                    overflow: 'auto'
-                  }}>
-                    {articles.length > 0 ? (
-                      <div dangerouslySetInnerHTML={{
-                        __html: articles.find(a => a.isActive)?.content || articles[0].content
-                      }} />
-                    ) : (
-                      <Typography color="text.secondary" sx={{ textAlign: 'center', mt: 4 }}>
-                        Chưa có bài viết nào
-                      </Typography>
-                    )}
-                  </Box>
-                </Paper>
-              </Grid>
-            </Grid>
+              {/* Preview Panel - Below Article List */}
+              <Paper sx={{ p: 3 }}>
+                <Typography variant="h6" gutterBottom>
+                  Xem trước Trang
+                </Typography>
+                <Box sx={{
+                  border: '1px solid #ddd',
+                  borderRadius: 1,
+                  p: 2,
+                  minHeight: '400px',
+                  maxHeight: '600px',
+                  overflow: 'auto'
+                }}>
+                  {articles.length > 0 ? (
+                    <div dangerouslySetInnerHTML={{
+                      __html: articles.find(a => a.isActive)?.content || articles[0].content
+                    }} />
+                  ) : (
+                    <Typography color="text.secondary" sx={{ textAlign: 'center', mt: 4 }}>
+                      Chưa có bài viết nào
+                    </Typography>
+                  )}
+                </Box>
+              </Paper>
+            </>
           )}
 
           {/* Preview Dialog */}
@@ -459,9 +454,7 @@ const ArticleManagement: React.FC = () => {
               {notification.message}
             </Alert>
           </Snackbar>
-        </Box>
-      </Box>
-    </DashboardLayout>
+    </Box>
   );
 };
 

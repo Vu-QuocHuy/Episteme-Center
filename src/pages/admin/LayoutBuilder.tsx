@@ -28,7 +28,8 @@ import {
   Add as AddIcon,
   Delete as DeleteIcon,
   Save as SaveIcon,
-  Upload as UploadIcon
+  Upload as UploadIcon,
+  Visibility as PreviewIcon
 } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
 import { createArticleAPI, ArticleData, uploadFileAPI } from '../../services/api';
@@ -73,6 +74,7 @@ const LayoutBuilder: React.FC = () => {
   const [imageUploading, setImageUploading] = useState(false);
   const [articleOrder, setArticleOrder] = useState<number>(1);
   const [isActive, setIsActive] = useState<boolean>(true);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -89,6 +91,8 @@ const LayoutBuilder: React.FC = () => {
   const generateId = () => `item-${Date.now()}`;
 
   const addItem = () => {
+    console.log('🔧 addItem called with:', newItem);
+
     if (!newItem.type) {
       setSnackbar({
         open: true,
@@ -101,12 +105,12 @@ const LayoutBuilder: React.FC = () => {
     const id = newItem.i || generateId();
     itemRefs.current[id] = React.createRef();
 
-    const nextY = layouts.lg.reduce((maxY, item) => Math.max(maxY, item.y + item.h), 0);
+    const nextY = (layouts.lg || []).reduce((maxY, item) => Math.max(maxY, item.y + item.h), 0);
 
     setLayouts(prev => ({
       ...prev,
       lg: [
-        ...prev.lg,
+        ...(prev.lg || []),
         {
           i: id,
           x: 0,
@@ -117,38 +121,48 @@ const LayoutBuilder: React.FC = () => {
       ]
     }));
 
-    setItems(prev => [
-      ...prev,
-      {
-        i: id,
-        type: newItem.type,
-        content: newItem.type === 'text' ? editorContent : newItem.content
-      }
-    ]);
+    setItems(prev => {
+      const newItems = [
+        ...prev,
+        {
+          i: id,
+          type: newItem.type,
+          content: newItem.type === 'text' ? editorContent : newItem.content
+        }
+      ];
+      console.log('🔧 Updated items:', newItems);
+      return newItems;
+    });
 
     // Reset form
     setNewItem({ i: '', type: 'text', content: '' });
     setEditorContent('');
     setDialogOpen(false);
+
+    console.log('🔧 addItem completed');
   };
 
   const removeItem = (id: string) => {
     setLayouts(prev => ({
       ...prev,
-      lg: prev.lg.filter(item => item.i !== id)
+      lg: (prev.lg || []).filter(item => item.i !== id)
     }));
     setItems(prev => prev.filter(item => item.i !== id));
     delete itemRefs.current[id];
   };
 
-  const onLayoutChange = (currentLayout: LayoutItem[]) => {
+  const onLayoutChange = (currentLayout: any) => {
+    setLayouts({ lg: currentLayout });
+  };
+
+  const onPreviewLayoutChange = (currentLayout: any) => {
     setLayouts({ lg: currentLayout });
   };
 
   const generateHTML = () => {
     let maxBottom = 0;
 
-    const layoutHTML = layouts.lg.map(layoutItem => {
+    const layoutHTML = (layouts.lg || []).map(layoutItem => {
       const item = items.find(i => i.i === layoutItem.i);
       if (!item) return '';
 
@@ -413,6 +427,17 @@ const LayoutBuilder: React.FC = () => {
               label="Trạng thái hoạt động"
             />
           </Grid>
+          <Grid item xs={12} md={3}>
+            <Button
+              variant="outlined"
+              startIcon={<PreviewIcon />}
+              onClick={() => setPreviewOpen(true)}
+              fullWidth
+              color="info"
+            >
+              Xem trước
+            </Button>
+          </Grid>
         </Grid>
       </Paper>
 
@@ -441,7 +466,7 @@ const LayoutBuilder: React.FC = () => {
             isDraggable={true}
             isResizable={true}
           >
-            {layouts.lg.map(layoutItem => (
+            {(layouts.lg || []).map(layoutItem => (
               <div key={layoutItem.i} style={{ position: 'relative' }}>
                 <IconButton
                   size="small"
@@ -573,6 +598,157 @@ const LayoutBuilder: React.FC = () => {
             Thêm thành phần
           </Button>
         </DialogActions>
+      </Dialog>
+
+      {/* Preview Dialog */}
+      <Dialog
+        open={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+        maxWidth="lg"
+        fullWidth
+        fullScreen
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="h6">Xem trước Layout</Typography>
+            <Button onClick={() => setPreviewOpen(false)}>Đóng</Button>
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ p: 0 }}>
+          <Box sx={{
+            minHeight: '100vh',
+            background: '#f5f5f5',
+            p: 3
+          }}>
+            <Box sx={{
+              maxWidth: '1200px',
+              margin: '0 auto',
+              background: 'white',
+              borderRadius: 2,
+              boxShadow: 3,
+              overflow: 'hidden'
+            }}>
+              {/* Header với ảnh tiêu đề */}
+              {uploadedImageUrl && (
+                <Box sx={{
+                  width: '100%',
+                  height: '300px',
+                  backgroundImage: `url(${uploadedImageUrl})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  position: 'relative'
+                }}>
+                  <Box sx={{
+                    background: 'rgba(0,0,0,0.5)',
+                    color: 'white',
+                    p: 3,
+                    borderRadius: 2,
+                    textAlign: 'center'
+                  }}>
+                    <Typography variant="h3" component="h1" gutterBottom>
+                      {title || 'Tiêu đề bài viết'}
+                    </Typography>
+                  </Box>
+                </Box>
+              )}
+
+              {/* Content - Sử dụng ResponsiveGridLayout thực tế */}
+              <Box sx={{ p: 4 }}>
+                {!uploadedImageUrl && title && (
+                  <Typography variant="h3" component="h1" gutterBottom sx={{ mb: 4 }}>
+                    {title}
+                  </Typography>
+                )}
+
+                {/* Hiển thị Layout Builder thực tế */}
+                <Box sx={{
+                  minHeight: '400px',
+                  border: '1px solid #e0e0e0',
+                  borderRadius: 1,
+                  p: 2,
+                  background: '#fafafa'
+                }}>
+                  {/* Debug info */}
+                  <Box sx={{ mb: 2, p: 1, background: '#f0f0f0', borderRadius: 1, fontSize: '12px' }}>
+                    <div>Layouts: {JSON.stringify(layouts)}</div>
+                    <div>Items count: {items.length}</div>
+                    <div>Layouts.lg count: {(layouts.lg || []).length}</div>
+                  </Box>
+
+                  <ResponsiveGridLayout
+                    className="layout"
+                    layouts={layouts || { lg: [] }}
+                    breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
+                    cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
+                    rowHeight={30}
+                    onLayoutChange={onPreviewLayoutChange}
+                    isDraggable={true}
+                    isResizable={true}
+                    margin={[16, 16]}
+                    containerPadding={[16, 16]}
+                  >
+                    {(layouts.lg || []).map((item) => {
+                      const component = items.find(comp => comp.i === item.i);
+                      if (!component) return null;
+
+                      return (
+                        <div key={item.i} data-grid={item}>
+                          <Paper
+                            elevation={2}
+                            sx={{
+                              p: 2,
+                              height: '100%',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              position: 'relative'
+                            }}
+                          >
+                            {/* Component Content */}
+                            <Box sx={{ flex: 1, overflow: 'auto' }}>
+                              {component.type === 'text' && (
+                                <div dangerouslySetInnerHTML={{ __html: component.content }} />
+                              )}
+                              {component.type === 'image' && (
+                                <Box sx={{ textAlign: 'center' }}>
+                                  <img
+                                    src={component.content}
+                                    alt="Component"
+                                    style={{
+                                      maxWidth: '100%',
+                                      maxHeight: '200px',
+                                      objectFit: 'contain'
+                                    }}
+                                  />
+                                </Box>
+                              )}
+                              {component.type === 'input' && (
+                                <input
+                                  type="text"
+                                  value={component.content}
+                                  readOnly
+                                  style={{
+                                    width: '100%',
+                                    padding: '8px',
+                                    border: '1px solid #ddd',
+                                    borderRadius: '4px',
+                                    backgroundColor: '#f5f5f5'
+                                  }}
+                                />
+                              )}
+                            </Box>
+                          </Paper>
+                        </div>
+                      );
+                    })}
+                  </ResponsiveGridLayout>
+                </Box>
+              </Box>
+            </Box>
+          </Box>
+        </DialogContent>
       </Dialog>
 
       {/* Snackbar */}

@@ -19,7 +19,9 @@ import {
   Select,
   FormControl,
   InputLabel,
-  Paper
+  Paper,
+  Tabs,
+  Tab
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -39,11 +41,13 @@ import {
 import { MenuItem } from '../../types';
 import NotificationSnackbar from '../../components/common/NotificationSnackbar';
 import { commonStyles } from '../../utils/styles';
+import ArticleManagement from '../admin/ArticleManagement';
 
 const MenuManagement: React.FC = () => {
   const navigate = useNavigate();
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState(0);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [currentItem, setCurrentItem] = useState<MenuItem | null>(null);
   const [parentId, setParentId] = useState<string | null>(null);
@@ -335,15 +339,33 @@ const MenuManagement: React.FC = () => {
     <Box>
       <Box sx={commonStyles.pageHeader}>
         <Typography sx={commonStyles.pageTitle}>Quản lý Menu</Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => handleOpenDialog()}
-          sx={commonStyles.primaryButton}
-        >
-          Thêm Menu
-        </Button>
+        {activeTab === 0 && (
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => handleOpenDialog()}
+            sx={commonStyles.primaryButton}
+          >
+            Thêm Menu
+          </Button>
+        )}
       </Box>
+
+      {/* Tabs */}
+      <Paper sx={{ mb: 3 }}>
+        <Tabs
+          value={activeTab}
+          onChange={(_, newValue) => setActiveTab(newValue)}
+          sx={{ borderBottom: 1, borderColor: 'divider' }}
+        >
+          <Tab label="Danh sách Menu" />
+          <Tab label="Quản lý Bài viết" />
+        </Tabs>
+      </Paper>
+
+      {/* Tab Content */}
+      {activeTab === 0 && (
+        <Box>
 
       <Paper sx={{ p: 3, mb: 3 }}>
         {menuItems.length === 0 ? (
@@ -424,6 +446,13 @@ const MenuManagement: React.FC = () => {
       </Dialog>
 
       {/* Notification Snackbar */}
+        </Box>
+      )}
+
+      {activeTab === 1 && (
+        <ArticleManagement />
+      )}
+
       <NotificationSnackbar
         open={notification.open}
         onClose={handleNotificationClose}

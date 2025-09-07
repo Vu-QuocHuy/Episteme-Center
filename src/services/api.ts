@@ -204,13 +204,6 @@ export const changePasswordAPI = (oldPassword: string, newPassword: string) => {
   });
 };
 
-export const logoutAPI = (refreshToken: string) => {
-  const formData = new URLSearchParams();
-  formData.append('refreshToken', refreshToken);
-  return axiosInstance.post(API_CONFIG.ENDPOINTS.AUTH.LOGOUT, formData, {
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-  });
-};
 
 export const forgotPasswordAPI = (email: string) => {
   const formData = new URLSearchParams();
@@ -661,10 +654,8 @@ export const deleteAnnouncementAPI = (id: string) =>
 
 // Refresh token
 export const refreshTokenAPI = () => {
-  // Backend tự xử lý cookie
-  return axiosInstance.get(API_CONFIG.ENDPOINTS.AUTH.REFRESH_TOKEN, {
-    withCredentials: true // ✅ Đảm bảo gửi cookie
-  });
+  // Backend tự xử lý cookie, frontend chỉ cần gọi API
+  return axiosInstance.get(API_CONFIG.ENDPOINTS.AUTH.REFRESH_TOKEN);
 };
 
 // Gửi email xác thực
@@ -1177,10 +1168,11 @@ export const createArticleAPI = (data: ArticleData) => {
   });
 };
 
-export const getAllArticlesAPI = (params?: { limit?: number; page?: number }) => {
+export const getAllArticlesAPI = (params?: { limit?: number; page?: number; filters?: { menuId?: string } }) => {
   const queryParams: any = {};
   if (params?.page) queryParams.page = params.page;
   if (params?.limit) queryParams.limit = params.limit;
+  if (params?.filters) queryParams.filters = JSON.stringify(params.filters);
 
   return axiosInstance.get<ArticlesListResponse>(API_CONFIG.ENDPOINTS.ARTICLES.GET_ALL, {
     params: queryParams

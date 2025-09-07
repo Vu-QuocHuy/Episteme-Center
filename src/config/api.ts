@@ -4,7 +4,6 @@ export interface ApiEndpoints {
     ADMIN_LOGIN: string;
     REFRESH_TOKEN: string;
     REGISTER: string;
-    LOGOUT: string;
     CHANGE_PASSWORD: string;
     FORGOT_PASSWORD: string;
     VERIFY_CODE: string;
@@ -199,7 +198,6 @@ export const API_CONFIG: ApiConfig = {
       ADMIN_LOGIN: '/auth/admin/login',
       REFRESH_TOKEN: '/auth/refresh',
       REGISTER: '/auth/register',
-      LOGOUT: '/auth/logout',
       CHANGE_PASSWORD: '/auth/change-password',
       FORGOT_PASSWORD: '/auth/forgot-password',
       VERIFY_CODE: '/auth/verify-code',

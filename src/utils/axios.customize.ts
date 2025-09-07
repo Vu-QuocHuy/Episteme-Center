@@ -55,8 +55,9 @@ interface FailedQueueItem {
 
 
 const instance: AxiosInstance = axios.create({
-    baseURL: import.meta.env.DEV ? '/api' : (import.meta.env.VITE_API_BASE_URL || 'https://eng-center-nestjs.onrender.com/api/v1'),
+    baseURL: 'https://eng-center-nestjs.onrender.com/api/v1',
     timeout: 60000,
+    // ✅ Cần withCredentials để gửi cookie
     withCredentials: true,
     headers: {
         'Content-Type': 'application/json'
@@ -145,12 +146,13 @@ instance.interceptors.response.use(
                     // Gọi API refresh token: backend tự xử lý cookie
                     // Sử dụng axios gốc để tránh loop vô hạn
                     const response = await axios.get<RefreshTokenResponse>(
-                        `${import.meta.env.DEV ? '/api' : (import.meta.env.VITE_API_BASE_URL || 'https://eng-center-nestjs.onrender.com/api/v1')}/auth/refresh`,
+                        'https://eng-center-nestjs.onrender.com/api/v1/auth/refresh',
                         {
-                            withCredentials: true, // Để gửi cookie
+                            withCredentials: true, // ✅ Cần để gửi cookie
                             headers: {
                                 'Content-Type': 'application/json'
-                            }
+                            },
+                            timeout: 10000
                         }
                     );
                     // ✅ Refresh token response received

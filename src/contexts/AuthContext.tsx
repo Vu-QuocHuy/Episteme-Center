@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
 
-import { loginAPI, loginAdminAPI, logoutAPI, refreshTokenAPI } from '../services/api';
+import { loginAPI, loginAdminAPI, refreshTokenAPI } from '../services/api';
 import { User } from '../types';
 
 interface AuthState {
@@ -315,30 +315,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       let accessToken: string | null = null;
       let refreshToken: string | null = null;
 
-      // Ưu tiên lấy theo cấu trúc thực tế mới
-      if (apiResponse?.data?.user && apiResponse?.data?.tokens?.access?.token) {
+      // ✅ Xử lý response theo cấu trúc thực tế: access_token và user trong data
+      if (apiResponse?.data?.data) {
+        userData = apiResponse.data.data.user;
+        accessToken = apiResponse.data.data.access_token;
+        // refresh_token được lưu trong cookie, không có trong response
+        refreshToken = null;
+      } else if (apiResponse?.data) {
         userData = apiResponse.data.user;
-        accessToken = apiResponse.data.tokens.access.token;
-        refreshToken = apiResponse.data.tokens.refresh?.token || null;
-      } else if (apiResponse?.data?.user && apiResponse?.data?.tokens?.access?.token) {
-        userData = apiResponse.data.user;
-        accessToken = apiResponse.data.tokens.access.token;
-        refreshToken = apiResponse.data.tokens.refresh?.token || null;
-      } else {
-        // fallback cho các cấu trúc cũ
-        if (apiResponse?.data?.data) {
-          userData = apiResponse.data.data.user;
-          accessToken = apiResponse.data.data.access_token || apiResponse.data.data.accessToken;
-          refreshToken = apiResponse.data.data.refresh_token || apiResponse.data.data.refreshToken;
-        } else if (apiResponse?.data) {
-          userData = apiResponse.data.user;
-          accessToken = apiResponse.data.access_token || apiResponse.data.accessToken;
-          refreshToken = apiResponse.data.refresh_token || apiResponse.data.refreshToken;
-        } else if (apiResponse?.data?.user) {
-          userData = apiResponse.data.user;
-          accessToken = apiResponse.data.access_token || apiResponse.data.AccessToken;
-          refreshToken = apiResponse.data.refresh_token || apiResponse.data.refreshToken;
-        }
+        accessToken = apiResponse.data.access_token;
+        // refresh_token được lưu trong cookie, không có trong response
+        refreshToken = null;
       }
 
       if (!userData || !accessToken) {
@@ -357,7 +344,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       localStorage.setItem('access_token', accessToken);
       localStorage.setItem('userData', JSON.stringify(userData));
-      // ✅ Không lưu refresh_token vào localStorage, backend sẽ set cookie
+      // ✅ refresh_token được lưu trong cookie bởi backend, không cần lưu vào localStorage
       if (userData.role === 'parent' && userData.parentId) {
         localStorage.setItem('parent_id', userData.parentId);
       }
@@ -420,20 +407,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logout = async (): Promise<void> => {
-    try {
-      // ✅ Gọi logout API để backend xóa cookie
-      const refreshToken = localStorage.getItem('refresh_token');
-      if (refreshToken) {
-        await logoutAPI(refreshToken);
-      }
-    } catch (error) {
-      // ✅ Logout API error (non-critical)
-    } finally {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('userData');
-      localStorage.removeItem('parent_id');
-      dispatch({ type: 'LOGOUT' });
-    }
+    // ✅ Không có logout API, chỉ xóa localStorage
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('userData');
+    localStorage.removeItem('parent_id');
+    dispatch({ type: 'LOGOUT' });
   };
 
   const refreshToken = async (): Promise<string | null> => {
@@ -444,10 +422,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       let newAccessToken: string | null = null;
       let newRefreshToken: string | null = null;
 
+      // ✅ Xử lý response refresh token theo cấu trúc thực tế
       if (response?.data?.data?.access_token) {
         // New API structure: { data: { access_token, user } }
         newAccessToken = response.data.data.access_token;
-        newRefreshToken = response.data.data.refresh_token || null;
+        // refresh_token được lưu trong cookie, không có trong response
+        newRefreshToken = null;
 
         // Update user data if provided
         if (response.data.data.user) {
@@ -465,15 +445,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } else if (response?.data?.access_token) {
         // Fallback structure
         newAccessToken = response.data.access_token;
-        newRefreshToken = response.data.refresh_token || null;
-      } else if (response?.data?.tokens?.access?.token) {
-        // Old structure
-        newAccessToken = response.data.tokens.access.token;
-        newRefreshToken = response.data.tokens.refresh?.token || null;
-      } else if (response?.data?.access?.token) {
-        // Another old structure
-        newAccessToken = response.data.access.token;
-        newRefreshToken = response.data.refresh?.token || null;
+        // refresh_token được lưu trong cookie, không có trong response
+        newRefreshToken = null;
       }
 
       if (!newAccessToken) {

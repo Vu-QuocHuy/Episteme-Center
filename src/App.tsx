@@ -32,7 +32,6 @@ import RoleManagement from './pages/admin/RoleManagement';
 
 
 import MenuManagement from './pages/admin/MenuManagement';
-import ArticleManagement from './pages/admin/ArticleManagement';
 import BannerManagement from './pages/admin/BannerManagement';
 import AboutManagement from './pages/admin/AboutManagement';
 import FeaturedTeachersManagement from './pages/admin/FeaturedTeachersManagement';
@@ -136,7 +135,6 @@ const AppContent: React.FC = () => {
                   {/* Menu Management Routes */}
                   <Route path="menu" element={<MenuManagement />} />
                   <Route path="menu-management" element={<MenuManagement />} />
-                  <Route path="article-management" element={<ArticleManagement />} />
                   <Route path="layout-builder/:id" element={<LayoutBuilder />} />
                   <Route path="layout-builder/:slug" element={<LayoutBuilder />} />
                   <Route path="profile" element={<AdminProfile />} />
