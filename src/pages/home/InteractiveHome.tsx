@@ -19,6 +19,7 @@ import FeedbackHome from '../../components/features/home/FeedbackHome';
 import FeaturedTeachersHome from '../../components/features/home/FeaturedTeachersHome';
 import HomeWelcomeAdPopup from './components/WelcomeAdPopup';
 import HomeHeader from './HomeHeader';
+import ConsultationRegistration from '../../components/home/ConsultationRegistration';
 
 const InteractiveHome: React.FC = () => {
 
@@ -150,6 +151,9 @@ const InteractiveHome: React.FC = () => {
           </Grid>
         </Container>
       </Box>
+
+      {/* Consultation Registration - above footer */}
+      <ConsultationRegistration />
     </Box>
   );
 };

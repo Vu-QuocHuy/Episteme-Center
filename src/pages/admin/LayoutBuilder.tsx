@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Responsive, WidthProvider } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
@@ -29,11 +29,13 @@ import {
   Delete as DeleteIcon,
   Save as SaveIcon,
   Upload as UploadIcon,
-  Visibility as PreviewIcon
+  Visibility as PreviewIcon,
+  Edit as EditIcon
 } from '@mui/icons-material';
-import { useParams, useNavigate } from 'react-router-dom';
-import { createArticleAPI, ArticleData, uploadFileAPI } from '../../services/api';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { createArticleAPI, ArticleData, uploadFileAPI, getAllArticlesAPI, getArticleByIdAPI, updateArticleAPI } from '../../services/api';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
+import { useMenuItems } from '../../hooks/features/useMenuItems';
 import { commonStyles } from '../../utils/styles';
 // Removed unused style imports
 
@@ -56,7 +58,29 @@ interface ContentItem {
 const LayoutBuilder: React.FC = () => {
   const { id } = useParams<{ id: string }>(); // ✅ Đổi từ slug thành id (UUID)
   const navigate = useNavigate();
+  const location = useLocation();
   // const cx = classNames.bind(styles);
+
+  // ✅ Phân biệt mode: tạo mới vs chỉnh sửa
+  // Sử dụng query parameter để phân biệt
+  const searchParams = new URLSearchParams(location.search);
+  const mode = searchParams.get('mode'); // 'edit' hoặc 'create'
+
+  const isEditMode = mode === 'edit';
+  const menuId = isEditMode ? undefined : id; // Nếu edit thì id là articleId, nếu create thì id là menuId
+  const { menuItems } = useMenuItems();
+  const menuTitle = !isEditMode && menuId
+    ? (function findTitle(items: any[]): string | null {
+        for (const item of items) {
+          if (item.id === menuId) return item.title;
+          if (item.children && item.children.length) {
+            const t = findTitle(item.children);
+            if (t) return t;
+          }
+        }
+        return null;
+      })(menuItems)
+    : null;
 
   const [layouts, setLayouts] = useState<{ lg: LayoutItem[] }>({ lg: [] });
   const [title, setTitle] = useState('');
@@ -72,9 +96,12 @@ const LayoutBuilder: React.FC = () => {
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | undefined>();
   const [uploadedPublicId, setUploadedPublicId] = useState<string | undefined>();
   const [imageUploading, setImageUploading] = useState(false);
-  const [articleOrder, setArticleOrder] = useState<number>(1);
+  const [articleOrder, setArticleOrder] = useState<string>('1');
   const [isActive, setIsActive] = useState<boolean>(true);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewArticles, setPreviewArticles] = useState<any[]>([]);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -85,10 +112,45 @@ const LayoutBuilder: React.FC = () => {
     severity: 'info'
   });
 
+  // ✅ Responsive scaling system - Sử dụng viewport units
+  const DESIGN_WIDTH = 1200; // Width của khung tạo
+  // Removed fixed SCALE_RATIO; canvas now scales responsively to container
+
+  // ✅ Content styling options
+  const [contentBackground, setContentBackground] = useState('#ffffff');
+  const [contentBorderRadius, setContentBorderRadius] = useState(8);
+
   const itemRefs = useRef<{ [key: string]: React.RefObject<HTMLDivElement> }>({});
+  // ✅ Scale canvas theo độ rộng container để trải nghiệm kéo thả giống trang thật
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [canvasScale, setCanvasScale] = useState<number>(1);
+
+  useEffect(() => {
+    const computeScale = () => {
+      const container = containerRef.current;
+      if (!container) return;
+      const availableWidth = container.clientWidth;
+      if (availableWidth <= 0) return;
+      // Scale dựa trên DESIGN_WIDTH để vừa khít container
+      const scale = availableWidth / DESIGN_WIDTH;
+      setCanvasScale(scale);
+    };
+
+    computeScale();
+    window.addEventListener('resize', computeScale);
+    return () => window.removeEventListener('resize', computeScale);
+  }, []);
 
   // Auto-generate ID if not provided
   const generateId = () => `item-${Date.now()}`;
+
+  // ✅ Load dữ liệu khi component mount
+  useEffect(() => {
+    console.log('🔍 LayoutBuilder mounted:', { id, mode, isEditMode, menuId });
+    if (isEditMode) {
+      loadArticleData();
+    }
+  }, [isEditMode, id]);
 
   const addItem = () => {
     console.log('🔧 addItem called with:', newItem);
@@ -103,35 +165,48 @@ const LayoutBuilder: React.FC = () => {
     }
 
     const id = newItem.i || generateId();
-    itemRefs.current[id] = React.createRef();
+    const isEditing = newItem.i && items.some(item => item.i === newItem.i);
 
-    const nextY = (layouts.lg || []).reduce((maxY, item) => Math.max(maxY, item.y + item.h), 0);
+    if (!isEditing) {
+      // Creating new item
+    itemRefs.current[id] = React.createRef();
+      const nextY = (layouts.lg || []).reduce((maxY, item) => Math.max(maxY, item.y + item.h), 0);
 
     setLayouts(prev => ({
       ...prev,
       lg: [
-        ...(prev.lg || []),
+          ...(prev.lg || []),
         {
           i: id,
           x: 0,
           y: nextY,
-          w: 6, // Default width
-          h: 2, // Default height
+            w: 20, // Default width (20/40 = 50% of container)
+            h: 4, // Default height
         }
       ]
     }));
+    }
 
+    // Update items (both create and edit)
     setItems(prev => {
-      const newItems = [
-        ...prev,
-        {
-          i: id,
-          type: newItem.type,
-          content: newItem.type === 'text' ? editorContent : newItem.content
-        }
-      ];
-      console.log('🔧 Updated items:', newItems);
-      return newItems;
+      if (isEditing) {
+        // Update existing item
+        return prev.map(item =>
+          item.i === id
+            ? { ...item, type: newItem.type, content: newItem.type === 'text' ? editorContent : newItem.content }
+            : item
+        );
+      } else {
+        // Add new item
+        return [
+      ...prev,
+      {
+        i: id,
+        type: newItem.type,
+        content: newItem.type === 'text' ? editorContent : newItem.content
+      }
+        ];
+      }
     });
 
     // Reset form
@@ -151,27 +226,194 @@ const LayoutBuilder: React.FC = () => {
     delete itemRefs.current[id];
   };
 
+  const editItem = (id: string) => {
+    const item = items.find(item => item.i === id);
+    if (!item) return;
+
+    // Set form data for editing
+    setNewItem({ i: id, type: item.type, content: item.content });
+    if (item.type === 'text') {
+      setEditorContent(item.content);
+    }
+    setDialogOpen(true);
+  };
+
+  const fetchPreviewArticles = async () => {
+    if (!menuId) return;
+
+    try {
+      setPreviewLoading(true);
+      const response = await getAllArticlesAPI({
+        page: 1,
+        limit: 100,
+        filters: { menuId: menuId }
+      });
+      const articlesList = response.data?.data?.result || [];
+      setPreviewArticles(articlesList);
+    } catch (error) {
+      console.error('Error fetching preview articles:', error);
+      setSnackbar({
+        open: true,
+        message: 'Lỗi khi tải dữ liệu xem trước',
+        severity: 'error'
+      });
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  // ✅ Parse HTML content để tạo layouts và items
+  const parseHTMLContent = (htmlContent: string) => {
+    try {
+      // Tạo một div tạm để parse HTML
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = htmlContent;
+
+      const newItems: ContentItem[] = [];
+      const newLayouts: LayoutItem[] = [];
+      let itemIndex = 0;
+
+      // Tìm tất cả các div có style position: absolute
+      const absoluteDivs = tempDiv.querySelectorAll('div[style*="position: absolute"]');
+
+      absoluteDivs.forEach((div) => {
+        const style = div.getAttribute('style') || '';
+
+        // Extract position và size từ style
+        const transformMatch = style.match(/transform:\s*translate\(([^,]+)px,\s*([^)]+)px\)/);
+        const widthMatch = style.match(/width:\s*([^;]+)px/);
+        const heightMatch = style.match(/height:\s*([^;]+)px/);
+
+        if (transformMatch && widthMatch && heightMatch) {
+          const x = parseInt(transformMatch[1]) || 0;
+          const y = parseInt(transformMatch[2]) || 0;
+          const width = parseInt(widthMatch[1]) || 200;
+          const height = parseInt(heightMatch[1]) || 100;
+
+          // Convert pixel to grid units (dựa trên rowHeight=30, margin=10)
+          const gridX = Math.round(x / 30);
+          const gridY = Math.round(y / 30);
+          const gridW = Math.round(width / 30);
+          const gridH = Math.round(height / 30);
+
+          const itemId = `item-${itemIndex}`;
+          itemIndex++;
+
+          // Determine content type và content
+          let contentType: 'text' | 'image' | 'input' = 'text';
+          let content = '';
+
+          // Check if contains image
+          const img = div.querySelector('img');
+          if (img) {
+            contentType = 'image';
+            content = img.src || '';
+          } else {
+            // Check if contains input
+            const input = div.querySelector('input');
+            if (input) {
+              contentType = 'input';
+              content = input.value || '';
+            } else {
+              // Default to text
+              contentType = 'text';
+              content = div.innerHTML || '<p>Default Text</p>';
+            }
+          }
+
+          // Create item
+          const newItem: ContentItem = {
+            i: itemId,
+            type: contentType,
+            content: content
+          };
+
+          // Create layout
+          const newLayout: LayoutItem = {
+            i: itemId,
+            x: gridX,
+            y: gridY,
+            w: gridW,
+            h: gridH
+          };
+
+          newItems.push(newItem);
+          newLayouts.push(newLayout);
+        }
+      });
+
+      // Update state
+      setItems(newItems);
+      setLayouts({ lg: newLayouts });
+
+      console.log('✅ Parsed HTML content:', { newItems, newLayouts });
+
+    } catch (error) {
+      console.error('Error parsing HTML content:', error);
+      setSnackbar({
+        open: true,
+        message: 'Lỗi khi parse nội dung HTML',
+        severity: 'error'
+      });
+    }
+  };
+
+  // ✅ Load dữ liệu article khi chỉnh sửa
+  const loadArticleData = async () => {
+    if (!isEditMode || !id) return;
+
+    try {
+      setLoading(true);
+      console.log('🔄 Loading article data for ID:', id);
+      const response = await getArticleByIdAPI(id);
+      console.log('📄 Article response:', response.data);
+      const article = response.data?.data;
+
+      if (article) {
+        setTitle(article.title || '');
+        setArticleOrder(String((article as any).order || 1));
+        setIsActive((article as any).isActive !== false);
+        setUploadedImageUrl(article.file || undefined);
+        setUploadedPublicId(article.publicId || undefined);
+
+        // Parse content để tạo layouts và items
+        if (article.content) {
+          parseHTMLContent(article.content);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading article:', error);
+      setSnackbar({
+        open: true,
+        message: 'Lỗi khi tải dữ liệu bài viết',
+        severity: 'error'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const onLayoutChange = (currentLayout: any) => {
     setLayouts({ lg: currentLayout });
   };
 
-  const onPreviewLayoutChange = (currentLayout: any) => {
-    setLayouts({ lg: currentLayout });
-  };
 
-  const generateHTML = () => {
+  // ✅ Generate responsive HTML với viewport units
+  const generateResponsiveHTML = () => {
     let maxBottom = 0;
 
     const layoutHTML = (layouts.lg || []).map(layoutItem => {
       const item = items.find(i => i.i === layoutItem.i);
       if (!item) return '';
 
-      const x = layoutItem.x * 25; // Grid column width
-      const y = layoutItem.y * 50; // Row height
-      const width = layoutItem.w * 25;
-      const height = layoutItem.h * 50;
-      const bottom = y + height;
+      // ✅ Tính toán position và size với responsive units
+      // Convert grid units to percentage based on design width
+      const xPercent = (layoutItem.x * 30 / DESIGN_WIDTH) * 100;
+      const yPercent = (layoutItem.y * 30 / DESIGN_WIDTH) * 100;
+      const widthPercent = (layoutItem.w * 30 / DESIGN_WIDTH) * 100;
+      const heightVh = Math.max((layoutItem.h * 30 / window.innerHeight) * 100, 5); // Minimum 5vh
 
+      const bottom = yPercent + heightVh;
       if (bottom > maxBottom) {
         maxBottom = bottom;
       }
@@ -179,10 +421,12 @@ const LayoutBuilder: React.FC = () => {
       let contentHTML = '';
       switch (item.type) {
         case 'text':
-          contentHTML = `<div>${item.content || 'Default Text'}</div>`;
+          // Match site baseline (sidebar/body text ≈ 1rem). Keep slight responsiveness.
+          // This clamps font-size to never exceed 1rem on large screens.
+          contentHTML = `<div style="font-size: clamp(0.9rem, 1vw, 1rem); line-height: 1.6;">${item.content || 'Default Text'}</div>`;
           break;
         case 'input':
-          contentHTML = `<input type="text" value="${item.content || ''}" readonly style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" />`;
+          contentHTML = `<input type="text" value="${item.content || ''}" readonly style="width: 100%; padding: clamp(8px, 1.5vw, 16px); border: 1px solid #ddd; border-radius: 4px; font-size: clamp(0.9rem, 2vw, 1.2rem);" />`;
           break;
         case 'image':
           contentHTML = `<img src="${item.content}" alt="Uploaded Image" style="width: 100%; height: 100%; object-fit: cover;" />`;
@@ -195,10 +439,12 @@ const LayoutBuilder: React.FC = () => {
         <div
           style="
             position: absolute;
-            transform: translate(${x}px, ${y}px);
-            width: ${width - 20}px;
-            height: ${height}px;
+            left: ${xPercent}%;
+            top: ${yPercent}%;
+            width: ${widthPercent}%;
+            height: ${heightVh}vh;
             box-sizing: border-box;
+            padding: clamp(10px, 1.5vw, 20px);
           "
         >
           ${contentHTML}
@@ -210,14 +456,20 @@ const LayoutBuilder: React.FC = () => {
         style="
           position: relative;
           width: 100%;
-          height: ${maxBottom}px;
+          min-height: 100vh;
+          height: ${Math.max(maxBottom, 100)}vh;
           box-sizing: border-box;
+          background-color: ${contentBackground};
+          border-radius: ${contentBorderRadius}px;
+          margin: 0;
+          padding: clamp(20px, 3vw, 40px);
         "
       >
         ${layoutHTML.join('\n')}
       </div>
     `;
   };
+
 
   const saveLayout = async () => {
     if (!title.trim()) {
@@ -239,24 +491,46 @@ const LayoutBuilder: React.FC = () => {
     }
 
     try {
-      const html = generateHTML();
-      const articleData: ArticleData = {
-        title: title,
-        content: html,
-        menuId: id || '', // ✅ Sử dụng UUID từ URL params
-        order: articleOrder, // ✅ Thứ tự hiển thị
-        isActive: isActive, // ✅ Trạng thái active
-        file: uploadedImageUrl ?? '', // ✅ Gửi empty string nếu không có ảnh
-        publicId: uploadedPublicId ?? '' // ✅ Gửi empty string nếu không có ảnh
-      };
+      const html = generateResponsiveHTML(); // ✅ Sử dụng responsive HTML cho trang thực tế
 
-      await createArticleAPI(articleData);
+      if (isEditMode) {
+        // ✅ Chỉnh sửa: Sử dụng updateArticleAPI
+        const updateData: Partial<ArticleData> = {
+          title: title,
+          content: html,
+          order: Math.max(1, Number(articleOrder || '1')),
+          isActive: isActive,
+          file: uploadedImageUrl ?? '',
+          publicId: uploadedPublicId ?? ''
+        };
+
+        await updateArticleAPI(id!, updateData);
+
+        setSnackbar({
+          open: true,
+          message: 'Cập nhật bài viết thành công!',
+          severity: 'success'
+        });
+      } else {
+        // ✅ Tạo mới: Sử dụng createArticleAPI
+        const articleData: ArticleData = {
+          title: title,
+          content: html,
+          menuId: menuId || '', // ✅ Sử dụng menuId cho tạo mới
+          order: Math.max(1, Number(articleOrder || '1')),
+          isActive: isActive,
+          file: uploadedImageUrl ?? '',
+          publicId: uploadedPublicId ?? ''
+        };
+
+        await createArticleAPI(articleData);
 
       setSnackbar({
         open: true,
-        message: 'Lưu layout thành công!',
+          message: 'Tạo bài viết thành công!',
         severity: 'success'
       });
+      }
 
       // Redirect back to menu management
       setTimeout(() => {
@@ -315,16 +589,51 @@ const LayoutBuilder: React.FC = () => {
     );
   };
 
+  // ✅ Show loading state khi đang load dữ liệu
+  if (loading && isEditMode) {
+    return (
+      <DashboardLayout role="admin">
+        <Box sx={commonStyles.pageContainer}>
+          <Box sx={commonStyles.contentContainer}>
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+              <Typography variant="h6">Đang tải dữ liệu bài viết...</Typography>
+            </Box>
+          </Box>
+        </Box>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout role="admin">
       <Box sx={commonStyles.pageContainer}>
         <Box sx={commonStyles.contentContainer}>
         <Box sx={{ mb: 4 }}>
-          <Typography variant="h4" gutterBottom>
-            Tạo Layout cho Menu: {id}
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
+            <Typography variant="h4" gutterBottom sx={{ mb: 0 }}>
+              {isEditMode
+                ? `Chỉnh sửa Bài viết: ${title || 'Đang tải...'}`
+                : `Tạo Layout cho Menu: ${menuTitle || menuId}`}
           </Typography>
+            <Button
+              variant="outlined"
+              startIcon={<PreviewIcon />}
+              onClick={async () => {
+                await fetchPreviewArticles();
+                setPreviewOpen(true);
+              }}
+              color="info"
+              disabled={previewLoading}
+              sx={{ whiteSpace: 'nowrap' }}
+            >
+              {previewLoading ? 'Đang tải...' : 'Xem trước'}
+            </Button>
+          </Box>
           <Typography variant="body1" color="text.secondary">
-            Kéo thả và tùy chỉnh các thành phần để tạo giao diện cho trang này
+            {isEditMode
+              ? 'Chỉnh sửa nội dung và layout của bài viết này'
+              : 'Kéo thả và tùy chỉnh các thành phần để tạo giao diện cho trang này'
+            }
           </Typography>
         </Box>
 
@@ -403,20 +712,25 @@ const LayoutBuilder: React.FC = () => {
           </Grid>
         </Grid>
 
-        {/* Order và Status Controls */}
+        {/* Order, Status và Preview Controls */}
         <Grid container spacing={3} alignItems="center" sx={{ mt: 2 }}>
-          <Grid item xs={12} md={3}>
+          <Grid item xs={12} md={4}>
             <TextField
               fullWidth
               label="Thứ tự hiển thị"
               type="number"
               value={articleOrder}
-              onChange={(e) => setArticleOrder(Number(e.target.value))}
+              onChange={(e) => {
+                const v = e.target.value;
+                if (v === '') { setArticleOrder(''); return; }
+                const digits = v.replace(/\D/g, '');
+                setArticleOrder(digits);
+              }}
               helperText="Số nhỏ hơn sẽ hiển thị trước"
               inputProps={{ min: 1 }}
             />
           </Grid>
-          <Grid item xs={12} md={3}>
+          <Grid item xs={12} md={4}>
             <FormControlLabel
               control={
                 <Checkbox
@@ -427,47 +741,111 @@ const LayoutBuilder: React.FC = () => {
               label="Trạng thái hoạt động"
             />
           </Grid>
-          <Grid item xs={12} md={3}>
-            <Button
-              variant="outlined"
-              startIcon={<PreviewIcon />}
-              onClick={() => setPreviewOpen(true)}
+          {/* Nút Xem trước đã được chuyển lên tiêu đề */}
+        </Grid>
+
+        {/* Content Styling Controls */}
+        <Grid container spacing={3} alignItems="center" sx={{ mt: 2 }}>
+          <Grid item xs={12} md={4}>
+            <TextField
               fullWidth
-              color="info"
-            >
-              Xem trước
-            </Button>
+              label="Màu nền nội dung"
+              type="color"
+              value={contentBackground}
+              onChange={(e) => setContentBackground(e.target.value)}
+              helperText="Màu nền cho nội dung"
+            />
           </Grid>
+          <Grid item xs={12} md={4}>
+            <TextField
+              fullWidth
+              label="Bo góc (px)"
+              type="number"
+              value={contentBorderRadius}
+              onChange={(e) => setContentBorderRadius(Number(e.target.value))}
+              helperText="Độ bo góc"
+              inputProps={{ min: 0, max: 50 }}
+            />
+          </Grid>
+          {/* Đã bỏ tùy chọn đổ bóng */}
         </Grid>
       </Paper>
 
       {/* Layout Preview */}
       <Paper sx={{ p: 3, mb: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Box>
           <Typography variant="h6">Xem trước Layout</Typography>
+            <Typography variant="body2" color="text.secondary">
+              Khung tạo: {DESIGN_WIDTH}px → Trang thực tế: Responsive (100% width, min 100vh height)
+            </Typography>
+          </Box>
           <Button
             variant="contained"
             startIcon={<SaveIcon />}
             onClick={saveLayout}
             color="success"
+            disabled={loading}
           >
-            Lưu Layout
+            {isEditMode ? 'Cập nhật Bài viết' : 'Lưu Layout'}
           </Button>
         </Box>
 
-        <Box sx={{ border: '1px solid #ddd', borderRadius: 1, p: 2, minHeight: '400px' }}>
+        <Box ref={containerRef} sx={{
+          border: '1px solid #ddd',
+          borderRadius: 1,
+          p: 2,
+          minHeight: '500px',
+          width: '100%',
+          margin: '0 auto',
+          backgroundColor: '#f5f5f5', // Background xám để tạo contrast
+          overflowX: 'hidden'
+        }}>
+          {/* Wrapper có width cố định = DESIGN_WIDTH, scale theo container */}
+          <Box sx={{
+            width: `${DESIGN_WIDTH}px`,
+            transform: `scale(${canvasScale})`,
+            transformOrigin: 'top center',
+            margin: '0 auto'
+          }}>
+            <Box sx={{
+              backgroundColor: contentBackground,
+              borderRadius: `${contentBorderRadius}px`,
+              minHeight: '460px'
+            }}>
           <ResponsiveGridLayout
             className="layout"
             layouts={layouts}
             breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480 }}
-            cols={{ lg: 24, md: 24, sm: 24, xs: 24 }}
-            rowHeight={50}
+            cols={{ lg: 40, md: 40, sm: 20, xs: 10 }}
+            rowHeight={30}
             onLayoutChange={onLayoutChange}
             isDraggable={true}
             isResizable={true}
+            margin={[10, 10]}
+            containerPadding={[10, 10]}
           >
             {(layouts.lg || []).map(layoutItem => (
               <div key={layoutItem.i} style={{ position: 'relative' }}>
+                {/* Edit Button */}
+                <IconButton
+                  size="small"
+                  onClick={() => editItem(layoutItem.i)}
+                  sx={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    zIndex: 1000,
+                    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                    '&:hover': {
+                      backgroundColor: 'rgba(255, 255, 255, 0.9)'
+                    }
+                  }}
+                >
+                  <EditIcon fontSize="small" />
+                </IconButton>
+
+                {/* Delete Button */}
                 <IconButton
                   size="small"
                   onClick={() => removeItem(layoutItem.i)}
@@ -488,6 +866,8 @@ const LayoutBuilder: React.FC = () => {
               </div>
             ))}
           </ResponsiveGridLayout>
+            </Box>
+          </Box>
         </Box>
       </Paper>
 
@@ -604,149 +984,63 @@ const LayoutBuilder: React.FC = () => {
       <Dialog
         open={previewOpen}
         onClose={() => setPreviewOpen(false)}
-        maxWidth="lg"
+        maxWidth={false}
         fullWidth
         fullScreen
+        PaperProps={{
+          sx: {
+            width: '100vw',
+            height: '100vh',
+            maxWidth: 'none',
+            maxHeight: 'none',
+            margin: 0,
+            borderRadius: 0
+          }
+        }}
       >
-        <DialogTitle>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="h6">Xem trước Layout</Typography>
-            <Button onClick={() => setPreviewOpen(false)}>Đóng</Button>
-          </Box>
-        </DialogTitle>
-        <DialogContent sx={{ p: 0 }}>
-          <Box sx={{
-            minHeight: '100vh',
-            background: '#f5f5f5',
-            p: 3
-          }}>
-            <Box sx={{
-              maxWidth: '1200px',
-              margin: '0 auto',
-              background: 'white',
-              borderRadius: 2,
-              boxShadow: 3,
-              overflow: 'hidden'
-            }}>
-              {/* Header với ảnh tiêu đề */}
-              {uploadedImageUrl && (
-                <Box sx={{
-                  width: '100%',
-                  height: '300px',
-                  backgroundImage: `url(${uploadedImageUrl})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  position: 'relative'
-                }}>
-                  <Box sx={{
-                    background: 'rgba(0,0,0,0.5)',
-                    color: 'white',
-                    p: 3,
-                    borderRadius: 2,
-                    textAlign: 'center'
-                  }}>
-                    <Typography variant="h3" component="h1" gutterBottom>
-                      {title || 'Tiêu đề bài viết'}
-                    </Typography>
-                  </Box>
-                </Box>
-              )}
-
-              {/* Content - Sử dụng ResponsiveGridLayout thực tế */}
-              <Box sx={{ p: 4 }}>
-                {!uploadedImageUrl && title && (
-                  <Typography variant="h3" component="h1" gutterBottom sx={{ mb: 4 }}>
-                    {title}
-                  </Typography>
-                )}
-
-                {/* Hiển thị Layout Builder thực tế */}
-                <Box sx={{
-                  minHeight: '400px',
-                  border: '1px solid #e0e0e0',
-                  borderRadius: 1,
-                  p: 2,
-                  background: '#fafafa'
-                }}>
-                  {/* Debug info */}
-                  <Box sx={{ mb: 2, p: 1, background: '#f0f0f0', borderRadius: 1, fontSize: '12px' }}>
-                    <div>Layouts: {JSON.stringify(layouts)}</div>
-                    <div>Items count: {items.length}</div>
-                    <div>Layouts.lg count: {(layouts.lg || []).length}</div>
-                  </Box>
-
-                  <ResponsiveGridLayout
-                    className="layout"
-                    layouts={layouts || { lg: [] }}
-                    breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-                    cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
-                    rowHeight={30}
-                    onLayoutChange={onPreviewLayoutChange}
-                    isDraggable={true}
-                    isResizable={true}
-                    margin={[16, 16]}
-                    containerPadding={[16, 16]}
-                  >
-                    {(layouts.lg || []).map((item) => {
-                      const component = items.find(comp => comp.i === item.i);
-                      if (!component) return null;
-
-                      return (
-                        <div key={item.i} data-grid={item}>
-                          <Paper
-                            elevation={2}
-                            sx={{
-                              p: 2,
-                              height: '100%',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              position: 'relative'
-                            }}
-                          >
-                            {/* Component Content */}
-                            <Box sx={{ flex: 1, overflow: 'auto' }}>
-                              {component.type === 'text' && (
-                                <div dangerouslySetInnerHTML={{ __html: component.content }} />
-                              )}
-                              {component.type === 'image' && (
-                                <Box sx={{ textAlign: 'center' }}>
-                                  <img
-                                    src={component.content}
-                                    alt="Component"
-                                    style={{
-                                      maxWidth: '100%',
-                                      maxHeight: '200px',
-                                      objectFit: 'contain'
-                                    }}
-                                  />
-                                </Box>
-                              )}
-                              {component.type === 'input' && (
-                                <input
-                                  type="text"
-                                  value={component.content}
-                                  readOnly
-                                  style={{
-                                    width: '100%',
-                                    padding: '8px',
-                                    border: '1px solid #ddd',
-                                    borderRadius: '4px',
-                                    backgroundColor: '#f5f5f5'
-                                  }}
-                                />
-                              )}
-                            </Box>
-                          </Paper>
-                        </div>
-                      );
-                    })}
-                  </ResponsiveGridLayout>
-                </Box>
+        {/* Floating close button */}
+        <Box sx={{
+          position: 'fixed',
+          top: 16,
+          right: 16,
+          zIndex: 1000
+        }}>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => setPreviewOpen(false)}
+            sx={{
+              borderRadius: '50%',
+              minWidth: 'auto',
+              width: 48,
+              height: 48,
+              boxShadow: 3
+            }}
+          >
+            ✕
+          </Button>
+        </Box>
+        <DialogContent sx={{ p: 0, overflow: 'auto' }}>
+          <Box sx={{ width: '100%', minHeight: '100vh', background: '#fff' }}>
+            {previewLoading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+                <Typography>Đang tải dữ liệu xem trước...</Typography>
               </Box>
-            </Box>
+            ) : previewArticles.length === 0 ? (
+              <Box sx={{ textAlign: 'center', py: 4 }}>
+                <Typography variant="h6" color="text.secondary">
+                  Chưa có bài viết nào cho menu này
+                </Typography>
+              </Box>
+            ) : (
+              previewArticles
+                .sort((a, b) => (a.order || 0) - (b.order || 0))
+                .map((article, index) => (
+                  <Box key={article.id || index} sx={{ mb: 6 }}>
+                    <div dangerouslySetInnerHTML={{ __html: article.content }} />
+                  </Box>
+                ))
+            )}
           </Box>
         </DialogContent>
       </Dialog>

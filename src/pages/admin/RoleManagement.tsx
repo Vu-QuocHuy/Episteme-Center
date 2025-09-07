@@ -53,6 +53,7 @@ import {
     AdminPanelSettings as AdminIcon
 } from '@mui/icons-material';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
+import { commonStyles } from '../../utils/styles';
 import { getAllRolesAPI, createRoleAPI, updateRoleAPI, deleteRoleAPI, getAllPermissionsAPI } from '../../services/api';
 import { Role, Permission } from '../../types';
 
@@ -525,17 +526,18 @@ const RoleManagement: React.FC = () => {
     // ============ MAIN RENDER ============
     return (
         <DashboardLayout>
-            <Box sx={{ p: 3 }}>
+            <Box sx={commonStyles.pageContainer}>
+                <Box sx={commonStyles.contentContainer}>
                 {/* Header */}
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                    <Typography variant="h4" component="h1" fontWeight="bold">
+                    <Box sx={commonStyles.pageHeader}>
+                        <Typography sx={commonStyles.pageTitle}>
                         {currentTab === 0 ? 'Quản lý vai trò' : 'Quản lý quyền hạn'}
                     </Typography>
                     <Button
                         variant="contained"
                         startIcon={currentTab === 0 ? <AddIcon /> : <KeyIcon />}
                         onClick={currentTab === 0 ? handleCreateRole : handleCreatePermission}
-                        sx={{ minWidth: 150 }}
+                            sx={commonStyles.primaryButton}
                     >
                         {currentTab === 0 ? 'Thêm vai trò' : 'Thêm quyền'}
                     </Button>
@@ -1218,6 +1220,7 @@ const RoleManagement: React.FC = () => {
                         </Dialog>
                     </>
                 )}
+                </Box>
             </Box>
         </DashboardLayout>
     );

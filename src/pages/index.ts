@@ -6,7 +6,7 @@ export { default as VerifyEmail } from './auth/VerifyEmail';
 export { default as UnauthorizedAccess } from './auth/UnauthorizedAccess';
 
 // Common Pages
-export { default as Home } from './Home';
+export { default as Home } from './home/InteractiveHome';
 
 // Profile Pages
 export { default as AdminProfile } from './profile/AdminProfile';

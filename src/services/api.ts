@@ -682,6 +682,8 @@ export interface MenuData {
   title: string;
   slug?: string;
   parentId?: string;
+  order?: number;
+  isActive?: boolean;
 }
 
 export interface MenuResponse {
@@ -715,6 +717,10 @@ export const getAllMenusAPI = (params?: { page?: number; limit?: number }) => {
 
 export const getMenuByIdAPI = (id: string) => {
   return axiosInstance.get<MenuResponse>(API_CONFIG.ENDPOINTS.MENUS.GET_BY_ID(id));
+};
+
+export const getMenuBySlugAPI = (slug: string) => {
+  return axiosInstance.get<MenuResponse>(`/menus/slug/${slug}`);
 };
 
 export const updateMenuAPI = (id: string, data: Partial<MenuData>) => {
@@ -1217,6 +1223,30 @@ export const updateArticleAPI = (id: string, data: Partial<ArticleData>) => {
 
 export const deleteArticleAPI = (id: string) => {
   return axiosInstance.delete(API_CONFIG.ENDPOINTS.ARTICLES.DELETE(id));
+};
+
+// Get articles by menu ID
+export const getArticlesByMenuIdAPI = (menuId: string) => {
+  const filters = JSON.stringify({ menuId });
+  return axiosInstance.get(`/articles?filters=${encodeURIComponent(filters)}`);
+};
+
+// Registration APIs
+export const createRegistrationAPI = (data: {
+  name: string;
+  email?: string;
+  phone: string;
+  gender?: 'male'|'female'|'other';
+  address?: string;
+  note?: string;
+  processed?: boolean;
+  classId?: string;
+}) => {
+  return axiosInstance.post(`/registrations`, data);
+};
+
+export const getAllRegistrationsAPI = (params: { page?: number; limit?: number; sort?: string }) => {
+  return axiosInstance.get(`/registrations`, { params });
 };
 
 // Legacy API for backward compatibility

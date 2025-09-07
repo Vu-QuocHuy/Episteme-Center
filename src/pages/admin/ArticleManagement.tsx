@@ -8,7 +8,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Grid,
   Paper,
   FormControl,
   InputLabel,
@@ -206,6 +205,28 @@ const ArticleManagement: React.FC = () => {
     setNotification(prev => ({ ...prev, open: false }));
   };
 
+  // Render menu options recursively to include submenus
+  const renderMenuOptions = (items: MenuItemType[], level: number = 0): React.ReactNode[] => {
+    const options: React.ReactNode[] = [];
+
+    items.forEach(item => {
+      // Add parent menu
+      options.push(
+        <MenuItem key={item.id} value={item.id} sx={{ pl: level * 2 }}>
+          {level > 0 && '└─ '}
+          {item.title}
+        </MenuItem>
+      );
+
+      // Add children recursively
+      if (item.children && item.children.length > 0) {
+        options.push(...renderMenuOptions(item.children, level + 1));
+      }
+    });
+
+    return options;
+  };
+
   useEffect(() => {
     fetchMenuItems();
   }, []);
@@ -243,11 +264,7 @@ const ArticleManagement: React.FC = () => {
                 onChange={(e) => setSelectedMenu(e.target.value)}
                 label="Chọn Menu"
               >
-                {menuItems.map(menu => (
-                  <MenuItem key={menu.id} value={menu.id}>
-                    {menu.title}
-                  </MenuItem>
-                ))}
+                {renderMenuOptions(menuItems)}
               </Select>
             </FormControl>
           </Paper>
@@ -338,7 +355,7 @@ const ArticleManagement: React.FC = () => {
                                       <Button
                                         size="small"
                                         startIcon={<EditIcon />}
-                                        onClick={() => navigate(`/admin/layout-builder/${article.id}`)}
+                                        onClick={() => navigate(`/admin/layout-builder/${article.id}?mode=edit`)}
                                       >
                                         Chỉnh sửa
                                       </Button>

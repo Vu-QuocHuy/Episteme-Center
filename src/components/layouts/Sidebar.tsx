@@ -39,6 +39,7 @@ const getMenuItemsByRole = (role: string): MenuItem[] => {
         { text: 'Quản lý người dùng', icon: <PeopleIcon />, path: '/admin/users' },
         { text: 'Quản lý lớp học', icon: <ClassIcon />, path: '/admin/classes' },
         { text: 'Quản lý quảng cáo', icon: <CampaignIcon />, path: '/admin/advertisements' },
+        { text: 'Đăng ký tư vấn', icon: <ListAltIcon />, path: '/admin/registrations' },
         { text: 'Quản lý Menu', icon: <MenuIcon />, path: '/admin/menu-management' },
         { text: 'Quản lý vai trò', icon: <SecurityIcon />, path: '/admin/roles-management' },
         { text: 'Thống kê', icon: <AssessmentIcon />, path: '/admin/statistics' },
@@ -511,3 +512,516 @@ const Sidebar: React.FC<SidebarProps> = ({ open }) => {
 };
 
 export default Sidebar;
+
+
+                          minHeight: 40,
+
+                          justifyContent: open ? 'initial' : 'center',
+
+                          px: 2.5,
+
+                          borderRadius: 2,
+
+                          ml: open ? 2 : 0,
+
+                          my: 0.25
+
+                        }}
+
+                      >
+
+                        {open && <ListItemText primary="Phụ huynh" />}
+
+                      </ListItemButton>
+
+                    </List>
+
+                  )}
+
+                </Box>
+
+              );
+
+            }
+
+
+
+            // Homepage Management item with expandable sub-menu
+
+            if (isHomepage) {
+
+              return (
+
+                <Box key={item.text}>
+
+                  <ListItem disablePadding sx={{ display: 'block' }}>
+
+                    <ListItemButton
+
+                      selected={location.pathname.startsWith('/admin/homepage')}
+
+                      onClick={() => {
+
+                        if (!open) {
+
+                          openSidebar();
+
+                        }
+
+                        setHomepageOpen((v) => !v);
+
+                      }}
+
+                      sx={{
+
+                        minHeight: 48,
+
+                        justifyContent: open ? 'initial' : 'center',
+
+                        px: 2.5,
+
+                        borderRadius: 2,
+
+                        my: 0.5,
+
+                        transition: 'background 0.2s',
+
+                        '&.Mui-selected': {
+
+                          bgcolor: '#f5f5f5',
+
+                          color: COLORS.primary.main,
+
+                          '&:hover': { bgcolor: '#eeeeee' }
+
+                        },
+
+                        '&:hover': { bgcolor: '#f9f9f9' }
+
+                      }}
+
+                    >
+
+                      <ListItemIcon
+
+                        sx={{
+
+                          minWidth: 0,
+
+                          mr: open ? 2 : 'auto',
+
+                          justifyContent: 'center',
+
+                          color: location.pathname.startsWith('/admin/homepage') ? COLORS.primary.main : 'inherit',
+
+                        }}
+
+                      >
+
+                        <WebIcon />
+
+                      </ListItemIcon>
+
+                      {open && <ListItemText primary={item.text} sx={{ opacity: open ? 1 : 0, mr: 2 }} />}
+
+                      {open && (homepageOpen ? <ExpandLessIcon /> : <ExpandMoreIcon />)}
+
+                    </ListItemButton>
+
+                  </ListItem>
+
+                  {homepageOpen && (
+
+                    <List component="div" disablePadding sx={{ pl: open ? 4 : 0 }}>
+
+                      <ListItemButton
+
+                        selected={location.pathname === '/admin/homepage/banner'}
+
+                        onClick={() => {
+
+                          if (!open) {
+
+                            openSidebar();
+
+                          }
+
+                          navigate('/admin/homepage/banner');
+
+                        }}
+
+                        sx={{
+
+                          minHeight: 40,
+
+                          justifyContent: open ? 'initial' : 'center',
+
+                          px: 2.5,
+
+                          borderRadius: 2,
+
+                          ml: open ? 2 : 0,
+
+                          my: 0.25
+
+                        }}
+
+                      >
+
+                        {open && <ListItemText primary="Quản lý Banner" />}
+
+                      </ListItemButton>
+
+                      <ListItemButton
+
+                        selected={location.pathname === '/admin/homepage/about'}
+
+                        onClick={() => {
+
+                          if (!open) {
+
+                            openSidebar();
+
+                          }
+
+                          navigate('/admin/homepage/about');
+
+                        }}
+
+                        sx={{
+
+                          minHeight: 40,
+
+                          justifyContent: open ? 'initial' : 'center',
+
+                          px: 2.5,
+
+                          borderRadius: 2,
+
+                          ml: open ? 2 : 0,
+
+                          my: 0.25
+
+                        }}
+
+                      >
+
+                        {open && <ListItemText primary="Quản lý Giới thiệu" />}
+
+                      </ListItemButton>
+
+                      <ListItemButton
+
+                        selected={location.pathname === '/admin/homepage/featured-teachers'}
+
+                        onClick={() => {
+
+                          if (!open) {
+
+                            openSidebar();
+
+                          }
+
+                          navigate('/admin/homepage/featured-teachers');
+
+                        }}
+
+                        sx={{
+
+                          minHeight: 40,
+
+                          justifyContent: open ? 'initial' : 'center',
+
+                          px: 2.5,
+
+                          borderRadius: 2,
+
+                          ml: open ? 2 : 0,
+
+                          my: 0.25
+
+                        }}
+
+                      >
+
+                        {open && <ListItemText primary="Giảng viên nổi bật" />}
+
+                      </ListItemButton>
+
+                      <ListItemButton
+
+                        selected={location.pathname === '/admin/homepage/testimonials'}
+
+                        onClick={() => {
+
+                          if (!open) {
+
+                            openSidebar();
+
+                          }
+
+                          navigate('/admin/homepage/testimonials');
+
+                        }}
+
+                        sx={{
+
+                          minHeight: 40,
+
+                          justifyContent: open ? 'initial' : 'center',
+
+                          px: 2.5,
+
+                          borderRadius: 2,
+
+                          ml: open ? 2 : 0,
+
+                          my: 0.25
+
+                        }}
+
+                      >
+
+                        {open && <ListItemText primary="Đánh giá học viên" />}
+
+                      </ListItemButton>
+
+                      <ListItemButton
+
+                        selected={location.pathname === '/admin/homepage/footer'}
+
+                        onClick={() => {
+
+                          if (!open) {
+
+                            openSidebar();
+
+                          }
+
+                          navigate('/admin/homepage/footer');
+
+                        }}
+
+                        sx={{
+
+                          minHeight: 40,
+
+                          justifyContent: open ? 'initial' : 'center',
+
+                          px: 2.5,
+
+                          borderRadius: 2,
+
+                          ml: open ? 2 : 0,
+
+                          my: 0.25
+
+                        }}
+
+                      >
+
+                        {open && <ListItemText primary="Footer" />}
+
+                      </ListItemButton>
+
+                    </List>
+
+                  )}
+
+                </Box>
+
+              );
+
+            }
+
+
+
+            // Statistics item with expandable sub-menu
+
+            return (
+
+              <Box key={item.text}>
+
+                <ListItem disablePadding sx={{ display: 'block' }}>
+
+                  <ListItemButton
+
+                    selected={location.pathname.startsWith('/admin/statistics')}
+
+                    onClick={() => {
+
+                      if (!open) {
+
+                        openSidebar();
+
+                      }
+
+                      setStatsOpen((v) => !v);
+
+                    }}
+
+                    sx={{
+
+                      minHeight: 48,
+
+                      justifyContent: open ? 'initial' : 'center',
+
+                      px: 2.5,
+
+                      borderRadius: 2,
+
+                      my: 0.5,
+
+                      transition: 'background 0.2s',
+
+                      '&.Mui-selected': {
+
+                        bgcolor: '#f5f5f5',
+
+                        color: COLORS.primary.main,
+
+                        '&:hover': { bgcolor: '#eeeeee' }
+
+                      },
+
+                      '&:hover': { bgcolor: '#f9f9f9' }
+
+                    }}
+
+                  >
+
+                    <ListItemIcon
+
+                      sx={{
+
+                        minWidth: 0,
+
+                        mr: open ? 2 : 'auto',
+
+                        justifyContent: 'center',
+
+                        color: location.pathname.startsWith('/admin/statistics') ? COLORS.primary.main : 'inherit',
+
+                      }}
+
+                    >
+
+                      <AssessmentIcon />
+
+                    </ListItemIcon>
+
+                    {open && <ListItemText primary={item.text} sx={{ opacity: open ? 1 : 0, mr: 2 }} />}
+
+                    {open && (statsOpen ? <ExpandLessIcon /> : <ExpandMoreIcon />)}
+
+                  </ListItemButton>
+
+                </ListItem>
+
+                {statsOpen && (
+
+                  <List component="div" disablePadding sx={{ pl: open ? 4 : 0 }}>
+
+                    <ListItemButton
+
+                      selected={location.pathname === '/admin/statistics/financial'}
+
+                      onClick={() => {
+
+                        if (!open) {
+
+                          openSidebar();
+
+                        }
+
+                        navigate('/admin/statistics/financial');
+
+                      }}
+
+                      sx={{
+
+                        minHeight: 40,
+
+                        justifyContent: open ? 'initial' : 'center',
+
+                        px: 2.5,
+
+                        borderRadius: 2,
+
+                        ml: open ? 2 : 0,
+
+                        my: 0.25
+
+                      }}
+
+                    >
+
+                      {open && <ListItemText primary="Thống kê tài chính" />}
+
+                    </ListItemButton>
+
+                    <ListItemButton
+
+                      selected={location.pathname === '/admin/statistics/students'}
+
+                      onClick={() => {
+
+                        if (!open) {
+
+                          openSidebar();
+
+                        }
+
+                        navigate('/admin/statistics/students');
+
+                      }}
+
+                      sx={{
+
+                        minHeight: 40,
+
+                        justifyContent: open ? 'initial' : 'center',
+
+                        px: 2.5,
+
+                        borderRadius: 2,
+
+                        ml: open ? 2 : 0,
+
+                        my: 0.25
+
+                      }}
+
+                    >
+
+                      {open && <ListItemText primary="Thống kê học sinh" />}
+
+                    </ListItemButton>
+
+                  </List>
+
+                )}
+
+              </Box>
+
+            );
+
+          })}
+
+        </List>
+
+      </Box>
+
+      <Divider />
+
+    </Drawer>
+
+  );
+
+};
+
+
+
+export default Sidebar;
+
+

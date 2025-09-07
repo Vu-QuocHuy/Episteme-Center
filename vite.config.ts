@@ -117,9 +117,8 @@ export default defineConfig({
         rewrite: (path) => '/api/v1' + path.replace(/^\/api/, ''),
         secure: true,
         // ✅ Cấu hình cookie để proxy hoạt động đúng
-        cookieDomainRewrite: {
-          '*': 'localhost'
-        },
+        cookieDomainRewrite: false,
+        cookiePathRewrite: false,
         configure: (proxy, _options) => {
           proxy.on('error', (err, _req, _res) => {
             // ✅ Chỉ log lỗi nghiêm trọng, không log mọi request

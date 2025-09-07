@@ -48,6 +48,7 @@ const HomeHeader: React.FC = () => {
   const [activeSection, setActiveSection] = useState<string>('hero-section');
   const [mobileMenuAnchor, setMobileMenuAnchor] = useState<HTMLElement | null>(null);
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  const [dropdownAnchor, setDropdownAnchor] = useState<{ [key: string]: HTMLElement | null }>({});
 
   // Get active menu items (filtered and sorted)
   const activeMenuItems = menuItems
@@ -89,7 +90,7 @@ const HomeHeader: React.FC = () => {
   };
 
   const handleMobileMenuItemClick = (menuItem: NavigationMenuItem): void => {
-    scrollToSection(menuItem.slug || menuItem.title);
+    handleMenuClick(menuItem);
     handleMobileMenuClose();
   };
 
@@ -134,6 +135,33 @@ const HomeHeader: React.FC = () => {
     logout();
     navigate('/'); // Stay on home page after logout
     handleMenuClose();
+  };
+
+  const handleDropdownOpen = (event: React.MouseEvent<HTMLElement>, menuId: string): void => {
+    setDropdownAnchor(prev => ({ ...prev, [menuId]: event.currentTarget }));
+  };
+
+  const handleDropdownClose = (menuId: string): void => {
+    setDropdownAnchor(prev => ({ ...prev, [menuId]: null }));
+  };
+
+  const handleMenuClick = (menuItem: NavigationMenuItem): void => {
+    if (menuItem.slug) {
+      // Navigate to slug if available
+      navigate(menuItem.slug);
+    } else if (menuItem.children && menuItem.children.length > 0) {
+      // If no slug but has children, do nothing (dropdown will handle it)
+      return;
+    } else {
+      // Fallback to scroll to section
+      scrollToSection(menuItem.title);
+    }
+  };
+
+  const handleSubmenuClick = (submenu: NavigationMenuItem): void => {
+    if (submenu.slug) {
+      navigate(submenu.slug);
+    }
   };
 
   const renderAuthControls = (): React.ReactNode => {
@@ -216,7 +244,7 @@ const HomeHeader: React.FC = () => {
     >
       <Toolbar sx={{ minHeight: 72, px: { xs: 2, md: 4 }, display: 'flex', justifyContent: 'space-between' }}>
         {/* Logo */}
-        <Box sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }} onClick={() => scrollToSection('hero-section')}>
+        <Box sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }} onClick={() => navigate('/')}>
           <SchoolIcon sx={{ fontSize: 32, color: COLORS.primary.text, mr: 1 }} />
           <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#111', fontSize: { xs: '1.1rem', md: '1.25rem' } }}>
             English Center
@@ -242,9 +270,30 @@ const HomeHeader: React.FC = () => {
               sx={{ mt: 1 }}
             >
               {displayMenuItems.map((menuItem) => (
-                <MenuItem key={menuItem.id} onClick={() => handleMobileMenuItemClick(menuItem)}>
-                  {menuItem.title}
-                </MenuItem>
+                <Box key={menuItem.id}>
+                  <MenuItem onClick={() => handleMobileMenuItemClick(menuItem)}>
+                    {menuItem.title}
+                  </MenuItem>
+                  {menuItem.children && menuItem.children.length > 0 && (
+                    <Box sx={{ pl: 2 }}>
+                      {menuItem.children
+                        .filter(child => child.isActive)
+                        .sort((a, b) => (a.order || 0) - (b.order || 0))
+                        .map((submenu) => (
+                          <MenuItem
+                            key={submenu.id}
+                            onClick={() => {
+                              handleSubmenuClick(submenu);
+                              handleMobileMenuClose();
+                            }}
+                            sx={{ pl: 3, fontSize: '0.9rem' }}
+                          >
+                            {submenu.title}
+                          </MenuItem>
+                        ))}
+                    </Box>
+                  )}
+                </Box>
               ))}
               {user ? (
                 <>
@@ -280,33 +329,84 @@ const HomeHeader: React.FC = () => {
               zIndex: 1,
             }}>
               {displayMenuItems.map((menuItem) => (
-                <Button
+                <Box
                   key={menuItem.id}
-                  onClick={() => {
-                    scrollToSection(menuItem.slug || menuItem.title);
+                  sx={{ position: 'relative' }}
+                  onMouseEnter={(e) => {
+                    if (menuItem.children && menuItem.children.length > 0) {
+                      handleDropdownOpen(e, menuItem.id);
+                    }
                   }}
-                  sx={{
-                    mx: 1.5,
-                    color: activeSection === (menuItem.slug || menuItem.title) ? COLORS.primary.main : '#111',
-                    fontWeight: activeSection === (menuItem.slug || menuItem.title) ? 700 : 500,
-                    fontSize: '1rem',
-                    borderRadius: 2,
-                    bgcolor: 'transparent',
-                    outline: 'none',
-                    boxShadow: 'none',
-                    '&:focus, &:active': {
-                      outline: 'none',
-                      boxShadow: 'none',
-                      bgcolor: 'transparent',
-                    },
-                    '&:hover': {
-                      color: COLORS.primary.main,
-                      bgcolor: 'transparent',
-                    },
+                  onMouseLeave={() => {
+                    if (menuItem.children && menuItem.children.length > 0) {
+                      handleDropdownClose(menuItem.id);
+                    }
                   }}
                 >
-                  {menuItem.title}
-                </Button>
+                  <Button
+                    onClick={() => handleMenuClick(menuItem)}
+                    sx={{
+                      mx: 1.5,
+                      color: activeSection === (menuItem.slug || menuItem.title) ? COLORS.primary.main : '#111',
+                      fontWeight: activeSection === (menuItem.slug || menuItem.title) ? 700 : 500,
+                      fontSize: '1rem',
+                      borderRadius: 0,
+                      bgcolor: 'transparent',
+                      outline: 'none',
+                      boxShadow: 'none',
+                      border: '1px solid transparent',
+                      '&:focus, &:active': {
+                        outline: 'none',
+                        boxShadow: 'none',
+                        bgcolor: 'transparent',
+                      },
+                      '&:hover': {
+                        color: '#111',
+                        bgcolor: 'transparent',
+                        border: '1px solid #ddd',
+                        borderRadius: 0,
+                      },
+                    }}
+                  >
+                    {menuItem.title}
+                  </Button>
+
+                  {/* Dropdown Menu */}
+                  {menuItem.children && menuItem.children.length > 0 && (
+                    <Menu
+                      anchorEl={dropdownAnchor[menuItem.id]}
+                      open={Boolean(dropdownAnchor[menuItem.id])}
+                      onClose={() => handleDropdownClose(menuItem.id)}
+                      anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                      transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+                      sx={{
+                        mt: 1,
+                        '& .MuiPaper-root': {
+                          borderRadius: 0,
+                        }
+                      }}
+                      MenuListProps={{
+                        onMouseEnter: () => {
+                          // Keep dropdown open when hovering over menu items
+                        },
+                        onMouseLeave: () => handleDropdownClose(menuItem.id),
+                      }}
+                    >
+                      {menuItem.children
+                        .filter(child => child.isActive)
+                        .sort((a, b) => (a.order || 0) - (b.order || 0))
+                        .map((submenu) => (
+                          <MenuItem
+                            key={submenu.id}
+                            onClick={() => handleSubmenuClick(submenu)}
+                            sx={{ minWidth: 150 }}
+                          >
+                            {submenu.title}
+                          </MenuItem>
+                        ))}
+                    </Menu>
+                  )}
+                </Box>
               ))}
             </Box>
 

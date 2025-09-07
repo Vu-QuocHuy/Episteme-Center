@@ -15,13 +15,11 @@ import {
   AccordionDetails,
   CircularProgress,
   Grid,
-  MenuItem as MuiMenuItem,
-  Select,
-  FormControl,
-  InputLabel,
   Paper,
   Tabs,
-  Tab
+  Tab,
+  Checkbox,
+  FormControlLabel
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -50,16 +48,20 @@ const MenuManagement: React.FC = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [currentItem, setCurrentItem] = useState<MenuItem | null>(null);
-  const [parentId, setParentId] = useState<string | null>(null);
   const [formData, setFormData] = useState<{
     title: string;
     slug: string;
     parentId?: string;
+    order?: number;
+    isActive?: boolean;
   }>({
     title: '',
     slug: '',
     parentId: undefined,
+    order: 1,
+    isActive: true,
   });
+  const [selectedParentMenu, setSelectedParentMenu] = useState<MenuItem | null>(null);
   const [notification, setNotification] = useState<{
     open: boolean;
     message: string;
@@ -185,23 +187,30 @@ const MenuManagement: React.FC = () => {
   // Note: toggle visibility is currently unused in UI
 
   // Open dialog for create/edit
-  const handleOpenDialog = (item?: MenuItem, parent?: string) => {
+  const handleOpenDialog = (item?: MenuItem, parentMenu?: MenuItem) => {
     if (item) {
+      // Chỉnh sửa menu hiện tại
       setCurrentItem(item);
-              setFormData({
-          title: item.title,
-          slug: item.slug || item.title.toLowerCase().replace(/\s+/g, '-'),
-          parentId: item.id,
-        });
+      setSelectedParentMenu(null);
+      setFormData({
+        title: item.title,
+        slug: item.slug || '',
+        parentId: undefined, // Menu chính không có parentId
+        order: item.order || 1,
+        isActive: item.isActive,
+      });
     } else {
+      // Tạo menu mới
       setCurrentItem(null);
-              setFormData({
-          title: '',
-          slug: '',
-          parentId: parent || undefined,
-        });
+      setSelectedParentMenu(parentMenu || null);
+      setFormData({
+        title: '',
+        slug: '',
+        parentId: parentMenu?.id || undefined, // Set parentId nếu có parentMenu
+        order: 1,
+        isActive: true,
+      });
     }
-    setParentId(parent || null);
     setDialogOpen(true);
   };
 
@@ -209,11 +218,13 @@ const MenuManagement: React.FC = () => {
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setCurrentItem(null);
-    setParentId(null);
+    setSelectedParentMenu(null);
     setFormData({
       title: '',
       slug: '',
       parentId: undefined,
+      order: 1,
+      isActive: true,
     });
   };
 
@@ -239,10 +250,6 @@ const MenuManagement: React.FC = () => {
     }
   };
 
-  // Get available parent options
-  const getParentOptions = () => {
-    return menuItems.filter(item => item.id !== currentItem?.id);
-  };
 
   // Render menu items recursively
   const renderMenuItems = (items: MenuItem[], level: number = 0) => {
@@ -259,7 +266,7 @@ const MenuManagement: React.FC = () => {
                 size="small"
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleOpenDialog(undefined, item.id);
+                  handleOpenDialog(undefined, item);
                 }}
                 title="Tạo submenu"
               >
@@ -270,7 +277,7 @@ const MenuManagement: React.FC = () => {
                 variant="outlined"
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigate(`/admin/layout-builder/${item.id}`); // ✅ Sử dụng UUID thay vì slug
+                  navigate(`/admin/layout-builder/${item.id}?mode=create`); // ✅ Sử dụng UUID thay vì slug
                 }}
                 title="Tạo Layout"
                 sx={{ minWidth: 'auto', px: 1, py: 0.5, fontSize: '0.75rem' }}
@@ -306,9 +313,6 @@ const MenuManagement: React.FC = () => {
         </AccordionSummary>
         <AccordionDetails>
           <Box sx={{ pl: 2 }}>
-                          <Typography variant="body2" color="text.secondary">
-                <strong>URL:</strong> {item.slug || `/${item.title.toLowerCase().replace(/\s+/g, '-')}`}
-              </Typography>
             {item.children && item.children.length > 0 && (
               <Box sx={{ mt: 2 }}>
                 <Typography variant="subtitle2" gutterBottom>
@@ -382,7 +386,12 @@ const MenuManagement: React.FC = () => {
       {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
         <DialogTitle>
-          {currentItem ? 'Sửa Menu' : parentId ? 'Tạo Submenu' : 'Thêm Menu'}
+          {currentItem
+            ? 'Sửa Menu'
+            : selectedParentMenu
+              ? `Thêm Submenu cho "${selectedParentMenu.title}"`
+              : 'Thêm Menu Mới'
+          }
         </DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 2 }}>
@@ -402,32 +411,52 @@ const MenuManagement: React.FC = () => {
                   label="Slug"
                   value={formData.slug}
                   onChange={(e) => handleInputChange('slug', e.target.value)}
-                  required
-                  helperText="URL-friendly version của tiêu đề"
+                  helperText="URL-friendly version của tiêu đề (không bắt buộc)"
                 />
               </Grid>
-              <Grid item xs={12}>
-                <FormControl fullWidth>
-                  <InputLabel>Menu cha</InputLabel>
-                  <Select
-                    value={formData.parentId || ''}
-                    onChange={(e) => handleInputChange('parentId', e.target.value || undefined)}
-                    label="Menu cha"
-                  >
-                    <MuiMenuItem value="">
-                      <em>Không có (Menu chính)</em>
-                    </MuiMenuItem>
-                    {getParentOptions().map((item) => (
-                      <MuiMenuItem key={item.id} value={item.id}>
-                        {item.title}
-                      </MuiMenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Thứ tự hiển thị"
+                  type="number"
+                  value={formData.order}
+                  onChange={(e) => handleInputChange('order', Number(e.target.value))}
+                  helperText="Số nhỏ hơn sẽ hiển thị trước"
+                  inputProps={{ min: 1 }}
+                />
               </Grid>
+              <Grid item xs={12} md={6}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={formData.isActive}
+                      onChange={(e) => handleInputChange('isActive', e.target.checked)}
+                    />
+                  }
+                  label="Trạng thái hoạt động"
+                />
+              </Grid>
+              {selectedParentMenu && (
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Menu cha"
+                    value={selectedParentMenu.title}
+                    InputProps={{
+                      readOnly: true,
+                    }}
+                    helperText="Menu cha (chỉ đọc)"
+                  />
+                </Grid>
+              )}
               <Grid item xs={12}>
                 <Typography variant="body2" color="text.secondary">
-                  URL sẽ được tự động tạo từ tiêu đề. Bạn có thể chỉnh sửa nếu cần.
+                  {currentItem
+                    ? 'URL sẽ được tự động tạo từ tiêu đề. Bạn có thể chỉnh sửa nếu cần.'
+                    : selectedParentMenu
+                      ? `Tạo submenu cho "${selectedParentMenu.title}". URL sẽ được tự động tạo từ tiêu đề.`
+                      : 'Tạo menu chính mới. Để tạo submenu, hãy sử dụng nút "Tạo submenu" từ menu cha.'
+                  }
                 </Typography>
               </Grid>
             </Grid>
@@ -438,7 +467,7 @@ const MenuManagement: React.FC = () => {
           <Button
             onClick={currentItem ? handleUpdate : handleCreate}
             variant="contained"
-            disabled={!formData.title || !formData.slug}
+            disabled={!formData.title}
           >
             {currentItem ? 'Cập nhật' : 'Tạo'}
           </Button>

@@ -55,7 +55,7 @@ interface FailedQueueItem {
 
 
 const instance: AxiosInstance = axios.create({
-    baseURL: 'https://eng-center-nestjs.onrender.com/api/v1',
+    baseURL: import.meta.env.DEV ? '/api' : 'https://eng-center-nestjs.onrender.com/api/v1',
     timeout: 60000,
     // ✅ Cần withCredentials để gửi cookie
     withCredentials: true,
@@ -79,6 +79,8 @@ const processQueue = (error: any, token: string | null = null): void => {
 
     failedQueue = [];
 };
+
+
 
 // Add a request interceptor
 instance.interceptors.request.use(
@@ -117,9 +119,7 @@ instance.interceptors.response.use(
             // Xử lý lỗi từ server
             if (error.response.status === 401 && !originalRequest._retry) {
                 // ✅ Chỉ log khi cần debug
-                if (import.meta.env.DEV) {
-                console.log('🔐 401 Unauthorized - attempting refresh token...');
-                }
+                // 401 Unauthorized - attempting refresh token
 
                 if (isRefreshing) {
                     // Nếu đang refresh, thêm request vào queue
@@ -145,8 +145,14 @@ instance.interceptors.response.use(
                 try {
                     // Gọi API refresh token: backend tự xử lý cookie
                     // Sử dụng axios gốc để tránh loop vô hạn
+                    const refreshUrl = import.meta.env.DEV
+                        ? '/api/auth/refresh'
+                        : 'https://eng-center-nestjs.onrender.com/api/v1/auth/refresh';
+
+                    // ✅ Backend tự xử lý cookie refresh_token (HttpOnly)
+
                     const response = await axios.get<RefreshTokenResponse>(
-                        'https://eng-center-nestjs.onrender.com/api/v1/auth/refresh',
+                        refreshUrl,
                         {
                             withCredentials: true, // ✅ Cần để gửi cookie
                             headers: {
@@ -218,7 +224,7 @@ instance.interceptors.response.use(
                         throw new Error('Invalid refresh token response');
                     }
                 } catch (refreshError: any) {
-                    console.error('❌ Refresh token failed:', refreshError);
+                    // Refresh token failed
                     // ✅ Refresh error occurred
 
                     // Xử lý queue với lỗi
@@ -249,7 +255,7 @@ instance.interceptors.response.use(
         });
         } else {
             // Network errors (socket hang up, timeout, etc.)
-            console.warn('🌐 Network error:', error.message, 'Code:', error.code);
+            // Network error
 
             // Retry logic for network errors
             if (!originalRequest._networkRetry &&

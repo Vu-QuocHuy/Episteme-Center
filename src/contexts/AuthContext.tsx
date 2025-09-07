@@ -183,8 +183,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         });
       } catch (error) {
         localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
         localStorage.removeItem('userData');
+        // ✅ Không xóa refresh_token vì nó được lưu trong cookie bởi backend
       }
       dispatch({ type: 'SET_LOADING', payload: false });
     } else if (userData) {
@@ -231,8 +231,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           }
         } catch (error) {
           localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
           localStorage.removeItem('userData');
+          // ✅ Không xóa refresh_token vì nó được lưu trong cookie bởi backend
           dispatch({ type: 'LOGOUT' });
         } finally {
           dispatch({ type: 'SET_LOADING', payload: false });
@@ -286,8 +286,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       localStorage.setItem('session_active', 'true');
     } else if (!state.user && !state.loading && localStorage.getItem('session_active')) {
       // Only clear if we're not loading AND we had an active session (to avoid clearing during initialization)
+      // ✅ Không xóa refresh_token vì nó được lưu trong cookie bởi backend
       localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
       localStorage.removeItem('userData');
       localStorage.removeItem('parent_id');
       localStorage.removeItem('session_active');
@@ -408,6 +408,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = async (): Promise<void> => {
     // ✅ Không có logout API, chỉ xóa localStorage
+    // ✅ Không xóa refresh_token vì nó được lưu trong cookie bởi backend
     localStorage.removeItem('access_token');
     localStorage.removeItem('userData');
     localStorage.removeItem('parent_id');
@@ -468,8 +469,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       return newAccessToken;
     } catch (error) {
-      // Nếu refresh token thất bại, logout user
-      await logout();
+      // ✅ Không logout ngay, để user thử lại
+      // Chỉ clear access token, giữ nguyên refresh token cookie
+      localStorage.removeItem('access_token');
       // Không throw error để tránh reload trang
       return null;
     }
