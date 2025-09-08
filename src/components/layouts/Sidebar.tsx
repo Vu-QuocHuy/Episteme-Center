@@ -337,44 +337,6 @@ const Sidebar: React.FC<SidebarProps> = ({ open }) => {
                         {open && <ListItemText primary="Quản lý Banner" />}
                       </ListItemButton>
                       <ListItemButton
-                        selected={location.pathname === '/admin/homepage/about'}
-                        onClick={() => {
-                          if (!open) {
-                            openSidebar();
-                          }
-                          navigate('/admin/homepage/about');
-                        }}
-                        sx={{
-                          minHeight: 40,
-                          justifyContent: open ? 'initial' : 'center',
-                          px: 2.5,
-                          borderRadius: 2,
-                          ml: open ? 2 : 0,
-                          my: 0.25
-                        }}
-                      >
-                        {open && <ListItemText primary="Quản lý Giới thiệu" />}
-                      </ListItemButton>
-                      <ListItemButton
-                        selected={location.pathname === '/admin/homepage/featured-teachers'}
-                        onClick={() => {
-                          if (!open) {
-                            openSidebar();
-                          }
-                          navigate('/admin/homepage/featured-teachers');
-                        }}
-                        sx={{
-                          minHeight: 40,
-                          justifyContent: open ? 'initial' : 'center',
-                          px: 2.5,
-                          borderRadius: 2,
-                          ml: open ? 2 : 0,
-                          my: 0.25
-                        }}
-                      >
-                        {open && <ListItemText primary="Giảng viên nổi bật" />}
-                      </ListItemButton>
-                      <ListItemButton
                         selected={location.pathname === '/admin/homepage/testimonials'}
                         onClick={() => {
                           if (!open) {

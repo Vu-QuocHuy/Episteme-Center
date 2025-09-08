@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Box, Grid, Typography, TextField, Button, Paper, Snackbar, Alert } from '@mui/material';
-import { createRegistrationAPI } from '../../services/api';
+import { createRegistrationAPI } from '../../../services/api';
 
 const ConsultationRegistration: React.FC = () => {
   const [form, setForm] = useState({ name: '', phone: '', email: '', address: '' });

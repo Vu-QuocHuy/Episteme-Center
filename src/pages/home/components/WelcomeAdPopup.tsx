@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useBannerConfig } from '../../../hooks/useBannerConfig';
-import WelcomeAdPopup from '../../../components/advertisement/WelcomeAdPopup';
+import WelcomeAdPopup from '../../../components/features/advertisement/WelcomeAdPopup';
 import { getHomePopupAPI } from '../../../services/api';
 import { Advertisement } from '../../../types';
 

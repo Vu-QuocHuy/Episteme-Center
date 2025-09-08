@@ -1,7 +1,7 @@
 import React from 'react';
 import { Dialog, IconButton, Box, Card, CardMedia, Typography } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
-import { Advertisement } from '../../types';
+import { Advertisement } from '../../../types';
 
 interface WelcomeAdPopupProps {
   open: boolean;

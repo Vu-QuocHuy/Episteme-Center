@@ -5,8 +5,8 @@ export { default as Header } from './layouts/Header';
 export { default as Sidebar } from './layouts/Sidebar';
 
 // Advertisement Components
-export { default as AdvertisementSlider } from './advertisement/AdvertisementSlider';
-export { default as WelcomeAdPopup } from './advertisement/WelcomeAdPopup';
+export { default as AdvertisementSlider } from './features/advertisement/AdvertisementSlider';
+export { default as WelcomeAdPopup } from './features/advertisement/WelcomeAdPopup';
 
 // Common Components
 export * from './common';

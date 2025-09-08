@@ -34,8 +34,6 @@ import RegistrationManagement from './pages/admin/RegistrationManagement';
 
 import MenuManagement from './pages/admin/MenuManagement';
 import BannerManagement from './pages/admin/BannerManagement';
-import AboutManagement from './pages/admin/AboutManagement';
-import FeaturedTeachersManagement from './pages/admin/FeaturedTeachersManagement';
 import TestimonialsManagement from './pages/admin/TestimonialsManagement';
 import FooterManagement from './pages/admin/FooterManagement';
 import AdminProfile from './pages/profile/AdminProfile';
@@ -129,8 +127,6 @@ const AppContent: React.FC = () => {
                       {/* Homepage Management Routes */}
                       <Route path="homepage" element={<Navigate to="/admin/homepage/banner" replace />} />
                       <Route path="homepage/banner" element={<BannerManagement />} />
-                      <Route path="homepage/about" element={<AboutManagement />} />
-                      <Route path="homepage/featured-teachers" element={<FeaturedTeachersManagement />} />
                       <Route path="homepage/testimonials" element={<TestimonialsManagement />} />
                       <Route path="homepage/footer" element={<FooterManagement />} />
 

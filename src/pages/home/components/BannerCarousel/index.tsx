@@ -5,7 +5,7 @@ import {
 import { getHomeBannersAPI } from '../../../../services/api';
 import { Advertisement } from '../../../../types';
 import { useBannerConfig } from '../../../../hooks/useBannerConfig';
-import AdvertisementSlider from '../../../../components/advertisement/AdvertisementSlider';
+import AdvertisementSlider from '../../../../components/features/advertisement/AdvertisementSlider';
 
 const BannerCarousel: React.FC = () => {
   const { bannerConfig } = useBannerConfig();

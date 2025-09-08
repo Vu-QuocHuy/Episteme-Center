@@ -2,28 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Responsive, WidthProvider } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
-import { Editor } from '@tinymce/tinymce-react';
-import {
-  Box,
-  Button,
-  TextField,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Typography,
-  IconButton,
-  Grid,
-  Paper,
-  Alert,
-  Snackbar,
-  FormControlLabel,
-  Checkbox
-} from '@mui/material';
+// Editor moved to AddItemDialog
+import { Box, Button, TextField, Typography, IconButton, Grid, Paper, Alert, Snackbar } from '@mui/material';
 import {
   Add as AddIcon,
   Delete as DeleteIcon,
@@ -32,9 +12,12 @@ import {
   Visibility as PreviewIcon,
   Edit as EditIcon
 } from '@mui/icons-material';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import { createArticleAPI, ArticleData, uploadFileAPI, getAllArticlesAPI, getArticleByIdAPI, updateArticleAPI } from '../../services/api';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
+import AddItemDialog from './layout-builder/AddItemDialog';
+import PreviewDialog from './layout-builder/PreviewDialog';
+import { DESIGN_WIDTH } from './layout-builder/utils';
 import { useMenuItems } from '../../hooks/features/useMenuItems';
 import { commonStyles } from '../../utils/styles';
 // Removed unused style imports
@@ -57,7 +40,6 @@ interface ContentItem {
 
 const LayoutBuilder: React.FC = () => {
   const { id } = useParams<{ id: string }>(); // ✅ Đổi từ slug thành id (UUID)
-  const navigate = useNavigate();
   const location = useLocation();
   // const cx = classNames.bind(styles);
 
@@ -96,8 +78,9 @@ const LayoutBuilder: React.FC = () => {
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | undefined>();
   const [uploadedPublicId, setUploadedPublicId] = useState<string | undefined>();
   const [imageUploading, setImageUploading] = useState(false);
+  // Upload state handled inside AddItemDialog
   const [articleOrder, setArticleOrder] = useState<string>('1');
-  const [isActive, setIsActive] = useState<boolean>(true);
+  // Article will be active by default when created; no toggle in builder
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewArticles, setPreviewArticles] = useState<any[]>([]);
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -112,8 +95,7 @@ const LayoutBuilder: React.FC = () => {
     severity: 'info'
   });
 
-  // ✅ Responsive scaling system - Sử dụng viewport units
-  const DESIGN_WIDTH = 1200; // Width của khung tạo
+  // ✅ Responsive scaling system - Sử dụng viewport units (moved to utils)
   // Removed fixed SCALE_RATIO; canvas now scales responsively to container
 
   // ✅ Content styling options
@@ -372,7 +354,7 @@ const LayoutBuilder: React.FC = () => {
       if (article) {
         setTitle(article.title || '');
         setArticleOrder(String((article as any).order || 1));
-        setIsActive((article as any).isActive !== false);
+        // Always active by default; status managed in Article Management
         setUploadedImageUrl(article.file || undefined);
         setUploadedPublicId(article.publicId || undefined);
 
@@ -398,7 +380,7 @@ const LayoutBuilder: React.FC = () => {
   };
 
 
-  // ✅ Generate responsive HTML với viewport units
+  // ✅ Generate responsive HTML với utils
   const generateResponsiveHTML = () => {
     let maxBottom = 0;
 
@@ -499,7 +481,6 @@ const LayoutBuilder: React.FC = () => {
           title: title,
           content: html,
           order: Math.max(1, Number(articleOrder || '1')),
-          isActive: isActive,
           file: uploadedImageUrl ?? '',
           publicId: uploadedPublicId ?? ''
         };
@@ -518,7 +499,6 @@ const LayoutBuilder: React.FC = () => {
           content: html,
           menuId: menuId || '', // ✅ Sử dụng menuId cho tạo mới
           order: Math.max(1, Number(articleOrder || '1')),
-          isActive: isActive,
           file: uploadedImageUrl ?? '',
           publicId: uploadedPublicId ?? ''
         };
@@ -532,10 +512,10 @@ const LayoutBuilder: React.FC = () => {
       });
       }
 
-      // Redirect back to menu management
-      setTimeout(() => {
-        navigate('/admin/menu');
-      }, 1500);
+      // Stay on Layout Builder after save; optionally refresh data if editing
+      if (isEditMode && id) {
+        await loadArticleData();
+      }
 
     } catch (error) {
       console.error('Error saving layout:', error);
@@ -640,7 +620,7 @@ const LayoutBuilder: React.FC = () => {
       {/* Form Controls */}
       <Paper sx={{ p: 3, mb: 3 }}>
         <Grid container spacing={3} alignItems="center">
-          <Grid item xs={12} md={4}>
+          <Grid item xs={12} md={6}>
             <TextField
               fullWidth
               label="Tiêu đề bài viết"
@@ -649,7 +629,58 @@ const LayoutBuilder: React.FC = () => {
               required
             />
           </Grid>
-          <Grid item xs={12} md={4}>
+          <Grid item xs={12} md={6}>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setDialogOpen(true)}
+              fullWidth
+            >
+              Thêm thành phần
+            </Button>
+          </Grid>
+        </Grid>
+
+        {/* Order + Background + Radius + Header Image Upload */}
+        <Grid container spacing={3} alignItems="center" sx={{ mt: 2 }}>
+          <Grid item xs={12} md={3}>
+            <TextField
+              fullWidth
+              label="Thứ tự hiển thị"
+              type="number"
+              value={articleOrder}
+              onChange={(e) => {
+                const v = e.target.value;
+                if (v === '') { setArticleOrder(''); return; }
+                const digits = v.replace(/\D/g, '');
+                setArticleOrder(digits);
+              }}
+              helperText="Số nhỏ hơn sẽ hiển thị trước"
+              inputProps={{ min: 1 }}
+            />
+          </Grid>
+          <Grid item xs={12} md={3}>
+            <TextField
+              fullWidth
+              label="Màu nền nội dung"
+              type="color"
+              value={contentBackground}
+              onChange={(e) => setContentBackground(e.target.value)}
+              helperText="Màu nền cho nội dung"
+            />
+          </Grid>
+          <Grid item xs={12} md={3}>
+            <TextField
+              fullWidth
+              label="Bo góc (px)"
+              type="number"
+              value={contentBorderRadius}
+              onChange={(e) => setContentBorderRadius(Number(e.target.value))}
+              helperText="Độ bo góc"
+              inputProps={{ min: 0, max: 50 }}
+            />
+          </Grid>
+          <Grid item xs={12} md={3}>
             <input
               accept="image/*"
               style={{ display: 'none' }}
@@ -700,73 +731,6 @@ const LayoutBuilder: React.FC = () => {
               </Button>
             </label>
           </Grid>
-          <Grid item xs={12} md={4}>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => setDialogOpen(true)}
-              fullWidth
-            >
-              Thêm thành phần
-            </Button>
-          </Grid>
-        </Grid>
-
-        {/* Order, Status và Preview Controls */}
-        <Grid container spacing={3} alignItems="center" sx={{ mt: 2 }}>
-          <Grid item xs={12} md={4}>
-            <TextField
-              fullWidth
-              label="Thứ tự hiển thị"
-              type="number"
-              value={articleOrder}
-              onChange={(e) => {
-                const v = e.target.value;
-                if (v === '') { setArticleOrder(''); return; }
-                const digits = v.replace(/\D/g, '');
-                setArticleOrder(digits);
-              }}
-              helperText="Số nhỏ hơn sẽ hiển thị trước"
-              inputProps={{ min: 1 }}
-            />
-          </Grid>
-          <Grid item xs={12} md={4}>
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={isActive}
-                  onChange={(e) => setIsActive(e.target.checked)}
-                />
-              }
-              label="Trạng thái hoạt động"
-            />
-          </Grid>
-          {/* Nút Xem trước đã được chuyển lên tiêu đề */}
-        </Grid>
-
-        {/* Content Styling Controls */}
-        <Grid container spacing={3} alignItems="center" sx={{ mt: 2 }}>
-          <Grid item xs={12} md={4}>
-            <TextField
-              fullWidth
-              label="Màu nền nội dung"
-              type="color"
-              value={contentBackground}
-              onChange={(e) => setContentBackground(e.target.value)}
-              helperText="Màu nền cho nội dung"
-            />
-          </Grid>
-          <Grid item xs={12} md={4}>
-            <TextField
-              fullWidth
-              label="Bo góc (px)"
-              type="number"
-              value={contentBorderRadius}
-              onChange={(e) => setContentBorderRadius(Number(e.target.value))}
-              helperText="Độ bo góc"
-              inputProps={{ min: 0, max: 50 }}
-            />
-          </Grid>
           {/* Đã bỏ tùy chọn đổ bóng */}
         </Grid>
       </Paper>
@@ -776,9 +740,6 @@ const LayoutBuilder: React.FC = () => {
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
           <Box>
           <Typography variant="h6">Xem trước Layout</Typography>
-            <Typography variant="body2" color="text.secondary">
-              Khung tạo: {DESIGN_WIDTH}px → Trang thực tế: Responsive (100% width, min 100vh height)
-            </Typography>
           </Box>
           <Button
             variant="contained"
@@ -871,179 +832,21 @@ const LayoutBuilder: React.FC = () => {
         </Box>
       </Paper>
 
-      {/* Add Item Dialog */}
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Thêm thành phần mới</DialogTitle>
-        <DialogContent>
-          <Box sx={{ pt: 2 }}>
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="ID (tùy chọn)"
-                  value={newItem.i}
-                  onChange={(e) => setNewItem(prev => ({ ...prev, i: e.target.value }))}
-                  helperText="Để trống để tự động tạo ID"
-                />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <FormControl fullWidth>
-                  <InputLabel>Loại thành phần</InputLabel>
-                  <Select
-                    value={newItem.type}
-                    onChange={(e) => setNewItem(prev => ({ ...prev, type: e.target.value as any }))}
-                    label="Loại thành phần"
-                  >
-                    <MenuItem value="text">Văn bản</MenuItem>
-                    <MenuItem value="image">Hình ảnh</MenuItem>
-                    <MenuItem value="input">Input field</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-
-              {newItem.type === 'text' && (
-                <Grid item xs={12}>
-                  <Typography variant="subtitle2" gutterBottom>
-                    Nội dung văn bản:
-                  </Typography>
-                                     <Editor
-                     apiKey="z7rs4ijsr5qcpob6tbzosk50cpg1otyearqb6i08r0c4s7og"
-                     initialValue=""
-                     init={{
-                       height: 300,
-                       menubar: false,
-                       plugins: [
-                         'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-                         'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-                         'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
-                       ],
-                       toolbar: 'undo redo | blocks | bold italic forecolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help',
-                       // Sử dụng API key hợp lệ
-                       skin: 'oxide',
-                       content_css: 'default',
-                       // Tắt tracking và analytics
-                       promotion: false,
-                       referrer_policy: 'no-referrer'
-                     }}
-                     value={editorContent}
-                     onEditorChange={setEditorContent}
-                     onInit={() => {
-                       console.log('TinyMCE initialized successfully with API key');
-                     }}
-                     onError={(e: any) => {
-                       console.error('TinyMCE error:', e);
-                       setSnackbar({
-                         open: true,
-                         message: 'Lỗi khởi tạo editor. Vui lòng thử lại.',
-                         severity: 'error'
-                       });
-                     }}
-                   />
-                </Grid>
-              )}
-
-              {newItem.type === 'image' && (
-                <Grid item xs={12}>
-                  <Typography variant="subtitle2" gutterBottom>
-                    URL hình ảnh:
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    placeholder="Nhập URL hình ảnh hoặc đường dẫn"
-                    value={newItem.content}
-                    onChange={(e) => setNewItem(prev => ({ ...prev, content: e.target.value }))}
-                  />
-                </Grid>
-              )}
-
-              {newItem.type === 'input' && (
-                <Grid item xs={12}>
-                  <Typography variant="subtitle2" gutterBottom>
-                    Giá trị mặc định:
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    placeholder="Nhập giá trị mặc định cho input field"
-                    value={newItem.content}
-                    onChange={(e) => setNewItem(prev => ({ ...prev, content: e.target.value }))}
-                  />
-                </Grid>
-              )}
-            </Grid>
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>Hủy</Button>
-          <Button onClick={addItem} variant="contained">
-            Thêm thành phần
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Preview Dialog */}
-      <Dialog
-        open={previewOpen}
-        onClose={() => setPreviewOpen(false)}
-        maxWidth={false}
-        fullWidth
-        fullScreen
-        PaperProps={{
-          sx: {
-            width: '100vw',
-            height: '100vh',
-            maxWidth: 'none',
-            maxHeight: 'none',
-            margin: 0,
-            borderRadius: 0
-          }
+      <AddItemDialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        onAdd={addItem}
+        newItem={newItem}
+        setNewItem={(updater) => setNewItem(prev => updater(prev))}
+        editorContent={editorContent}
+        setEditorContent={setEditorContent}
+        onUploadImage={async (file) => {
+          try { const res = await uploadFileAPI(file); return res.data?.data?.url || ''; } catch { setSnackbar({ open: true, message: 'Tải ảnh thất bại, vui lòng thử lại', severity: 'error' }); return ''; }
         }}
-      >
-        {/* Floating close button */}
-        <Box sx={{
-          position: 'fixed',
-          top: 16,
-          right: 16,
-          zIndex: 1000
-        }}>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => setPreviewOpen(false)}
-            sx={{
-              borderRadius: '50%',
-              minWidth: 'auto',
-              width: 48,
-              height: 48,
-              boxShadow: 3
-            }}
-          >
-            ✕
-          </Button>
-        </Box>
-        <DialogContent sx={{ p: 0, overflow: 'auto' }}>
-          <Box sx={{ width: '100%', minHeight: '100vh', background: '#fff' }}>
-            {previewLoading ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
-                <Typography>Đang tải dữ liệu xem trước...</Typography>
-              </Box>
-            ) : previewArticles.length === 0 ? (
-              <Box sx={{ textAlign: 'center', py: 4 }}>
-                <Typography variant="h6" color="text.secondary">
-                  Chưa có bài viết nào cho menu này
-                </Typography>
-              </Box>
-            ) : (
-              previewArticles
-                .sort((a, b) => (a.order || 0) - (b.order || 0))
-                .map((article, index) => (
-                  <Box key={article.id || index} sx={{ mb: 6 }}>
-                    <div dangerouslySetInnerHTML={{ __html: article.content }} />
-                  </Box>
-                ))
-            )}
-          </Box>
-        </DialogContent>
-      </Dialog>
+        uploading={imageUploading}
+      />
+
+      <PreviewDialog open={previewOpen} onClose={() => setPreviewOpen(false)} articles={previewArticles} loading={previewLoading} />
 
       {/* Snackbar */}
       <Snackbar

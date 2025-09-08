@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Box, Paper, Typography, Table, TableHead, TableRow, TableCell, TableBody, TableContainer, TextField, IconButton, Chip } from '@mui/material';
+import { Box, Paper, Typography, Table, TableHead, TableRow, TableCell, TableBody, TableContainer, TextField, Chip } from '@mui/material';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
 import { commonStyles } from '../../utils/styles';
 import { getAllRegistrationsAPI } from '../../services/api';
-import RefreshIcon from '@mui/icons-material/Refresh';
+// Removed reload icon per request
 
 interface RegistrationItem {
   id: string;
@@ -17,17 +17,14 @@ interface RegistrationItem {
 
 const RegistrationManagement: React.FC = () => {
   const [rows, setRows] = useState<RegistrationItem[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
   const [search, setSearch] = useState<string>('');
-
   const fetchData = async () => {
     try {
-      setLoading(true);
       const res = await getAllRegistrationsAPI({ page: 1, limit: 50 });
       const list = res.data?.data?.result || res.data?.data || [];
       setRows(list);
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching registrations:', error);
     }
   };
 
@@ -48,21 +45,26 @@ const RegistrationManagement: React.FC = () => {
     <DashboardLayout role="admin">
       <Box sx={commonStyles.pageContainer}>
         <Box sx={commonStyles.contentContainer}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
             <Typography variant="h5" fontWeight={700}>Quản lý đăng ký tư vấn</Typography>
-            <IconButton onClick={fetchData} disabled={loading}><RefreshIcon /></IconButton>
           </Box>
 
-          {/* Search box centered below the title */}
-          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-            <TextField
-              size="small"
-              placeholder="Tìm theo tên, email, SĐT, địa chỉ"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              sx={{ width: '100%' }}
-            />
-          </Box>
+          {/* Filter area - styled like student management */}
+          <Paper sx={{ px: 2, py: 2, mb: 2, borderRadius: 2, boxShadow: 1 }}>
+            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+              <TextField
+                fullWidth
+                placeholder="Tìm theo tên, email, SĐT, địa chỉ"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                sx={{
+                  flex: 1,
+                  '& .MuiInputBase-root': { height: 48, fontSize: 16 },
+                  '& input::placeholder': { opacity: 0.7 }
+                }}
+              />
+            </Box>
+          </Paper>
 
           <Paper>
             <TableContainer>

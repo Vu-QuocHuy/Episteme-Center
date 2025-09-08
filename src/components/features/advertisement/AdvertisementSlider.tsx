@@ -4,7 +4,7 @@ import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
 import { Card, CardMedia, Box, Typography, IconButton } from '@mui/material';
 import { ArrowBackIos, ArrowForwardIos } from '@mui/icons-material';
-import { Advertisement } from '../../types';
+import { Advertisement } from '../../../types';
 
 interface AdvertisementSliderProps {
   autoPlay?: boolean;
