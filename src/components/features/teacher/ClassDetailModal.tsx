@@ -24,9 +24,7 @@ import {
   School as SchoolIcon,
   People as PeopleIcon
 } from '@mui/icons-material';
-import {
-  getClassByIdAPI,
-} from '../../../services/api';
+import { getClassByIdAPI } from '../../../services/classes';
 import AttendanceModal from './AttendanceModal';
 
 interface Schedule {

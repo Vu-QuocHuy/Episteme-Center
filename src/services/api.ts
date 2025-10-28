@@ -1,16 +1,6 @@
 import axiosInstance from '../utils/axios.customize';
-import { API_CONFIG } from '../config/api';
-import {
-  ClassFormData,
-  MenuItem,
-  CreateFeedbackRequest,
-  UpdateFeedbackRequest,
-  FeedbackResponse,
-  FeedbacksListResponse,
-  CreateRoleRequest,
-  UpdateRoleRequest
-} from '../types';
-import { createQueryParams } from '../utils/apiHelpers';
+// import { API_CONFIG } from '../config/api';
+import { MenuItem } from '../types';
 
 // Type definitions for API parameters and responses
 export interface LoginData {
@@ -173,509 +163,39 @@ export interface ApiParams {
   [key: string]: any;
 }
 
-// Auth APIs
-export const registerAPI = (data: any) => axiosInstance.post(API_CONFIG.ENDPOINTS.AUTH.REGISTER, data);
-export const registerAdminAPI = (data: any) => axiosInstance.post(API_CONFIG.ENDPOINTS.ADMIN.CREATE, data);
-export const loginUserAPI = (data: LoginData) => {
-  const formData = new URLSearchParams();
-  formData.append('email', data.email);
-  formData.append('password', data.password);
-  return axiosInstance.post(API_CONFIG.ENDPOINTS.AUTH.USER_LOGIN, formData, {
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-  });
-};
-export const loginAdminAPI = (data: LoginData) => {
-  const formData = new URLSearchParams();
-  formData.append('email', data.email);
-  formData.append('password', data.password);
-  return axiosInstance.post(API_CONFIG.ENDPOINTS.AUTH.ADMIN_LOGIN, formData, {
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-  });
-};
-// Backward compatibility
-export const loginAPI = loginUserAPI;
+// Auth APIs moved to src/services/auth.ts
 
-export const changePasswordAPI = (oldPassword: string, newPassword: string) => {
-  const formData = new URLSearchParams();
-  formData.append('oldPassword', oldPassword);
-  formData.append('newPassword', newPassword);
-  return axiosInstance.post(API_CONFIG.ENDPOINTS.AUTH.CHANGE_PASSWORD, formData, {
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-  });
-};
+// User APIs moved to src/services/users.ts
 
-
-export const forgotPasswordAPI = (email: string) => {
-  const formData = new URLSearchParams();
-  formData.append('email', email);
-  return axiosInstance.post(API_CONFIG.ENDPOINTS.AUTH.FORGOT_PASSWORD, formData, {
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-  });
-};
-
-export const verifyCodeAPI = (code: string, email: string) => {
-  const formData = new URLSearchParams();
-  formData.append('code', code);
-  formData.append('email', email);
-  return axiosInstance.post(API_CONFIG.ENDPOINTS.AUTH.VERIFY_CODE, formData, {
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-  });
-};
-
-export const resetPasswordAPI = (email: string, code: string, password: string) => {
-  const formData = new URLSearchParams();
-  formData.append('email', email);
-  formData.append('code', code);
-  formData.append('password', password);
-  return axiosInstance.post(API_CONFIG.ENDPOINTS.AUTH.RESET_PASSWORD, formData, {
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-  });
-};
-
-// User APIs
-export const uploadAvatarAPI = (data: { imageUrl: string; publicId: string }) => {
-  const formData = new URLSearchParams();
-  formData.append('imageUrl', data.imageUrl);
-  formData.append('publicId', data.publicId);
-  return axiosInstance.patch(API_CONFIG.ENDPOINTS.USERS.UPLOAD_AVATAR, formData, {
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-    }
-  });
-};
-export const getUserByIdAPI = (id: string) => axiosInstance.get(API_CONFIG.ENDPOINTS.USERS.GET_BY_ID(id));
-
-// Class APIs
-export const createClassAPI = (data: ClassFormData) => {
-  return axiosInstance.post(API_CONFIG.ENDPOINTS.CLASSES.CREATE, data, {
-    headers: {
-      'Content-Type': 'application/json',
-      'x-lang': 'vi',
-      'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-    }
-  });
-};
-
-export const getAllClassesAPI = (params?: ApiParams) => {
-  const queryParams = createQueryParams(params || {});
-  return axiosInstance.get(API_CONFIG.ENDPOINTS.CLASSES.GET_ALL, {
-    params: queryParams
-  });
-};
-
-export const getClassByIdAPI = (id: string) => {
-  return axiosInstance.get(API_CONFIG.ENDPOINTS.CLASSES.GET_BY_ID(id), {
-    headers: {
-      'x-lang': 'vi',
-      'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-    }
-  });
-};
-
-export const updateClassAPI = (id: string, data: Partial<ClassFormData>) => {
-  return axiosInstance.patch(API_CONFIG.ENDPOINTS.CLASSES.UPDATE(id), data, {
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-    }
-  });
-};
-
-export const deleteClassAPI = (id: string) => {
-  return axiosInstance.delete(API_CONFIG.ENDPOINTS.CLASSES.DELETE ? API_CONFIG.ENDPOINTS.CLASSES.DELETE(id) : `/classes/${id}`, {
-    headers: {
-      'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-    }
-  });
-};
-
-export const assignTeacherAPI = (classId: string, teacherId: string) => {
-  return axiosInstance.patch(API_CONFIG.ENDPOINTS.CLASSES.ASSIGN_TEACHER, undefined, {
-    params: {
-      classId: classId,
-      teacherId: teacherId
-    },
-    headers: {
-      'x-lang': 'vi'
-    }
-  });
-};
-
-export const unassignTeacherAPI = (classId: string, teacherId: string) => {
-  return axiosInstance.patch(API_CONFIG.ENDPOINTS.CLASSES.UNASSIGN_TEACHER, undefined, {
-    params: {
-      classId: classId,
-      teacherId: teacherId
-    },
-    headers: {
-      'x-lang': 'vi'
-    }
-  });
-};
-
-export const getAvailableStudentsAPI = (classId: string, params?: ApiParams) => {
-  const queryParams: any = {};
-  if (params?.page) queryParams.page = params.page;
-  if (params?.limit) queryParams.limit = params.limit;
-
-  return axiosInstance.get(API_CONFIG.ENDPOINTS.CLASSES.GET_AVAILABLE_STUDENTS(classId), {
-    params: queryParams,
-    headers: {
-      'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-    }
-  });
-};
-export const addStudentsToClassAPI = (classId: string, students: Array<{ studentId: string, discountPercent?: number }>) => {
-  // Try different formats based on API specification
-  const requestData = students.map(student => ({
-    studentId: student.studentId,
-    discountPercent: student.discountPercent || 0
-  }));
-  return axiosInstance.patch(API_CONFIG.ENDPOINTS.CLASSES.ADD_STUDENTS(classId), requestData, {
-    headers: {
-      'Content-Type': 'application/json',
-      'x-lang': 'vi'
-    }
-  }).then(response => {
-    return response;
-  }).catch(error => {
-    // If it's a 500 error, the operation might have succeeded
-    if (error.response?.status === 500) {
-      // Return a mock success response
-      return { data: { success: true, message: 'Students added successfully despite 500 error' } };
-    }
-
-    throw error;
-  });
-};
-
-export const removeStudentsFromClassAPI = (classId: string, studentIds: string[]) => {
-  return axiosInstance.patch(API_CONFIG.ENDPOINTS.CLASSES.REMOVE_STUDENTS(classId), studentIds, {
-    headers: {
-      'Content-Type': 'application/json',
-      'x-lang': 'vi'
-    }
-  });
-};
-// Backward compatibility
-export const enrollStudentAPI = addStudentsToClassAPI;
-export const removeStudentFromClassAPI = (classId: string, studentId: string) => removeStudentsFromClassAPI(classId, [studentId]);
-export const getStudentsInClassAPI = (classId: string, params?: ApiParams) => {
-  // Sử dụng endpoint get class by id và extract students từ response
-  return axiosInstance.get(API_CONFIG.ENDPOINTS.CLASSES.GET_BY_ID(classId), { params });
-};
+// Class APIs moved to services/classes.ts
 
 // Student APIs
-export const createStudentAPI = (data: StudentData) => axiosInstance.post(API_CONFIG.ENDPOINTS.STUDENTS.CREATE, data);
-export const getAllStudentsAPI = (params?: ApiParams) => {
-  // Use helper function to create query params with filters
-  const queryParams = createQueryParams(params || {});
-  // Use axios with properly encoded filters
-  return axiosInstance.get(API_CONFIG.ENDPOINTS.STUDENTS.GET_ALL, {
-    params: queryParams
-  });
-};
-export const getStudentByIdAPI = (id: string) => axiosInstance.get(API_CONFIG.ENDPOINTS.STUDENTS.GET_BY_ID(id));
-export const updateStudentAPI = (id: string, data: Partial<StudentData>) => axiosInstance.patch(API_CONFIG.ENDPOINTS.STUDENTS.UPDATE(id), data);
-export const deleteStudentAPI = (id: string) => axiosInstance.delete(API_CONFIG.ENDPOINTS.STUDENTS.DELETE(id));
-export const getStudentScheduleAPI = (id: string) => axiosInstance.get(API_CONFIG.ENDPOINTS.STUDENTS.SCHEDULE(id));
-export const getStudentAttendanceAPI = (id: string) => axiosInstance.get(API_CONFIG.ENDPOINTS.STUDENTS.ATTENDANCE(id));
-export const getMonthlyStudentChangeAPI = (params?: ApiParams) => axiosInstance.get(API_CONFIG.ENDPOINTS.STUDENTS.MONTHLY_CHANGES, { params });
+// Student APIs moved to services/students.ts
 
-// Teacher APIs - Updated for new backend structure
-export const createTeacherAPI = (data: TeacherData) => {
-  // Use JSON format as per Postman spec
-  return axiosInstance.post(API_CONFIG.ENDPOINTS.TEACHERS.CREATE, data, {
-    headers: {
-      'Content-Type': 'application/json',
-      'x-lang': 'vi'
-    }
-  });
-};
+// Teacher APIs moved to services/teachers.ts
 
-export const getAllTeachersAPI = (params?: ApiParams) => {
-  const queryParams = createQueryParams(params || {});
-  return axiosInstance.get(API_CONFIG.ENDPOINTS.TEACHERS.GET_ALL, {
-    params: queryParams
-  });
-};
-
-export const getTypicalTeachersAPI = () => {
-  const timestamp = Date.now();
-  return axiosInstance.get(`/teachers/typical?_t=${timestamp}`, {
-    headers: {
-      'Cache-Control': 'no-cache',
-      'Pragma': 'no-cache'
-    }
-  });
-};
-
-export const getTeacherByIdAPI = (id: string) => {
-  return axiosInstance.get(API_CONFIG.ENDPOINTS.TEACHERS.GET_BY_ID(id));
-};
-
-export const getTeacherBySlugAPI = (slug: string) => {
-  return axiosInstance.get(`/teachers/slug/${slug}`);
-};
-
-export const updateTeacherAPI = (id: string, data: Partial<TeacherData>) => {
-  // Use JSON format as per Postman spec
-  return axiosInstance.patch(API_CONFIG.ENDPOINTS.TEACHERS.UPDATE(id), data, {
-    headers: { 'Content-Type': 'application/json' }
-  });
-};
-
-export const deleteTeacherAPI = (id: string) => {
-  return axiosInstance.delete(API_CONFIG.ENDPOINTS.TEACHERS.DELETE(id));
-};
-
-// Teacher schedule API
-export const getTeacherScheduleAPI = (id: string) => axiosInstance.get(`/teachers/schedule/${id}`);
-
-// Legacy APIs for backward compatibility
-export const getMyClassesAPI = () => axiosInstance.get(API_CONFIG.ENDPOINTS.TEACHERS.GET_MY_CLASSES);
-
-// Parent APIs - Updated for new backend structure
-export const createParentAPI = (data: ParentData) => {
-  // Convert to FormData for URL-encoded format as per Postman spec
-  const formData = new URLSearchParams();
-  Object.entries(data).forEach(([key, value]) => {
-    if (value !== undefined && value !== null) {
-      formData.append(key, String(value));
-    }
-  });
-
-  return axiosInstance.post(API_CONFIG.ENDPOINTS.PARENTS.CREATE, formData, {
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'x-lang': 'vi'
-    }
-  });
-};
-
-export const getAllParentsAPI = (params?: ApiParams) => {
-  const queryParams = createQueryParams(params || {});
-  return axiosInstance.get(API_CONFIG.ENDPOINTS.PARENTS.GET_ALL, {
-    params: queryParams
-  });
-};
-
-export const getParentByIdAPI = (id: string) => {
-  return axiosInstance.get(API_CONFIG.ENDPOINTS.PARENTS.GET_BY_ID(id), {
-    headers: { 'x-lang': 'vi' }
-  });
-};
-
-export const updateParentAPI = (id: string, data: Partial<ParentData>) => {
-  // Convert to FormData for URL-encoded format
-  const formData = new URLSearchParams();
-  Object.entries(data).forEach(([key, value]) => {
-    if (value !== undefined && value !== null) {
-      formData.append(key, String(value));
-    }
-  });
-
-  return axiosInstance.patch(API_CONFIG.ENDPOINTS.PARENTS.UPDATE(id), formData, {
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-  });
-};
-
-export const deleteParentAPI = (id: string) => axiosInstance.delete(API_CONFIG.ENDPOINTS.PARENTS.DELETE(id));
-
-// New parent-child management APIs
-export const addChildToParentAPI = (studentId: string, parentId: string) => {
-  const formData = new URLSearchParams();
-  formData.append('studentId', studentId);
-  formData.append('parentId', parentId);
-
-  return axiosInstance.patch(API_CONFIG.ENDPOINTS.PARENTS.ADD_CHILD, formData, {
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-  });
-};
-
-export const removeChildFromParentAPI = (studentId: string, parentId: string) => {
-  const formData = new URLSearchParams();
-  formData.append('studentId', studentId);
-  formData.append('parentId', parentId);
-
-  return axiosInstance.patch(API_CONFIG.ENDPOINTS.PARENTS.REMOVE_CHILD, formData, {
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-  });
-};
-
-export const payTuitionFeeAPI = () => {
-  // TODO: Implement when backend API is ready
-  return axiosInstance.get('/parents/pay-tuition-fee');
-};
-
-// Legacy API for backward compatibility
-export const getParentChildrenAPI = (id: string) => {
-  // Use parent detail API and let callers extract data.students
-  return axiosInstance.get(API_CONFIG.ENDPOINTS.PARENTS.GET_BY_ID(id));
-};
-export const addChildAPI = (studentId: string, parentId: string) => {
-  const formData = new URLSearchParams();
-  formData.append('studentId', studentId);
-  formData.append('parentId', parentId);
-  return axiosInstance.patch(API_CONFIG.ENDPOINTS.PARENTS.ADD_CHILD, formData, {
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-  });
-};
-export const removeChildAPI = (studentId: string, parentId: string) => {
-  const formData = new URLSearchParams();
-  formData.append('studentId', studentId);
-  formData.append('parentId', parentId);
-  return axiosInstance.patch(API_CONFIG.ENDPOINTS.PARENTS.REMOVE_CHILD, formData, {
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-  });
-};
-export const payTuitionAPI = (data: any) => axiosInstance.patch(API_CONFIG.ENDPOINTS.PARENTS.PAY_TUITION_FEE, data);
+// Parent APIs moved to services/parents.ts
 
 // Session APIs (Attendance)
-export const getTodaySessionAPI = (classId: string) => axiosInstance.get(API_CONFIG.ENDPOINTS.SESSIONS.GET_TODAY(classId));
-export const updateSessionAttendanceAPI = (sessionId: string, data: AttendanceData[]) => axiosInstance.patch(API_CONFIG.ENDPOINTS.SESSIONS.UPDATE_ATTENDANCE(sessionId), data);
-export const getSessionsByClassAPI = (classId: string, params?: ApiParams) => axiosInstance.get(API_CONFIG.ENDPOINTS.SESSIONS.GET_ALL_BY_CLASS(classId), { params });
-export const getSessionsByStudentAPI = (studentId: string) => axiosInstance.get(API_CONFIG.ENDPOINTS.SESSIONS.GET_BY_STUDENT(studentId));
-// Backward compatibility
-export const getTodayAttendanceAPI = getTodaySessionAPI;
-export const updateAttendanceAPI = (id: string, data: AttendanceData) => updateSessionAttendanceAPI(id, [data]);
+// Moved to services/sessions.ts
 
-// Payment APIs
-export const getAllPaymentsAPI = (params?: ApiParams) => {
-  const queryParams = createQueryParams(params || {});
-  return axiosInstance.get(API_CONFIG.ENDPOINTS.PAYMENTS.GET_ALL, {
-    params: queryParams,
-    headers: {
-      'x-lang': 'vi'
-    }
-  });
-};
-export const payStudentAPI = (paymentId: string, data: PaymentData) => {
-  const formData = new URLSearchParams();
-  formData.append('amount', String(Number(data.amount)));
-  if (data.method) formData.append('method', data.method);
-  if (data.note) formData.append('note', data.note);
-  return axiosInstance.patch(API_CONFIG.ENDPOINTS.PAYMENTS.PAY_STUDENT(paymentId), formData, {
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-  });
-};
-export const getAllTeacherPaymentsAPI = (params?: ApiParams) => {
-  const queryParams = createQueryParams(params || {});
-  return axiosInstance.get('/teacher-payments', {
-    params: queryParams
-  });
-};
-
-// Teacher Payment APIs
-
-
-export const updateTeacherPaymentAPI = (id: string, data: {
-  method?: string;
-  paidAmount?: number;
-  note?: string;
-}) => {
-  // Fix duplicated /api/v1 in path; axiosInstance baseURL already includes prefix when needed
-  return axiosInstance.patch(`/teacher-payments/${id}`, data);
-};
-
-
-
-// Backward compatibility
-export const getTeacherPaymentsAPI = getAllTeacherPaymentsAPI;
-// Backward compatibility
-export const getPaymentsAPI = getAllPaymentsAPI;
-export const getTotalPaymentsAPI = () => axiosInstance.get('/payments/total');
-export const getPaymentsByStudentAPI = (studentId: string, params?: ApiParams) =>
-  axiosInstance.get(`/payments/students/${studentId}`, { params });
-
-export const exportPaymentsReportAPI = (filters?: Record<string, any>) => {
-  const params: Record<string, any> = {};
-  if (filters && Object.keys(filters).length > 0) {
-    params.filters = typeof filters === 'string' ? filters : JSON.stringify(filters);
-  }
-  return axiosInstance.get(API_CONFIG.ENDPOINTS.PAYMENTS.EXPORT_REPORT, {
-    headers: {
-      'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-      'Accept': 'application/json'
-    },
-    params
-  });
-};
-export const payTeacherAPI = (id: string, data: PaymentData, params: ApiParams = {}) => {
-  const formData = new URLSearchParams();
-  formData.append('amount', String(Number(data.amount)));
-  if (data.method) formData.append('method', data.method);
-  if (data.note) formData.append('note', data.note);
-  return axiosInstance.post(`/teacher-payments/${id}/pay`, formData, {
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    params
-  });
-};
-export const getTeacherPaymentByIdAPI = (id: string) => axiosInstance.get(`/teacher-payments/${id}`);
+// Payment APIs moved to services/payments.ts
 // Typical teacher detail (homepage featured teachers)
-export const getTypicalTeacherDetailAPI = (id: string) => axiosInstance.get(`/teachers/typical/${id}`);
-export const getAttendanceListAPI = (params: { classId: string; limit?: number; page?: number }) => {
-  const { classId, ...queryParams } = params;
-  return axiosInstance.get(`/sessions/all/${classId}`, { params: queryParams });
-};
-export const getAttendanceByIdAPI = (id: string) => axiosInstance.get(`/attendances/${id}`);
+// Moved to sessions/teachers services where applicable
 
 // Schedule APIs
-export const getLoggedInStudentSchedule = () => axiosInstance.get(API_CONFIG.ENDPOINTS.SCHEDULES.GET_STUDENT_SCHEDULE);
+// Kept for backward compatibility if used elsewhere
+export const getLoggedInStudentSchedule = () => axiosInstance.get('/schedules/student/me');
 
 // Announcement APIs (Quản lý quảng cáo)
-export const createAnnouncementAPI = (data: AnnouncementData) =>
-  axiosInstance.post(API_CONFIG.ENDPOINTS.ANNOUNCEMENTS.CREATE, data, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
-
-export const getAllAnnouncementsAPI = (params?: ApiParams) => {
-  // Temporary check for development - can be removed when API is ready
-  const isDevelopment = import.meta.env.VITE_NODE_ENV === 'development';
-  if (isDevelopment && import.meta.env.VITE_MOCK_ANNOUNCEMENTS === 'true') {
-    return Promise.resolve({ data: [] }); // Return empty data for development
-  }
-  return axiosInstance.get(API_CONFIG.ENDPOINTS.ANNOUNCEMENTS.GET_ALL, { params });
-};
-
-export const getAnnouncementByIdAPI = (id: string) =>
-  axiosInstance.get(API_CONFIG.ENDPOINTS.ANNOUNCEMENTS.GET_BY_ID(id));
-
-export const updateAnnouncementAPI = (id: string, data: Partial<AnnouncementData>) =>
-  axiosInstance.patch(API_CONFIG.ENDPOINTS.ANNOUNCEMENTS.UPDATE(id), data, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
-
-export const deleteAnnouncementAPI = (id: string) =>
-  axiosInstance.delete(API_CONFIG.ENDPOINTS.ANNOUNCEMENTS.DELETE(id));
+// Announcement APIs moved to services/advertisements.ts (managed there as advertisements)
 
 
 
-// Refresh token
-export const refreshTokenAPI = () => {
-  // Backend tự xử lý cookie, frontend chỉ cần gọi API
-  return axiosInstance.get(API_CONFIG.ENDPOINTS.AUTH.REFRESH_TOKEN);
-};
-
-// Gửi email xác thực
-export const sendVerificationEmailAPI = () =>
-  axiosInstance.post(API_CONFIG.ENDPOINTS.AUTH.SEND_VERIFICATION_EMAIL);
-
-// Xác thực email
-export const verifyEmailAPI = (token: string) =>
-  axiosInstance.post(`${API_CONFIG.ENDPOINTS.AUTH.VERIFY_EMAIL}?token=${token}`);
+// Refresh/verification APIs moved to src/services/auth.ts
 
 // Update user (PATCH)
-export const updateUserAPI = (userId: string, data: UserUpdateData) => {
-  const formData = new URLSearchParams();
-  Object.entries(data).forEach(([key, value]) => {
-    if (value !== undefined && value !== null) formData.append(key, value);
-  });
-  return axiosInstance.patch(API_CONFIG.ENDPOINTS.USERS.UPDATE(userId), formData, {
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-  });
-};
+// Update user API moved to src/services/users.ts
 
 // Menu APIs
 export interface MenuData {
@@ -698,42 +218,7 @@ export interface MenusListResponse {
   data: MenuItem[];
 }
 
-export const createMenuAPI = (data: MenuData) => {
-  return axiosInstance.post<MenuResponse>('/menus', data);
-};
-
-export const getAllMenusAPI = (params?: { page?: number; limit?: number }) => {
-  const queryParams: any = {};
-  if (params?.page) queryParams.page = params.page;
-  if (params?.limit) queryParams.limit = params.limit;
-
-  return axiosInstance.get<MenusListResponse>('/menus', {
-    params: queryParams,
-    headers: {
-      'x-lang': 'vi'
-    }
-  });
-};
-
-export const getMenuByIdAPI = (id: string) => {
-  return axiosInstance.get<MenuResponse>(API_CONFIG.ENDPOINTS.MENUS.GET_BY_ID(id));
-};
-
-export const getMenuBySlugAPI = (slug: string) => {
-  return axiosInstance.get<MenuResponse>(`/menus/slug/${slug}`);
-};
-
-export const updateMenuAPI = (id: string, data: Partial<MenuData>) => {
-  return axiosInstance.patch<MenuResponse>(`/menus/${id}`, data);
-};
-
-export const deleteMenuAPI = (id: string) => {
-  return axiosInstance.delete(`/menus/${id}`);
-};
-
-export const toggleMenuVisibilityAPI = (id: string, isActive: boolean) => {
-  return axiosInstance.patch<MenuResponse>(`/menus/${id}`, { isActive });
-};
+// Menu APIs moved to src/services/menus.ts
 
 
 // Transaction APIs
@@ -743,57 +228,7 @@ export interface TransactionData {
   description: string;
 }
 
-export const createTransactionAPI = (data: TransactionData) => {
-  const formData = new URLSearchParams();
-  formData.append('amount', String(data.amount));
-  if (data.category_id) formData.append('categoryId', data.category_id); // Use camelCase as backend expects
-  if (data.description) formData.append('description', data.description);
-  return axiosInstance.post(API_CONFIG.ENDPOINTS.TRANSACTIONS.CREATE, formData, {
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'x-lang': 'vi'
-    }
-  });
-};
-
-export const getAllTransactionsAPI = (params?: ApiParams) => {
-  const queryParams = createQueryParams(params || {});
-  return axiosInstance.get(API_CONFIG.ENDPOINTS.TRANSACTIONS.GET_ALL, {
-    params: queryParams,
-    headers: {
-      'x-lang': 'vi'
-    }
-  });
-};
-
-export const getTransactionByIdAPI = (id: string) => {
-  return axiosInstance.get(API_CONFIG.ENDPOINTS.TRANSACTIONS.GET_BY_ID(id), {
-    headers: {
-      'x-lang': 'vi'
-    }
-  });
-};
-
-export const updateTransactionAPI = (id: string, data: Partial<TransactionData>) => {
-  const formData = new URLSearchParams();
-  if (data.amount) formData.append('amount', String(data.amount));
-  if (data.category_id) formData.append('categoryId', data.category_id); // Use camelCase as backend expects
-  if (data.description) formData.append('description', data.description);
-  return axiosInstance.patch(API_CONFIG.ENDPOINTS.TRANSACTIONS.UPDATE(id), formData, {
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'x-lang': 'vi'
-    }
-  });
-};
-
-export const deleteTransactionAPI = (id: string) => {
-  return axiosInstance.delete(API_CONFIG.ENDPOINTS.TRANSACTIONS.DELETE(id), {
-    headers: {
-      'x-lang': 'vi'
-    }
-  });
-};
+// Transaction APIs moved to src/services/transactions.ts
 
 // Transaction Categories APIs
 export interface TransactionCategoryData {
@@ -801,51 +236,7 @@ export interface TransactionCategoryData {
   name: string;
 }
 
-export const createTransactionCategoryAPI = (data: TransactionCategoryData) => {
-  const formData = new URLSearchParams();
-  formData.append('type', data.type);
-  formData.append('name', data.name);
-  return axiosInstance.post(API_CONFIG.ENDPOINTS.TRANSACTION_CATEGORIES.CREATE, formData, {
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-  });
-};
-
-export const getAllTransactionCategoriesAPI = (params?: ApiParams) => {
-  const queryParams: any = {};
-  if (params?.page) queryParams.page = params.page;
-  if (params?.limit) queryParams.limit = params.limit;
-  return axiosInstance.get(API_CONFIG.ENDPOINTS.TRANSACTION_CATEGORIES.GET_ALL, {
-    params: queryParams,
-    headers: {
-      'x-lang': 'vi'
-    }
-  });
-};
-
-export const getTransactionCategoryByIdAPI = (id: string) => {
-  return axiosInstance.get(API_CONFIG.ENDPOINTS.TRANSACTION_CATEGORIES.GET_BY_ID(id), {
-    headers: {
-      'x-lang': 'vi'
-    }
-  });
-};
-
-export const updateTransactionCategoryAPI = (id: string, data: Partial<TransactionCategoryData>) => {
-  const formData = new URLSearchParams();
-  if (data.type) formData.append('type', data.type);
-  if (data.name) formData.append('name', data.name);
-  return axiosInstance.patch(API_CONFIG.ENDPOINTS.TRANSACTION_CATEGORIES.UPDATE(id), formData, {
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-  });
-};
-
-export const deleteTransactionCategoryAPI = (id: string) => {
-  return axiosInstance.delete(API_CONFIG.ENDPOINTS.TRANSACTION_CATEGORIES.DELETE(id), {
-    headers: {
-      'x-lang': 'vi'
-    }
-  });
-};
+// Transaction category APIs moved to src/services/transactions.ts
 
 // File APIs
 export interface FileUploadResponse {
@@ -857,25 +248,7 @@ export interface FileUploadResponse {
   };
 }
 
-export const uploadFileAPI = (file: File) => {
-  const formData = new FormData();
-  formData.append('file', file);
-  return axiosInstance.post<FileUploadResponse>(API_CONFIG.ENDPOINTS.FILES.UPLOAD, formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-      'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-    }
-  });
-};
-
-export const deleteFileAPI = (publicId: string) => {
-  return axiosInstance.delete(API_CONFIG.ENDPOINTS.FILES.DELETE, {
-    params: { publicId },
-    headers: {
-      'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-    }
-  });
-};
+// File APIs moved to src/services/files.ts
 
 // Advertisement APIs
 export interface AdvertisementData {
@@ -920,79 +293,10 @@ export interface AdvertisementsListResponse {
   };
 }
 
-export const createAdvertisementAPI = (data: AdvertisementData) => {
-  const formData = new URLSearchParams();
-  formData.append('title', data.title);
-  formData.append('description', data.description);
-  formData.append('priority', data.priority.toString());
-  formData.append('imageUrl', data.imageUrl);
-  formData.append('publicId', data.publicId);
-  if (data.classId) formData.append('classId', data.classId);
-  formData.append('type', data.type);
-
-  return axiosInstance.post<AdvertisementResponse>(API_CONFIG.ENDPOINTS.ADVERTISEMENTS.CREATE, formData, {
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-  });
-};
-
-export const getAdvertisementsAPI = (params?: { limit?: number; page?: number }) => {
-  const queryParams: any = {};
-  if (params?.page) queryParams.page = params.page;
-  if (params?.limit) queryParams.limit = params.limit;
-
-  return axiosInstance.get<AdvertisementsListResponse>(API_CONFIG.ENDPOINTS.ADVERTISEMENTS.GET_ALL, {
-    params: queryParams
-  });
-};
-
-export const getHomeBannersAPI = (limit: number = 3) => {
-  const timestamp = Date.now();
-  return axiosInstance.get<AdvertisementsListResponse>(`/advertisements/banners/${limit}?_t=${timestamp}`, {
-    headers: {
-      'Cache-Control': 'no-cache',
-      'Pragma': 'no-cache'
-    }
-  });
-};
-
-export const getHomePopupAPI = () => {
-  const timestamp = Date.now();
-  return axiosInstance.get<AdvertisementsListResponse>(`/advertisements/popup?_t=${timestamp}`, {
-    headers: {
-      'Cache-Control': 'no-cache',
-      'Pragma': 'no-cache'
-    }
-  });
-};
-
-export const getAdvertisementByIdAPI = (id: string) => {
-  return axiosInstance.get<AdvertisementResponse>(API_CONFIG.ENDPOINTS.ADVERTISEMENTS.GET_BY_ID(id));
-};
-
-export const updateAdvertisementAPI = (id: string, data: Partial<AdvertisementData>) => {
-  const formData = new URLSearchParams();
-  if (data.title !== undefined) formData.append('title', data.title);
-  if (data.description !== undefined) formData.append('description', data.description);
-  if (data.priority !== undefined) formData.append('priority', data.priority.toString());
-  if (data.imageUrl !== undefined) formData.append('imageUrl', data.imageUrl);
-  if (data.publicId !== undefined) formData.append('publicId', data.publicId);
-  if (data.classId !== undefined) formData.append('classId', data.classId);
-  if (data.type !== undefined) formData.append('type', data.type);
-
-  return axiosInstance.patch<AdvertisementResponse>(API_CONFIG.ENDPOINTS.ADVERTISEMENTS.UPDATE(id), formData, {
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-  });
-};
-
-export const deleteAdvertisementAPI = (id: string) => {
-  return axiosInstance.delete(API_CONFIG.ENDPOINTS.ADVERTISEMENTS.DELETE(id));
-};
+// Advertisement APIs moved to src/services/advertisements.ts
 
 // Dashboard APIs
-export const getAdminDashboardAPI = () => axiosInstance.get(API_CONFIG.ENDPOINTS.DASHBOARD.ADMIN);
-export const getTeacherDashboardAPI = (id: string) => axiosInstance.get(API_CONFIG.ENDPOINTS.DASHBOARD.TEACHER(id));
-export const getParentDashboardAPI = (id: string) => axiosInstance.get(API_CONFIG.ENDPOINTS.DASHBOARD.PARENT(id));
-export const getStudentDashboardAPI = (id: string) => axiosInstance.get(API_CONFIG.ENDPOINTS.DASHBOARD.STUDENT(id));
+// Moved to services/dashboard.ts
 
 // Audit Log APIs
 export interface AuditLogItem {
@@ -1027,85 +331,14 @@ export interface AuditLogResponse {
   };
 }
 
-export const getAuditLogsAPI = (params: { page?: number; limit?: number } = {}) => {
-  const { page = 1, limit = 10 } = params;
-  return axiosInstance.get<AuditLogResponse>(API_CONFIG.ENDPOINTS.AUDIT!.LOGS, {
-    params: { page, limit },
-  });
-}
+// Audit APIs moved to src/services/audit.ts
 
 // Feedback APIs
-export const createFeedbackAPI = (data: CreateFeedbackRequest) => {
-  const formData = new URLSearchParams();
-  formData.append('name', data.name);
-  formData.append('description', data.description);
-  if (data.imageUrl) formData.append('imageUrl', data.imageUrl);
-  if (data.publicId) formData.append('publicId', data.publicId);
-  if (data.socialUrl) formData.append('socialUrl', data.socialUrl);
+// Feedback APIs moved to src/services/feedback.ts
 
-  return axiosInstance.post<FeedbackResponse>(API_CONFIG.ENDPOINTS.FEEDBACK!.CREATE, formData, {
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-  });
-};
+// Teacher payments report API moved to src/services/payments.ts
 
-export const getFeedbacksAPI = (params?: { limit?: number; page?: number }) => {
-  const queryParams: any = {};
-  if (params?.page) queryParams.page = params.page;
-  if (params?.limit) queryParams.limit = params.limit;
-
-  return axiosInstance.get<FeedbacksListResponse>(API_CONFIG.ENDPOINTS.FEEDBACK!.GET_ALL, {
-    params: queryParams
-  });
-};
-
-export const getFeedbackByIdAPI = (id: string) => {
-  return axiosInstance.get<FeedbackResponse>(API_CONFIG.ENDPOINTS.FEEDBACK!.GET_BY_ID(id));
-};
-
-export const updateFeedbackAPI = (id: string, data: UpdateFeedbackRequest) => {
-  const formData = new URLSearchParams();
-  if (data.name !== undefined) formData.append('name', data.name);
-  if (data.description !== undefined) formData.append('description', data.description);
-  if (data.imageUrl !== undefined) formData.append('imageUrl', data.imageUrl);
-  if (data.publicId !== undefined) formData.append('publicId', data.publicId);
-  if (data.socialUrl !== undefined) formData.append('socialUrl', data.socialUrl);
-
-  return axiosInstance.patch<FeedbackResponse>(API_CONFIG.ENDPOINTS.FEEDBACK!.UPDATE(id), formData, {
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-  });
-};
-
-export const deleteFeedbackAPI = (id: string) => {
-  return axiosInstance.delete(API_CONFIG.ENDPOINTS.FEEDBACK!.DELETE(id));
-};
-
-export const exportTeacherPaymentsReportAPI = (filters?: Record<string, any>) => {
-  const params: Record<string, any> = {};
-  if (filters && Object.keys(filters).length > 0) {
-    params.filters = typeof filters === 'string' ? filters : JSON.stringify(filters);
-  }
-  return axiosInstance.get(API_CONFIG.ENDPOINTS.PAYMENTS.TEACHER_EXPORT_REPORT, {
-    headers: {
-      'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-      'Accept': 'application/json'
-    },
-    params
-  });
-};
-
-export const exportTransactionsReportAPI = (params?: ApiParams & { startDate?: string; endDate?: string; type?: 'revenue' | 'expense' }) => {
-  const queryParams = createQueryParams(params || {});
-  // remove page/limit if undefined to keep them optional
-  if (!params?.page) delete (queryParams as any).page;
-  if (!params?.limit) delete (queryParams as any).limit;
-  return axiosInstance.get(API_CONFIG.ENDPOINTS.TRANSACTIONS.REPORT, {
-    headers: {
-      'x-lang': 'vi',
-      'Accept': 'application/json'
-    },
-    params: queryParams
-  });
-};
+// Transaction report API moved to src/services/transactions.ts
 
 // Article APIs
 export interface ArticleData {
@@ -1147,138 +380,11 @@ export interface ArticlesListResponse {
   };
 }
 
-export const createArticleAPI = (data: ArticleData) => {
-  // ✅ Sử dụng JSON thay vì URLSearchParams để gửi number
-  const payload: any = {
-    title: data.title,
-    content: data.content,
-    menuId: data.menuId
-  };
-
-  // ✅ Chỉ gửi các trường optional nếu có giá trị
-  if (data.order !== undefined && data.order !== null) {
-    payload.order = data.order; // Gửi dưới dạng number
-  }
-  if (data.isActive !== undefined && data.isActive !== null) {
-    payload.isActive = data.isActive; // Gửi dưới dạng boolean
-  }
-  if (data.file !== undefined && data.file !== null && data.file !== '') {
-    payload.file = data.file;
-  }
-  if (data.publicId !== undefined && data.publicId !== null && data.publicId !== '') {
-    payload.publicId = data.publicId;
-  }
-
-  return axiosInstance.post<ArticleResponse>(API_CONFIG.ENDPOINTS.ARTICLES.CREATE, payload, {
-    headers: { 'Content-Type': 'application/json' }
-  });
-};
-
-export const getAllArticlesAPI = (params?: { limit?: number; page?: number; filters?: { menuId?: string } }) => {
-  const queryParams: any = {};
-  if (params?.page) queryParams.page = params.page;
-  if (params?.limit) queryParams.limit = params.limit;
-  if (params?.filters) queryParams.filters = JSON.stringify(params.filters);
-
-  return axiosInstance.get<ArticlesListResponse>(API_CONFIG.ENDPOINTS.ARTICLES.GET_ALL, {
-    params: queryParams
-  });
-};
-
-export const getArticleByIdAPI = (id: string) => {
-  return axiosInstance.get<ArticleResponse>(API_CONFIG.ENDPOINTS.ARTICLES.GET_BY_ID(id));
-};
-
-export const updateArticleAPI = (id: string, data: Partial<ArticleData>) => {
-  // ✅ Sử dụng JSON thay vì URLSearchParams để gửi number
-  const payload: any = {};
-
-  // ✅ Chỉ gửi các trường có giá trị
-  if (data.title !== undefined && data.title !== null && data.title !== '') {
-    payload.title = data.title;
-  }
-  if (data.content !== undefined && data.content !== null && data.content !== '') {
-    payload.content = data.content;
-  }
-  if (data.menuId !== undefined && data.menuId !== null && data.menuId !== '') {
-    payload.menuId = data.menuId;
-  }
-  if (data.order !== undefined && data.order !== null) {
-    payload.order = data.order; // Gửi dưới dạng number
-  }
-  if (data.isActive !== undefined && data.isActive !== null) {
-    payload.isActive = data.isActive; // Gửi dưới dạng boolean
-  }
-  if (data.file !== undefined && data.file !== null && data.file !== '') {
-    payload.file = data.file;
-  }
-  if (data.publicId !== undefined && data.publicId !== null && data.publicId !== '') {
-    payload.publicId = data.publicId;
-  }
-
-  return axiosInstance.patch<ArticleResponse>(API_CONFIG.ENDPOINTS.ARTICLES.UPDATE(id), payload, {
-    headers: { 'Content-Type': 'application/json' }
-  });
-};
-
-export const deleteArticleAPI = (id: string) => {
-  return axiosInstance.delete(API_CONFIG.ENDPOINTS.ARTICLES.DELETE(id));
-};
-
-// Get articles by menu ID
-export const getArticlesByMenuIdAPI = (menuId: string) => {
-  const filters = JSON.stringify({ menuId });
-  return axiosInstance.get(`/articles?filters=${encodeURIComponent(filters)}`);
-};
+// Article APIs moved to src/services/articles.ts
 
 // Registration APIs
-export const createRegistrationAPI = (data: {
-  name: string;
-  email?: string;
-  phone: string;
-  gender?: 'male'|'female'|'other';
-  address?: string;
-  note?: string;
-  processed?: boolean;
-  classId?: string;
-}) => {
-  return axiosInstance.post(`/registrations`, data);
-};
+// Registration APIs moved to services/registrations.ts
 
-export const getAllRegistrationsAPI = (params: { page?: number; limit?: number; sort?: string }) => {
-  return axiosInstance.get(`/registrations`, { params });
-};
+// Legacy API moved to src/services/articles.ts
 
-// Legacy API for backward compatibility
-export const getArticlesByMenuSlugAPI = (slug: string) => {
-  return axiosInstance.get(`/public/${slug}/articles`);
-};
-
-// Role Management APIs
-export const getAllRolesAPI = (params?: ApiParams) => {
-  const queryParams = createQueryParams(params || {});
-  return axiosInstance.get(API_CONFIG.ENDPOINTS.ROLES.GET_ALL, {
-    params: queryParams
-  });
-};
-
-export const getRoleByIdAPI = (id: string) => {
-  return axiosInstance.get(API_CONFIG.ENDPOINTS.ROLES.GET_BY_ID(id));
-};
-
-export const createRoleAPI = (data: CreateRoleRequest) => {
-  return axiosInstance.post(API_CONFIG.ENDPOINTS.ROLES.CREATE, data);
-};
-
-export const updateRoleAPI = (id: number, data: UpdateRoleRequest) => {
-  return axiosInstance.patch(API_CONFIG.ENDPOINTS.ROLES.UPDATE(id.toString()), data);
-};
-
-export const deleteRoleAPI = (id: number) => {
-  return axiosInstance.delete(API_CONFIG.ENDPOINTS.ROLES.DELETE(id.toString()));
-};
-
-// Permission APIs
-export const getAllPermissionsAPI = () => {
-  return axiosInstance.get(API_CONFIG.ENDPOINTS.PERMISSIONS.GET_ALL);
-};
+// Role/Permission APIs moved to services/roles.ts

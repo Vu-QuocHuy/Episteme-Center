@@ -22,7 +22,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from '../../hooks/useForm';
-import { forgotPasswordAPI, verifyCodeAPI, resetPasswordAPI } from '../../services/api';
+import { forgotPasswordAPI, verifyCodeAPI, resetPasswordAPI } from '../../services/auth';
 import { validateOtpCode } from '../../validations/forgotPasswordValidation';
 import { validateEmail, validatePassword } from '../../validations/commonValidation';
 import { validationRules } from '../../utils/validation';

@@ -35,7 +35,7 @@ import {
   updateTeacherPaymentAPI,
   getTeacherPaymentByIdAPI,
   exportTeacherPaymentsReportAPI,
-} from '../../../../services/api';
+} from '../../../../services/payments';
 
 interface TeacherPayment {
   id: string;

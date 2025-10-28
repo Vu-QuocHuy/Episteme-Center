@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Box, Typography, Container, CircularProgress, Alert } from '@mui/material';
-import { getArticlesByMenuIdAPI } from '../services/api';
+import { getArticlesByMenuIdAPI } from '../services/articles';
 import { MenuItem } from '../types';
 import { useMenuItems } from '../hooks/features/useMenuItems';
 import HomeHeader from './home/HomeHeader';

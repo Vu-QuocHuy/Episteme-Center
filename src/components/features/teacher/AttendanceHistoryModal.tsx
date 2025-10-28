@@ -25,9 +25,7 @@ import {
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
 } from '@mui/icons-material';
-import {
-  getAttendanceListAPI
-} from '../../../services/api';
+import { getAttendanceListAPI } from '../../../services/sessions';
 
 interface StudentAttendance {
   name: string;

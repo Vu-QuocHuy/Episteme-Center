@@ -25,7 +25,7 @@ import {
   Person as PersonIcon
 } from '@mui/icons-material';
 import { Parent, Student } from '../../../types';
-import { addChildToParentAPI, removeChildFromParentAPI } from '../../../services/api';
+import { addChildToParentAPI, removeChildFromParentAPI } from '../../../services/parents';
 
 interface ParentChildrenManagerProps {
   parent: Parent | null;

@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { createParentAPI, updateParentAPI, addChildAPI, removeChildAPI } from '../../services/api';
+import { createParentAPI, updateParentAPI, addChildAPI, removeChildAPI } from '../../services/parents';
 import { validateParent } from '../../validations/parentValidation';
 import { Parent, ParentFormData, ParentValidationErrors } from '../../types';
 

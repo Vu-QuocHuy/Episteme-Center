@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Box, Paper, Typography, Table, TableHead, TableRow, TableCell, TableBody, TableContainer, TextField, Chip } from '@mui/material';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
 import { commonStyles } from '../../utils/styles';
-import { getAllRegistrationsAPI } from '../../services/api';
+import { getAllRegistrationsAPI } from '../../services/registrations';
 // Removed reload icon per request
 
 interface RegistrationItem {

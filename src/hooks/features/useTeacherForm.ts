@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { createTeacherAPI, updateTeacherAPI } from '../../services/api';
+import { createTeacherAPI, updateTeacherAPI } from '../../services/teachers';
 import { Teacher, UseFormReturn, FormErrors } from '../../types';
 import { validateTeacher, validateName, validateEmail, validatePhone, validateAddress, validateGender } from '../../validations/teacherValidation';
 

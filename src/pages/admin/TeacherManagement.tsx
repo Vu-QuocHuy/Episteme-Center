@@ -18,7 +18,7 @@ import NotificationSnackbar from '../../components/common/NotificationSnackbar';
 import { Teacher } from '../../types';
 import { useTeacherManagement } from '../../hooks/features/useTeacherManagement';
 import { useTeacherForm } from '../../hooks/features/useTeacherForm';
-import { createTeacherAPI } from '../../services/api';
+import { createTeacherAPI } from '../../services/teachers';
 
 // Components
 import TeacherForm from '../../components/features/teacher/TeacherForm';

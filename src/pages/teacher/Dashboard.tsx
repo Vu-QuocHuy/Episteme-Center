@@ -24,7 +24,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { commonStyles } from '../../utils/styles';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
 import StatCard from '../../components/common/StatCard';
-import { getTeacherDashboardAPI } from '../../services/api';
+import { getTeacherDashboardAPI } from '../../services/dashboard';
 
 const Dashboard = () => {
   const { user } = useAuth();

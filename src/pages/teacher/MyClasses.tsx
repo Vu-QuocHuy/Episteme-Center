@@ -30,7 +30,7 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
-import { getTeacherScheduleAPI } from '../../services/api';
+import { getTeacherScheduleAPI } from '../../services/teachers';
 import ClassDetailModal from '../../components/features/teacher/ClassDetailModal';
 import AttendanceModal from '../../components/features/teacher/AttendanceModal';
 import AttendanceHistoryModal from '../../components/features/teacher/AttendanceHistoryModal';

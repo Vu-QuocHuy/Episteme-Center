@@ -37,7 +37,9 @@ import { COLORS } from "../../utils/colors";
 import DashboardLayout from '../../components/layouts/DashboardLayout';
 import { commonStyles } from '../../utils/styles';
 import { useAuth } from '../../contexts/AuthContext';
-import { getStudentScheduleAPI, getStudentDashboardAPI, getClassByIdAPI, getSessionsByStudentAPI } from '../../services/api';
+import { getStudentScheduleAPI, getStudentDashboardAPI } from '../../services/students';
+import { getClassByIdAPI } from '../../services/classes';
+import { getSessionsByStudentAPI } from '../../services/sessions';
 import StatCard from '../../components/common/StatCard';
 
 const MyClasses = () => {

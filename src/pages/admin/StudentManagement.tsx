@@ -9,7 +9,7 @@ import { useStudentManagement } from '../../hooks/features/useStudentManagement'
 import { useStudentForm } from '../../hooks/features/useStudentForm';
 import { StudentForm, StudentTable, StudentFilters, StudentViewDialog } from '../../components/features/student';
 import { Student } from '../../types';
-import { getStudentByIdAPI } from '../../services/api';
+import { getStudentByIdAPI } from '../../services/students';
 
 interface SnackbarState {
   open: boolean;

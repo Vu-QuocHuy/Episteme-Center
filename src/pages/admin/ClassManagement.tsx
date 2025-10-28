@@ -9,7 +9,7 @@ import ClassTable from '../../components/features/class/ClassTable';
 import ClassForm from '../../components/features/class/ClassFormUpdated';
 import { useClassManagement } from '../../hooks/features/useClassManagement';
 import { Class } from '../../types';
-import { createClassAPI, updateClassAPI, deleteClassAPI } from '../../services/api';
+import { createClassAPI, updateClassAPI, deleteClassAPI } from '../../services/classes';
 
 interface SnackbarState {
   open: boolean;

@@ -34,8 +34,8 @@ import {
   getAllMenusAPI,
   updateMenuAPI,
   deleteMenuAPI,
-  MenuData,
-} from '../../services/api';
+} from '../../services/menus';
+import type { MenuData } from '../../services/menus';
 import { MenuItem } from '../../types';
 import NotificationSnackbar from '../../components/common/NotificationSnackbar';
 import { commonStyles } from '../../utils/styles';

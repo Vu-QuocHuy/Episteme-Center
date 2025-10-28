@@ -13,7 +13,8 @@ import {
   Edit as EditIcon
 } from '@mui/icons-material';
 import { useParams, useLocation } from 'react-router-dom';
-import { createArticleAPI, ArticleData, uploadFileAPI, getAllArticlesAPI, getArticleByIdAPI, updateArticleAPI } from '../../services/api';
+import { createArticleAPI, ArticleData, getAllArticlesAPI, getArticleByIdAPI, updateArticleAPI } from '../../services/articles';
+import { uploadFileAPI } from '../../services/files';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
 import AddItemDialog from './layout-builder/AddItemDialog';
 import PreviewDialog from './layout-builder/PreviewDialog';

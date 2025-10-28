@@ -10,7 +10,8 @@ import {
   TextField,
 } from '@mui/material';
 import { Person as PersonIcon, School as SchoolIcon } from '@mui/icons-material';
-import { getAllTeachersAPI, assignTeacherAPI, unassignTeacherAPI } from '../../services/api';
+import { assignTeacherAPI, unassignTeacherAPI } from '../../services/classes';
+import { getAllTeachersAPI } from '../../services/teachers';
 
 import NotificationSnackbar from '../../components/common/NotificationSnackbar';
 

@@ -3,7 +3,7 @@ import { Box, CircularProgress, Alert } from '@mui/material';
 import dayjs, { Dayjs } from 'dayjs';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
 import ScheduleCalendar from '../../components/common/ScheduleCalendar';
-import { getTeacherScheduleAPI, TeacherScheduleClass } from '../../services/api';
+import { getTeacherScheduleAPI, TeacherScheduleClass } from '../../services/teachers';
 import { useAuth } from '../../contexts/AuthContext';
 
 

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { getAllParentsAPI, deleteParentAPI, getAllStudentsAPI, getParentByIdAPI } from '../../services/api';
+import { getAllParentsAPI, deleteParentAPI, getParentByIdAPI } from '../../services/parents';
+import { getAllStudentsAPI } from '../../services/students';
 import { Parent, Student } from '../../types';
 
 interface UseParentManagementReturn {

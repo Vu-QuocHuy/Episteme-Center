@@ -54,7 +54,7 @@ import {
 } from '@mui/icons-material';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
 import { commonStyles } from '../../utils/styles';
-import { getAllRolesAPI, createRoleAPI, updateRoleAPI, deleteRoleAPI, getAllPermissionsAPI } from '../../services/api';
+import { getAllRolesAPI, createRoleAPI, updateRoleAPI, deleteRoleAPI, getAllPermissionsAPI } from '../../services/roles';
 import { Role, Permission } from '../../types';
 
 const RoleManagement: React.FC = () => {

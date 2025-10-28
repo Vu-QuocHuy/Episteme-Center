@@ -25,10 +25,8 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import WarningIcon from '@mui/icons-material/Warning';
 import { commonStyles } from '../../utils/styles';
 import StatCard from '../../components/common/StatCard';
-import {
-  getParentDashboardAPI,
-  getStudentScheduleAPI,
-} from '../../services/api';
+import { getParentDashboardAPI } from '../../services/dashboard';
+import { getStudentScheduleAPI } from '../../services/students';
 
 const Dashboard = () => {
   const { user } = useAuth();

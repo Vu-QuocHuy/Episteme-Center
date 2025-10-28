@@ -3,7 +3,7 @@ import { Box, TextField, MenuItem, Table, TableBody, TableCell, TableContainer, 
 import { Download as DownloadIcon } from '@mui/icons-material';
 import { History as HistoryIcon, Payment as PaymentIcon } from '@mui/icons-material';
 import PaymentHistoryModal from '../../../../components/common/PaymentHistoryModal';
-import { getAllPaymentsAPI, payStudentAPI, exportPaymentsReportAPI } from '../../../../services/api';
+import { getAllPaymentsAPI, payStudentAPI, exportPaymentsReportAPI } from '../../../../services/payments';
 import * as XLSX from 'xlsx';
 
 interface StudentPayment {

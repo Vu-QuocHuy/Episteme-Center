@@ -39,10 +39,9 @@ import {
   updateAdvertisementAPI,
   deleteAdvertisementAPI,
   getAdvertisementByIdAPI,
-  uploadFileAPI,
-  getAllClassesAPI,
-  deleteFileAPI
-} from '../../services/api';
+} from '../../services/advertisements';
+import { uploadFileAPI, deleteFileAPI } from '../../services/files';
+import { getAllClassesAPI } from '../../services/classes';
 import NotificationSnackbar from '../../components/common/NotificationSnackbar';
 // Optional: add your own validations if needed
 

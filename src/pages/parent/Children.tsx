@@ -14,7 +14,10 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
-import { getParentByIdAPI, getClassByIdAPI, getStudentByIdAPI, getSessionsByStudentAPI } from '../../services/api';
+import { getParentByIdAPI } from '../../services/parents';
+import { getClassByIdAPI } from '../../services/classes';
+import { getStudentByIdAPI } from '../../services/students';
+import { getSessionsByStudentAPI } from '../../services/sessions';
 import { commonStyles } from '../../utils/styles';
 import StatCard from '../../components/common/StatCard';
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getAllStudentsAPI, deleteStudentAPI } from '../../services/api';
+import { getAllStudentsAPI, deleteStudentAPI } from '../../services/students';
 import { Student } from '../../types';
 
 interface UseStudentManagementReturn {

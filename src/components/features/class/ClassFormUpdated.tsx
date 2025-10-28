@@ -21,7 +21,7 @@ import {
 } from '@mui/icons-material';
 
 import { Class, ClassFormData, ClassFormErrors } from '../../../types';
-import { getClassByIdAPI } from '../../../services/api';
+import { getClassByIdAPI } from '../../../services/classes';
 import ClassTeacherManagement from '../../../pages/admin/ClassTeacherManagement';
 import ClassStudentManagement from '../../../pages/admin/ClassStudentManagement';
 

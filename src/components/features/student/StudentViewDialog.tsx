@@ -13,7 +13,7 @@ import {
   Alert,
 } from '@mui/material';
 import { Visibility as ViewIcon } from '@mui/icons-material';
-import { getStudentByIdAPI } from '../../../services/api';
+import { getStudentByIdAPI } from '../../../services/students';
 import { Student } from '../../../types';
 
 

@@ -17,14 +17,8 @@ import DashboardLayout from '../../components/layouts/DashboardLayout';
 import NotificationSnackbar from '../../components/common/NotificationSnackbar';
 import { commonStyles } from '../../utils/styles';
 import FeedbackHome from '../../components/features/home/FeedbackHome';
-import {
-  createFeedbackAPI,
-  getFeedbacksAPI,
-  updateFeedbackAPI,
-  deleteFeedbackAPI,
-  uploadFileAPI,
-  deleteFileAPI
-} from '../../services/api';
+import { createFeedbackAPI, getFeedbacksAPI, updateFeedbackAPI, deleteFeedbackAPI } from '../../services/feedback';
+import { uploadFileAPI, deleteFileAPI } from '../../services/files';
 import { Feedback, CreateFeedbackRequest } from '../../types';
 
 const TestimonialsManagement: React.FC = () => {

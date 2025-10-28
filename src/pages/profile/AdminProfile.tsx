@@ -22,7 +22,7 @@ import {
   VerifiedUser as VerifiedUserIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
-import { updateUserAPI } from '../../services/api';
+import { updateUserAPI } from '../../services/users';
 import { validateUserUpdate } from '../../validations/commonValidation';
 import { commonStyles } from '../../utils/styles';
 import DashboardLayout from '../../components/layouts/DashboardLayout';

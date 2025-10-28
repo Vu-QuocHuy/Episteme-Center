@@ -34,7 +34,7 @@ import {
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { Class } from '../../../types';
-import { getClassByIdAPI } from '../../../services/api';
+import { getClassByIdAPI } from '../../../services/classes';
 
 interface ClassTableProps {
   classes: Class[];

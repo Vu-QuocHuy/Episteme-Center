@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
 
-import { loginAPI, loginAdminAPI, refreshTokenAPI } from '../services/api';
+import { loginUserAPI as loginAPI, loginAdminAPI, refreshTokenAPI } from '../services/auth';
 import { User } from '../types';
 
 interface AuthState {

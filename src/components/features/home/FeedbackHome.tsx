@@ -2,7 +2,7 @@ import { useRef, useState, useEffect } from 'react';
 import Slider from 'react-slick';
 import { Card, CardContent, Avatar, Typography, Box, Button, IconButton, CircularProgress } from '@mui/material';
 import { ChevronLeft, ChevronRight } from '@mui/icons-material';
-import { getFeedbacksAPI } from '../../../services/api';
+import { getFeedbacksAPI } from '../../../services/feedback';
 import { Feedback } from '../../../types';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';

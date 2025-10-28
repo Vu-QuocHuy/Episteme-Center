@@ -17,7 +17,7 @@ import {
   Phone as PhoneIcon,
   Email as EmailIcon
 } from '@mui/icons-material';
-import { getTeacherByIdAPI, getTeacherBySlugAPI, getTypicalTeacherDetailAPI } from '../../services/api';
+import { getTeacherByIdAPI, getTeacherBySlugAPI, getTypicalTeacherDetailAPI } from '../../services/teachers';
 import { Teacher } from '../../types';
 
 const TeacherDetail: React.FC = () => {

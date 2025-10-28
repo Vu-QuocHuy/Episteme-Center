@@ -15,7 +15,9 @@ import 'react-resizable/css/styles.css';
 import { Editor } from '@tinymce/tinymce-react';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
 import NotificationSnackbar from '../../components/common/NotificationSnackbar';
-import { createArticleAPI, ArticleData, uploadFileAPI } from '../../services/api';
+import { createArticleAPI } from '../../services/articles';
+import type { ArticleData } from '../../services/articles';
+import { uploadFileAPI } from '../../services/files';
 import { commonStyles } from '../../utils/styles';
 
 

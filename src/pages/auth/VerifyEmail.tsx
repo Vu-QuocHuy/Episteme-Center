@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Button, Typography, CircularProgress, Paper } from '@mui/material';
 import MarkEmailReadIcon from '@mui/icons-material/MarkEmailRead';
-import { verifyEmailAPI } from '../../services/api';
+import { verifyEmailAPI } from '../../services/auth';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import NotificationSnackbar from '../../components/common/NotificationSnackbar';

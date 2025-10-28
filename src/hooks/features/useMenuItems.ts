@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getAllMenusAPI } from '../../services/api';
+import { getAllMenusAPI } from '../../services/menus';
 import { NavigationMenuItem } from '../../types';
 
 export const useMenuItems = () => {

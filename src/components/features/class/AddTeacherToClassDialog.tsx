@@ -21,7 +21,7 @@ import {
   Search as SearchIcon,
   Add as AddIcon
 } from '@mui/icons-material';
-import { getAllTeachersAPI } from '../../../services/api';
+import { getAllTeachersAPI } from '../../../services/teachers';
 
 interface AddTeacherToClassDialogProps {
   open: boolean;

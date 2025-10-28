@@ -21,10 +21,7 @@ import {
   Assignment as AssignmentIcon,
   Save as SaveIcon,
 } from '@mui/icons-material';
-import {
-  getTodayAttendanceAPI,
-  updateSessionAttendanceAPI
-} from '../../../services/api';
+import { getTodaySessionAPI as getTodayAttendanceAPI, updateSessionAttendanceAPI } from '../../../services/sessions';
 import NotificationSnackbar from '../../../components/common/NotificationSnackbar';
 
 const ATTENDANCE_STATUS = {

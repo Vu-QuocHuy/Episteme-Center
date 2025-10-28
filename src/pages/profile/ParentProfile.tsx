@@ -25,7 +25,8 @@ import {
   VerifiedUser as VerifiedUserIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
-import { updateUserAPI, updateParentAPI } from '../../services/api';
+import { updateUserAPI } from '../../services/users';
+import { updateParentAPI } from '../../services/parents';
 import { validateUserUpdate } from '../../validations/commonValidation';
 import { validateParentUpdate } from '../../validations/parentValidation';
 import { commonStyles } from '../../utils/styles';

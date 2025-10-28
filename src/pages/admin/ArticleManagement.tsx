@@ -28,7 +28,8 @@ import {
   DragIndicator as DragIcon
 } from '@mui/icons-material';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import { getAllMenusAPI, getAllArticlesAPI, updateArticleAPI, deleteArticleAPI } from '../../services/api';
+import { getAllMenusAPI } from '../../services/menus';
+import { getAllArticlesAPI, updateArticleAPI, deleteArticleAPI } from '../../services/articles';
 import { MenuItem as MenuItemType } from '../../types';
 
 interface Article {

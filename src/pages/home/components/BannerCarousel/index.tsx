@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Box, Typography, Skeleton
 } from '@mui/material';
-import { getHomeBannersAPI } from '../../../../services/api';
+import { getHomeBannersAPI } from '../../../../services/advertisements';
 import { Advertisement } from '../../../../types';
 import { useBannerConfig } from '../../../../hooks/useBannerConfig';
 import AdvertisementSlider from '../../../../components/features/advertisement/AdvertisementSlider';

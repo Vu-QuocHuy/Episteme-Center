@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import {
   Box, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, CircularProgress, Grid, Button, IconButton, Tooltip, Dialog, DialogTitle, DialogContent, DialogActions
 } from '@mui/material';
-import { getTeacherPaymentsAPI, getTeacherPaymentByIdAPI } from '../../services/api';
+import { getTeacherPaymentsAPI, getTeacherPaymentByIdAPI } from '../../services/payments';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
 import StatCard from '../../components/common/StatCard';
 import { commonStyles } from '../../utils/styles';

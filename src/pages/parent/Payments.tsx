@@ -12,7 +12,8 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
-import { getParentByIdAPI, getPaymentsByStudentAPI, payTuitionAPI } from '../../services/api';
+import { getParentByIdAPI } from '../../services/parents';
+import { getPaymentsByStudentAPI, payTuitionAPI } from '../../services/payments';
 import { commonStyles } from '../../utils/styles';
 import PaymentHistoryModal from '../../components/common/PaymentHistoryModal';
 import NotificationSnackbar from '../../components/common/NotificationSnackbar';

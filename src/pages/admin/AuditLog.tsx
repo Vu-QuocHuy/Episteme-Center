@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Stack, Pagination, CircularProgress, Table, TableHead, TableRow, TableCell, TableBody, Paper, TableContainer } from '@mui/material';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
-import { getAuditLogsAPI, AuditLogItem } from '../../services/api';
+import { getAuditLogsAPI } from '../../services/audit';
+import type { AuditLogItem } from '../../services/audit';
 import { commonStyles } from '../../utils/styles';
 
 // Parse HTML description to extract action, actor, and content (keep list structure)

@@ -19,7 +19,8 @@ import {
   Close as CloseIcon,
   CloudUpload as CloudUploadIcon,
 } from '@mui/icons-material';
-import { uploadAvatarAPI, uploadFileAPI, deleteFileAPI } from '../../services/api';
+import { uploadAvatarAPI } from '../../services/users';
+import { uploadFileAPI, deleteFileAPI } from '../../services/files';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface AvatarUploadProps {

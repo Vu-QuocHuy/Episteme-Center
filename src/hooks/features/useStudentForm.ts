@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { createStudentAPI, updateStudentAPI } from '../../services/api';
+import { createStudentAPI, updateStudentAPI } from '../../services/students';
 import { validateStudent } from '../../validations/studentValidation';
 import { Student, StudentFormData, StudentValidationErrors, ClassEditData } from '../../types';
 

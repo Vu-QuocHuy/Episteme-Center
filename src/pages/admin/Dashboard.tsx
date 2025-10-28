@@ -26,7 +26,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { commonStyles } from '../../utils/styles';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
 import StatCard from '../../components/common/StatCard';
-import { getAdminDashboardAPI } from '../../services/api';
+import { getAdminDashboardAPI } from '../../services/dashboard';
 
 interface PaymentInfo {
   totalRevenue: number;

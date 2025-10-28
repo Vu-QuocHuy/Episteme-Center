@@ -190,7 +190,7 @@ export interface ApiConfig {
 }
 
 export const API_CONFIG: ApiConfig = {
-  BASE_URL: import.meta.env.DEV ? '/api' : (import.meta.env.VITE_API_BASE_URL || 'https://eng-center-nestjs.onrender.com/api/v1'),
+  BASE_URL: import.meta.env.DEV ? '/api' : (import.meta.env.VITE_API_BASE_URL || 'http://103.199.18.103:8080/api/v1'),
   ENDPOINTS: {
     // Auth endpoints
     AUTH: {

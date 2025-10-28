@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getAllTeachersAPI, deleteTeacherAPI, getTeacherByIdAPI } from '../../services/api';
+import { getAllTeachersAPI, deleteTeacherAPI, getTeacherByIdAPI } from '../../services/teachers';
 import { Teacher } from '../../types';
 
 interface UseTeacherManagementReturn {

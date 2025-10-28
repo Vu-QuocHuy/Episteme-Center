@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Box, CircularProgress, Alert } from '@mui/material';
 import dayjs from 'dayjs';
 import { useAuth } from '../../contexts/AuthContext';
-import { getStudentScheduleAPI, StudentScheduleClass } from '../../services/api';
+import { getStudentScheduleAPI, StudentScheduleClass } from '../../services/students';
 import ScheduleCalendar from '../../components/common/ScheduleCalendar';
 import { Lesson } from '../../types';
 import DashboardLayout from '../../components/layouts/DashboardLayout';

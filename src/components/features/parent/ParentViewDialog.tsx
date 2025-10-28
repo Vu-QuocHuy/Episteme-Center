@@ -13,7 +13,7 @@ import {
   Alert,
 } from '@mui/material';
 import { Visibility as ViewIcon } from '@mui/icons-material';
-import { getParentByIdAPI } from '../../../services/api';
+import { getParentByIdAPI } from '../../../services/parents';
 import { Parent } from '../../../types';
 
 const formatGender = (gender?: string) => {

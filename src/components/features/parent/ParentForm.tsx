@@ -26,7 +26,8 @@ import {
 } from '@mui/icons-material';
 import { Parent, Student } from '../../../types';
 import { useParentForm } from '../../../hooks/features/useParentForm';
-import { getAllStudentsAPI, getParentByIdAPI, getParentChildrenAPI } from '../../../services/api';
+import { getParentByIdAPI, getParentChildrenAPI } from '../../../services/parents';
+import { getAllStudentsAPI } from '../../../services/students';
 
 interface ParentFormProps {
   open: boolean;

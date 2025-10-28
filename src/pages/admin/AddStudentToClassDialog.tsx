@@ -16,7 +16,8 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { Search as SearchIcon } from '@mui/icons-material';
-import { getAllStudentsAPI, enrollStudentAPI, getStudentsInClassAPI } from '../../services/api';
+import { getAllStudentsAPI } from '../../services/students';
+import { enrollStudentAPI, getStudentsInClassAPI } from '../../services/classes';
 import NotificationSnackbar from '../../components/common/NotificationSnackbar';
 
 interface Student {

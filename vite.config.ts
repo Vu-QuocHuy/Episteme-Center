@@ -112,10 +112,10 @@ export default defineConfig({
     cors: true,
     proxy: {
       '/api': {
-        target: 'https://eng-center-nestjs.onrender.com',
+        target: 'http://103.199.18.103:8080',
         changeOrigin: true,
         rewrite: (path) => '/api/v1' + path.replace(/^\/api/, ''),
-        secure: true,
+        secure: false,
         // ✅ Cấu hình cookie để proxy hoạt động đúng
         cookieDomainRewrite: false,
         cookiePathRewrite: false,

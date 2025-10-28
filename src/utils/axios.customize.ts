@@ -1,4 +1,5 @@
 import axios, { AxiosInstance, AxiosResponse, AxiosError } from 'axios';
+import { API_CONFIG } from '../config/api';
 
 // Tạo custom event để thông báo logout
 // const createLogoutEvent = (): void => {
@@ -55,7 +56,7 @@ interface FailedQueueItem {
 
 
 const instance: AxiosInstance = axios.create({
-    baseURL: import.meta.env.DEV ? '/api' : 'https://eng-center-nestjs.onrender.com/api/v1',
+    baseURL: API_CONFIG.BASE_URL,
     timeout: 60000,
     // ✅ Cần withCredentials để gửi cookie
     withCredentials: true,
@@ -145,9 +146,7 @@ instance.interceptors.response.use(
                 try {
                     // Gọi API refresh token: backend tự xử lý cookie
                     // Sử dụng axios gốc để tránh loop vô hạn
-                    const refreshUrl = import.meta.env.DEV
-                        ? '/api/auth/refresh'
-                        : 'https://eng-center-nestjs.onrender.com/api/v1/auth/refresh';
+                    const refreshUrl = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.AUTH.REFRESH_TOKEN}`;
 
                     // ✅ Backend tự xử lý cookie refresh_token (HttpOnly)
 

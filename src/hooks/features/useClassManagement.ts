@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getAllClassesAPI, getClassByIdAPI, getStudentsInClassAPI } from '../../services/api';
+import { getAllClassesAPI, getClassByIdAPI, getStudentsInClassAPI } from '../../services/classes';
 import { Class } from '../../types';
 
 interface UseClassManagementReturn {
@@ -121,7 +121,7 @@ export const useClassManagement = (): UseClassManagementReturn => {
 
   // Fetch classes when dependencies change
   useEffect(() => {
-    
+
     fetchClasses(page);
   }, [page, debouncedSearch, yearFilter, gradeFilter, statusFilter]);
 
