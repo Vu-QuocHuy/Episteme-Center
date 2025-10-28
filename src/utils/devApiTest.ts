@@ -19,7 +19,8 @@ export const testAPI = async () => {
   try {
     // Test direct connection
     console.log('Testing direct endpoint...');
-    const directResponse = await fetch('http://103.199.18.103:8080/api/v1/');
+    const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://103.199.18.103:8080/api/v1';
+    const directResponse = await fetch(apiUrl);
     console.log('Direct response:', directResponse.status, await directResponse.text());
   } catch (err) {
     console.error('Direct test failed:', err);

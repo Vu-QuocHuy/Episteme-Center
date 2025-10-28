@@ -1,9 +1,18 @@
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  // Load env file based on `mode` in the current working directory.
+  const env = loadEnv(mode, process.cwd(), '');
+  
+  // Extract backend URL from env, fallback to default
+  const backendUrl = env.VITE_API_BASE_URL || 'http://103.199.18.103:8080/api/v1';
+  // Get base URL without /api/v1 for proxy target
+  const proxyTarget = backendUrl.replace(/\/api\/v1$/, '');
+
+  return {
   plugins: [react()],
   resolve: {
     alias: {
@@ -112,7 +121,7 @@ export default defineConfig({
     cors: true,
     proxy: {
       '/api': {
-        target: 'http://103.199.18.103:8080',
+        target: proxyTarget,
         changeOrigin: true,
         rewrite: (path) => '/api/v1' + path.replace(/^\/api/, ''),
         secure: false,
@@ -163,4 +172,5 @@ export default defineConfig({
 
   // Environment variables
   envPrefix: 'VITE_',
+};
 });

@@ -1,33 +1,30 @@
-// Re-export from new constants location for backward compatibility
-export { USER_ROLES, APP_DESCRIPTION, ROUTES as CONSTANT_ROUTES, STORAGE_KEYS as CONSTANT_STORAGE_KEYS, PAGINATION as CONSTANT_PAGINATION, DATE_FORMATS as CONSTANT_DATE_FORMATS, VALIDATION, ADVERTISEMENT } from '../constants/index';
+// App Information
+export const APP_NAME = 'English Center';
+export const APP_VERSION = '1.0.0';
 
-// Type exports
-export type { UserRole } from '../constants/index';
+// User Roles
+export const USER_ROLES = {
+  ADMIN: 'admin',
+  TEACHER: 'teacher',
+  STUDENT: 'student',
+  PARENT: 'parent'
+} as const;
 
-// Role Labels (for backward compatibility)
-export const ROLE_LABELS: Record<string, string> = {
-  admin: 'Quản trị viên',
-  teacher: 'Giáo viên',
-  student: 'Học sinh',
-  parent: 'Phụ huynh'
+export type UserRole = typeof USER_ROLES[keyof typeof USER_ROLES];
+
+// Role Labels
+export const ROLE_LABELS: Record<UserRole, string> = {
+  [USER_ROLES.ADMIN]: 'Quản trị viên',
+  [USER_ROLES.TEACHER]: 'Giáo viên',
+  [USER_ROLES.STUDENT]: 'Học sinh',
+  [USER_ROLES.PARENT]: 'Phụ huynh'
 };
-
-// Legacy file - deprecated
-// Please import directly from '../constants' or '@constants' instead
-// This file will be removed in future versions
-
-if (import.meta.env.DEV) {
-  console.warn(
-    '⚠️  utils/constants.ts is deprecated. ' +
-    'Please import from "constants" or "@constants" instead.'
-  );
-}
 
 // Routes
 export const ROUTES = {
   HOME: '/',
   LOGIN: '/login',
-  ADMIN_LOGIN: '/staff/login',
+  ADMIN_LOGIN: '/admin/login',
   ADMIN: {
     DASHBOARD: '/admin/dashboard',
     CLASSES: '/admin/classes',
@@ -270,13 +267,11 @@ export const AVATAR_COLORS: readonly string[] = [
   '#ffeb3b', '#ffc107', '#ff9800', '#ff5722'
 ] as const;
 
-// App Info
-export const APP_NAME = 'English Center Management';
-export const APP_VERSION = '1.0.0';
-
 export default {
   APP_NAME,
   APP_VERSION,
+  USER_ROLES,
+  ROLE_LABELS,
   ROUTES,
   STORAGE_KEYS,
   PAGINATION,

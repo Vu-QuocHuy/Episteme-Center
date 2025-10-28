@@ -173,6 +173,7 @@ export interface ApiParams {
 // Student APIs moved to services/students.ts
 
 // Teacher APIs moved to services/teachers.ts
+export { getAllTeachersAPI, deleteTeacherAPI, getTeacherByIdAPI } from './teachers';
 
 // Parent APIs moved to services/parents.ts
 

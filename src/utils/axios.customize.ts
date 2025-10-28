@@ -57,7 +57,7 @@ interface FailedQueueItem {
 
 const instance: AxiosInstance = axios.create({
     baseURL: API_CONFIG.BASE_URL,
-    timeout: 60000,
+    timeout: Number(import.meta.env.VITE_API_TIMEOUT || 60000),
     // ✅ Cần withCredentials để gửi cookie
     withCredentials: true,
     headers: {

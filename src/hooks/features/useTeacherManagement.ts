@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getAllTeachersAPI, deleteTeacherAPI, getTeacherByIdAPI } from '../../services/teachers';
+import { getAllTeachersAPI, deleteTeacherAPI, getTeacherByIdAPI } from '../../services/api';
 import { Teacher } from '../../types';
 
 interface UseTeacherManagementReturn {
@@ -50,21 +50,19 @@ export const useTeacherManagement = (): UseTeacherManagementReturn => {
   const fetchTeachers = useCallback(async (pageNum: number = 1): Promise<void> => {
     setLoading(true);
     setLoadingTable(true);
-    setError(''); // Clear previous errors
     try {
       const params: Record<string, any> = {
         page: pageNum,
         limit: 10,
+        // Note: New API doesn't seem to support name or isActive filters based on Postman
+        // ...(debouncedSearch && { name: debouncedSearch }),
+        // ...(isActiveFilter && { isActive: isActiveFilter })
       };
 
-      // Handle filters with {} format
-      if (debouncedSearch) {
-        params.name = debouncedSearch;
-      }
-
       const response = await getAllTeachersAPI(params);
+      console.log('📊 Teachers API Response:', response);
 
-      // Handle new paginated API response structure
+      // Handle paginated API response structure similar to students/parents
       if (response && response.data && response.data.data) {
         const { data } = response.data;
         const teachersArray = data.result || [];
@@ -76,20 +74,10 @@ export const useTeacherManagement = (): UseTeacherManagementReturn => {
         setTeachers(response.data);
         setTotalPages(response.data?.totalPages || 1);
         setTotalRecords(response.data?.totalRecords || 0);
-      } else {
-        // Handle empty response
-        setTeachers([]);
-        setTotalPages(1);
-        setTotalRecords(0);
       }
-    } catch (error: any) {
-      const errorMessage = error?.response?.data?.message ||
-                          error?.message ||
-                          'Có lỗi xảy ra khi tải danh sách giáo viên';
-      setError(errorMessage);
-      setTeachers([]);
-      setTotalPages(1);
-      setTotalRecords(0);
+    } catch (error) {
+      console.error('Error fetching teachers:', error);
+      setError('Có lỗi xảy ra khi tải danh sách giáo viên');
     } finally {
       setLoading(false);
       setLoadingTable(false);
@@ -103,6 +91,7 @@ export const useTeacherManagement = (): UseTeacherManagementReturn => {
       await fetchTeachers(); // Refresh teacher list
       return { success: true, message: 'Xóa giáo viên thành công!' };
     } catch (error: any) {
+      console.error('Error deleting teacher:', error);
       return {
         success: false,
         message: error?.response?.data?.message || 'Có lỗi xảy ra khi xóa giáo viên'
@@ -121,6 +110,7 @@ export const useTeacherManagement = (): UseTeacherManagementReturn => {
     setLoadingDetail(true);
     try {
       const response = await getTeacherByIdAPI(id);
+      console.log('📊 Teacher Detail API Response:', response);
 
       if (response && response.data && response.data.data) {
         const teacher = response.data.data;
@@ -129,6 +119,7 @@ export const useTeacherManagement = (): UseTeacherManagementReturn => {
       }
       return null;
     } catch (error: any) {
+      console.error('❌ Error fetching teacher detail:', error);
       setError(error.response?.data?.message || 'Không thể tải thông tin giáo viên');
       return null;
     } finally {

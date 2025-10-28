@@ -1,37 +1,45 @@
 // Environment Variables Type Definitions
 interface ImportMetaEnv {
   // API Configuration
-  readonly VITE_API_URL: string;
+  readonly VITE_API_BASE_URL: string;
+  readonly VITE_USE_PROXY: string;
   readonly VITE_API_TIMEOUT: string;
 
   // App Configuration
   readonly VITE_APP_NAME: string;
   readonly VITE_APP_VERSION: string;
+  readonly VITE_APP_DESCRIPTION: string;
+
+  // Environment
+  readonly VITE_NODE_ENV: string;
 
   // Features
   readonly VITE_ENABLE_DEBUG: string;
   readonly VITE_ENABLE_ANALYTICS: string;
   readonly VITE_ENABLE_NOTIFICATIONS: string;
-  readonly VITE_ENABLE_MOCK_API: string;
 
   // UI Configuration
   readonly VITE_DEFAULT_THEME: string;
   readonly VITE_DEFAULT_LANGUAGE: string;
-  readonly VITE_SIDEBAR_WIDTH: string;
+  readonly VITE_ITEMS_PER_PAGE: string;
 
-  // Storage Configuration
-  readonly VITE_STORAGE_PREFIX: string;
-  readonly VITE_TOKEN_EXPIRY: string;
+  // File Upload Configuration
+  readonly VITE_MAX_FILE_SIZE: string;
+  readonly VITE_ALLOWED_IMAGE_TYPES: string;
+
+  // Session Configuration
+  readonly VITE_SESSION_TIMEOUT: string;
+  readonly VITE_REFRESH_TOKEN_INTERVAL: string;
 
   // Development Tools
   readonly VITE_SHOW_DEBUG_INFO: string;
 
-  // Analytics (optional)
+  // Optional Services
   readonly VITE_GOOGLE_ANALYTICS_ID?: string;
-  readonly VITE_HOTJAR_ID?: string;
-
-  // Error Tracking (optional)
   readonly VITE_SENTRY_DSN?: string;
+  readonly VITE_FIREBASE_API_KEY?: string;
+  readonly VITE_PUSHER_APP_KEY?: string;
+  readonly VITE_CLOUDINARY_CLOUD_NAME?: string;
 }
 
 interface ImportMeta {
@@ -71,7 +79,7 @@ export const getNumberEnvVar = (key: keyof ImportMetaEnv, defaultValue?: number)
 // Environment validation
 export const validateEnvironment = () => {
   const requiredVars: (keyof ImportMetaEnv)[] = [
-    'VITE_API_URL',
+    'VITE_API_BASE_URL',
     'VITE_APP_NAME',
     'VITE_APP_VERSION',
   ];

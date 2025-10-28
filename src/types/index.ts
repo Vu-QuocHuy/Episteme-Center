@@ -40,12 +40,12 @@ export interface Teacher extends BaseEntity {
   qualifications: string[];
   specializations: string[];
   description: string;
+  introduction?: string;
   salary?: number; // Added salary field
   salaryPerLesson?: number; // Keep for backward compatibility
-  workExperience?: string; // Added work experience field
-  introduction?: string; // Added introduction field
+  workExperience?: number | string | null; // Accept number or string for form compatibility
+  typical?: boolean;
   isActive: boolean;
-  typical?: boolean; // Added typical field
   role: {
     id: number;
     name: string;
@@ -73,15 +73,15 @@ export interface Student extends BaseEntity {
     name: string;
   };
   classes?: any[];
-  parent?: {
-    id: string;
-    name: string;
-    email: string;
-    phone: string;
-  };
   // Legacy fields for compatibility
   userId?: User;
   parentId?: string;
+  // Some UI expects populated parent object
+  parent?: {
+    name: string;
+    email?: string;
+    phone?: string;
+  };
   grade?: number;
   dateOfBirth?: string; // Alias for dayOfBirth for compatibility
   level?: string;
@@ -271,6 +271,7 @@ export interface FormState {
 export interface ParentFormData {
   name: string;
   email: string;
+  password?: string;
   dayOfBirth: string;
   phone: string;
   address: string;
@@ -281,6 +282,7 @@ export interface ParentFormData {
 export interface ParentValidationErrors {
   name?: string;
   email?: string;
+  password?: string;
   dayOfBirth?: string;
   phone?: string;
   address?: string;
@@ -365,11 +367,8 @@ export interface TeacherFormData {
   description: string;
   qualifications: string[];
   specializations: string[];
-  introduction?: string;
-  workExperience?: string;
   salaryPerLesson: number;
   isActive: boolean;
-  typical: boolean;
 }
 
 export interface TeacherValidationErrors {
@@ -383,11 +382,8 @@ export interface TeacherValidationErrors {
   description?: string;
   qualifications?: string;
   specializations?: string;
-  introduction?: string;
-  workExperience?: string;
   salaryPerLesson?: string;
   isActive?: string;
-  typical?: string;
 }
 
 export interface ParentUpdateData {
@@ -430,11 +426,8 @@ export interface TeacherUpdateData {
   description: string;
   qualifications: string[];
   specializations: string[];
-  introduction?: string;
-  workExperience?: string;
   salaryPerLesson: number;
   isActive: boolean;
-  typical: boolean;
 }
 
 export interface TeacherUpdateErrors {
@@ -447,11 +440,8 @@ export interface TeacherUpdateErrors {
   description?: string;
   qualifications?: string;
   specializations?: string;
-  introduction?: string;
-  workExperience?: string;
   salaryPerLesson?: string;
   isActive?: string;
-  typical?: string;
 }
 
 // Component Props Types
@@ -665,7 +655,7 @@ export interface UseFormReturn<T> {
   handleChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   setFormData: (data?: T) => void;
   resetForm: () => void;
-  handleSubmit: (data?: T, onSuccess?: () => void, originalData?: T) => Promise<{ success: boolean; message?: string }>;
+  handleSubmit: (data?: T, onSuccess?: () => void) => Promise<{ success: boolean; message?: string }>;
 }
 
 // API Service Types
@@ -767,237 +757,88 @@ export interface Advertisement {
   endDate?: string;
 }
 
+// Home Page Content Management Types
+export interface HomeContent {
+  id: string;
+  section: string; // 'hero', 'about', 'services', 'contact', etc.
+  title?: string;
+  subtitle?: string;
+  description?: string;
+  content?: string;
+  imageUrl?: string;
+  buttonText?: string;
+  buttonLink?: string;
+  order: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
 
+export interface HomeContentFormData {
+  section: string;
+  title?: string;
+  subtitle?: string;
+  description?: string;
+  content?: string;
+  imageUrl?: string;
+  buttonText?: string;
+  buttonLink?: string;
+  order: number;
+  isActive: boolean;
+}
+
+export interface HomeContentFormErrors {
+  section?: string;
+  title?: string;
+  subtitle?: string;
+  description?: string;
+  content?: string;
+  imageUrl?: string;
+  buttonText?: string;
+  buttonLink?: string;
+  order?: string;
+  isActive?: string;
+}
+
+export interface HomeSection {
+  hero: HomeContent[];
+  about: HomeContent[];
+  services: HomeContent[];
+  features: HomeContent[];
+  testimonials: HomeContent[];
+  contact: HomeContent[];
+  footer: HomeContent[];
+}
 
 // Menu Item Types for Navigation
 export interface MenuItem {
   id: string;
-  slug: string | null;
-  title: string;
-  order: number | null;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-  deletedAt: string | null;
-  children: MenuItem[];
-}
-
-// Navigation Menu Item Type (alias for MenuItem)
-export interface NavigationMenuItem extends MenuItem { }
-
-// Detailed Content Types for Sections
-export interface BannerSlide {
-  id: string;
-  title: string;
-  description?: string;
-  imageUrl: string;
-  linkUrl?: string;
-  buttonText?: string;
-  isActive: boolean;
-  order: number;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-export interface AboutFeature {
-  id: string;
-  title: string;
-  description: string;
-  icon: string;
+  label?: string;
+  sectionId?: string;
   order: number;
   isActive: boolean;
+  isExternal?: boolean;
+  externalUrl?: string;
   createdAt?: string;
   updatedAt?: string;
-}
-
-export interface Testimonial {
-  id: string;
-  name: string;
-  role: string;
-  content: string;
-  rating: number;
-  avatar?: string;
-  isActive: boolean;
-  order: number;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-export interface Statistic {
-  id: string;
-  number: string;
-  label: string;
-  icon: string;
-  order: number;
-  isActive: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-export interface FeaturedTeacher {
-  id: string;
-  teacherId: string;
-  teacher: {
-    id: string;
-    name: string;
-    avatar?: string;
-    specializations?: string[];
-  };
-  order: number;
-  isActive: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-// API Response Types
-export interface BannerSlidesResponse {
-  statusCode: number;
-  message: string;
-  data: BannerSlide[];
-}
-
-export interface AboutFeaturesResponse {
-  statusCode: number;
-  message: string;
-  data: AboutFeature[];
-}
-
-export interface TestimonialsResponse {
-  statusCode: number;
-  message: string;
-  data: Testimonial[];
-}
-
-export interface StatisticsResponse {
-  statusCode: number;
-  message: string;
-  data: Statistic[];
-}
-
-export interface FeaturedTeachersResponse {
-  statusCode: number;
-  message: string;
-  data: FeaturedTeacher[];
-}
-
-// Form Data Types
-export interface BannerSlideData {
+  deletedAt?: string | null;
+  // Extended fields used by navigation/pages (ensure presence where code expects)
   title: string;
-  description?: string;
-  imageUrl: string;
-  linkUrl?: string;
-  buttonText?: string;
-  isActive?: boolean;
-  order?: number;
+  slug?: string;
+  children?: MenuItem[];
 }
 
-export interface AboutFeatureData {
-  title: string;
-  description: string;
-  icon: string;
-  order?: number;
-  isActive?: boolean;
-}
+// Navigation types used by header/hooks
+export type NavigationMenuItem = MenuItem;
 
-export interface TestimonialData {
-  name: string;
-  role: string;
-  content: string;
-  rating: number;
-  avatar?: string;
-  isActive?: boolean;
-  order?: number;
-}
-
-export interface StatisticData {
-  number: string;
-  label: string;
-  icon: string;
-  order?: number;
-  isActive?: boolean;
-}
-
-export interface FeaturedTeacherData {
-  teacherId: string;
-  order?: number;
-  isActive?: boolean;
-}
-
-
-
-// Posts Types (like FE-webcntt-main)
-export interface Post {
-  post_id: string;
-  title: string;
-  content: string;
-  author: string;
-  create_at: string;
-  file_dto: Array<{
-    downloadUrl: string;
-    fileName: string;
-    fileType: string;
-  }>;
-}
-
-export interface PostsResponse {
-  statusCode: number;
-  message: string;
-  data: Post[];
-}
-
-// Events Types (like FE-webcntt-main)
-export interface Event {
-  eventId: string;
-  eventName: string;
-  description: string;
-  startAt: string;
-  endAt: string;
-  location: string;
-  organizedBy: string;
-  fileDTOList: Array<{
-    downloadUrl: string;
-    fileName: string;
-    fileType: string;
-  }>;
-}
-
-export interface EventsResponse {
-  statusCode: number;
-  message: string;
-  data: {
-    content: Event[];
-    totalElements: number;
-    totalPages: number;
-    size: number;
-    number: number;
-  };
-}
-
-// Feedback Types
+// Feedback types used by home/testimonials and services
 export interface Feedback extends BaseEntity {
   name: string;
   description: string;
   imageUrl?: string;
   publicId?: string;
   socialUrl?: string;
-}
-
-export interface FeedbackResponse {
-  statusCode: number;
-  message: string;
-  data: Feedback;
-}
-
-export interface FeedbacksListResponse {
-  statusCode: number;
-  message: string;
-  data: {
-    result: Feedback[];
-    totalElements: number;
-    totalPages: number;
-    size: number;
-    number: number;
-  };
+  isActive?: boolean;
 }
 
 export interface CreateFeedbackRequest {
@@ -1016,13 +857,14 @@ export interface UpdateFeedbackRequest {
   socialUrl?: string;
 }
 
-// Role Management Types
+// Roles & Permissions used by RoleManagement and services
 export interface Permission {
   id: number;
-  path: string;
-  method: string;
-  description: string;
+  name?: string;
   module: string;
+  description: string;
+  method: string;
+  path: string;
   version: number;
 }
 
@@ -1030,20 +872,21 @@ export interface Role {
   id: number;
   name: string;
   description?: string;
-  isActive: boolean;
   permissions: Permission[];
+  isActive: boolean;
 }
 
 export interface CreateRoleRequest {
   name: string;
   description?: string;
-  isActive?: boolean;
+  // Accept both shapes depending on caller
+  permissions?: number[];
   permissionIds?: number[];
 }
 
 export interface UpdateRoleRequest {
-  name: string;
+  name?: string;
   description?: string;
-  isActive?: boolean;
+  permissions?: number[];
   permissionIds?: number[];
 }

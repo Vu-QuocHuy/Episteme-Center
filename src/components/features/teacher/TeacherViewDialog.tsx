@@ -11,6 +11,10 @@ import {
   DialogActions,
   Button,
   CircularProgress,
+  List,
+  ListItem,
+  ListItemText,
+  Divider,
 } from '@mui/material';
 import {
   Visibility as ViewIcon,
@@ -100,149 +104,9 @@ const TeacherViewDialog: React.FC<TeacherViewDialogProps> = ({
       <DialogContent sx={{ p: 0 }}>
         <Box sx={{ p: 4 }}>
           <Box>
-            {/* Personal Information - Full Width */}
-            <Grid item xs={12}>
-              <Paper sx={{
-                p: 3,
-                borderRadius: 2,
-                background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
-                border: '1px solid #e0e6ed',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
-              }}>
-                <Typography variant="h6" gutterBottom sx={{
-                  color: '#2c3e50',
-                  fontWeight: 600,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1,
-                  mb: 2
-                }}>
-                  <Box sx={{
-                    width: 4,
-                    height: 20,
-                    bgcolor: '#667eea',
-                    borderRadius: 2
-                  }} />
-                  Thông tin cá nhân
-                </Typography>
-                <Box sx={{
-                  p: 2,
-                  bgcolor: 'white',
-                  borderRadius: 1,
-                  border: '1px solid #e0e6ed'
-                }}>
-                  <Grid container spacing={2}>
-                    {/* Left Column */}
-                    <Grid item xs={12} md={6}>
-                      <Grid container spacing={2}>
-                        <Grid item xs={12}>
-                          <Typography variant="subtitle2" color="textSecondary">
-                            Họ và tên
-                          </Typography>
-                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                            {teacher.name || teacher.userId?.name || 'N/A'}
-                          </Typography>
-                        </Grid>
-                        <Grid item xs={12}>
-                          <Typography variant="subtitle2" color="textSecondary">
-                            Email
-                          </Typography>
-                          <Typography variant="body1">
-                            {teacher.email || teacher.userId?.email || 'N/A'}
-                          </Typography>
-                        </Grid>
-                        <Grid item xs={12}>
-                          <Typography variant="subtitle2" color="textSecondary">
-                            Số điện thoại
-                          </Typography>
-                          <Typography variant="body1">
-                            {teacher.phone || teacher.userId?.phone || 'N/A'}
-                          </Typography>
-                        </Grid>
-                        <Grid item xs={12}>
-                          <Typography variant="subtitle2" color="textSecondary">
-                            Địa chỉ
-                          </Typography>
-                          <Typography variant="body1">
-                            {teacher.address || teacher.userId?.address || 'N/A'}
-                          </Typography>
-                        </Grid>
-                      </Grid>
-                    </Grid>
-
-                    {/* Right Column */}
-                    <Grid item xs={12} md={6}>
-                      <Grid container spacing={2}>
-                        <Grid item xs={12}>
-                          <Typography variant="subtitle2" color="textSecondary">
-                            Ngày sinh
-                          </Typography>
-                          <Typography variant="body1">
-                            {(() => {
-                              const birthDate = teacher.dayOfBirth || teacher.userId?.dayOfBirth;
-                              if (!birthDate) return 'N/A';
-
-                              if (formatDateDDMMYYYY) {
-                                return formatDateDDMMYYYY(birthDate);
-                              }
-
-                              // Fallback formatting if formatDateDDMMYYYY is not provided
-                              try {
-                                const date = new Date(birthDate);
-                                if (isNaN(date.getTime())) return 'N/A';
-
-                                const day = date.getDate().toString().padStart(2, '0');
-                                const month = (date.getMonth() + 1).toString().padStart(2, '0');
-                                const year = date.getFullYear();
-
-                                return `${day}/${month}/${year}`;
-                              } catch (error) {
-                                return 'N/A';
-                              }
-                            })()}
-                          </Typography>
-                        </Grid>
-                        <Grid item xs={12}>
-                          <Typography variant="subtitle2" color="textSecondary">
-                            Giới tính
-                          </Typography>
-                          <Typography variant="body1">
-                            {(teacher.gender || teacher.userId?.gender) === 'male' ? 'Nam' :
-                             (teacher.gender || teacher.userId?.gender) === 'female' ? 'Nữ' : 'N/A'}
-                          </Typography>
-                        </Grid>
-                        <Grid item xs={12}>
-                          <Typography variant="subtitle2" color="textSecondary">
-                            Trạng thái
-                          </Typography>
-                          <Chip
-                            label={teacher.isActive ? 'Đang hoạt động' : 'Ngừng hoạt động'}
-                            color={teacher.isActive ? 'success' : 'error'}
-                            size="small"
-                            sx={{ mt: 0.5 }}
-                          />
-                        </Grid>
-                        <Grid item xs={12}>
-                          <Typography variant="subtitle2" color="textSecondary">
-                            Giáo viên tiêu biểu
-                          </Typography>
-                          <Chip
-                            label={teacher.typical ? 'Tiêu biểu' : 'Thường'}
-                            color={teacher.typical ? 'warning' : 'default'}
-                            size="small"
-                            sx={{ mt: 0.5 }}
-                          />
-                        </Grid>
-                      </Grid>
-                    </Grid>
-                  </Grid>
-                </Box>
-              </Paper>
-            </Grid>
-
-            {/* Professional Information - 2 Columns */}
-            <Grid container spacing={3} sx={{ mt: 2 }}>
-              {/* Left Column */}
+            {/* Main Information Grid */}
+            <Grid container spacing={3}>
+              {/* Left Column - Personal Info */}
               <Grid item xs={12} md={6}>
                 <Paper sx={{
                   p: 3,
@@ -266,7 +130,7 @@ const TeacherViewDialog: React.FC<TeacherViewDialogProps> = ({
                       bgcolor: '#667eea',
                       borderRadius: 2
                     }} />
-                    Bằng cấp, chuyên môn
+                    Thông tin cá nhân
                   </Typography>
                   <Box sx={{
                     p: 2,
@@ -275,6 +139,108 @@ const TeacherViewDialog: React.FC<TeacherViewDialogProps> = ({
                     border: '1px solid #e0e6ed'
                   }}>
                     <Grid container spacing={2}>
+                      <Grid item xs={12}>
+                        <Typography variant="subtitle2" color="textSecondary">
+                          Họ và tên
+                        </Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                          {teacher.name || teacher.userId?.name || 'N/A'}
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={12}>
+                        <Typography variant="subtitle2" color="textSecondary">
+                          Email
+                        </Typography>
+                        <Typography variant="body1">
+                          {teacher.email || teacher.userId?.email || 'N/A'}
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={12}>
+                        <Typography variant="subtitle2" color="textSecondary">
+                          Số điện thoại
+                        </Typography>
+                        <Typography variant="body1">
+                          {teacher.phone || teacher.userId?.phone || 'N/A'}
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={12}>
+                        <Typography variant="subtitle2" color="textSecondary">
+                          Địa chỉ
+                        </Typography>
+                        <Typography variant="body1">
+                          {teacher.address || teacher.userId?.address || 'N/A'}
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={12}>
+                        <Typography variant="subtitle2" color="textSecondary">
+                          Ngày sinh
+                        </Typography>
+                        <Typography variant="body1">
+                          {teacher.dayOfBirth ?
+                            (formatDateDDMMYYYY ? formatDateDDMMYYYY(teacher.dayOfBirth) : teacher.dayOfBirth)
+                            : teacher.userId?.dayOfBirth ?
+                            (formatDateDDMMYYYY ? formatDateDDMMYYYY(teacher.userId.dayOfBirth) : teacher.userId.dayOfBirth)
+                            : 'N/A'}
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={12}>
+                        <Typography variant="subtitle2" color="textSecondary">
+                          Giới tính
+                        </Typography>
+                        <Typography variant="body1">
+                          {(teacher.gender || teacher.userId?.gender) === 'male' ? 'Nam' :
+                           (teacher.gender || teacher.userId?.gender) === 'female' ? 'Nữ' : 'N/A'}
+                        </Typography>
+                      </Grid>
+                    </Grid>
+                  </Box>
+                </Paper>
+              </Grid>
+
+              {/* Right Column - Professional Info */}
+              <Grid item xs={12} md={6}>
+                <Paper sx={{
+                  p: 3,
+                  borderRadius: 2,
+                  height: '100%',
+                  background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+                  border: '1px solid #e0e6ed',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                }}>
+                  <Typography variant="h6" gutterBottom sx={{
+                    color: '#2c3e50',
+                    fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    mb: 2
+                  }}>
+                    <Box sx={{
+                      width: 4,
+                      height: 20,
+                      bgcolor: '#667eea',
+                      borderRadius: 2
+                    }} />
+                    Thông tin chuyên môn
+                  </Typography>
+                  <Box sx={{
+                    p: 2,
+                    bgcolor: 'white',
+                    borderRadius: 1,
+                    border: '1px solid #e0e6ed'
+                  }}>
+                    <Grid container spacing={2}>
+                      <Grid item xs={12}>
+                        <Typography variant="subtitle2" color="textSecondary">
+                          Trạng thái
+                        </Typography>
+                        <Chip
+                          label={teacher.isActive ? 'Đang hoạt động' : 'Ngừng hoạt động'}
+                          color={teacher.isActive ? 'success' : 'error'}
+                          size="small"
+                          sx={{ mt: 0.5 }}
+                        />
+                      </Grid>
                       {teacher.salary && (
                         <Grid item xs={12}>
                           <Typography variant="subtitle2" color="textSecondary" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -300,167 +266,165 @@ const TeacherViewDialog: React.FC<TeacherViewDialogProps> = ({
                           </Typography>
                         </Grid>
                       )}
-
-                      {/* Bằng cấp */}
-                      {teacher.qualifications && teacher.qualifications.length > 0 && (
-                        <Grid item xs={12}>
-                          <Typography variant="subtitle2" color="textSecondary" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                            <EducationIcon sx={{ fontSize: 18 }} />
-                            Bằng cấp
-                          </Typography>
-                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                            {teacher.qualifications.map((qualification, index) => (
-                              <Chip
-                                key={index}
-                                label={qualification}
-                                color="secondary"
-                                variant="outlined"
-                                size="small"
-                              />
-                            ))}
-                          </Box>
-                        </Grid>
-                      )}
-
-                      {/* Chuyên môn */}
-                      {teacher.specializations && teacher.specializations.length > 0 && (
-                        <Grid item xs={12}>
-                          <Typography variant="subtitle2" color="textSecondary" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                            <Box sx={{
-                              width: 4,
-                              height: 18,
-                              bgcolor: '#667eea',
-                              borderRadius: 2
-                            }} />
-                            Chuyên môn
-                          </Typography>
-                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                            {teacher.specializations.map((specialization, index) => (
-                              <Chip
-                                key={index}
-                                label={specialization}
-                                color="primary"
-                                variant="outlined"
-                                size="small"
-                              />
-                            ))}
-                          </Box>
-                        </Grid>
-                      )}
+                      <Grid item xs={12}>
+                        <Typography variant="subtitle2" color="textSecondary">
+                          Ngày tạo
+                        </Typography>
+                        <Typography variant="body1">
+                          {teacher.createdAt ?
+                            (formatDateDDMMYYYY ? formatDateDDMMYYYY(teacher.createdAt) : teacher.createdAt)
+                            : 'N/A'}
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={12}>
+                        <Typography variant="subtitle2" color="textSecondary">
+                          Cập nhật lần cuối
+                        </Typography>
+                        <Typography variant="body1">
+                          {teacher.updatedAt ?
+                            (formatDateDDMMYYYY ? formatDateDDMMYYYY(teacher.updatedAt) : teacher.updatedAt)
+                            : 'N/A'}
+                        </Typography>
+                      </Grid>
                     </Grid>
-                  </Box>
-                </Paper>
-              </Grid>
-
-              {/* Right Column */}
-              <Grid item xs={12} md={6}>
-                <Paper sx={{
-                  p: 3,
-                  borderRadius: 2,
-                  height: '100%',
-                  background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
-                  border: '1px solid #e0e6ed',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
-                }}>
-                  <Typography variant="h6" gutterBottom sx={{
-                    color: '#2c3e50',
-                    fontWeight: 600,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1,
-                    mb: 2
-                  }}>
-                    <Box sx={{
-                      width: 4,
-                      height: 20,
-                      bgcolor: '#667eea',
-                      borderRadius: 2
-                    }} />
-                    Mô tả
-                  </Typography>
-                  <Box sx={{
-                    p: 2,
-                    bgcolor: 'white',
-                    borderRadius: 1,
-                    border: '1px solid #e0e6ed'
-                  }}>
-                    <Typography variant="body1">
-                      {teacher.description || 'Chưa có mô tả'}
-                    </Typography>
                   </Box>
                 </Paper>
               </Grid>
             </Grid>
 
-            {/* Additional Information Sections - 2 Columns */}
+            {/* Additional Information Sections */}
             <Grid container spacing={3} sx={{ mt: 2 }}>
-              {/* Introduction Section - Left Column */}
-              <Grid item xs={12} md={6}>
-                <Paper sx={{
-                  p: 3,
-                  borderRadius: 2,
-                  height: '100%',
-                  background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
-                  border: '1px solid #e0e6ed',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
-                }}>
-                  <Typography variant="h6" gutterBottom sx={{
-                    color: '#2c3e50',
-                    fontWeight: 600,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1,
-                    mb: 2
+              {/* Description Section */}
+              {teacher.description && (
+                <Grid item xs={12}>
+                  <Paper sx={{
+                    p: 3,
+                    borderRadius: 2,
+                    background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+                    border: '1px solid #e0e6ed',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
                   }}>
-                    <DescriptionIcon sx={{ fontSize: 20 }} />
-                    Giới thiệu
-                  </Typography>
-                  <Box sx={{
-                    p: 2,
-                    bgcolor: 'white',
-                    borderRadius: 1,
-                    border: '1px solid #e0e6ed'
-                  }}>
-                    <Typography variant="body1">
-                      {teacher.introduction || ''}
+                    <Typography variant="h6" gutterBottom sx={{
+                      color: '#2c3e50',
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      mb: 2
+                    }}>
+                      <DescriptionIcon sx={{ fontSize: 20 }} />
+                      Mô tả
                     </Typography>
-                  </Box>
-                </Paper>
-              </Grid>
+                    <Box sx={{
+                      p: 2,
+                      bgcolor: 'white',
+                      borderRadius: 1,
+                      border: '1px solid #e0e6ed'
+                    }}>
+                      <Typography variant="body1">
+                        {teacher.description}
+                      </Typography>
+                    </Box>
+                  </Paper>
+                </Grid>
+              )}
 
-              {/* Work Experience Section - Right Column */}
-              <Grid item xs={12} md={6}>
-                <Paper sx={{
-                  p: 3,
-                  borderRadius: 2,
-                  height: '100%',
-                  background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
-                  border: '1px solid #e0e6ed',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
-                }}>
-                  <Typography variant="h6" gutterBottom sx={{
-                    color: '#2c3e50',
-                    fontWeight: 600,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1,
-                    mb: 2
+              {/* Qualifications Section */}
+              {teacher.qualifications && teacher.qualifications.length > 0 && (
+                <Grid item xs={12} md={6}>
+                  <Paper sx={{
+                    p: 3,
+                    borderRadius: 2,
+                    background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+                    border: '1px solid #e0e6ed',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
                   }}>
-                    <WorkIcon sx={{ fontSize: 20 }} />
-                    Kinh nghiệm làm việc
-                  </Typography>
-                  <Box sx={{
-                    p: 2,
-                    bgcolor: 'white',
-                    borderRadius: 1,
-                    border: '1px solid #e0e6ed'
-                  }}>
-                    <Typography variant="body1">
-                      {teacher.workExperience || ''}
+                    <Typography variant="h6" gutterBottom sx={{
+                      color: '#2c3e50',
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      mb: 2
+                    }}>
+                      <EducationIcon sx={{ fontSize: 20 }} />
+                      Bằng cấp
                     </Typography>
-                  </Box>
-                </Paper>
-              </Grid>
+                    <Box sx={{
+                      p: 2,
+                      bgcolor: 'white',
+                      borderRadius: 1,
+                      border: '1px solid #e0e6ed'
+                    }}>
+                      <List dense>
+                        {teacher.qualifications.map((qualification, index) => (
+                          <React.Fragment key={index}>
+                            <ListItem sx={{ px: 0 }}>
+                              <ListItemText
+                                primary={qualification}
+                                primaryTypographyProps={{
+                                  variant: 'body2',
+                                  sx: { fontWeight: 500 }
+                                }}
+                              />
+                            </ListItem>
+                            {index < teacher.qualifications!.length - 1 && <Divider />}
+                          </React.Fragment>
+                        ))}
+                      </List>
+                    </Box>
+                  </Paper>
+                </Grid>
+              )}
+
+              {/* Specializations Section */}
+              {teacher.specializations && teacher.specializations.length > 0 && (
+                <Grid item xs={12} md={6}>
+                  <Paper sx={{
+                    p: 3,
+                    borderRadius: 2,
+                    background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+                    border: '1px solid #e0e6ed',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                  }}>
+                    <Typography variant="h6" gutterBottom sx={{
+                      color: '#2c3e50',
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      mb: 2
+                    }}>
+                      <Box sx={{
+                        width: 4,
+                        height: 20,
+                        bgcolor: '#667eea',
+                        borderRadius: 2
+                      }} />
+                      Chuyên môn
+                    </Typography>
+                    <Box sx={{
+                      p: 2,
+                      bgcolor: 'white',
+                      borderRadius: 1,
+                      border: '1px solid #e0e6ed',
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: 1
+                    }}>
+                      {teacher.specializations.map((specialization, index) => (
+                        <Chip
+                          key={index}
+                          label={specialization}
+                          color="primary"
+                          variant="outlined"
+                          size="small"
+                        />
+                      ))}
+                    </Box>
+                  </Paper>
+                </Grid>
+              )}
             </Grid>
           </Box>
         </Box>

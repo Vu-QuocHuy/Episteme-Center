@@ -1,7 +1,7 @@
 // Environment Configuration
 export const config = {
   // API Configuration
-  apiUrl: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
+  apiUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api',
   apiTimeout: parseInt(import.meta.env.VITE_API_TIMEOUT || '10000'),
 
   // Environment
@@ -12,6 +12,7 @@ export const config = {
   // App Configuration
   appName: import.meta.env.VITE_APP_NAME || 'English Center Management',
   appVersion: import.meta.env.VITE_APP_VERSION || '1.0.0',
+  appDescription: import.meta.env.VITE_APP_DESCRIPTION || 'Hệ thống quản lý trung tâm tiếng Anh',
 
   // Features
   features: {
@@ -24,25 +25,30 @@ export const config = {
   ui: {
     defaultTheme: import.meta.env.VITE_DEFAULT_THEME || 'light',
     defaultLanguage: import.meta.env.VITE_DEFAULT_LANGUAGE || 'vi',
-    sidebarWidth: parseInt(import.meta.env.VITE_SIDEBAR_WIDTH || '280'),
+    itemsPerPage: parseInt(import.meta.env.VITE_ITEMS_PER_PAGE || '10'),
   },
 
-  // Storage Configuration
-  storage: {
-    prefix: import.meta.env.VITE_STORAGE_PREFIX || 'ec_',
-    tokenExpiry: parseInt(import.meta.env.VITE_TOKEN_EXPIRY || '86400'), // 24 hours
+  // File Upload Configuration
+  upload: {
+    maxFileSize: parseInt(import.meta.env.VITE_MAX_FILE_SIZE || '5242880'), // 5MB
+    allowedImageTypes: import.meta.env.VITE_ALLOWED_IMAGE_TYPES?.split(',') || ['image/jpeg', 'image/png', 'image/gif'],
+  },
+
+  // Session Configuration
+  session: {
+    timeout: parseInt(import.meta.env.VITE_SESSION_TIMEOUT || '3600000'), // 1 hour
+    refreshTokenInterval: parseInt(import.meta.env.VITE_REFRESH_TOKEN_INTERVAL || '300000'), // 5 minutes
   },
 
   // Development Tools
   dev: {
-    enableMockApi: import.meta.env.VITE_ENABLE_MOCK_API === 'true',
     showDebugInfo: import.meta.env.VITE_SHOW_DEBUG_INFO === 'true',
   },
 } as const;
 
 // Validate required environment variables
 export const validateConfig = () => {
-  const requiredVars = ['VITE_API_URL'];
+  const requiredVars = ['VITE_API_BASE_URL'];
   const missingVars: string[] = [];
 
   for (const varName of requiredVars) {
