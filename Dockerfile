@@ -12,8 +12,6 @@ RUN npm run build
 ENV CI=true
 ENV PORT=3000
 
-CMD [ "npm", "start" ]
-
 FROM development AS build
 
 RUN npm run build
@@ -27,5 +25,7 @@ WORKDIR /usr/share/nginx/html
 RUN rm -rf ./*
 
 COPY --from=build /eng-center/client/dist .
+
+EXPOSE 3000
 
 ENTRYPOINT ["nginx", "-g", "daemon off;"]
