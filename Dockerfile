@@ -12,6 +12,10 @@ RUN npm run build
 ENV CI=true
 ENV PORT=3000
 
+# Accept build argument
+ARG VITE_API_BASE_URL
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+
 FROM development AS build
 
 RUN npm run build
