@@ -1,46 +1,34 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Stack, Pagination, CircularProgress, Table, TableHead, TableRow, TableCell, TableBody, Paper, TableContainer } from '@mui/material';
+import {
+  Box,
+  Stack,
+  Pagination,
+  CircularProgress,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+  Paper,
+  TableContainer,
+  Typography,
+  Chip,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  Divider,
+  Grid,
+  TextField,
+} from '@mui/material';
+import { Close as CloseIcon } from '@mui/icons-material';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
 import { getAuditLogsAPI } from '../../services/audit';
 import type { AuditLogItem } from '../../services/audit';
 import { commonStyles } from '../../utils/styles';
-
-// Parse HTML description to extract action, actor, and content (keep list structure)
-const parseDescription = (html: string): { action: string; actor: string; contentHtml: string } => {
-  try {
-    const container = document.createElement('div');
-    container.innerHTML = html || '';
-
-    // Extract content list HTML (preserve <li> formatting). If not available, fallback to line breaks
-    const items = Array.from(container.querySelectorAll('ul li')) as HTMLLIElement[];
-    const ulEl = container.querySelector('ul');
-    const contentHtml = ulEl
-      ? ulEl.innerHTML
-      : items.map(li => (li.textContent?.trim() || '')).filter(Boolean).map(t => `<div>${t}</div>`).join('');
-
-    // Remove the list to get only the header text
-    if (ulEl && ulEl.parentElement) {
-      ulEl.parentElement.removeChild(ulEl);
-    }
-
-    let header = (container.textContent || '').trim();
-    // Normalize spaces
-    header = header.replace(/\s+/g, ' ');
-    // Drop trailing colon
-    header = header.replace(/:$/, '').trim();
-
-    // Split by 'bởi' to separate action and actor (Vietnamese 'by')
-    const parts = header.split(' bởi ');
-    const action = (parts[0] || '').trim();
-    const actor = (parts[1] || '').trim();
-
-    return { action, actor, contentHtml };
-  } catch (e) {
-    return { action: '', actor: '', contentHtml: '' };
-  }
-};
-
-// Only render description per requirements
+import axiosInstance from '../../utils/axios.customize';
 
 const AuditLog: React.FC = () => {
   const [logs, setLogs] = useState<AuditLogItem[]>([]);
@@ -50,12 +38,46 @@ const AuditLog: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Filter state
+  const [filters, setFilters] = useState({
+    userEmail: '',
+    entityName: '',
+    entityId: '',
+    startTime: '',
+    endTime: '',
+  });
+
+  // Detail dialog state
+  const [selectedLog, setSelectedLog] = useState<AuditLogItem | null>(null);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailData, setDetailData] = useState<any>(null);
+
   const formatDateTime = (iso?: string): string => {
     if (!iso) return '';
     try {
-      return new Date(iso).toLocaleString('vi-VN', { hour12: false });
+      return new Date(iso).toLocaleString('vi-VN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      });
     } catch {
       return iso;
+    }
+  };
+
+  const getMethodColor = (method: string) => {
+    switch (method.toUpperCase()) {
+      case 'GET': return 'info';
+      case 'POST': return 'success';
+      case 'PUT':
+      case 'PATCH': return 'warning';
+      case 'DELETE': return 'error';
+      default: return 'default';
     }
   };
 
@@ -63,7 +85,20 @@ const AuditLog: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await getAuditLogsAPI({ page: pageNum, limit: pageLimit });
+      // Build filter object
+      const filter: any = {};
+
+      if (filters.userEmail) filter.userEmail = filters.userEmail;
+      if (filters.entityName) filter.entityName = filters.entityName;
+      if (filters.entityId) filter.entityId = filters.entityId;
+      if (filters.startTime) filter.startTime = new Date(filters.startTime);
+      if (filters.endTime) filter.endTime = new Date(filters.endTime);
+
+      const res = await getAuditLogsAPI({
+        page: pageNum,
+        limit: pageLimit,
+        filter: Object.keys(filter).length > 0 ? filter : undefined
+      });
       const data = res.data?.data;
       setLogs(data?.result || []);
       setTotalPages(data?.meta?.totalPages || 1);
@@ -74,6 +109,185 @@ const AuditLog: React.FC = () => {
     }
   };
 
+  const fetchLogDetail = async (logId: string) => {
+    setDetailLoading(true);
+    try {
+      const response = await axiosInstance.get(`/audit-log/${logId}`);
+      setDetailData(response.data?.data || null);
+    } catch (e: any) {
+      console.error('Error fetching log detail:', e);
+      setDetailData(null);
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
+  const handleViewDetail = (log: AuditLogItem) => {
+    setSelectedLog(log);
+    setDetailDialogOpen(true);
+    fetchLogDetail(log.id);
+  };
+
+  const handleCloseDetail = () => {
+    setDetailDialogOpen(false);
+    setSelectedLog(null);
+    setDetailData(null);
+  };
+
+  const handleFilterChange = (field: keyof typeof filters, value: string) => {
+    setFilters(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleApplyFilters = () => {
+    setPage(1);
+    fetchLogs(1, limit);
+  };
+
+  const handleClearFilters = () => {
+    setFilters({
+      userEmail: '',
+      entityName: '',
+      entityId: '',
+      startTime: '',
+      endTime: '',
+    });
+    setPage(1);
+    fetchLogs(1, limit);
+  };
+
+  const renderDetailContent = () => {
+    if (detailLoading) {
+      return (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+          <CircularProgress />
+        </Box>
+      );
+    }
+
+    if (!detailData || !selectedLog) {
+      return <Typography color="text.secondary">Không có dữ liệu chi tiết</Typography>;
+    }
+
+    return (
+      <Box>
+        <Grid container spacing={2}>
+          {/* Row 1: Entity Name and Action */}
+          <Grid item xs={12} sm={6}>
+            <Typography variant="subtitle2" color="text.secondary">Tài nguyên ảnh hưởng</Typography>
+            <Typography variant="body1" fontWeight={600}>{selectedLog.entityName}</Typography>
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <Typography variant="subtitle2" color="text.secondary">Hành động</Typography>
+            <Chip label={selectedLog.action} color="primary" size="small" />
+          </Grid>
+
+          {/* Row 2: Entity ID and Method */}
+          <Grid item xs={12} sm={6}>
+            <Typography variant="subtitle2" color="text.secondary">ID Thực thể</Typography>
+            <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.875rem' }}>
+              {selectedLog.entityId || 'N/A'}
+            </Typography>
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <Typography variant="subtitle2" color="text.secondary">Method</Typography>
+            <Chip
+              label={selectedLog.method}
+              color={getMethodColor(selectedLog.method) as any}
+              size="small"
+            />
+          </Grid>
+
+          {/* Row 3: User and Path */}
+          <Grid item xs={12} sm={6}>
+            <Typography variant="subtitle2" color="text.secondary">Người thực hiện</Typography>
+            <Typography variant="body1">
+              {selectedLog.user.name}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {selectedLog.user.email}
+            </Typography>
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <Typography variant="subtitle2" color="text.secondary">Path</Typography>
+            <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.875rem' }}>
+              {selectedLog.path}
+            </Typography>
+          </Grid>
+
+          {/* Changed Fields */}
+          {selectedLog.changedFields && selectedLog.changedFields.length > 0 && (
+            <Grid item xs={12}>
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                Các trường đã thay đổi ({selectedLog.changedFields.length})
+              </Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                {selectedLog.changedFields.map((field) => (
+                  <Chip key={field} label={field} size="small" variant="outlined" />
+                ))}
+              </Box>
+            </Grid>
+          )}
+
+          {/* Description */}
+          <Grid item xs={12}>
+            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+              Mô tả
+            </Typography>
+            <Box
+              sx={{
+                p: 2,
+                bgcolor: 'grey.50',
+                borderRadius: 1,
+                '& strong': { fontWeight: 600 },
+                '& ul': { pl: 3, my: 1 },
+                '& li': { mb: 0.5 }
+              }}
+              dangerouslySetInnerHTML={{ __html: selectedLog.description || 'Không có mô tả' }}
+            />
+          </Grid>
+
+          {/* Current Value */}
+          {selectedLog.newValue !== undefined && (
+            <>
+              <Grid item xs={12}>
+                <Divider sx={{ my: 1 }} />
+                <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                  Giá trị hiện tại
+                </Typography>
+              </Grid>
+
+              <Grid item xs={12}>
+                <Box sx={{ pl: 2 }}>
+                  {typeof selectedLog.newValue === 'object' && selectedLog.newValue !== null ? (
+                    <Box component="ul" sx={{ m: 0, pl: 2 }}>
+                      {Object.entries(selectedLog.newValue).map(([key, value]) => (
+                        <Box component="li" key={key} sx={{ mb: 1 }}>
+                          <Typography component="span" sx={{ fontWeight: 600 }}>
+                            {key}:
+                          </Typography>{' '}
+                          <Typography component="span">
+                            {typeof value === 'object' && value !== null
+                              ? JSON.stringify(value)
+                              : String(value)}
+                          </Typography>
+                        </Box>
+                      ))}
+                    </Box>
+                  ) : (
+                    <Typography>{String(selectedLog.newValue)}</Typography>
+                  )}
+                </Box>
+              </Grid>
+            </>
+          )}
+        </Grid>
+      </Box>
+    );
+  };
+
   useEffect(() => {
     fetchLogs(1, limit);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -82,62 +296,171 @@ const AuditLog: React.FC = () => {
   return (
     <DashboardLayout role="admin">
       <Box sx={commonStyles.pageContainer}>
-        {/* Simplified header intentionally omitted */}
+        <Typography variant="h4" component="h1" gutterBottom fontWeight="bold">
+          Nhật ký Hệ thống
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+          Theo dõi các hoạt động và thay đổi trong hệ thống
+        </Typography>
+
+        {/* Filter Section */}
+        <Paper variant="outlined" sx={{ mb: 3, p: 3 }}>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6} md={4}>
+              <TextField
+                fullWidth
+                size="small"
+                label="Email người dùng"
+                value={filters.userEmail}
+                onChange={(e) => handleFilterChange('userEmail', e.target.value)}
+                variant="outlined"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <TextField
+                fullWidth
+                size="small"
+                label="Tên tài nguyên"
+                value={filters.entityName}
+                onChange={(e) => handleFilterChange('entityName', e.target.value)}
+                variant="outlined"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <TextField
+                fullWidth
+                size="small"
+                label="Entity ID"
+                value={filters.entityId}
+                onChange={(e) => handleFilterChange('entityId', e.target.value)}
+                variant="outlined"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <TextField
+                fullWidth
+                size="small"
+                type="datetime-local"
+                label="Từ ngày"
+                value={filters.startTime}
+                onChange={(e) => handleFilterChange('startTime', e.target.value)}
+                InputLabelProps={{ shrink: true }}
+                variant="outlined"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <TextField
+                fullWidth
+                size="small"
+                type="datetime-local"
+                label="Đến ngày"
+                value={filters.endTime}
+                onChange={(e) => handleFilterChange('endTime', e.target.value)}
+                InputLabelProps={{ shrink: true }}
+                variant="outlined"
+              />
+            </Grid>
+          </Grid>
+
+          <Box sx={{ display: 'flex', gap: 2, mt: 3 }}>
+            <Button
+              variant="contained"
+              onClick={handleApplyFilters}
+              disabled={loading}
+            >
+              Áp dụng
+            </Button>
+            <Button
+              variant="outlined"
+              onClick={handleClearFilters}
+              disabled={loading}
+            >
+              Xóa bộ lọc
+            </Button>
+          </Box>
+        </Paper>
 
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
             <CircularProgress />
           </Box>
         ) : error ? (
-          <Box sx={{ color: 'error.main' }}>{error}</Box>
+          <Box sx={{ color: 'error.main', p: 2 }}>{error}</Box>
         ) : logs.length === 0 ? (
-          <Box sx={{ color: 'text.secondary' }}>Không có log nào</Box>
+          <Box sx={{ color: 'text.secondary', textAlign: 'center', py: 8 }}>
+            Không có log nào
+          </Box>
         ) : (
           <Box sx={commonStyles.contentContainer}>
             <Stack spacing={2}>
-            <TableContainer component={Paper} variant="outlined" sx={commonStyles.tableContainer}>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell width="20%">Hành động</TableCell>
-                    <TableCell width="25%">Người thực hiện</TableCell>
-                    <TableCell width="15%">Thời gian</TableCell>
-                    <TableCell width="35%">Nội dung</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {logs.map((log) => {
-                    const parsed = parseDescription(log.description || '');
-                    return (
+              <TableContainer component={Paper} variant="outlined" sx={commonStyles.tableContainer}>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell width="18%">Thời gian</TableCell>
+                      <TableCell width="20%">Người thực hiện</TableCell>
+                      <TableCell width="19%">Tài nguyên ảnh hưởng</TableCell>
+                      <TableCell width="12%">Hành động</TableCell>
+                      <TableCell width="31%">Mô tả</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {logs.map((log) => (
                       <TableRow key={log.id} hover>
-                        <TableCell sx={{ textTransform: 'none', fontWeight: 600, width: '25%' }}>
-                          {parsed.action || log.action || log.method}
-                        </TableCell>
-                        <TableCell sx={{ width: '20%' }}>
-                          {parsed.actor || (log.user ? `${log.user.name}${log.user.email ? ` - ${log.user.email}` : ''}` : '')}
-                        </TableCell>
-                        <TableCell sx={{ width: '15%', whiteSpace: 'nowrap' }}>
+                        <TableCell sx={{ whiteSpace: 'nowrap' }}>
                           {formatDateTime((log as any).createdAt)}
                         </TableCell>
-                        <TableCell sx={{ width: '35%' }}>
-                          {parsed.contentHtml ? (
-                            <Box
-                              sx={{ '& ul': { pl: 3 }, '& li': { mb: 0.5 } }}
-                              dangerouslySetInnerHTML={{ __html: `<ul style=\"margin: 8px 0; padding-left: 20px;\">${parsed.contentHtml}</ul>` }}
-                            />
-                          ) : (
-                            <Box
-                              sx={{ '& ul': { pl: 3 }, '& li': { mb: 0.5 } }}
-                              dangerouslySetInnerHTML={{ __html: log.description || '' }}
-                            />
-                          )}
+                        <TableCell>
+                          <Box>
+                            <Typography variant="body2" fontWeight={600}>
+                              {log.user?.name || 'N/A'}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {log.user?.email || ''}
+                            </Typography>
+                          </Box>
+                        </TableCell>
+                        <TableCell>
+                          <Box>
+                            <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
+                              {log.entityName || 'N/A'}
+                            </Typography>
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              color="inherit"
+                              onClick={() => handleViewDetail(log)}
+                              sx={{ fontSize: '0.75rem', py: 0.25, px: 1, display: 'block', ml: '-5px' }}
+                            >
+                              Xem chi tiết
+                            </Button>
+                          </Box>
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={log.action || 'N/A'}
+                            color="default"
+                            size="small"
+                            variant="outlined"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Box
+                            sx={{
+                              '& strong': { fontWeight: 600 },
+                              '& ul': { pl: 2, my: 0.5 },
+                              '& li': { mb: 0.25, fontSize: '0.875rem' }
+                            }}
+                            dangerouslySetInnerHTML={{
+                              __html: log.description || 'N/A'
+                            }}
+                          />
                         </TableCell>
                       </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
 
               <Box sx={{ display: 'flex', justifyContent: 'center', py: 1 }}>
                 <Pagination
@@ -152,6 +475,33 @@ const AuditLog: React.FC = () => {
             </Stack>
           </Box>
         )}
+
+        {/* Detail Dialog */}
+        <Dialog
+          open={detailDialogOpen}
+          onClose={handleCloseDetail}
+          maxWidth="lg"
+          fullWidth
+        >
+          <DialogTitle>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Typography variant="h6" component="div">
+                Chi tiết Log
+              </Typography>
+              <IconButton edge="end" onClick={handleCloseDetail} size="small">
+                <CloseIcon />
+              </IconButton>
+            </Box>
+          </DialogTitle>
+          <DialogContent dividers>
+            {renderDetailContent()}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseDetail} variant="outlined">
+              Đóng
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Box>
     </DashboardLayout>
   );
