@@ -44,13 +44,13 @@ const StudentManagement: React.FC = () => {
     // form,
     // classEdits,
     // formErrors,
-    formLoading,
+    // formLoading,
     // formError,
     // handleChange,
     // handleClassEditChange,
     setFormData,
     resetForm,
-    handleSubmit,
+    // handleSubmit,
   } = useStudentForm();
 
   // Dialog handlers
@@ -79,27 +79,6 @@ const StudentManagement: React.FC = () => {
       setSelectedStudent(null);
       resetForm();
     }, 100);
-  };
-
-  const handleFormSubmit = async (): Promise<void> => {
-    const result = await handleSubmit(selectedStudent || undefined, () => {
-      handleCloseDialog();
-      fetchStudents();
-    });
-
-    if (result.success) {
-      setSnackbar({
-        open: true,
-        message: selectedStudent ? 'Cập nhật học sinh thành công!' : 'Thêm học sinh thành công!',
-        severity: 'success'
-      });
-    } else {
-      setSnackbar({
-        open: true,
-        message: result.message || 'Có lỗi xảy ra',
-        severity: 'error'
-      });
-    }
   };
 
   const handleOpenDeleteDialog = (student: Student): void => {
@@ -204,10 +183,17 @@ const StudentManagement: React.FC = () => {
         open={openDialog}
         onClose={handleCloseDialog}
         student={selectedStudent}
-        onSubmit={async () => {
-          await handleFormSubmit();
+        onSubmit={(result) => {
+          // Refresh student list
+          fetchStudents();
+
+          // Show notification
+          setSnackbar({
+            open: true,
+            message: result.message || (result.success ? 'Thành công!' : 'Có lỗi xảy ra'),
+            severity: result.success ? 'success' : 'error'
+          });
         }}
-        loading={formLoading}
       />
 
       <ConfirmDialog

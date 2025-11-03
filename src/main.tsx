@@ -30,8 +30,6 @@ try {
 // Load dev helpers in development
 if (import.meta.env.DEV) {
   import('./utils/testHelpers');
-import('./utils/debugRefreshToken');
-  import('./utils/devApiTest');
 }
 
 const rootElement = document.getElementById('root');

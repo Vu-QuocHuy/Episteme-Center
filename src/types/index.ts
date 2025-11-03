@@ -755,6 +755,7 @@ export interface Advertisement {
   isActive?: boolean;
   startDate?: string;
   endDate?: string;
+  classId?: string | null;
 }
 
 // Home Page Content Management Types

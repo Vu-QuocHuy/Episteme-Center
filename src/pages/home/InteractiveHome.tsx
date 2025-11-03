@@ -18,8 +18,8 @@ import BannerCarousel from './components/BannerCarousel';
 import FeedbackHome from '../../components/features/home/FeedbackHome';
 import FeaturedTeachersHome from '../../components/features/home/FeaturedTeachersHome';
 import HomeWelcomeAdPopup from './components/WelcomeAdPopup';
-import HomeHeader from './HomeHeader';
 import ConsultationRegistration from '../../components/features/home/ConsultationRegistration';
+import PublicLayout from '../../components/layouts/PublicLayout';
 
 const InteractiveHome: React.FC = () => {
 
@@ -70,10 +70,7 @@ const InteractiveHome: React.FC = () => {
 
 
   return (
-    <Box>
-      {/* Header */}
-      <HomeHeader />
-
+    <PublicLayout>
       {/* Welcome Ad Popup */}
       <HomeWelcomeAdPopup />
 
@@ -154,7 +151,7 @@ const InteractiveHome: React.FC = () => {
 
       {/* Consultation Registration - above footer */}
       <ConsultationRegistration />
-    </Box>
+    </PublicLayout>
   );
 };
 

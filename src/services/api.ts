@@ -163,40 +163,12 @@ export interface ApiParams {
   [key: string]: any;
 }
 
-// Auth APIs moved to src/services/auth.ts
-
-// User APIs moved to src/services/users.ts
-
-// Class APIs moved to services/classes.ts
-
-// Student APIs
-// Student APIs moved to services/students.ts
-
 // Teacher APIs moved to services/teachers.ts
 export { getAllTeachersAPI, deleteTeacherAPI, getTeacherByIdAPI } from './teachers';
-
-// Parent APIs moved to services/parents.ts
-
-// Session APIs (Attendance)
-// Moved to services/sessions.ts
-
-// Payment APIs moved to services/payments.ts
-// Typical teacher detail (homepage featured teachers)
-// Moved to sessions/teachers services where applicable
 
 // Schedule APIs
 // Kept for backward compatibility if used elsewhere
 export const getLoggedInStudentSchedule = () => axiosInstance.get('/schedules/student/me');
-
-// Announcement APIs (Quản lý quảng cáo)
-// Announcement APIs moved to services/advertisements.ts (managed there as advertisements)
-
-
-
-// Refresh/verification APIs moved to src/services/auth.ts
-
-// Update user (PATCH)
-// Update user API moved to src/services/users.ts
 
 // Menu APIs
 export interface MenuData {
@@ -219,9 +191,6 @@ export interface MenusListResponse {
   data: MenuItem[];
 }
 
-// Menu APIs moved to src/services/menus.ts
-
-
 // Transaction APIs
 export interface TransactionData {
   amount: number;
@@ -229,15 +198,11 @@ export interface TransactionData {
   description: string;
 }
 
-// Transaction APIs moved to src/services/transactions.ts
-
 // Transaction Categories APIs
 export interface TransactionCategoryData {
   type: 'revenue' | 'expense';
   name: string;
 }
-
-// Transaction category APIs moved to src/services/transactions.ts
 
 // File APIs
 export interface FileUploadResponse {
@@ -248,8 +213,6 @@ export interface FileUploadResponse {
     public_id: string;
   };
 }
-
-// File APIs moved to src/services/files.ts
 
 // Advertisement APIs
 export interface AdvertisementData {
@@ -294,11 +257,6 @@ export interface AdvertisementsListResponse {
   };
 }
 
-// Advertisement APIs moved to src/services/advertisements.ts
-
-// Dashboard APIs
-// Moved to services/dashboard.ts
-
 // Audit Log APIs
 export interface AuditLogItem {
   id: string;
@@ -331,15 +289,6 @@ export interface AuditLogResponse {
     result: AuditLogItem[];
   };
 }
-
-// Audit APIs moved to src/services/audit.ts
-
-// Feedback APIs
-// Feedback APIs moved to src/services/feedback.ts
-
-// Teacher payments report API moved to src/services/payments.ts
-
-// Transaction report API moved to src/services/transactions.ts
 
 // Article APIs
 export interface ArticleData {
@@ -380,12 +329,3 @@ export interface ArticlesListResponse {
     result: ArticleResponse['data'][];
   };
 }
-
-// Article APIs moved to src/services/articles.ts
-
-// Registration APIs
-// Registration APIs moved to services/registrations.ts
-
-// Legacy API moved to src/services/articles.ts
-
-// Role/Permission APIs moved to services/roles.ts

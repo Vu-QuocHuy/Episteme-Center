@@ -18,7 +18,6 @@ import { uploadFileAPI } from '../../services/files';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
 import AddItemDialog from './layout-builder/AddItemDialog';
 import PreviewDialog from './layout-builder/PreviewDialog';
-import { DESIGN_WIDTH } from './layout-builder/utils';
 import { useMenuItems } from '../../hooks/features/useMenuItems';
 import { commonStyles } from '../../utils/styles';
 // Removed unused style imports
@@ -104,25 +103,7 @@ const LayoutBuilder: React.FC = () => {
   const [contentBorderRadius, setContentBorderRadius] = useState(8);
 
   const itemRefs = useRef<{ [key: string]: React.RefObject<HTMLDivElement> }>({});
-  // ✅ Scale canvas theo độ rộng container để trải nghiệm kéo thả giống trang thật
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const [canvasScale, setCanvasScale] = useState<number>(1);
-
-  useEffect(() => {
-    const computeScale = () => {
-      const container = containerRef.current;
-      if (!container) return;
-      const availableWidth = container.clientWidth;
-      if (availableWidth <= 0) return;
-      // Scale dựa trên DESIGN_WIDTH để vừa khít container
-      const scale = availableWidth / DESIGN_WIDTH;
-      setCanvasScale(scale);
-    };
-
-    computeScale();
-    window.addEventListener('resize', computeScale);
-    return () => window.removeEventListener('resize', computeScale);
-  }, []);
 
   // Auto-generate ID if not provided
   const generateId = () => `item-${Date.now()}`;
@@ -163,7 +144,7 @@ const LayoutBuilder: React.FC = () => {
           i: id,
           x: 0,
           y: nextY,
-            w: 20, // Default width (20/40 = 50% of container)
+            w: 6, // Default width (6/12 = 50% of container)
             h: 4, // Default height
         }
       ]
@@ -384,19 +365,31 @@ const LayoutBuilder: React.FC = () => {
   // ✅ Generate responsive HTML với utils
   const generateResponsiveHTML = () => {
     let maxBottom = 0;
+    const GRID_COLS = 12; // ✅ Số cột grid (lg breakpoint)
+    const ROW_HEIGHT = 30; // ✅ Chiều cao mỗi row (px) trong builder
+    const MARGIN = 10; // ✅ Margin giữa các items trong builder
+    // const CONTAINER_PADDING = 0; // ✅ Container padding trong builder (containerPadding=[0,0])
+
+    // ✅ Tính tỷ lệ scale dựa trên chiều rộng thực tế
+    // Builder canvas width (lấy từ containerRef)
+    // const builderWidth = containerRef.current?.clientWidth || 1200;
+    // Trang thực thường có max-width container ~1200px hoặc full width
+    // Để content không quá lớn, dùng tỷ lệ 1:1 (không scale)
+    const SCALE_FACTOR = 1; // Không scale, giữ nguyên kích thước
 
     const layoutHTML = (layouts.lg || []).map(layoutItem => {
       const item = items.find(i => i.i === layoutItem.i);
       if (!item) return '';
 
-      // ✅ Tính toán position và size với responsive units
-      // Convert grid units to percentage based on design width
-      const xPercent = (layoutItem.x * 30 / DESIGN_WIDTH) * 100;
-      const yPercent = (layoutItem.y * 30 / DESIGN_WIDTH) * 100;
-      const widthPercent = (layoutItem.w * 30 / DESIGN_WIDTH) * 100;
-      const heightVh = Math.max((layoutItem.h * 30 / window.innerHeight) * 100, 5); // Minimum 5vh
+      // ✅ Tính toán position và size - ĐỒNG BỘ với react-grid-layout
+      // Position: y * (rowHeight + margin[1])
+      const xPercent = (layoutItem.x / GRID_COLS) * 100;
+      const yPx = layoutItem.y * (ROW_HEIGHT + MARGIN) * SCALE_FACTOR;
+      const widthPercent = (layoutItem.w / GRID_COLS) * 100;
+      // Height: h * rowHeight + (h - 1) * margin[1]
+      const heightPx = (layoutItem.h * ROW_HEIGHT + (layoutItem.h - 1) * MARGIN) * SCALE_FACTOR;
 
-      const bottom = yPercent + heightVh;
+      const bottom = yPx + heightPx;
       if (bottom > maxBottom) {
         maxBottom = bottom;
       }
@@ -404,15 +397,13 @@ const LayoutBuilder: React.FC = () => {
       let contentHTML = '';
       switch (item.type) {
         case 'text':
-          // Match site baseline (sidebar/body text ≈ 1rem). Keep slight responsiveness.
-          // This clamps font-size to never exceed 1rem on large screens.
-          contentHTML = `<div style="font-size: clamp(0.9rem, 1vw, 1rem); line-height: 1.6;">${item.content || 'Default Text'}</div>`;
+          contentHTML = `<div style="font-size: clamp(1rem, 1.5vw, 1.2rem); line-height: 1.6; height: 100%; overflow: auto;">${item.content || 'Default Text'}</div>`;
           break;
         case 'input':
-          contentHTML = `<input type="text" value="${item.content || ''}" readonly style="width: 100%; padding: clamp(8px, 1.5vw, 16px); border: 1px solid #ddd; border-radius: 4px; font-size: clamp(0.9rem, 2vw, 1.2rem);" />`;
+          contentHTML = `<input type="text" value="${item.content || ''}" readonly style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 1.1rem; box-sizing: border-box;" />`;
           break;
         case 'image':
-          contentHTML = `<img src="${item.content}" alt="Uploaded Image" style="width: 100%; height: 100%; object-fit: cover;" />`;
+          contentHTML = `<img src="${item.content}" alt="Uploaded Image" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;" />`;
           break;
         default:
           contentHTML = `<div>Invalid Type</div>`;
@@ -423,29 +414,32 @@ const LayoutBuilder: React.FC = () => {
           style="
             position: absolute;
             left: ${xPercent}%;
-            top: ${yPercent}%;
+            top: ${yPx}px;
             width: ${widthPercent}%;
-            height: ${heightVh}vh;
+            height: ${heightPx}px;
             box-sizing: border-box;
-            padding: clamp(10px, 1.5vw, 20px);
+            padding: 0;
           "
         >
           ${contentHTML}
         </div>`;
     });
 
+    // ✅ Container height: maxBottom + extra space (không dùng containerPadding vì đã có trong items)
+    const containerHeight = Math.max(maxBottom + 50, 600 * SCALE_FACTOR);
+
     return `
       <div
         style="
           position: relative;
           width: 100%;
-          min-height: 100vh;
-          height: ${Math.max(maxBottom, 100)}vh;
+          min-height: ${600 * SCALE_FACTOR}px;
+          height: ${containerHeight}px;
           box-sizing: border-box;
           background-color: ${contentBackground};
           border-radius: ${contentBorderRadius}px;
           margin: 0;
-          padding: clamp(20px, 3vw, 40px);
+          padding: 0;
         "
       >
         ${layoutHTML.join('\n')}
@@ -539,7 +533,7 @@ const LayoutBuilder: React.FC = () => {
           width: '100%',
           height: '100%',
           overflow: item.type === 'text' ? 'auto' : 'hidden',
-          padding: '8px'
+          padding: '0'
         }}
       >
         {item.type === 'text' && (
@@ -559,7 +553,7 @@ const LayoutBuilder: React.FC = () => {
             readOnly
             style={{
               width: '100%',
-              padding: '8px',
+              padding: '4px',
               border: '1px solid #ddd',
               borderRadius: '4px',
               backgroundColor: '#f5f5f5'
@@ -588,7 +582,7 @@ const LayoutBuilder: React.FC = () => {
   return (
     <DashboardLayout role="admin">
       <Box sx={commonStyles.pageContainer}>
-        <Box sx={commonStyles.contentContainer}>
+        <Box sx={{ ...commonStyles.contentContainer, p: 3 }}> {/* ✅ Giảm padding từ 5 xuống 3 */}
         <Box sx={{ mb: 4 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
             <Typography variant="h4" gutterBottom sx={{ mb: 0 }}>
@@ -740,7 +734,7 @@ const LayoutBuilder: React.FC = () => {
       <Paper sx={{ p: 3, mb: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
           <Box>
-          <Typography variant="h6">Xem trước Layout</Typography>
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>Xem trước Layout</Typography>
           </Box>
           <Button
             variant="contained"
@@ -748,44 +742,34 @@ const LayoutBuilder: React.FC = () => {
             onClick={saveLayout}
             color="success"
             disabled={loading}
+            size="large"
           >
             {isEditMode ? 'Cập nhật Bài viết' : 'Lưu Layout'}
           </Button>
         </Box>
 
+        {/* Canvas Container - Responsive như các trang khác */}
         <Box ref={containerRef} sx={{
-          border: '1px solid #ddd',
-          borderRadius: 1,
-          p: 2,
-          minHeight: '500px',
+          border: '2px solid #e0e0e0',
+          borderRadius: 0,
+          p: 0,
+          minHeight: '600px',
           width: '100%',
-          margin: '0 auto',
-          backgroundColor: '#f5f5f5', // Background xám để tạo contrast
-          overflowX: 'hidden'
+          backgroundColor: contentBackground,
+          overflow: 'auto',
+          boxSizing: 'border-box'
         }}>
-          {/* Wrapper có width cố định = DESIGN_WIDTH, scale theo container */}
-          <Box sx={{
-            width: `${DESIGN_WIDTH}px`,
-            transform: `scale(${canvasScale})`,
-            transformOrigin: 'top center',
-            margin: '0 auto'
-          }}>
-            <Box sx={{
-              backgroundColor: contentBackground,
-              borderRadius: `${contentBorderRadius}px`,
-              minHeight: '460px'
-            }}>
           <ResponsiveGridLayout
             className="layout"
             layouts={layouts}
             breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480 }}
-            cols={{ lg: 40, md: 40, sm: 20, xs: 10 }}
+            cols={{ lg: 12, md: 10, sm: 6, xs: 4 }}
             rowHeight={30}
             onLayoutChange={onLayoutChange}
             isDraggable={true}
             isResizable={true}
             margin={[10, 10]}
-            containerPadding={[10, 10]}
+            containerPadding={[0, 0]}
           >
             {(layouts.lg || []).map(layoutItem => (
               <div key={layoutItem.i} style={{ position: 'relative' }}>
@@ -828,8 +812,6 @@ const LayoutBuilder: React.FC = () => {
               </div>
             ))}
           </ResponsiveGridLayout>
-            </Box>
-          </Box>
         </Box>
       </Paper>
 

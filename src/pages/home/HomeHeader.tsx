@@ -19,6 +19,7 @@ import {
   Dashboard as DashboardIcon,
   AccountCircle as AccountCircleIcon,
   Logout as LogoutIcon,
+  KeyboardArrowDown as ArrowDownIcon,
 } from '@mui/icons-material';
 import { COLORS } from '../../utils/colors';
 import { useNavigate } from 'react-router-dom';
@@ -49,10 +50,65 @@ const HomeHeader: React.FC = () => {
   const [mobileMenuAnchor, setMobileMenuAnchor] = useState<HTMLElement | null>(null);
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [dropdownAnchor, setDropdownAnchor] = useState<{ [key: string]: HTMLElement | null }>({});
+  const closeTimeoutRef = React.useRef<{ [key: string]: NodeJS.Timeout }>({});
+  const menuRefs = React.useRef<{ [key: string]: HTMLElement | null }>({});
+  const justOpenedRef = React.useRef<boolean>(false);
+
+
+  // Global mouse move listener to close dropdown when not hovering menu or dropdown
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      // Skip if just opened (prevent immediate close)
+      if (justOpenedRef.current) {
+        return;
+      }
+
+      // Debounce - chỉ check sau 100ms
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        // Check if any dropdown is open
+        const hasOpenDropdown = Object.values(dropdownAnchor).some(anchor => anchor !== null);
+
+        if (!hasOpenDropdown) return;
+
+        const target = e.target as HTMLElement;
+
+        // Check if mouse is on a menu button
+        const isOnMenuButton = target.closest('button') !== null &&
+                               Object.values(menuRefs.current).some(ref => ref && ref.contains(target));
+
+        // Check if mouse is on dropdown menu (MUI Portal)
+        const isOnDropdown = target.closest('[role="menu"]') !== null;
+
+        // If not on button and not on dropdown -> close all
+        if (!isOnMenuButton && !isOnDropdown) {
+          setDropdownAnchor({});
+        }
+      }, 100);
+    };
+
+    document.addEventListener('mousemove', handleGlobalMouseMove);
+    return () => {
+      clearTimeout(timeoutId);
+      document.removeEventListener('mousemove', handleGlobalMouseMove);
+    };
+  }, [dropdownAnchor]);
 
   // Get active menu items (filtered and sorted)
+  // ✅ Lọc bỏ menu item "Trang chủ" vì trang chủ được điều hướng qua logo
   const activeMenuItems = menuItems
     .filter(item => item.isActive)
+    .filter(item => {
+      // Loại bỏ item có slug là '/' hoặc '/home' hoặc title là 'Trang chủ'
+      const slug = item.slug?.toLowerCase().trim();
+      const title = item.title?.toLowerCase().trim();
+      return slug !== '/' &&
+             slug !== '/home' &&
+             title !== 'trang chủ' &&
+             title !== 'home';
+    })
     .sort((a, b) => (a.order || 0) - (b.order || 0));
 
   // Không dùng menu tĩnh mặc định; chỉ hiển thị khi có menu từ API
@@ -137,21 +193,22 @@ const HomeHeader: React.FC = () => {
     handleMenuClose();
   };
 
-  const handleDropdownOpen = (event: React.MouseEvent<HTMLElement>, menuId: string): void => {
-    setDropdownAnchor(prev => ({ ...prev, [menuId]: event.currentTarget }));
-  };
-
   const handleDropdownClose = (menuId: string): void => {
     setDropdownAnchor(prev => ({ ...prev, [menuId]: null }));
   };
 
   const handleMenuClick = (menuItem: NavigationMenuItem): void => {
+    // If has children, don't do anything - just show dropdown
+    if (menuItem.children && menuItem.children.length > 0) {
+      return;
+    }
+
+    // Only navigate/scroll if no children
     if (menuItem.slug) {
       // Navigate to slug if available
-      navigate(menuItem.slug);
-    } else if (menuItem.children && menuItem.children.length > 0) {
-      // If no slug but has children, do nothing (dropdown will handle it)
-      return;
+      // Ensure slug starts with '/' for absolute path
+      const absoluteSlug = menuItem.slug.startsWith('/') ? menuItem.slug : `/${menuItem.slug}`;
+      navigate(absoluteSlug);
     } else {
       // Fallback to scroll to section
       scrollToSection(menuItem.title);
@@ -160,7 +217,9 @@ const HomeHeader: React.FC = () => {
 
   const handleSubmenuClick = (submenu: NavigationMenuItem): void => {
     if (submenu.slug) {
-      navigate(submenu.slug);
+      // Ensure slug starts with '/' for absolute path
+      const absoluteSlug = submenu.slug.startsWith('/') ? submenu.slug : `/${submenu.slug}`;
+      navigate(absoluteSlug);
     }
   };
 
@@ -271,7 +330,10 @@ const HomeHeader: React.FC = () => {
             >
               {displayMenuItems.map((menuItem) => (
                 <Box key={menuItem.id}>
-                  <MenuItem onClick={() => handleMobileMenuItemClick(menuItem)}>
+                  <MenuItem
+                    onClick={() => handleMobileMenuItemClick(menuItem)}
+                    sx={{ fontWeight: 600 }} // ✅ Chữ đậm cho menu mobile
+                  >
                     {menuItem.title}
                   </MenuItem>
                   {menuItem.children && menuItem.children.length > 0 && (
@@ -286,7 +348,7 @@ const HomeHeader: React.FC = () => {
                               handleSubmenuClick(submenu);
                               handleMobileMenuClose();
                             }}
-                            sx={{ pl: 3, fontSize: '0.9rem' }}
+                            sx={{ pl: 3, fontSize: '0.9rem', fontWeight: 500 }} // ✅ Submenu mobile hơi nhạt hơn
                           >
                             {submenu.title}
                           </MenuItem>
@@ -317,54 +379,69 @@ const HomeHeader: React.FC = () => {
         ) : (
           // Desktop Menu
           <>
-            <Box sx={{
-              position: 'absolute',
-              left: '50%',
-              top: 0,
-              bottom: 0,
-              transform: 'translateX(-50%)',
-              display: 'flex',
-              alignItems: 'center',
-              height: '100%',
-              zIndex: 1,
-            }}>
+            <Box
+              sx={{
+                position: 'absolute',
+                left: '50%',
+                top: 0,
+                bottom: 0,
+                transform: 'translateX(-50%)',
+                display: 'flex',
+                alignItems: 'center',
+                height: '100%',
+                zIndex: 1,
+              }}
+            >
               {displayMenuItems.map((menuItem) => (
                 <Box
                   key={menuItem.id}
+                  ref={(el) => { menuRefs.current[menuItem.id] = el as HTMLElement | null; }}
                   sx={{ position: 'relative' }}
                   onMouseEnter={(e) => {
+                    // Clear all timeouts
+                    Object.keys(closeTimeoutRef.current).forEach(key => {
+                      clearTimeout(closeTimeoutRef.current[key]);
+                    });
+                    closeTimeoutRef.current = {};
+
+                    // Close all dropdowns first
+                    setDropdownAnchor({});
+
+                    // Then open this dropdown if has children
                     if (menuItem.children && menuItem.children.length > 0) {
-                      handleDropdownOpen(e, menuItem.id);
+                      const buttonElement = e.currentTarget.querySelector('button');
+                      if (buttonElement) {
+                        // Set flag to prevent immediate close
+                        justOpenedRef.current = true;
+                        setDropdownAnchor({ [menuItem.id]: buttonElement });
+                        // Reset flag after 300ms
+                        setTimeout(() => {
+                          justOpenedRef.current = false;
+                        }, 300);
+                      }
                     }
                   }}
-                  onMouseLeave={() => {
-                    if (menuItem.children && menuItem.children.length > 0) {
-                      handleDropdownClose(menuItem.id);
-                    }
-                  }}
+
                 >
                   <Button
                     onClick={() => handleMenuClick(menuItem)}
+                    endIcon={menuItem.children && menuItem.children.length > 0 ? <ArrowDownIcon /> : null}
                     sx={{
                       mx: 1.5,
                       color: activeSection === (menuItem.slug || menuItem.title) ? COLORS.primary.main : '#111',
-                      fontWeight: activeSection === (menuItem.slug || menuItem.title) ? 700 : 500,
+                      fontWeight: 600, // ✅ Chữ đậm cho tất cả menu items
                       fontSize: '1rem',
-                      borderRadius: 0,
-                      bgcolor: 'transparent',
+                      borderRadius: 1,
+                      bgcolor: dropdownAnchor[menuItem.id] ? '#f5f5f5' : 'transparent',
                       outline: 'none',
                       boxShadow: 'none',
-                      border: '1px solid transparent',
+                      transition: 'all 0.2s ease',
                       '&:focus, &:active': {
                         outline: 'none',
                         boxShadow: 'none',
-                        bgcolor: 'transparent',
                       },
                       '&:hover': {
-                        color: '#111',
-                        bgcolor: 'transparent',
-                        border: '1px solid #ddd',
-                        borderRadius: 0,
+                        bgcolor: '#f5f5f5',
                       },
                     }}
                   >
@@ -379,17 +456,25 @@ const HomeHeader: React.FC = () => {
                       onClose={() => handleDropdownClose(menuItem.id)}
                       anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
                       transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+                      disableAutoFocusItem
+                      disableAutoFocus
                       sx={{
-                        mt: 1,
+                        mt: 0.5,
                         '& .MuiPaper-root': {
-                          borderRadius: 0,
+                          borderRadius: 2,
+                          boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                          border: '1px solid rgba(0,0,0,0.08)',
+                          minWidth: 200,
+                        },
+                        '& .MuiList-root': {
+                          py: 1,
                         }
                       }}
                       MenuListProps={{
-                        onMouseEnter: () => {
-                          // Keep dropdown open when hovering over menu items
-                        },
-                        onMouseLeave: () => handleDropdownClose(menuItem.id),
+                        autoFocusItem: false,
+                      }}
+                      TransitionProps={{
+                        timeout: 200,
                       }}
                     >
                       {menuItem.children
@@ -399,7 +484,15 @@ const HomeHeader: React.FC = () => {
                           <MenuItem
                             key={submenu.id}
                             onClick={() => handleSubmenuClick(submenu)}
-                            sx={{ minWidth: 150 }}
+                            sx={{
+                              minWidth: 200,
+                              px: 2.5,
+                              py: 1.2,
+                              fontSize: '0.95rem',
+                              '&:hover': {
+                                bgcolor: '#f5f5f5',
+                              }
+                            }}
                           >
                             {submenu.title}
                           </MenuItem>

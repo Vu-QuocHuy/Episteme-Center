@@ -6,6 +6,7 @@ import { getHomeBannersAPI } from '../../../../services/advertisements';
 import { Advertisement } from '../../../../types';
 import { useBannerConfig } from '../../../../hooks/useBannerConfig';
 import AdvertisementSlider from '../../../../components/features/advertisement/AdvertisementSlider';
+import ClassRegistrationModal from '../../../../components/features/home/ClassRegistrationModal';
 
 const BannerCarousel: React.FC = () => {
   const { bannerConfig } = useBannerConfig();
@@ -13,6 +14,9 @@ const BannerCarousel: React.FC = () => {
   const [advertisements, setAdvertisements] = useState<Advertisement[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
+  const [selectedClassName, setSelectedClassName] = useState<string>('');
 
 
 
@@ -42,6 +46,10 @@ const BannerCarousel: React.FC = () => {
         const activeBanners = bannerAds.filter((ad: any) => ad.isActive !== false);
 
         const finalBanners = activeBanners.slice(0, bannerConfig.maxSlides);
+
+        // 🔍 Debug: Kiểm tra xem banner có classId không
+        console.log('📢 [BannerCarousel] Loaded banners:', finalBanners);
+        console.log('📢 [BannerCarousel] Banners with classId:', finalBanners.filter((b: any) => b.classId));
 
         setAdvertisements(finalBanners);
       } catch (error) {
@@ -83,17 +91,33 @@ const BannerCarousel: React.FC = () => {
     );
   }
 
+  const handleRegisterClick = (classId: string | null, className: string) => {
+    setSelectedClassId(classId);
+    setSelectedClassName(className);
+    setModalOpen(true);
+  };
+
   return (
-    <Box sx={{ position: 'relative', mb: 4 }}>
-      <AdvertisementSlider
-        ads={advertisements}
-        autoPlay={bannerConfig.autoPlay}
-        interval={bannerConfig.interval}
-        showArrows={bannerConfig.showArrows}
-        showDots={bannerConfig.showDots}
-        height={bannerConfig.height}
+    <>
+      <Box sx={{ position: 'relative', mb: 4 }}>
+        <AdvertisementSlider
+          ads={advertisements}
+          autoPlay={bannerConfig.autoPlay}
+          interval={bannerConfig.interval}
+          showArrows={bannerConfig.showArrows}
+          showDots={bannerConfig.showDots}
+          height={bannerConfig.height}
+          onRegisterClick={handleRegisterClick}
+        />
+      </Box>
+
+      <ClassRegistrationModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        classId={selectedClassId}
+        className={selectedClassName}
       />
-    </Box>
+    </>
   );
 };
 

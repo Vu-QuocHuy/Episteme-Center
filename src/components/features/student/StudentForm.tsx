@@ -18,11 +18,20 @@ import {
 } from '@mui/material';
 import { Save as SaveIcon, Cancel as CancelIcon, Edit as EditIcon } from '@mui/icons-material';
 import { Student } from '../../../types';
+import {
+  validateName,
+  validateEmail,
+  validatePhone,
+  validateAddress,
+  validateGender,
+  validateDiscountCode
+} from '../../../validations/commonValidation';
+import { createStudentAPI, updateStudentAPI } from '../../../services/students';
 
 interface StudentFormProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (studentData: Partial<Student>) => Promise<void>;
+  onSubmit?: (result: { success: boolean; message?: string }) => void;
   student?: Student | null;
   loading?: boolean;
 }
@@ -50,7 +59,7 @@ const StudentForm: React.FC<StudentFormProps> = ({
   onClose,
   onSubmit,
   student,
-  loading = false
+  loading: externalLoading = false
 }) => {
   // Removed theme-based avatar UI for edit layout
   const [formData, setFormData] = useState<FormData>({
@@ -63,6 +72,7 @@ const StudentForm: React.FC<StudentFormProps> = ({
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [classEdits, setClassEdits] = useState<Array<{ classId?: string; className: string; discountPercent: number; status: 'active' | 'completed'; }>>([]);
+  const [loading, setLoading] = useState(false);
   // Removed avatar editing in this dialog
 
   // Removed levels/grades UI for this dialog per design
@@ -125,22 +135,79 @@ const StudentForm: React.FC<StudentFormProps> = ({
     setClassEdits(prev => prev.map((item, i) => i === index ? { ...item, [field]: field === 'discountPercent' ? Number(value) : value } : item));
   };
 
-  const validateForm = (): boolean => true;
+  // Helper function to validate date format (yyyy-mm-dd from input type="date")
+  const validateDateOfBirth = (dateStr: string): string => {
+    if (!dateStr) return 'Ngày sinh không được để trống';
+
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return 'Ngày sinh không hợp lệ';
+
+    const today = new Date();
+    if (date >= today) return 'Ngày sinh phải nhỏ hơn ngày hiện tại';
+
+    // Check minimum age (e.g., at least 3 years old)
+    const minDate = new Date();
+    minDate.setFullYear(minDate.getFullYear() - 3);
+    if (date > minDate) return 'Học sinh phải ít nhất 3 tuổi';
+
+    return '';
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {};
+
+    // Validate name
+    const nameError = validateName(formData.name);
+    if (nameError) newErrors.name = nameError;
+
+    // Validate email
+    const emailError = validateEmail(formData.email);
+    if (emailError) newErrors.email = emailError;
+
+    // Validate phone
+    const phoneError = validatePhone(formData.phone);
+    if (phoneError) newErrors.phone = phoneError;
+
+    // Validate address
+    const addressError = validateAddress(formData.address);
+    if (addressError) newErrors.address = addressError;
+
+    // Validate date of birth
+    const dobError = validateDateOfBirth(formData.dateOfBirth);
+    if (dobError) newErrors.dateOfBirth = dobError;
+
+    // Validate gender
+    const genderError = validateGender(formData.gender);
+    if (genderError) newErrors.gender = genderError;
+
+    // Validate discount percent for each class
+    for (let i = 0; i < classEdits.length; i++) {
+      const discountError = validateDiscountCode(classEdits[i].discountPercent);
+      if (discountError) {
+        newErrors.address = newErrors.address || `Lỗi giảm giá lớp ${classEdits[i].className}: ${discountError}`;
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async () => {
     if (!validateForm()) {
       return;
     }
 
+    setLoading(true);
+
     try {
       const payload = student?.id
         ? {
             userData: {
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        dayOfBirth: formData.dateOfBirth,
-        gender: formData.gender,
+              name: formData.name,
+              email: formData.email,
+              phone: formData.phone,
+              dayOfBirth: formData.dateOfBirth,
+              gender: formData.gender,
               address: formData.address,
             },
             studentData: classEdits.map(edit => ({
@@ -152,18 +219,35 @@ const StudentForm: React.FC<StudentFormProps> = ({
         : {
             email: formData.email,
             password: 'password123',
-          name: formData.name,
+            name: formData.name,
             dayOfBirth: formData.dateOfBirth,
-          phone: formData.phone,
-          address: formData.address,
+            phone: formData.phone,
+            address: formData.address,
             gender: formData.gender
-      };
+          };
 
-      await onSubmit(payload as any);
+      if (student?.id) {
+        await updateStudentAPI(student.id, payload as any);
+      } else {
+        await createStudentAPI(payload as any);
+      }
+
+      // Notify parent component
+      if (onSubmit) {
+        onSubmit({ success: true, message: student?.id ? 'Cập nhật học sinh thành công!' : 'Thêm học sinh thành công!' });
+      }
+
       resetForm();
       onClose();
-    } catch (error) {
-      console.error('Error submitting student form:', error);
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || 'Có lỗi xảy ra khi lưu học sinh';
+
+      // Notify parent component
+      if (onSubmit) {
+        onSubmit({ success: false, message: errorMessage });
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -386,17 +470,17 @@ const StudentForm: React.FC<StudentFormProps> = ({
           onClick={handleClose}
           startIcon={<CancelIcon />}
           variant="outlined"
-          disabled={loading}
+          disabled={loading || externalLoading}
         >
           Hủy
         </Button>
         <Button
           onClick={handleSubmit}
-          startIcon={loading ? <CircularProgress size={20} /> : <SaveIcon />}
+          startIcon={(loading || externalLoading) ? <CircularProgress size={20} /> : <SaveIcon />}
           variant="contained"
-          disabled={loading}
+          disabled={loading || externalLoading}
         >
-          {loading ? 'Đang lưu...' : (student ? 'Cập nhật' : 'Thêm mới')}
+          {(loading || externalLoading) ? 'Đang lưu...' : (student ? 'Cập nhật' : 'Thêm mới')}
         </Button>
       </DialogActions>
     </Dialog>

@@ -4,7 +4,7 @@ import { Box, Typography, Container, CircularProgress, Alert } from '@mui/materi
 import { getArticlesByMenuIdAPI } from '../services/articles';
 import { MenuItem } from '../types';
 import { useMenuItems } from '../hooks/features/useMenuItems';
-import HomeHeader from './home/HomeHeader';
+import PublicLayout from '../components/layouts/PublicLayout';
 
 
 const DynamicMenuPage: React.FC = () => {
@@ -19,6 +19,12 @@ const DynamicMenuPage: React.FC = () => {
   useEffect(() => {
     const fetchMenuItem = async () => {
       if (!slug) return;
+
+      // ✅ Nếu menuItems chưa load (array rỗng), giữ loading state và chờ
+      if (menuItems.length === 0) {
+        setLoading(true);
+        return;
+      }
 
       try {
         setLoading(true);
@@ -52,10 +58,8 @@ const DynamicMenuPage: React.FC = () => {
           console.log('No articles found for this menu, using mock content');
           }
         } else {
-          // Only set error if menuItems is not empty (to avoid setting error during initial load)
-          if (menuItems.length > 0) {
-            setError('Không tìm thấy trang này');
-          }
+          // ✅ menuItems đã load nhưng không tìm thấy → Đây mới là lỗi thật
+          setError('Không tìm thấy trang này');
         }
 
       } catch (error) {
@@ -112,49 +116,37 @@ const DynamicMenuPage: React.FC = () => {
             {articles.map((article, index) => (
               <Box key={article.id || index} sx={{ mb: 6 }}>
                 <div dangerouslySetInnerHTML={{ __html: article.content }} />
-          </Box>
+              </Box>
             ))}
-            </Box>
-          );
+          </Box>
+        );
       }
     }
 
-    // No articles found - show empty page
-    return (
-      <Box sx={{ textAlign: 'center', py: 8 }}>
-        <Typography variant="h6" color="text.secondary">
-          Trang này chưa có nội dung
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-          Nội dung sẽ được cập nhật sớm
-        </Typography>
-      </Box>
-    );
+    // No articles found - show blank page (trắng tinh)
+    return null;
   };
 
-  if (loading) {
+  // Show loading spinner while fetching data
+  if (loading || (menuItems.length === 0 && !error)) {
     return (
-      <>
-        <HomeHeader />
-        <Box sx={{ pt: 9 }}>
+      <PublicLayout>
       <Container maxWidth="lg" sx={{ py: 8 }}>
         <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
           <CircularProgress />
         </Box>
       </Container>
-        </Box>
-      </>
+      </PublicLayout>
     );
   }
 
-  console.log('Render check:', { error, menuItem, loading });
+  console.log('Render check:', { error, menuItem, loading, menuItemsLength: menuItems.length });
 
-  if (error || !menuItem) {
-    console.log('Showing error page because:', { error: !!error, menuItem: !!menuItem });
+  // Only show error if: has explicit error OR (menuItems loaded but menuItem not found)
+  if (error || (!menuItem && menuItems.length > 0)) {
+    console.log('Showing error page because:', { error: !!error, menuItem: !!menuItem, menuItemsLoaded: menuItems.length > 0 });
     return (
-      <>
-        <HomeHeader />
-        <Box sx={{ pt: 9 }}>
+      <PublicLayout>
       <Container maxWidth="lg" sx={{ py: 8 }}>
         <Alert severity="error" sx={{ mb: 2 }}>
           {error || 'Không tìm thấy trang này'}
@@ -166,21 +158,17 @@ const DynamicMenuPage: React.FC = () => {
           Trang bạn đang tìm kiếm không tồn tại hoặc đã bị di chuyển.
         </Typography>
       </Container>
-        </Box>
-      </>
+      </PublicLayout>
     );
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: '#ffffff' }}>
-      <HomeHeader />
-      <Box sx={{ pt: 9 }}>
-        {/* Hiển thị đúng content đã lưu: không thêm Container/margin/padding ngoài */}
-        <Box sx={{ width: '100%' }}>
-          {renderContent()}
-        </Box>
+    <PublicLayout>
+      {/* Hiển thị đúng content đã lưu: không thêm Container/margin/padding ngoài */}
+      <Box sx={{ width: '100%' }}>
+        {renderContent()}
       </Box>
-      </Box>
+    </PublicLayout>
   );
 };
 

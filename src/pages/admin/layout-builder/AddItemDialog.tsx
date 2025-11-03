@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Grid, InputLabel, MenuItem, Select, TextField, Typography } from '@mui/material';
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Grid, MenuItem, Select, TextField, Typography, FormControl, InputLabel } from '@mui/material';
 import { Editor } from '@tinymce/tinymce-react';
 import UploadIcon from '@mui/icons-material/Upload';
 
@@ -34,16 +34,18 @@ const AddItemDialog: React.FC<AddItemDialogProps> = ({ open, onClose, onAdd, new
               />
             </Grid>
             <Grid item xs={12} md={6}>
-              <InputLabel sx={{ mb: 0.5 }}>Loại thành phần</InputLabel>
-              <Select
-                fullWidth
-                value={newItem.type}
-                onChange={(e) => setNewItem(prev => ({ ...prev, type: e.target.value as any }))}
-              >
-                <MenuItem value="text">Văn bản</MenuItem>
-                <MenuItem value="image">Hình ảnh</MenuItem>
-                <MenuItem value="input">Input field</MenuItem>
-              </Select>
+              <FormControl fullWidth>
+                <InputLabel>Loại thành phần</InputLabel>
+                <Select
+                  value={newItem.type}
+                  label="Loại thành phần"
+                  onChange={(e) => setNewItem(prev => ({ ...prev, type: e.target.value as any }))}
+                >
+                  <MenuItem value="text">Văn bản</MenuItem>
+                  <MenuItem value="image">Hình ảnh</MenuItem>
+                  <MenuItem value="input">Input field</MenuItem>
+                </Select>
+              </FormControl>
             </Grid>
 
             {newItem.type === 'text' && (
