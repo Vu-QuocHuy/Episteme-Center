@@ -114,8 +114,8 @@ const StaffLogin: React.FC = () => {
 
       if (result && result.user) {
         const roleId = typeof result.user.role === 'object' ? (result.user.role as any)?.id :
-                      (result.user.role === 'admin') ? 1 :
-                      (result.user.role === 'teacher') ? 2 : 0;
+          (result.user.role === 'admin') ? 1 :
+            (result.user.role === 'teacher') ? 2 : 0;
 
         if (roleId !== 1 && roleId !== 2) {
           setLoginError('Chỉ có quản trị viên và giáo viên mới được phép đăng nhập tại đây');
@@ -229,6 +229,48 @@ const StaffLogin: React.FC = () => {
                   {authError || loginError}
                 </Alert>
               )}
+
+              {/* Demo Credentials */}
+              <Box sx={{
+                mb: 3,
+                p: 2,
+                borderRadius: 2,
+                bgcolor: 'rgba(103, 58, 183, 0.08)',
+                border: '1px solid rgba(103, 58, 183, 0.2)'
+              }}>
+                <Typography variant="subtitle2" fontWeight="600" color="primary" gutterBottom>
+                  🔑 Thông tin đăng nhập Demo
+                </Typography>
+                <Box sx={{ mt: 1.5 }}>
+                  <Box sx={{
+                    display: 'flex',
+                    gap: 1,
+                    flexWrap: 'wrap',
+                    mb: 1.5
+                  }}>
+                    <Box sx={{
+                      bgcolor: 'white',
+                      px: 1.5,
+                      py: 0.5,
+                      borderRadius: 1,
+                      fontFamily: 'monospace',
+                      fontSize: '0.875rem'
+                    }}>
+                      admin@gmail.com
+                    </Box>
+                    <Box sx={{
+                      bgcolor: 'white',
+                      px: 1.5,
+                      py: 0.5,
+                      borderRadius: 1,
+                      fontFamily: 'monospace',
+                      fontSize: '0.875rem'
+                    }}>
+                      password123
+                    </Box>
+                  </Box>
+                </Box>
+              </Box>
 
               <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
                 <TextField
