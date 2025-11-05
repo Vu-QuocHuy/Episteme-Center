@@ -14,7 +14,6 @@ interface RefreshTokenResponse {
   message: string;
   data?: {
     access_token: string;
-    refresh_token?: string;
     user?: {
       id: string;
       name: string;
@@ -29,23 +28,7 @@ interface RefreshTokenResponse {
       phone: string;
     };
   };
-  // Legacy structures for backward compatibility
-  tokens?: {
-    access?: {
-      token: string;
-    };
-    refresh?: {
-      token: string;
-    };
-  };
-  access?: {
-    token: string;
-  };
-  refresh?: {
-    token: string;
-  };
   access_token?: string;
-  refresh_token?: string;
 }
 
 interface FailedQueueItem {
@@ -144,35 +127,26 @@ instance.interceptors.response.use(
                 // Backend sẽ xử lý cookie tự động
 
                 try {
-                    // Gọi API refresh token: backend tự xử lý cookie
-                    // Sử dụng axios gốc để tránh loop vô hạn
                     const refreshUrl = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.AUTH.REFRESH_TOKEN}`;
-
-                    // ✅ Backend tự xử lý cookie refresh_token (HttpOnly)
 
                     const response = await axios.get<RefreshTokenResponse>(
                         refreshUrl,
                         {
-                            withCredentials: true, // ✅ Cần để gửi cookie
+                            withCredentials: true,
                             headers: {
                                 'Content-Type': 'application/json'
                             },
                             timeout: 10000
                         }
                     );
-                    // ✅ Refresh token response received
 
-                    let newAccessToken: string | null = null;
-                    let newRefreshToken: string | null = null;
+                    const newAccessToken = response?.data?.data?.access_token || response?.data?.access_token;
 
-                    // Xử lý response theo cấu trúc API mới
-                    // New API structure: { statusCode, message, data: { access_token, user } }
-                    if (response?.data?.data?.access_token) {
-                        newAccessToken = response.data.data.access_token;
-                        newRefreshToken = response.data.data.refresh_token || null;
+                    if (newAccessToken) {
+                        localStorage.setItem('access_token', newAccessToken);
 
                         // Update user data if provided
-                        if (response.data.data.user) {
+                        if (response?.data?.data?.user) {
                             const userData = response.data.data.user;
                             // Normalize role field
                             if (userData.role && typeof userData.role === 'object' && 'id' in userData.role) {
@@ -184,62 +158,27 @@ instance.interceptors.response.use(
                             }
                             localStorage.setItem('userData', JSON.stringify(userData));
                         }
-                    } else if (response?.data?.tokens?.access?.token) {
-                        newAccessToken = response.data.tokens.access.token;
-                        newRefreshToken = response.data.tokens.refresh?.token || null;
-                    } else if (response?.data?.access?.token) {
-                        newAccessToken = response.data.access.token;
-                        newRefreshToken = response.data.refresh?.token || null;
-                    } else if (response?.data?.access_token) {
-                        newAccessToken = response.data.access_token;
-                        newRefreshToken = response.data.refresh_token || null;
-                    }
 
-                    if (newAccessToken) {
-                        localStorage.setItem('access_token', newAccessToken);
-                        if (newRefreshToken) {
-                            localStorage.setItem('refresh_token', newRefreshToken);
-                        }
-
-                        // Dispatch event để AuthContext cập nhật isAuthenticated
+                        // Dispatch event to update AuthContext
                         const authSuccessEvent = new CustomEvent('auth:refresh_success', {
-                            detail: {
-                                accessToken: newAccessToken,
-                                refreshToken: newRefreshToken
-                            }
+                            detail: { accessToken: newAccessToken }
                         });
                         window.dispatchEvent(authSuccessEvent);
 
-                        // Cập nhật header cho request gốc
+                        // Update request header
                         originalRequest.headers = originalRequest.headers || {};
                         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
 
-                        // Xử lý queue
+                        // Process queue
                         processQueue(null, newAccessToken);
 
-                        // Thực hiện lại request gốc
+                        // Retry original request
                         return instance(originalRequest);
                     } else {
                         throw new Error('Invalid refresh token response');
                     }
                 } catch (refreshError: any) {
-                    // Refresh token failed
-                    // ✅ Refresh error occurred
-
-                    // Xử lý queue với lỗi
                     processQueue(refreshError, null);
-
-                    // Không logout ngay, để user thử lại
-                    // Chỉ logout khi refresh token thực sự hết hạn
-                    if (refreshError.response?.status === 401) {
-                        // ✅ Refresh token API returned 401 - might be temporary
-                        // Không logout ngay, để user thử lại
-                        // Có thể là vấn đề tạm thời với backend
-                    } else {
-                        // ✅ Refresh token failed but not expired, allowing retry
-                        // Không logout, để user thử lại
-                    }
-
                     return Promise.reject(refreshError);
                 } finally {
                     isRefreshing = false;

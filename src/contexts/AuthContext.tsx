@@ -6,7 +6,6 @@ import { User } from '../types';
 interface AuthState {
   user: User | null;
   token: string | null;
-  refreshToken: string | null;
   isAuthenticated: boolean;
   loading: boolean;
   error: string | null;
@@ -20,22 +19,21 @@ interface LoginCredentials {
 interface LoginResponse {
   user: User;
   accessToken: string;
-  refreshToken?: string;
 }
 
 type AuthAction =
   | { type: 'LOGIN_START' }
-  | { type: 'LOGIN_SUCCESS'; payload: { user: User; accessToken: string; refreshToken?: string } }
+  | { type: 'LOGIN_SUCCESS'; payload: { user: User; accessToken: string } }
   | { type: 'LOGIN_FAILURE'; payload: string }
   | { type: 'LOGOUT' }
-  | { type: 'REFRESH_TOKEN_SUCCESS'; payload: { accessToken: string; refreshToken?: string } }
+  | { type: 'REFRESH_TOKEN_SUCCESS'; payload: { accessToken: string } }
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'CLEAR_ERROR' }
   | { type: 'UPDATE_USER'; payload: Partial<User> }
   | { type: 'SET_AUTHENTICATED'; payload: boolean }
-  | { type: 'SET_USER_DATA'; payload: { user: User; accessToken: string; refreshToken?: string } };
+  | { type: 'SET_USER_DATA'; payload: { user: User; accessToken: string } };
 
-interface AuthContextType extends Omit<AuthState, 'refreshToken'> {
+interface AuthContextType extends AuthState {
   login: (credentials: LoginCredentials, isAdmin?: boolean) => Promise<LoginResponse | null>;
   logout: () => Promise<void>;
   refreshToken: () => Promise<string | null>;
@@ -48,9 +46,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const initialState: AuthState = {
   user: null,
   token: null,
-  refreshToken: null,
   isAuthenticated: false,
-  loading: true, // Keep this true during initial load
+  loading: true,
   error: null
 };
 
@@ -67,7 +64,6 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
         ...state,
         user: action.payload.user,
         token: action.payload.accessToken,
-        refreshToken: action.payload.refreshToken || null,
         isAuthenticated: true,
         loading: false,
         error: null
@@ -77,7 +73,6 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
         ...state,
         user: null,
         token: null,
-        refreshToken: null,
         isAuthenticated: false,
         loading: false,
         error: action.payload
@@ -87,7 +82,6 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
         ...state,
         user: null,
         token: null,
-        refreshToken: null,
         isAuthenticated: false,
         loading: false,
         error: null
@@ -96,8 +90,7 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
       return {
         ...state,
         token: action.payload.accessToken,
-        refreshToken: action.payload.refreshToken || null,
-        isAuthenticated: true, // Cập nhật isAuthenticated thành true
+        isAuthenticated: true,
       };
     case 'SET_LOADING':
       return {
@@ -127,8 +120,7 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
         ...state,
         user: action.payload.user,
         token: action.payload.accessToken,
-        refreshToken: action.payload.refreshToken || null,
-        isAuthenticated: false, // Ban đầu set false để cho phép interceptor xử lý
+        isAuthenticated: false,
         loading: false,
         error: null
       };
@@ -147,11 +139,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     // Check for stored token on app load
     const token = localStorage.getItem('access_token');
-    const refreshToken = localStorage.getItem('refresh_token');
     const userData = localStorage.getItem('userData');
-    // const sessionActive = localStorage.getItem('session_active');
 
-        if (token && userData) {
+    if (token && userData) {
       try {
         let user: User = JSON.parse(userData);
 
@@ -176,25 +166,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           localStorage.setItem('userData', JSON.stringify(user));
         }
 
-        // Ban đầu set isAuthenticated = false để cho phép interceptor xử lý refresh nếu cần
         dispatch({
           type: 'SET_USER_DATA',
-          payload: { user, accessToken: token, refreshToken: refreshToken || undefined }
+          payload: { user, accessToken: token }
         });
       } catch (error) {
         localStorage.removeItem('access_token');
         localStorage.removeItem('userData');
-        // ✅ Không xóa refresh_token vì nó được lưu trong cookie bởi backend
       }
       dispatch({ type: 'SET_LOADING', payload: false });
     } else if (userData) {
-      // Always try refresh when we have userData
-      // Backend tự xử lý cookie
+      // Try refresh when we have userData but no token
       (async () => {
         try {
           let user: User = JSON.parse(userData);
 
-          // Normalize role field on restore from localStorage
+          // Normalize role field
           if (user.role && typeof user.role === 'object' && 'id' in user.role) {
             const roleId = (user.role as any).id;
             (user as any).role = roleId === 1 ? 'admin' :
@@ -204,27 +191,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           }
 
           const response = await refreshTokenAPI();
-          let newAccessToken: string | null = null;
-          let newRefreshToken: string | null = null;
-          if (response?.data?.data?.access_token) {
-            newAccessToken = response.data.data.access_token;
-            newRefreshToken = response.data.data.refresh_token || null;
-          } else if (response?.data?.access_token) {
-            newAccessToken = response.data.access_token;
-            newRefreshToken = response.data.refresh_token || null;
-          } else if (response?.data?.tokens?.access?.token) {
-            newAccessToken = response.data.tokens.access.token;
-            newRefreshToken = response.data.tokens.refresh?.token || null;
-          } else if (response?.data?.access?.token) {
-            newAccessToken = response.data.access.token;
-            newRefreshToken = response.data.refresh?.token || null;
-          }
+          const newAccessToken = response?.data?.data?.access_token || response?.data?.access_token;
+
           if (newAccessToken) {
             localStorage.setItem('access_token', newAccessToken);
-            // refresh token kept by backend
             dispatch({
               type: 'LOGIN_SUCCESS',
-              payload: { user, accessToken: newAccessToken, refreshToken: newRefreshToken || undefined }
+              payload: { user, accessToken: newAccessToken }
             });
           } else {
             throw new Error('Invalid refresh token response');
@@ -232,7 +205,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         } catch (error) {
           localStorage.removeItem('access_token');
           localStorage.removeItem('userData');
-          // ✅ Không xóa refresh_token vì nó được lưu trong cookie bởi backend
           dispatch({ type: 'LOGOUT' });
         } finally {
           dispatch({ type: 'SET_LOADING', payload: false });
@@ -242,57 +214,42 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
 
-    // Lắng nghe event logout từ axios interceptor
-    const handleLogoutEvent = (_event: CustomEvent) => {
-      dispatch({ type: 'LOGOUT' });
-    };
-
-    // Lắng nghe event refresh success từ axios interceptor
+    // Listen for refresh success event from axios interceptor
     const handleRefreshSuccessEvent = (event: CustomEvent) => {
-      const { accessToken, refreshToken } = event.detail;
+      const { accessToken } = event.detail;
       dispatch({
         type: 'REFRESH_TOKEN_SUCCESS',
-        payload: { accessToken, refreshToken }
+        payload: { accessToken }
       });
-      // Cập nhật isAuthenticated thành true
       dispatch({
         type: 'SET_AUTHENTICATED',
         payload: true
       });
     };
 
-    window.addEventListener('auth:logout', handleLogoutEvent as EventListener);
     window.addEventListener('auth:refresh_success', handleRefreshSuccessEvent as EventListener);
 
     return () => {
-      window.removeEventListener('auth:logout', handleLogoutEvent as EventListener);
       window.removeEventListener('auth:refresh_success', handleRefreshSuccessEvent as EventListener);
     };
   }, []);
 
-  // Luôn đồng bộ user/token vào localStorage khi thay đổi
+  // Sync user/token to localStorage when changed
   useEffect(() => {
     if (state.user && state.token) {
       localStorage.setItem('access_token', state.token);
       localStorage.setItem('userData', JSON.stringify(state.user));
-      if (state.refreshToken) {
-        localStorage.setItem('refresh_token', state.refreshToken);
-      }
       if (state.user.role === 'parent' && state.user.parentId) {
         localStorage.setItem('parent_id', state.user.parentId);
       }
-
-      // Set a flag to indicate session is active
       localStorage.setItem('session_active', 'true');
     } else if (!state.user && !state.loading && localStorage.getItem('session_active')) {
-      // Only clear if we're not loading AND we had an active session (to avoid clearing during initialization)
-      // ✅ Không xóa refresh_token vì nó được lưu trong cookie bởi backend
       localStorage.removeItem('access_token');
       localStorage.removeItem('userData');
       localStorage.removeItem('parent_id');
       localStorage.removeItem('session_active');
     }
-  }, [state.user, state.token, state.refreshToken, state.loading]);
+  }, [state.user, state.token, state.loading]);
 
   const login = async (credentials: LoginCredentials, isAdmin: boolean = false): Promise<LoginResponse | null> => {
     dispatch({ type: 'LOGIN_START' });
@@ -313,30 +270,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       let userData: User | null = null;
       let accessToken: string | null = null;
-      let refreshToken: string | null = null;
 
-      // ✅ Xử lý response theo cấu trúc thực tế: access_token và user trong data
+      // Parse response structure
       if (apiResponse?.data?.data) {
         userData = apiResponse.data.data.user;
         accessToken = apiResponse.data.data.access_token;
-        // refresh_token được lưu trong cookie, không có trong response
-        refreshToken = null;
       } else if (apiResponse?.data) {
         userData = apiResponse.data.user;
         accessToken = apiResponse.data.access_token;
-        // refresh_token được lưu trong cookie, không có trong response
-        refreshToken = null;
       }
 
       if (!userData || !accessToken) {
         throw new Error('Invalid response structure: missing user data or token');
       }
 
-      // Normalize role field - handle both string and object role
+      // Normalize role field
       if (userData.role && typeof userData.role === 'object' && 'id' in userData.role) {
-        // If role is an object with id, extract the id as the role string
         const roleId = (userData.role as any).id;
-                    (userData as any).role = roleId === 1 ? 'admin' :
+        (userData as any).role = roleId === 1 ? 'admin' :
                           roleId === 2 ? 'teacher' :
                           roleId === 3 ? 'parent' :
                           roleId === 4 ? 'student' : 'unknown';
@@ -344,7 +295,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       localStorage.setItem('access_token', accessToken);
       localStorage.setItem('userData', JSON.stringify(userData));
-      // ✅ refresh_token được lưu trong cookie bởi backend, không cần lưu vào localStorage
       if (userData.role === 'parent' && userData.parentId) {
         localStorage.setItem('parent_id', userData.parentId);
       }
@@ -353,12 +303,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         type: 'LOGIN_SUCCESS',
         payload: {
           user: userData,
-          accessToken: accessToken,
-          refreshToken: refreshToken || undefined
+          accessToken: accessToken
         }
       });
 
-      return { user: userData, accessToken, refreshToken: refreshToken || undefined };
+      return { user: userData, accessToken };
 
     } catch (error: any) {
       let errorMessage = 'Đăng nhập thất bại';
@@ -407,8 +356,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logout = async (): Promise<void> => {
-    // ✅ Không có logout API, chỉ xóa localStorage
-    // ✅ Không xóa refresh_token vì nó được lưu trong cookie bởi backend
     localStorage.removeItem('access_token');
     localStorage.removeItem('userData');
     localStorage.removeItem('parent_id');
@@ -417,62 +364,37 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const refreshToken = async (): Promise<string | null> => {
     try {
-      // Backend tự xử lý cookie
       const response = await refreshTokenAPI();
-
-      let newAccessToken: string | null = null;
-      let newRefreshToken: string | null = null;
-
-      // ✅ Xử lý response refresh token theo cấu trúc thực tế
-      if (response?.data?.data?.access_token) {
-        // New API structure: { data: { access_token, user } }
-        newAccessToken = response.data.data.access_token;
-        // refresh_token được lưu trong cookie, không có trong response
-        newRefreshToken = null;
-
-        // Update user data if provided
-        if (response.data.data.user) {
-          const userData = response.data.data.user;
-          // Normalize role field
-          if (userData.role && typeof userData.role === 'object' && 'id' in userData.role) {
-            const roleId = (userData.role as any).id;
-            (userData as any).role = roleId === 1 ? 'admin' :
-                          roleId === 2 ? 'teacher' :
-                          roleId === 3 ? 'parent' :
-                          roleId === 4 ? 'student' : 'unknown';
-          }
-          localStorage.setItem('userData', JSON.stringify(userData));
-        }
-      } else if (response?.data?.access_token) {
-        // Fallback structure
-        newAccessToken = response.data.access_token;
-        // refresh_token được lưu trong cookie, không có trong response
-        newRefreshToken = null;
-      }
+      const newAccessToken = response?.data?.data?.access_token || response?.data?.access_token;
 
       if (!newAccessToken) {
         throw new Error('Invalid refresh token response');
       }
 
-      // Cập nhật localStorage
-      localStorage.setItem('access_token', newAccessToken);
-      // ✅ refresh token được giữ trong cookie bởi backend
+      // Update user data if provided
+      if (response?.data?.data?.user) {
+        const userData = response.data.data.user;
+        // Normalize role field
+        if (userData.role && typeof userData.role === 'object' && 'id' in userData.role) {
+          const roleId = (userData.role as any).id;
+          (userData as any).role = roleId === 1 ? 'admin' :
+                        roleId === 2 ? 'teacher' :
+                        roleId === 3 ? 'parent' :
+                        roleId === 4 ? 'student' : 'unknown';
+        }
+        localStorage.setItem('userData', JSON.stringify(userData));
+      }
 
-      // Cập nhật state
+      localStorage.setItem('access_token', newAccessToken);
+
       dispatch({
         type: 'REFRESH_TOKEN_SUCCESS',
-        payload: {
-          accessToken: newAccessToken,
-          refreshToken: newRefreshToken ?? undefined
-        }
+        payload: { accessToken: newAccessToken }
       });
 
       return newAccessToken;
     } catch (error) {
-      // ✅ Không logout ngay, để user thử lại
-      // Chỉ clear access token, giữ nguyên refresh token cookie
       localStorage.removeItem('access_token');
-      // Không throw error để tránh reload trang
       return null;
     }
   };
@@ -485,11 +407,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     dispatch({ type: 'CLEAR_ERROR' });
   };
 
-  // Exclude refreshToken (state field) to satisfy AuthContextType (it provides a method named refreshToken)
-  const { refreshToken: _refreshTokenState, ...stateWithoutRefreshToken } = state;
-
   const value: AuthContextType = {
-    ...stateWithoutRefreshToken,
+    ...state,
     login,
     logout,
     refreshToken,

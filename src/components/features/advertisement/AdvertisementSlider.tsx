@@ -2,7 +2,7 @@ import React from 'react';
 import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
-import { Card, CardMedia, Box, Typography, IconButton } from '@mui/material';
+import { Card, CardMedia, Box, Typography, IconButton, Button } from '@mui/material';
 import { ArrowBackIos, ArrowForwardIos } from '@mui/icons-material';
 import { Advertisement } from '../../../types';
 
@@ -13,6 +13,7 @@ interface AdvertisementSliderProps {
   showArrows?: boolean;
   showDots?: boolean;
   height?: number;
+  onRegisterClick?: (classId: string | null, className: string) => void;
 }
 
 interface ArrowProps {
@@ -85,7 +86,8 @@ const AdvertisementSlider: React.FC<AdvertisementSliderProps> = ({
   ads,
   showArrows = true,
   showDots = true,
-  height = 550
+  height = 550,
+  onRegisterClick
 }) => {
   if (!ads || ads.length === 0) return null;
 
@@ -100,6 +102,12 @@ const AdvertisementSlider: React.FC<AdvertisementSliderProps> = ({
       return dateA.getTime() - dateB.getTime();
     })
     .slice(0, 5);
+
+  // 🔍 Debug: Kiểm tra từng banner
+  console.log('🎨 [AdvertisementSlider] Total ads:', sortedAds.length);
+  sortedAds.forEach((ad, idx) => {
+    console.log(`🎨 [Banner ${idx + 1}] Title: "${ad.title}", classId: "${ad.classId || 'KHÔNG CÓ'}", onRegisterClick: ${!!onRegisterClick}`);
+  });
 
   const settings = {
     dots: showDots,
@@ -136,13 +144,49 @@ const AdvertisementSlider: React.FC<AdvertisementSliderProps> = ({
                 alt={ad.title}
                 sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
               />
-              <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent, rgba(0,0,0,0.8))', color: 'white', p: 3 }}>
-                <Typography variant="h4" fontWeight="bold" gutterBottom>
+              <Box sx={{
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                background: 'linear-gradient(transparent, rgba(0,0,0,0.85))',
+                color: 'white',
+                p: { xs: 2, md: 3 }
+              }}>
+                <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ fontSize: { xs: '1.5rem', md: '2rem' } }}>
                   {ad.title}
                 </Typography>
-                <Typography variant="body1" sx={{ mb: 2, opacity: 0.9 }}>
+                <Typography variant="body1" sx={{ mb: 2, opacity: 0.9, fontSize: { xs: '0.9rem', md: '1rem' } }}>
                   {ad.content || ad.description}
                 </Typography>
+                {onRegisterClick && ad.classId && (
+                  <Button
+                    variant="contained"
+                    size="large"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRegisterClick(ad.classId || null, ad.title);
+                    }}
+                    sx={{
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      color: 'white',
+                      fontWeight: 700,
+                      px: 4,
+                      py: 1.5,
+                      borderRadius: 2,
+                      fontSize: { xs: '0.9rem', md: '1rem' },
+                      boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
+                      '&:hover': {
+                        background: 'linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%)',
+                        transform: 'translateY(-2px)',
+                        boxShadow: '0 6px 20px rgba(102, 126, 234, 0.6)',
+                      },
+                      transition: 'all 0.3s ease'
+                    }}
+                  >
+                    ĐĂNG KÝ NGAY
+                  </Button>
+                )}
               </Box>
             </Card>
           </Box>

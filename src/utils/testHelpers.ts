@@ -47,17 +47,11 @@ export const quickFillLoginForm = (role: keyof typeof TEST_CREDENTIALS = 'admin'
 // Test refresh token functionality
 export const testRefreshToken = async () => {
   try {
-    const refreshToken = localStorage.getItem('refresh_token');
-    if (!refreshToken) {
-      console.log('❌ No refresh token found');
-      return;
-    }
-
     console.log('🔄 Testing refresh token...');
     const response = await fetch('/api/auth/refresh', {
       method: 'GET',
+      credentials: 'include', // Send cookies
       headers: {
-        'Authorization': `Bearer ${refreshToken}`,
         'Content-Type': 'application/json'
       }
     });

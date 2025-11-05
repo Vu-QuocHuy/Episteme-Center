@@ -356,12 +356,12 @@ const Sidebar: React.FC<SidebarProps> = ({ open }) => {
                         {open && <ListItemText primary="Đánh giá học viên" />}
                       </ListItemButton>
                       <ListItemButton
-                        selected={location.pathname === '/admin/homepage/footer'}
+                        selected={location.pathname === '/admin/homepage/footer-settings'}
                         onClick={() => {
                           if (!open) {
                             openSidebar();
                           }
-                          navigate('/admin/homepage/footer');
+                          navigate('/admin/homepage/footer-settings');
                         }}
                         sx={{
                           minHeight: 40,
@@ -372,7 +372,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open }) => {
                           my: 0.25
                         }}
                       >
-                        {open && <ListItemText primary="Footer" />}
+                        {open && <ListItemText primary="Cài đặt Footer" />}
                       </ListItemButton>
                     </List>
                   )}

@@ -93,6 +93,7 @@ export const useStudentForm = (): UseStudentFormReturn => {
 
   const handleSubmit = async (selectedStudent?: Student | null, onSuccess?: () => void): Promise<{ success: boolean; message?: string }> => {
     const errors = validateStudent(form, !!selectedStudent, classEdits);
+
     // Kiểm tra lỗi tổng thể và lỗi discountPercent từng lớp
     const hasFieldError = Object.keys(errors).some(key => key !== 'classEdits' && errors[key as keyof StudentValidationErrors]);
     const hasClassEditError = Array.isArray(errors.classEdits) && errors.classEdits.some(e => e && e.discountPercent);

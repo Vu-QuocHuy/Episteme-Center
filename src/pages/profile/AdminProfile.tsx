@@ -195,7 +195,7 @@ const AdminProfile: React.FC = () => {
                     <AvatarUpload
                       currentAvatar={user.avatar}
                       userName={user.name}
-                      size={120}
+                      size={200}
                       onAvatarUpdate={(newAvatarUrl) => {
                         // Avatar will be updated through the context
                         console.log('Avatar updated:', newAvatarUrl);
@@ -204,13 +204,8 @@ const AdminProfile: React.FC = () => {
                   </Box>
 
                   {/* User Name */}
-                  <Typography variant="h5" sx={{ fontWeight: 600, mb: 1, color: '#1e293b' }}>
+                  <Typography variant="h5" sx={{ fontWeight: 600, mb: 3, color: '#1e293b' }}>
                     {user.name}
-                  </Typography>
-
-                  {/* User Email */}
-                  <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-                    {user.email}
                   </Typography>
                 </CardContent>
               </Card>
