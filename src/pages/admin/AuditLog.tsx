@@ -249,37 +249,30 @@ const AuditLog: React.FC = () => {
             />
           </Grid>
 
-          {/* Current Value */}
-          {selectedLog.newValue !== undefined && (
+          {/* Full API Response */}
+          {detailData && (
             <>
               <Grid item xs={12}>
                 <Divider sx={{ my: 1 }} />
                 <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-                  Giá trị hiện tại
+                  Chi tiết đầy đủ
                 </Typography>
               </Grid>
 
               <Grid item xs={12}>
-                <Box sx={{ pl: 2 }}>
-                  {typeof selectedLog.newValue === 'object' && selectedLog.newValue !== null ? (
-                    <Box component="ul" sx={{ m: 0, pl: 2 }}>
-                      {Object.entries(selectedLog.newValue).map(([key, value]) => (
-                        <Box component="li" key={key} sx={{ mb: 1 }}>
-                          <Typography component="span" sx={{ fontWeight: 600 }}>
-                            {key}:
-                          </Typography>{' '}
-                          <Typography component="span">
-                            {typeof value === 'object' && value !== null
-                              ? JSON.stringify(value)
-                              : String(value)}
-                          </Typography>
-                        </Box>
-                      ))}
-                    </Box>
-                  ) : (
-                    <Typography>{String(selectedLog.newValue)}</Typography>
-                  )}
-                </Box>
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    p: 2,
+                    bgcolor: 'grey.50',
+                    maxHeight: 400,
+                    overflow: 'auto'
+                  }}
+                >
+                  <pre style={{ margin: 0, fontSize: '0.875rem', whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
+                    {JSON.stringify(detailData, null, 2)}
+                  </pre>
+                </Paper>
               </Grid>
             </>
           )}
