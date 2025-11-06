@@ -115,6 +115,10 @@ export interface ApiEndpoints {
   };
   PERMISSIONS: {
     GET_ALL: string;
+    GET_BY_ID: (id: string) => string;
+    CREATE: string;
+    UPDATE: (id: string) => string;
+    DELETE: (id: string) => string;
   };
 
   DASHBOARD: {
@@ -189,24 +193,8 @@ export interface ApiConfig {
   ENDPOINTS: ApiEndpoints;
 }
 
-// ✅ Centralized API Configuration - Chỉ cần sửa ở .env
-// - Development: Nếu USE_PROXY=true → dùng Vite proxy (/api)
-// - Production: Gọi trực tiếp đến VITE_API_BASE_URL
-const getBaseUrl = () => {
-  const useProxy = import.meta.env.VITE_USE_PROXY === 'true';
-  const apiUrl = import.meta.env.VITE_API_BASE_URL;
-
-  // Nếu set USE_PROXY và đang dev, dùng proxy
-  if (useProxy && import.meta.env.DEV) {
-    return '/api';
-  }
-
-  // Ngược lại, dùng URL trực tiếp
-  return apiUrl || '/api';
-};
-
 export const API_CONFIG: ApiConfig = {
-  BASE_URL: getBaseUrl(),
+  BASE_URL: import.meta.env.DEV ? '/api' : (import.meta.env.VITE_API_BASE_URL || 'http://103.199.18.103:8080/api/v1'),
   ENDPOINTS: {
     // Auth endpoints
     AUTH: {
@@ -331,6 +319,10 @@ export const API_CONFIG: ApiConfig = {
     },
     PERMISSIONS: {
       GET_ALL: '/permissions',
+      GET_BY_ID: (id: string) => `/permissions/${id}`,
+      CREATE: '/permissions',
+      UPDATE: (id: string) => `/permissions/${id}`,
+      DELETE: (id: string) => `/permissions/${id}`,
     },
     // Homepage Content Management
 
