@@ -122,7 +122,7 @@ const AppContent: React.FC = () => {
                     <Route path="statistics/students" element={<StudentStatistics />} />
                   <Route path="roles-management" element={<RoleManagement />} />
                   <Route path="registrations" element={<RegistrationManagement />} />
-                                          <Route path="audit-log" element={<AuditLog />} />
+                  <Route path="audit-log" element={<AuditLog />} />
 
                     {/* Homepage Management Routes */}
                     <Route path="homepage" element={<Navigate to="/admin/homepage/banner" replace />} />

@@ -220,8 +220,8 @@ const ArticleManagement: React.FC = () => {
       );
 
       // Add children recursively
-      if (item.children && item.children.length > 0) {
-        options.push(...renderMenuOptions(item.children, level + 1));
+      if (item.childrenMenu && item.childrenMenu.length > 0) {
+        options.push(...renderMenuOptions(item.childrenMenu, level + 1));
       }
     });
 

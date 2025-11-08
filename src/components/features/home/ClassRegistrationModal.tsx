@@ -9,11 +9,9 @@ import {
   TextField,
   Button,
   IconButton,
-  Divider,
   Chip,
   Alert,
-  CircularProgress,
-  Paper
+  CircularProgress
 } from '@mui/material';
 import {
   Close as CloseIcon,
@@ -23,14 +21,17 @@ import {
   EventNote as EventIcon,
   AttachMoney as MoneyIcon
 } from '@mui/icons-material';
-import { getClassByIdAPI } from '../../../services/classes';
+import MenuItem from '@mui/material/MenuItem';
+import { getClassBannerInfoAPI } from '../../../services/classes';
 import { createRegistrationAPI } from '../../../services/registrations';
+import NotificationSnackbar from '../../common/NotificationSnackbar';
 
 interface ClassRegistrationModalProps {
   open: boolean;
   onClose: () => void;
   classId: string | null;
   className?: string;
+  onSuccess?: () => void;
 }
 
 interface ClassInfo {
@@ -63,19 +64,26 @@ const ClassRegistrationModal: React.FC<ClassRegistrationModalProps> = ({
   open,
   onClose,
   classId,
-  className
+  className,
+  onSuccess
 }) => {
   const [classInfo, setClassInfo] = useState<ClassInfo | null>(null);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [notification, setNotification] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error';
+  }>({ open: false, message: '', severity: 'success' });
 
   const [form, setForm] = useState({
     name: '',
     phone: '',
     email: '',
-    address: ''
+    gender: 'male' as 'male' | 'female',
+    address: '',
+    note: ''
   });
 
   // Fetch class info khi modal mở
@@ -83,10 +91,9 @@ const ClassRegistrationModal: React.FC<ClassRegistrationModalProps> = ({
     if (open && classId) {
       fetchClassInfo();
     }
-    // Reset form và success state khi modal đóng
+    // Reset form khi modal đóng
     if (!open) {
-      setForm({ name: '', phone: '', email: '', address: '' });
-      setSuccess(false);
+      setForm({ name: '', phone: '', email: '', gender: 'male', address: '', note: '' });
       setError(null);
     }
   }, [open, classId]);
@@ -97,11 +104,14 @@ const ClassRegistrationModal: React.FC<ClassRegistrationModalProps> = ({
     setLoading(true);
     setError(null);
     try {
-      const response = await getClassByIdAPI(classId);
+      console.log('🔍 [ClassRegistrationModal] Fetching class banner info for classId:', classId);
+      const response = await getClassBannerInfoAPI(classId);
+      console.log('✅ [ClassRegistrationModal] API response:', response);
       const data = response?.data?.data || response?.data;
+      console.log('📊 [ClassRegistrationModal] Parsed data:', data);
       setClassInfo(data);
     } catch (err: any) {
-      console.error('Error fetching class info:', err);
+      console.error('❌ [ClassRegistrationModal] Error fetching class info:', err);
       setError('Không thể tải thông tin lớp học');
     } finally {
       setLoading(false);
@@ -114,8 +124,13 @@ const ClassRegistrationModal: React.FC<ClassRegistrationModalProps> = ({
 
   const handleSubmit = async () => {
     // Validation
-    if (!form.name.trim() || !form.phone.trim()) {
-      setError('Vui lòng nhập đầy đủ Họ tên và Số điện thoại');
+    if (!form.name.trim() || !form.email.trim()) {
+      setError('Vui lòng nhập đầy đủ Họ tên và Email');
+      return;
+    }
+
+    if (!classId) {
+      setError('Không tìm thấy thông tin lớp học');
       return;
     }
 
@@ -125,20 +140,32 @@ const ClassRegistrationModal: React.FC<ClassRegistrationModalProps> = ({
     try {
       await createRegistrationAPI({
         name: form.name.trim(),
-        phone: form.phone.trim(),
         email: form.email.trim(),
+        phone: form.phone.trim(),
+        gender: form.gender,
         address: form.address.trim(),
-        classId: classId || undefined,
+        note: form.note.trim(),
+        classId: classId,
         processed: false
       });
 
-      setSuccess(true);
-      setForm({ name: '', phone: '', email: '', address: '' });
+      // Đóng modal ngay
+      onClose();
 
-      // Tự động đóng sau 2 giây
-      setTimeout(() => {
-        onClose();
-      }, 2000);
+      // Reset form
+      setForm({ name: '', phone: '', email: '', gender: 'male', address: '', note: '' });
+
+      // Hiển thị notification
+      setNotification({
+        open: true,
+        message: 'Đăng ký tư vấn thành công! Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất.',
+        severity: 'success'
+      });
+
+      // Gọi callback nếu có
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (err: any) {
       console.error('Error submitting registration:', err);
       setError('Đăng ký thất bại. Vui lòng thử lại sau.');
@@ -170,14 +197,15 @@ const ClassRegistrationModal: React.FC<ClassRegistrationModalProps> = ({
   };
 
   return (
+    <>
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth="lg"
+      maxWidth="md"
       fullWidth
       PaperProps={{
         sx: {
-          borderRadius: 3,
+          borderRadius: 0,
           maxHeight: '90vh'
         }
       }}
@@ -185,20 +213,20 @@ const ClassRegistrationModal: React.FC<ClassRegistrationModalProps> = ({
       <DialogTitle sx={{
         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
         color: 'white',
-        py: 2,
-        px: 3,
+        py: 1.5,
+        px: 2,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between'
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <SchoolIcon sx={{ fontSize: 28 }} />
+          <SchoolIcon sx={{ fontSize: 24 }} />
           <Box>
-            <Typography variant="h5" sx={{ fontWeight: 600, lineHeight: 1.2 }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, lineHeight: 1.2 }}>
               Đăng ký tư vấn
             </Typography>
             {className && (
-              <Typography variant="body2" sx={{ opacity: 0.9, mt: 0.5 }}>
+              <Typography variant="caption" sx={{ opacity: 0.9, display: 'block' }}>
                 {className}
               </Typography>
             )}
@@ -206,12 +234,13 @@ const ClassRegistrationModal: React.FC<ClassRegistrationModalProps> = ({
         </Box>
         <IconButton
           onClick={onClose}
+          size="small"
           sx={{
             color: 'white',
             '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
           }}
         >
-          <CloseIcon />
+          <CloseIcon fontSize="small" />
         </IconButton>
       </DialogTitle>
 
@@ -220,144 +249,166 @@ const ClassRegistrationModal: React.FC<ClassRegistrationModalProps> = ({
           <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
             <CircularProgress />
           </Box>
-        ) : success ? (
-          <Box sx={{ p: 4, textAlign: 'center' }}>
-            <Box sx={{
-              width: 80,
-              height: 80,
-              borderRadius: '50%',
-              bgcolor: 'success.light',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto',
-              mb: 3
-            }}>
-              <Typography variant="h1" sx={{ color: 'success.main' }}>✓</Typography>
-            </Box>
-            <Typography variant="h5" gutterBottom fontWeight={600} color="success.main">
-              Đăng ký thành công!
-            </Typography>
-            <Typography variant="body1" color="text.secondary">
-              Cảm ơn bạn đã đăng ký. Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất.
-            </Typography>
-          </Box>
         ) : (
-          <Grid container sx={{ minHeight: 400 }}>
+          <Grid container sx={{ minHeight: 350 }}>
             {/* Left side - Class Info */}
-            <Grid item xs={12} md={6} sx={{
-              bgcolor: 'grey.50',
+            <Grid item xs={12} md={7} sx={{
+              bgcolor: 'linear-gradient(to bottom, #f8f9fa 0%, #e9ecef 100%)',
               p: 3,
               borderRight: { md: '1px solid', borderColor: 'divider' }
             }}>
-              <Typography variant="h6" fontWeight={700} gutterBottom sx={{ mb: 3 }}>
-                Thông tin lớp học
-              </Typography>
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="h6" fontWeight={700}>
+                  📚 Thông tin lớp học
+                </Typography>
+              </Box>
 
               {classInfo ? (
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                   {/* Tên lớp */}
-                  <Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <SchoolIcon sx={{ color: 'primary.main', fontSize: 20 }} />
-                      <Typography variant="subtitle2" color="text.secondary" fontWeight={600}>
-                        Tên lớp
-                      </Typography>
+                  <Box sx={{
+                    p: 2,
+                    bgcolor: 'white',
+                    borderRadius: 1,
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                    borderLeft: '4px solid',
+                    borderColor: 'primary.main'
+                  }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                      <SchoolIcon sx={{ color: 'primary.main', fontSize: 22 }} />
+                      <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, flexWrap: 'wrap' }}>
+                        <Typography variant="subtitle2" fontWeight={700}>
+                          Tên lớp học:
+                        </Typography>
+                        <Typography variant="h6" fontWeight={700}>
+                          {classInfo.name}
+                        </Typography>
+                      </Box>
                     </Box>
-                    <Typography variant="body1" fontWeight={600} sx={{ pl: 3.5 }}>
-                      {classInfo.name}
-                    </Typography>
                     {classInfo.grade && classInfo.section && (
-                      <Typography variant="body2" color="text.secondary" sx={{ pl: 3.5 }}>
-                        Lớp {classInfo.grade}.{classInfo.section} • Năm {classInfo.year}
+                      <Typography variant="body2" sx={{ pl: 3.5 }}>
+                        Dành cho học sinh lớp {classInfo.grade}.{classInfo.section} • Năm học {classInfo.year}
                       </Typography>
                     )}
                   </Box>
 
-                  <Divider />
-
                   {/* Giảng viên */}
                   {classInfo.teacher && (
-                    <>
-                      <Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                          <PersonIcon sx={{ color: 'primary.main', fontSize: 20 }} />
-                          <Typography variant="subtitle2" color="text.secondary" fontWeight={600}>
-                            Giảng viên
+                    <Box sx={{
+                      p: 2,
+                      bgcolor: 'white',
+                      borderRadius: 1,
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+                    }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                        <PersonIcon sx={{ color: 'success.main', fontSize: 22 }} />
+                        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, flexWrap: 'wrap' }}>
+                          <Typography variant="subtitle2" fontWeight={700}>
+                            Giảng viên phụ trách:
+                          </Typography>
+                          <Typography variant="body1" fontWeight={600}>
+                            {classInfo.teacher.name}
                           </Typography>
                         </Box>
-                        <Typography variant="body1" sx={{ pl: 3.5 }}>
-                          {classInfo.teacher.name}
-                        </Typography>
                       </Box>
-                      <Divider />
-                    </>
+                      <Typography variant="body2" sx={{ pl: 3.5 }}>
+                        Giảng viên có kinh nghiệm, tận tâm với học sinh
+                      </Typography>
+                    </Box>
                   )}
 
                   {/* Lịch học */}
                   {classInfo.schedule && (
-                    <>
-                      <Box>
+                    <Box sx={{
+                      p: 2,
+                      bgcolor: 'white',
+                      borderRadius: 1,
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+                    }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                        <EventIcon sx={{ color: 'info.main', fontSize: 22 }} />
+                        <Typography variant="subtitle2" fontWeight={700}>
+                          Lịch học trong tuần
+                        </Typography>
+                      </Box>
+
+                      <Typography variant="body2" sx={{ mb: 1 }}>
+                        Các ngày học trong tuần:
+                      </Typography>
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 1.5 }}>
+                        {classInfo.schedule.days_of_week?.map((day, idx) => (
+                          <Chip
+                            key={idx}
+                            label={getDayOfWeekLabel(day)}
+                            size="small"
+                            color="info"
+                            sx={{ fontWeight: 600 }}
+                          />
+                        ))}
+                      </Box>
+
+                      {classInfo.schedule.time_slots && (
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                          <EventIcon sx={{ color: 'primary.main', fontSize: 20 }} />
-                          <Typography variant="subtitle2" color="text.secondary" fontWeight={600}>
-                            Lịch học
-                          </Typography>
-                        </Box>
-                        <Box sx={{ pl: 3.5, display: 'flex', flexWrap: 'wrap', gap: 1, mb: 1 }}>
-                          {classInfo.schedule.days_of_week?.map((day, idx) => (
-                            <Chip
-                              key={idx}
-                              label={getDayOfWeekLabel(day)}
-                              size="small"
-                              color="primary"
-                              variant="outlined"
-                            />
-                          ))}
-                        </Box>
-                        {classInfo.schedule.time_slots && (
-                          <Box sx={{ pl: 3.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <TimeIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                            <Typography variant="body2" color="text.secondary">
+                          <TimeIcon sx={{ fontSize: 20, color: 'info.main' }} />
+                          <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, flexWrap: 'wrap' }}>
+                            <Typography variant="body2">
+                              Giờ học:
+                            </Typography>
+                            <Typography variant="body1" fontWeight={600}>
                               {classInfo.schedule.time_slots.start_time} - {classInfo.schedule.time_slots.end_time}
                             </Typography>
                           </Box>
-                        )}
-                        {classInfo.schedule.start_date && classInfo.schedule.end_date && (
-                          <Typography variant="body2" color="text.secondary" sx={{ pl: 3.5, mt: 0.5 }}>
-                            Từ {formatDate(classInfo.schedule.start_date)} đến {formatDate(classInfo.schedule.end_date)}
-                          </Typography>
-                        )}
-                      </Box>
-                      <Divider />
-                    </>
+                        </Box>
+                      )}
+
+                      {classInfo.schedule.start_date && classInfo.schedule.end_date && (
+                        <Typography variant="body2" sx={{
+                          mt: 1,
+                          pt: 1,
+                          borderTop: '1px dashed',
+                          borderColor: 'divider'
+                        }}>
+                          📅 Thời gian: {formatDate(classInfo.schedule.start_date)} đến {formatDate(classInfo.schedule.end_date)}
+                        </Typography>
+                      )}
+                    </Box>
                   )}
 
                   {/* Học phí */}
                   {classInfo.feePerLesson && classInfo.feePerLesson > 0 && (
-                    <>
-                      <Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                          <MoneyIcon sx={{ color: 'primary.main', fontSize: 20 }} />
-                          <Typography variant="subtitle2" color="text.secondary" fontWeight={600}>
-                            Học phí
+                    <Box sx={{
+                      p: 2,
+                      bgcolor: 'white',
+                      borderRadius: 1,
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+                    }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                        <MoneyIcon sx={{ color: 'error.main', fontSize: 22 }} />
+                        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, flexWrap: 'wrap' }}>
+                          <Typography variant="subtitle2" fontWeight={700}>
+                            Học phí:
+                          </Typography>
+                          <Typography variant="h5" fontWeight={700}>
+                            {classInfo.feePerLesson.toLocaleString('vi-VN')}đ / buổi học
                           </Typography>
                         </Box>
-                        <Typography variant="body1" fontWeight={600} color="error.main" sx={{ pl: 3.5 }}>
-                          {classInfo.feePerLesson.toLocaleString('vi-VN')}đ / buổi
-                        </Typography>
                       </Box>
-                      <Divider />
-                    </>
+                      <Typography variant="body2" sx={{ pl: 3.5 }}>
+                        (Có thể áp dụng ưu đãi khi đăng ký)
+                      </Typography>
+                    </Box>
                   )}
 
                   {/* Mô tả */}
                   {classInfo.description && (
-                    <Box>
-                      <Typography variant="subtitle2" color="text.secondary" fontWeight={600} gutterBottom>
-                        Mô tả
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+                    <Box sx={{
+                      p: 2,
+                      bgcolor: 'info.lighter',
+                      borderRadius: 1,
+                      borderLeft: '4px solid',
+                      borderColor: 'info.main'
+                    }}>
+                      <Typography variant="body2" sx={{ lineHeight: 1.6 }}>
                         {classInfo.description}
                       </Typography>
                     </Box>
@@ -371,98 +422,119 @@ const ClassRegistrationModal: React.FC<ClassRegistrationModalProps> = ({
             </Grid>
 
             {/* Right side - Registration Form */}
-            <Grid item xs={12} md={6} sx={{ p: 3 }}>
-              <Typography variant="h6" fontWeight={700} gutterBottom sx={{ mb: 3 }}>
-                Thông tin đăng ký
-              </Typography>
+            <Grid item xs={12} md={5} sx={{ p: 2.5, bgcolor: 'background.paper' }}>
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="h6" fontWeight={700} sx={{ mb: 0.5 }}>
+                  ✍️ Đăng ký tư vấn
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Để lại thông tin, chúng tôi sẽ liên hệ ngay
+                </Typography>
+              </Box>
 
               {error && (
-                <Alert severity="error" sx={{ mb: 2 }}>
+                <Alert severity="error" sx={{ mb: 1.5, py: 0.5 }}>
                   {error}
                 </Alert>
               )}
 
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                 <TextField
                   fullWidth
                   required
                   label="Họ và tên"
-                  placeholder="Nhập họ và tên của bạn"
+                  placeholder="Nhập họ và tên"
                   value={form.name}
                   onChange={handleChange('name')}
                   disabled={submitting}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2
-                    }
-                  }}
+                  size="small"
                 />
 
                 <TextField
                   fullWidth
                   required
-                  label="Số điện thoại"
-                  placeholder="Nhập số điện thoại"
-                  value={form.phone}
-                  onChange={handleChange('phone')}
+                  label="Email"
+                  placeholder="Nhập email"
+                  type="email"
+                  value={form.email}
+                  onChange={handleChange('email')}
                   disabled={submitting}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2
-                    }
-                  }}
+                  size="small"
                 />
 
                 <TextField
                   fullWidth
-                  label="Email"
-                  placeholder="Nhập email (không bắt buộc)"
-                  value={form.email}
-                  onChange={handleChange('email')}
+                  label="Số điện thoại"
+                  placeholder="Nhập SĐT"
+                  value={form.phone}
+                  onChange={handleChange('phone')}
                   disabled={submitting}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2
-                    }
-                  }}
+                  size="small"
                 />
+
+                <TextField
+                  fullWidth
+                  select
+                  label="Giới tính"
+                  value={form.gender}
+                  onChange={handleChange('gender')}
+                  disabled={submitting}
+                  size="small"
+                >
+                  <MenuItem value="male">Nam</MenuItem>
+                  <MenuItem value="female">Nữ</MenuItem>
+                </TextField>
 
                 <TextField
                   fullWidth
                   label="Địa chỉ"
-                  placeholder="Nhập địa chỉ (không bắt buộc)"
+                  placeholder="Nhập địa chỉ"
                   value={form.address}
                   onChange={handleChange('address')}
                   disabled={submitting}
-                  multiline
-                  rows={3}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2
-                    }
-                  }}
+                  size="small"
                 />
 
-                <Paper sx={{ p: 2, bgcolor: 'info.lighter', borderRadius: 2 }}>
-                  <Typography variant="body2" color="info.dark">
-                    <strong>Lưu ý:</strong> Sau khi đăng ký, chúng tôi sẽ liên hệ với bạn trong vòng 24 giờ để tư vấn chi tiết về lớp học.
+                <TextField
+                  fullWidth
+                  label="Ghi chú"
+                  placeholder="Thêm ghi chú (nếu có)"
+                  value={form.note}
+                  onChange={handleChange('note')}
+                  disabled={submitting}
+                  multiline
+                  rows={2}
+                  size="small"
+                />
+
+                <Box sx={{
+                  p: 1.5,
+                  bgcolor: 'success.lighter',
+                  borderRadius: 1,
+                  border: '1px solid',
+                  borderColor: 'success.light'
+                }}>
+                  <Typography variant="caption" color="success.dark" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Box component="span" sx={{ fontSize: '1.2rem' }}>✓</Box>
+                    <strong>Cam kết:</strong> Tư vấn miễn phí, liên hệ trong 24h
                   </Typography>
-                </Paper>
+                </Box>
 
                 <Button
                   fullWidth
                   variant="contained"
-                  size="large"
                   onClick={handleSubmit}
-                  disabled={submitting || !form.name.trim() || !form.phone.trim()}
+                  disabled={submitting || !form.name.trim() || !form.email.trim()}
                   sx={{
-                    py: 1.5,
-                    borderRadius: 2,
-                    fontWeight: 600,
-                    fontSize: '1rem',
+                    py: 1.2,
+                    borderRadius: 0,
+                    fontWeight: 700,
+                    fontSize: '0.95rem',
                     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)',
                     '&:hover': {
                       background: 'linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%)',
+                      boxShadow: '0 6px 16px rgba(102, 126, 234, 0.6)',
                     }
                   }}
                 >
@@ -481,6 +553,17 @@ const ClassRegistrationModal: React.FC<ClassRegistrationModalProps> = ({
         )}
       </DialogContent>
     </Dialog>
+
+    {/* Notification Snackbar */}
+    <NotificationSnackbar
+      open={notification.open}
+      onClose={() => setNotification(prev => ({ ...prev, open: false }))}
+      message={notification.message}
+      severity={notification.severity}
+      title={notification.severity === 'success' ? 'Thành công' : 'Lỗi'}
+      autoHideDuration={4000}
+    />
+    </>
   );
 };
 

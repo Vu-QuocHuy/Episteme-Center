@@ -168,18 +168,18 @@ const AdvertisementSlider: React.FC<AdvertisementSliderProps> = ({
                       onRegisterClick(ad.classId || null, ad.title);
                     }}
                     sx={{
-                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      bgcolor: 'error.main',
                       color: 'white',
                       fontWeight: 700,
                       px: 4,
                       py: 1.5,
                       borderRadius: 2,
                       fontSize: { xs: '0.9rem', md: '1rem' },
-                      boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
+                      boxShadow: '0 4px 15px rgba(211, 47, 47, 0.4)',
                       '&:hover': {
-                        background: 'linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%)',
+                        bgcolor: 'error.dark',
                         transform: 'translateY(-2px)',
-                        boxShadow: '0 6px 20px rgba(102, 126, 234, 0.6)',
+                        boxShadow: '0 6px 20px rgba(211, 47, 47, 0.6)',
                       },
                       transition: 'all 0.3s ease'
                     }}

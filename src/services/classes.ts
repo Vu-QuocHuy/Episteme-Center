@@ -26,6 +26,15 @@ export const getClassByIdAPI = (id: string) => {
   });
 };
 
+// API mới: Lấy thông tin lớp học cho banner (không cần auth)
+export const getClassBannerInfoAPI = (id: string) => {
+  return axiosInstance.get(`/classes/${id}/banner-info`, {
+    headers: {
+      'x-lang': 'vi'
+    }
+  });
+};
+
 export const updateClassAPI = (id: string, data: Partial<ClassFormData>) => {
   return axiosInstance.patch(API_CONFIG.ENDPOINTS.CLASSES.UPDATE(id), data, {
     headers: {

@@ -74,6 +74,8 @@ export interface ApiEndpoints {
     GET_ALL: string;
     GET_BY_STUDENT: (id: string) => string;
     PAY_STUDENT: (id: string) => string;
+    REQUEST_PAYMENT: (paymentId: string) => string;
+    PROCESS_REQUEST: (paymentRequestId: string) => string;
     GET_TEACHER_PAYMENTS: string;
     EXPORT_REPORT: string;
     TEACHER_EXPORT_REPORT: string;
@@ -278,6 +280,8 @@ export const API_CONFIG: ApiConfig = {
       GET_ALL: '/payments/all',
       GET_BY_STUDENT: (id: string) => `/payments/students/${id}`,
       PAY_STUDENT: (id: string) => `/payments/pay-student/${id}`,
+      REQUEST_PAYMENT: (paymentId: string) => `/payments/request/${paymentId}`,
+      PROCESS_REQUEST: (paymentRequestId: string) => `/payments/process/${paymentRequestId}`,
       GET_TEACHER_PAYMENTS: '/teacher-payments/all',
       EXPORT_REPORT: '/payments/report',
       TEACHER_EXPORT_REPORT: '/teacher-payments/report',

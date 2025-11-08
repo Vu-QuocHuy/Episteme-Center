@@ -264,34 +264,42 @@ const Dashboard = () => {
                               </TableCell>
                               <TableCell>
                                 <Typography variant="body2">
-                                  {(scheduleItem.schedule?.dayOfWeeks || scheduleItem.schedule?.days_of_week || [])
+                                  {(scheduleItem.class?.schedule?.days_of_week || scheduleItem.schedule?.dayOfWeeks || scheduleItem.schedule?.days_of_week || [])
                                     .map((d: any) => formatDayOfWeek(d)).join(', ')}
                                 </Typography>
                               </TableCell>
                               <TableCell>
                                 <Typography variant="body2">
-                                  {(scheduleItem.schedule?.timeSlots?.startTime || scheduleItem.schedule?.time_slots?.start_time || '')}
+                                  {(scheduleItem.class?.schedule?.time_slots?.start_time || scheduleItem.schedule?.timeSlots?.startTime || scheduleItem.schedule?.time_slots?.start_time || '')}
                                   {' '}
                                   -
                                   {' '}
-                                  {(scheduleItem.schedule?.timeSlots?.endTime || scheduleItem.schedule?.time_slots?.end_time || '')}
+                                  {(scheduleItem.class?.schedule?.time_slots?.end_time || scheduleItem.schedule?.timeSlots?.endTime || scheduleItem.schedule?.time_slots?.end_time || '')}
                                 </Typography>
                               </TableCell>
                               <TableCell>
                                 <Chip
                                   label={
-                                    scheduleItem.class?.status === 'active'
+                                    scheduleItem.isActive === true
                                       ? 'Đang học'
-                                      : scheduleItem.class?.status === 'completed'
-                                        ? 'Đã hoàn thành'
-                                        : scheduleItem.class?.status || 'N/A'
+                                      : scheduleItem.isActive === false
+                                        ? 'Ngừng học'
+                                        : scheduleItem.class?.status === 'active'
+                                          ? 'Đang học'
+                                          : scheduleItem.class?.status === 'completed'
+                                            ? 'Đã hoàn thành'
+                                            : scheduleItem.class?.status || 'N/A'
                                   }
                                   color={
-                                    scheduleItem.class?.status === 'active'
+                                    scheduleItem.isActive === true
                                       ? 'success'
-                                      : scheduleItem.class?.status === 'completed'
-                                        ? 'default'
-                                        : 'default'
+                                      : scheduleItem.isActive === false
+                                        ? 'error'
+                                        : scheduleItem.class?.status === 'active'
+                                          ? 'success'
+                                          : scheduleItem.class?.status === 'completed'
+                                            ? 'default'
+                                            : 'default'
                                   }
                                   size="small"
                                 />

@@ -42,12 +42,28 @@ const BannerCarousel: React.FC = () => {
           bannerAds = response.data;
         }
 
+        // Map và normalize data để đảm bảo classId được giữ lại
+        const normalizedBanners = bannerAds.map((ad: any) => ({
+          id: ad.id,
+          title: ad.title,
+          description: ad.description,
+          content: ad.content || ad.description,
+          imageUrl: ad.imageUrl,
+          image: ad.imageUrl,
+          priority: ad.priority,
+          createdAt: ad.createdAt,
+          type: ad.type,
+          isActive: ad.isActive,
+          classId: ad.classId || null, // 🎯 Đảm bảo classId được map
+        }));
+
         // Filter active banners only
-        const activeBanners = bannerAds.filter((ad: any) => ad.isActive !== false);
+        const activeBanners = normalizedBanners.filter((ad: any) => ad.isActive !== false);
 
         const finalBanners = activeBanners.slice(0, bannerConfig.maxSlides);
 
         // 🔍 Debug: Kiểm tra xem banner có classId không
+        console.log('📢 [BannerCarousel] Raw API response:', response.data);
         console.log('📢 [BannerCarousel] Loaded banners:', finalBanners);
         console.log('📢 [BannerCarousel] Banners with classId:', finalBanners.filter((b: any) => b.classId));
 
@@ -92,9 +108,11 @@ const BannerCarousel: React.FC = () => {
   }
 
   const handleRegisterClick = (classId: string | null, className: string) => {
+    console.log('🎯 [BannerCarousel] handleRegisterClick called!', { classId, className });
     setSelectedClassId(classId);
     setSelectedClassName(className);
     setModalOpen(true);
+    console.log('🎯 [BannerCarousel] Modal should open now!');
   };
 
   return (

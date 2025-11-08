@@ -266,6 +266,7 @@ const PaymentHistoryModal: React.FC<PaymentHistoryModalProps> = ({
   const [loading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [paymentHistory, setPaymentHistory] = useState<PaymentTransaction[]>([]);
+  const [paymentRequests, setPaymentRequests] = useState<any[]>([]);
   const [paymentDetails, setPaymentDetails] = useState<PaymentDetails | null>(null);
 
   useEffect(() => {
@@ -291,19 +292,46 @@ const PaymentHistoryModal: React.FC<PaymentHistoryModalProps> = ({
 
         setPaymentHistory(history);
 
+        // Extract payment requests
+        const requests = (paymentData as any).paymentRequests || [];
+        setPaymentRequests(Array.isArray(requests) ? requests : []);
+
       if (showPaymentDetails) {
+        // Extract student and class info from API response
+        const studentInfo = (paymentData as any).student || (paymentData as any).studentId;
+        const classInfo = (paymentData as any).class || (paymentData as any).classId || paymentData.classes?.[0];
+
+        // Use mapped values from Payments.tsx (originalAmount, finalAmount, etc.)
+        // Payments.tsx already calculated these correctly
+        const totalAmount = (paymentData as any).originalAmount || 0;
+        const discountAmount = (paymentData as any).discountAmount || 0;
+        const finalAmount = (paymentData as any).finalAmount || 0;
+        const paidAmount = (paymentData as any).paidAmount || 0;
+        const remainingAmount = (paymentData as any).remainingAmount || 0;
+
+        // Get month and year correctly
+        let monthValue: number = typeof paymentData.month === 'number' ? paymentData.month : 1;
+        let yearValue: number = typeof paymentData.year === 'number' ? paymentData.year : new Date().getFullYear();
+
+        // If month is a string like "11/2025", parse it
+        if (typeof paymentData.month === 'string' && (paymentData.month as string).includes('/')) {
+          const parts = (paymentData.month as string).split('/');
+          monthValue = parseInt(parts[0]) || 1;
+          yearValue = parseInt(parts[1]) || new Date().getFullYear();
+        }
+
         setPaymentDetails({
-          paymentCode: `INV-${paymentData.month}/${paymentData.year}-${paymentData.id?.slice(-6)}`,
-          totalAmount: paymentData.totalAmount || 0,
-          paidAmount: paymentData.paidAmount || 0,
-          remainingAmount: (paymentData.totalAmount || 0) - (paymentData.paidAmount || 0),
-          finalAmount: paymentData.totalAmount || 0,
-          discountAmount: 0, // No discount in new API
+          paymentCode: `INV-${monthValue}/${yearValue}-${paymentData.id?.slice(-6)}`,
+          totalAmount: totalAmount,
+          paidAmount: paidAmount,
+          remainingAmount: remainingAmount,
+          finalAmount: finalAmount,
+          discountAmount: discountAmount,
           status: paymentData.status || 'pending',
-          month: paymentData.month || 1,
-          year: paymentData.year || new Date().getFullYear(),
-          className: paymentData.classes?.[0]?.name || 'N/A', // Use classes array from new API
-          studentName: 'N/A' // No student info in teacher payment
+          month: typeof monthValue === 'number' ? monthValue : parseInt(String(monthValue)) || 1,
+          year: typeof yearValue === 'number' ? yearValue : parseInt(String(yearValue)) || new Date().getFullYear(),
+          className: classInfo?.name || 'N/A',
+          studentName: studentInfo?.name || studentInfo?.userId?.name || 'N/A'
         });
       }
     }
@@ -311,6 +339,7 @@ const PaymentHistoryModal: React.FC<PaymentHistoryModalProps> = ({
 
   const handleClose = (): void => {
     setPaymentHistory([]);
+    setPaymentRequests([]);
     setPaymentDetails(null);
     setError('');
     onClose();
@@ -450,79 +479,86 @@ const PaymentHistoryModal: React.FC<PaymentHistoryModalProps> = ({
                           </Box>
                         </Grid>
                       </>
-                    ) : (
-                      <>
-                        <Grid item xs={12} md={6}>
-                          <Box>
-                            <Typography variant="subtitle2" color="textSecondary" gutterBottom sx={{ fontWeight: 600 }}>
-                              Học sinh: {paymentDetails.studentName}
-                            </Typography>
-                          </Box>
-                        </Grid>
-                        <Grid item xs={12} md={6}>
-                          <Box>
-                            <Typography variant="subtitle2" color="textSecondary" gutterBottom sx={{ fontWeight: 600 }}>
-                              Lớp học: {paymentDetails.className}
-                            </Typography>
-                          </Box>
-                        </Grid>
-                        <Grid item xs={12} md={6}>
-                          <Box>
-                            <Typography variant="subtitle2" color="textSecondary" gutterBottom sx={{ fontWeight: 600 }}>
-                              Tháng/Năm: {paymentDetails.month}/{paymentDetails.year}
-                            </Typography>
-                          </Box>
-                        </Grid>
-                        <Grid item xs={12} md={6}>
-                          <Box>
-                            <Typography variant="subtitle2" color="textSecondary" gutterBottom sx={{ fontWeight: 600 }}>
-                              Số tiền gốc: {formatCurrency(paymentDetails.totalAmount || 0)}
-                            </Typography>
-                          </Box>
-                        </Grid>
-                        <Grid item xs={12} md={6}>
-                          <Box>
-                            <Typography variant="subtitle2" color="textSecondary" gutterBottom sx={{ fontWeight: 600 }}>
-                              Giảm giá: {formatCurrency(paymentDetails.discountAmount || 0)}
-                            </Typography>
-                          </Box>
-                        </Grid>
-                        <Grid item xs={12} md={6}>
-                          <Box>
-                            <Typography variant="subtitle2" color="textSecondary" gutterBottom sx={{ fontWeight: 600 }}>
-                              Số tiền cuối: {formatCurrency(paymentDetails.finalAmount || 0)}
-                            </Typography>
-                          </Box>
-                        </Grid>
-                        <Grid item xs={12} md={6}>
-                          <Box>
-                            <Typography variant="subtitle2" color="textSecondary" gutterBottom sx={{ fontWeight: 600 }}>
-                              Đã thanh toán: {formatCurrency(paymentDetails.paidAmount || 0)}
-                            </Typography>
-                          </Box>
-                        </Grid>
-                        <Grid item xs={12} md={6}>
-                          <Box>
-                            <Typography variant="subtitle2" color="textSecondary" gutterBottom sx={{ fontWeight: 600 }}>
-                              Còn lại: {formatCurrency(paymentDetails.remainingAmount || 0)}
-                            </Typography>
-                          </Box>
-                        </Grid>
-                        <Grid item xs={12}>
-                          <Box>
-                            <Typography variant="subtitle2" color="textSecondary" sx={{ fontWeight: 600, mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                              Trạng thái:
-                              <Chip
-                                label={getPaymentStatusInfo(paymentData).label}
-                                color={getPaymentStatusInfo(paymentData).color}
-                                size="small"
-                                variant="outlined"
-                              />
-                            </Typography>
-                          </Box>
-                        </Grid>
-                      </>
-                    )}
+                     ) : (
+                       <>
+                         <Grid item xs={12} md={6}>
+                           <Box>
+                             <Typography variant="subtitle2" color="textSecondary" gutterBottom sx={{ fontWeight: 600 }}>
+                               Học sinh: {(paymentData as any).childName || paymentDetails.studentName}
+                             </Typography>
+                           </Box>
+                         </Grid>
+                         <Grid item xs={12} md={6}>
+                           <Box>
+                             <Typography variant="subtitle2" color="textSecondary" gutterBottom sx={{ fontWeight: 600 }}>
+                               Lớp học: {(paymentData as any).className || paymentDetails.className}
+                             </Typography>
+                           </Box>
+                         </Grid>
+                         <Grid item xs={12} md={6}>
+                           <Box>
+                             <Typography variant="subtitle2" color="textSecondary" gutterBottom sx={{ fontWeight: 600 }}>
+                               Tháng/Năm: {paymentDetails.month}/{paymentDetails.year}
+                             </Typography>
+                           </Box>
+                         </Grid>
+                         <Grid item xs={12} md={6}>
+                           <Box>
+                             <Typography variant="subtitle2" color="textSecondary" gutterBottom sx={{ fontWeight: 600 }}>
+                               Số buổi học: {(paymentData as any).attendedLessons || (paymentData as any).totalLessons || 0} buổi
+                             </Typography>
+                           </Box>
+                         </Grid>
+                         <Grid item xs={12} md={6}>
+                           <Box>
+                             <Typography variant="subtitle2" color="textSecondary" gutterBottom sx={{ fontWeight: 600 }}>
+                               Số tiền gốc: {formatCurrency(paymentDetails.totalAmount || 0)}
+                             </Typography>
+                           </Box>
+                         </Grid>
+                         <Grid item xs={12} md={6}>
+                           <Box>
+                             <Typography variant="subtitle2" color="textSecondary" gutterBottom sx={{ fontWeight: 600 }}>
+                               Giảm giá: {formatCurrency(paymentDetails.discountAmount || 0)}
+                             </Typography>
+                           </Box>
+                         </Grid>
+                         <Grid item xs={12} md={6}>
+                           <Box>
+                             <Typography variant="subtitle2" color="textSecondary" gutterBottom sx={{ fontWeight: 600 }}>
+                               Số tiền cuối: {formatCurrency(paymentDetails.finalAmount || 0)}
+                             </Typography>
+                           </Box>
+                         </Grid>
+                         <Grid item xs={12} md={6}>
+                           <Box>
+                             <Typography variant="subtitle2" color="textSecondary" gutterBottom sx={{ fontWeight: 600 }}>
+                               Đã thanh toán: {formatCurrency(paymentDetails.paidAmount || 0)}
+                             </Typography>
+                           </Box>
+                         </Grid>
+                         <Grid item xs={12} md={6}>
+                           <Box>
+                             <Typography variant="subtitle2" color="textSecondary" gutterBottom sx={{ fontWeight: 600 }}>
+                               Còn lại: {formatCurrency(paymentDetails.remainingAmount || 0)}
+                             </Typography>
+                           </Box>
+                         </Grid>
+                         <Grid item xs={12}>
+                           <Box>
+                             <Typography variant="subtitle2" color="textSecondary" sx={{ fontWeight: 600, mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                               Trạng thái:
+                               <Chip
+                                 label={getPaymentStatusInfo(paymentData).label}
+                                 color={getPaymentStatusInfo(paymentData).color}
+                                 size="small"
+                                 variant="outlined"
+                               />
+                             </Typography>
+                           </Box>
+                         </Grid>
+                       </>
+                     )}
                   </Grid>
                 </Box>
               </Paper>
@@ -634,6 +670,143 @@ const PaymentHistoryModal: React.FC<PaymentHistoryModalProps> = ({
                 )}
               </Box>
             </Paper>
+
+            {/* Payment Requests Section */}
+            {paymentRequests.length > 0 && (
+              <Paper sx={{
+                mt: 3,
+                p: 3,
+                borderRadius: 2,
+                background: 'linear-gradient(135deg, #fff5e6 0%, #ffe0b2 100%)',
+                border: '1px solid #ffb74d',
+                boxShadow: '0 2px 8px rgba(255, 152, 0, 0.1)'
+              }}>
+                <Typography variant="h6" gutterBottom sx={{
+                  color: '#e65100',
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  mb: 2
+                }}>
+                  <Box sx={{
+                    width: 4,
+                    height: 20,
+                    bgcolor: '#ff9800',
+                    borderRadius: 2
+                  }} />
+                  Lịch sử yêu cầu thanh toán
+                </Typography>
+                <Box sx={{
+                  bgcolor: 'white',
+                  borderRadius: 2,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                  overflow: 'hidden'
+                }}>
+                  <TableContainer sx={{ maxHeight: 400 }}>
+                    <Table stickyHeader>
+                      <TableHead>
+                        <TableRow sx={{ bgcolor: '#fff8f0' }}>
+                          <TableCell sx={{ fontWeight: 600, color: '#e65100' }}>
+                            Thời gian yêu cầu
+                          </TableCell>
+                          <TableCell sx={{ fontWeight: 600, color: '#e65100' }}>
+                            Số tiền
+                          </TableCell>
+                          <TableCell sx={{ fontWeight: 600, color: '#e65100' }}>
+                            Trạng thái
+                          </TableCell>
+                          <TableCell sx={{ fontWeight: 600, color: '#e65100' }}>
+                            Ảnh bằng chứng
+                          </TableCell>
+                          <TableCell sx={{ fontWeight: 600, color: '#e65100' }}>
+                            Ghi chú
+                          </TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                         {paymentRequests.map((request, index) => (
+                           <TableRow key={request.id || index} hover>
+                             <TableCell>
+                               <Typography variant="body2" sx={{ fontWeight: 500, color: '#2c3e50' }}>
+                                 {formatDate(request.requestedAt || request.createdAt)}
+                               </Typography>
+                               {request.processedAt && (
+                                 <>
+                                   <Typography variant="caption" color="text.secondary" display="block">
+                                     Xử lý: {formatDate(request.processedAt)}
+                                   </Typography>
+                                   {request.processedBy && (
+                                     <Typography variant="caption" color="text.secondary" display="block">
+                                       Bởi: {request.processedBy.name || request.processedBy.email || 'Admin'}
+                                     </Typography>
+                                   )}
+                                 </>
+                               )}
+                             </TableCell>
+                            <TableCell>
+                              <Typography
+                                variant="body2"
+                                sx={{
+                                  fontWeight: 600,
+                                  color: 'warning.main'
+                                }}
+                              >
+                                {formatCurrency(request.amount)}
+                              </Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Chip
+                                icon={
+                                  request.status === 'pending' ? <PendingIcon /> :
+                                  request.status === 'approved' ? <CheckCircleIcon /> :
+                                  <CancelIcon />
+                                }
+                                label={
+                                  request.status === 'pending' ? 'Chờ duyệt' :
+                                  request.status === 'approved' ? 'Đã duyệt' :
+                                  'Bị từ chối'
+                                }
+                                color={
+                                  request.status === 'pending' ? 'warning' :
+                                  request.status === 'approved' ? 'success' :
+                                  'error'
+                                }
+                                size="small"
+                                variant="outlined"
+                              />
+                            </TableCell>
+                            <TableCell>
+                              {request.imageProof ? (
+                                <Button
+                                  size="small"
+                                  variant="outlined"
+                                  onClick={() => window.open(request.imageProof, '_blank')}
+                                  sx={{ fontSize: '0.75rem' }}
+                                >
+                                  Xem ảnh
+                                </Button>
+                              ) : (
+                                <Typography variant="body2" color="text.secondary">
+                                  -
+                                </Typography>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <Typography variant="body2" color="text.secondary">
+                                {request.status === 'rejected' && request.rejectionReason
+                                  ? `Lý do từ chối: ${request.rejectionReason}`
+                                  : request.note || '-'}
+                              </Typography>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Box>
+              </Paper>
+            )}
 
             {/* Summary Section */}
             {paymentHistory.length > 0 && (

@@ -53,7 +53,7 @@ const NavigationMenu: React.FC<NavigationMenuProps> = ({
   };
 
   const renderMenuItem = (item: any, level: number = 0) => {
-    const hasChildren = item.children && item.children.length > 0;
+    const hasChildren = item.childrenMenu && item.childrenMenu.length > 0;
     const isExpanded = expandedItems.has(item.key);
     const isActive = location.pathname === `/${item.key}`;
 
@@ -101,7 +101,7 @@ const NavigationMenu: React.FC<NavigationMenuProps> = ({
         {hasChildren && (
           <Collapse in={isExpanded} timeout="auto" unmountOnExit>
             <List component="div" disablePadding>
-              {item.children.map((child: any) => renderMenuItem(child, level + 1))}
+              {item.childrenMenu.map((child: any) => renderMenuItem(child, level + 1))}
             </List>
           </Collapse>
         )}

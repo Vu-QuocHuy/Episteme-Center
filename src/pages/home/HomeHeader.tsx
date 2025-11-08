@@ -199,7 +199,7 @@ const HomeHeader: React.FC = () => {
 
   const handleMenuClick = (menuItem: NavigationMenuItem): void => {
     // If has children, don't do anything - just show dropdown
-    if (menuItem.children && menuItem.children.length > 0) {
+    if (menuItem.childrenMenu && menuItem.childrenMenu.length > 0) {
       return;
     }
 
@@ -336,9 +336,9 @@ const HomeHeader: React.FC = () => {
                   >
                     {menuItem.title}
                   </MenuItem>
-                  {menuItem.children && menuItem.children.length > 0 && (
+                  {menuItem.childrenMenu && menuItem.childrenMenu.length > 0 && (
                     <Box sx={{ pl: 2 }}>
-                      {menuItem.children
+                      {menuItem.childrenMenu
                         .filter(child => child.isActive)
                         .sort((a, b) => (a.order || 0) - (b.order || 0))
                         .map((submenu) => (
@@ -408,7 +408,7 @@ const HomeHeader: React.FC = () => {
                     setDropdownAnchor({});
 
                     // Then open this dropdown if has children
-                    if (menuItem.children && menuItem.children.length > 0) {
+                    if (menuItem.childrenMenu && menuItem.childrenMenu.length > 0) {
                       const buttonElement = e.currentTarget.querySelector('button');
                       if (buttonElement) {
                         // Set flag to prevent immediate close
@@ -425,7 +425,7 @@ const HomeHeader: React.FC = () => {
                 >
                   <Button
                     onClick={() => handleMenuClick(menuItem)}
-                    endIcon={menuItem.children && menuItem.children.length > 0 ? <ArrowDownIcon /> : null}
+                    endIcon={menuItem.childrenMenu && menuItem.childrenMenu.length > 0 ? <ArrowDownIcon /> : null}
                     sx={{
                       mx: 1.5,
                       color: activeSection === (menuItem.slug || menuItem.title) ? COLORS.primary.main : '#111',
@@ -449,7 +449,7 @@ const HomeHeader: React.FC = () => {
                   </Button>
 
                   {/* Dropdown Menu */}
-                  {menuItem.children && menuItem.children.length > 0 && (
+                  {menuItem.childrenMenu && menuItem.childrenMenu.length > 0 && (
                     <Menu
                       anchorEl={dropdownAnchor[menuItem.id]}
                       open={Boolean(dropdownAnchor[menuItem.id])}
@@ -477,7 +477,7 @@ const HomeHeader: React.FC = () => {
                         timeout: 200,
                       }}
                     >
-                      {menuItem.children
+                      {menuItem.childrenMenu
                         .filter(child => child.isActive)
                         .sort((a, b) => (a.order || 0) - (b.order || 0))
                         .map((submenu) => (

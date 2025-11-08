@@ -313,12 +313,12 @@ const MenuManagement: React.FC = () => {
         </AccordionSummary>
         <AccordionDetails>
           <Box sx={{ pl: 2 }}>
-            {item.children && item.children.length > 0 && (
+            {item.childrenMenu && item.childrenMenu.length > 0 && (
               <Box sx={{ mt: 2 }}>
                 <Typography variant="subtitle2" gutterBottom>
                   Submenu:
                 </Typography>
-                {renderMenuItems(item.children, level + 1)}
+                {renderMenuItems(item.childrenMenu, level + 1)}
               </Box>
             )}
           </Box>

@@ -24,7 +24,7 @@ export const useMenuItems = () => {
             createdAt: item.createdAt,
             updatedAt: item.updatedAt,
             deletedAt: item.deletedAt,
-            children: (item.children || []).map((child: any) => ({
+            childrenMenu: (item.childrenMenu || []).map((child: any) => ({
               id: child.id,
               slug: child.slug,
               title: child.title,
@@ -33,7 +33,7 @@ export const useMenuItems = () => {
               createdAt: child.createdAt,
               updatedAt: child.updatedAt,
               deletedAt: child.deletedAt,
-              children: []
+              childrenMenu: []
             }))
           }));
           setMenuItems(transformedItems);

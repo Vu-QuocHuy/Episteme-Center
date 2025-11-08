@@ -90,8 +90,8 @@ const DynamicMenuPage: React.FC = () => {
       }
 
       // Check children recursively
-      if (item.children && item.children.length > 0) {
-        const found = findMenuItemBySlug(item.children, targetSlug);
+      if (item.childrenMenu && item.childrenMenu.length > 0) {
+        const found = findMenuItemBySlug(item.childrenMenu, targetSlug);
         if (found) return found;
       }
     }

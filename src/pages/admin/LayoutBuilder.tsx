@@ -55,8 +55,8 @@ const LayoutBuilder: React.FC = () => {
     ? (function findTitle(items: any[]): string | null {
         for (const item of items) {
           if (item.id === menuId) return item.title;
-          if (item.children && item.children.length) {
-            const t = findTitle(item.children);
+          if (item.childrenMenu && item.childrenMenu.length) {
+            const t = findTitle(item.childrenMenu);
             if (t) return t;
           }
         }

@@ -826,7 +826,7 @@ export interface MenuItem {
   // Extended fields used by navigation/pages (ensure presence where code expects)
   title: string;
   slug?: string;
-  children?: MenuItem[];
+  childrenMenu?: MenuItem[];
 }
 
 // Navigation types used by header/hooks

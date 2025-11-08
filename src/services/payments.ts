@@ -80,3 +80,48 @@ export const exportTeacherPaymentsReportAPI = (filters?: Record<string, any>) =>
 };
 
 export const payTuitionAPI = (data: any) => axiosInstance.patch(API_CONFIG.ENDPOINTS.PARENTS.PAY_TUITION_FEE, data);
+
+// Payment Request API for Parent
+export const requestPaymentAPI = (paymentId: string, data: {
+  amount: number;
+  imageProof: string;
+}) => {
+  const formData = new URLSearchParams();
+  formData.append('amount', String(data.amount));
+  formData.append('imageProof', data.imageProof);
+  return axiosInstance.patch(API_CONFIG.ENDPOINTS.PAYMENTS.REQUEST_PAYMENT(paymentId), formData, {
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+  });
+};
+
+// Payment Request API for Admin
+export const processPaymentRequestAPI = (paymentRequestId: string, action: 'approve' | 'reject', rejectionReason?: string) => {
+  console.log('🔵 processPaymentRequestAPI called with:', {
+    paymentRequestId,
+    paymentRequestIdType: typeof paymentRequestId,
+    action,
+    rejectionReason
+  });
+
+  const endpoint = API_CONFIG.ENDPOINTS.PAYMENTS.PROCESS_REQUEST(String(paymentRequestId));
+  console.log('🔵 API Endpoint:', endpoint);
+
+  // Map frontend action to backend status value
+  const status = action === 'approve' ? 'approved' : 'rejected';
+
+  const formData = new URLSearchParams();
+  formData.append('status', status);
+  if (action === 'reject' && rejectionReason) {
+    formData.append('rejectionReason', rejectionReason);
+  }
+
+  console.log('🔵 FormData:', {
+    status: formData.get('status'),
+    rejectionReason: formData.get('rejectionReason')
+  });
+  console.log('🔵 FormData string:', formData.toString());
+
+  return axiosInstance.patch(endpoint, formData, {
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+  });
+};

@@ -50,7 +50,7 @@ export const useMenuManagement = (): UseMenuManagementReturn => {
           createdAt: now,
           updatedAt: now,
           deletedAt: null,
-          children: []
+          childrenMenu: []
         },
         {
           id: '2',
@@ -61,7 +61,7 @@ export const useMenuManagement = (): UseMenuManagementReturn => {
           createdAt: now,
           updatedAt: now,
           deletedAt: null,
-          children: []
+          childrenMenu: []
         }
       ];
 

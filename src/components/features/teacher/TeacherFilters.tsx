@@ -6,6 +6,8 @@ import { SearchInput } from '../../common';
 interface TeacherFiltersProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
+  emailFilter?: string;
+  setEmailFilter?: (email: string) => void;
   isActiveFilter: string;
   setIsActiveFilter: (filter: string) => void;
 }
@@ -13,17 +15,26 @@ interface TeacherFiltersProps {
 const TeacherFilters: React.FC<TeacherFiltersProps> = ({
   searchQuery,
   setSearchQuery,
+  emailFilter = '',
+  setEmailFilter,
   isActiveFilter,
   setIsActiveFilter,
 }) => {
   return (
     <Paper sx={{ p: 2, mb: 3 }}>
       <Grid container spacing={2} alignItems="center">
-        <Grid item xs={12} md={8}>
+        <Grid item xs={12} md={4}>
           <SearchInput
             value={searchQuery}
             onChange={setSearchQuery}
-            placeholder="Tìm kiếm giáo viên..."
+            placeholder="Tìm theo tên giáo viên..."
+          />
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <SearchInput
+            value={emailFilter}
+            onChange={setEmailFilter || (() => {})}
+            placeholder="Tìm theo email..."
           />
         </Grid>
         <Grid item xs={12} md={4}>
@@ -35,8 +46,8 @@ const TeacherFilters: React.FC<TeacherFiltersProps> = ({
             fullWidth
           >
             <MenuItem value="">Tất cả</MenuItem>
-            <MenuItem value="true">Đang hoạt động</MenuItem>
-            <MenuItem value="false">Ngừng hoạt động</MenuItem>
+            <MenuItem value="active">Đang hoạt động</MenuItem>
+            <MenuItem value="inactive">Ngừng hoạt động</MenuItem>
           </TextField>
         </Grid>
       </Grid>

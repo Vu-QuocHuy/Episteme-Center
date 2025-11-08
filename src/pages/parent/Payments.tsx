@@ -2,18 +2,21 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Box, Typography, Grid, Card, CardContent, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Chip, LinearProgress, Alert, Button,
-  TextField, FormControl, InputLabel, Select, MenuItem,
+  TextField,
   Paper, Tabs, Tab, InputAdornment, Dialog, DialogTitle, DialogContent, DialogActions, IconButton,
+  CircularProgress, Tooltip,
 } from '@mui/material';
 import {
   Payment as PaymentIcon,
   Search as SearchIcon, Receipt as ReceiptIcon, MoneyOff as MoneyOffIcon, Discount as DiscountIcon,
-  History as HistoryIcon,
+  History as HistoryIcon, CloudUpload as UploadIcon, Image as ImageIcon, Close as CloseIcon,
+  HourglassEmpty as PendingIcon, CheckCircle as ApprovedIcon, Cancel as RejectedIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
 import { getParentByIdAPI } from '../../services/parents';
-import { getPaymentsByStudentAPI, payTuitionAPI } from '../../services/payments';
+import { getPaymentsByStudentAPI, requestPaymentAPI } from '../../services/payments';
+import { uploadFileAPI } from '../../services/files';
 import { commonStyles } from '../../utils/styles';
 import PaymentHistoryModal from '../../components/common/PaymentHistoryModal';
 import NotificationSnackbar from '../../components/common/NotificationSnackbar';
@@ -37,6 +40,15 @@ interface PaymentTransaction {
   paymentMethod?: string;
   description?: string;
   paymentHistory?: any[];
+  paymentRequests?: Array<{
+    id: number;
+    amount: number;
+    imageProof: string;
+    status: 'pending' | 'approved' | 'rejected';
+    requestedAt: string;
+    processedAt?: string;
+    rejectionReason?: string;
+  }>;
 }
 
 interface PaymentData {
@@ -68,8 +80,12 @@ const Payments: React.FC = () => {
   const [paymentLoading, setPaymentLoading] = useState<boolean>(false);
   const [paymentError, setPaymentError] = useState<string>('');
   const [paymentSuccess, setPaymentSuccess] = useState<string>('');
-  const [paymentNote, setPaymentNote] = useState<string>('');
-  const [paymentMethod, setPaymentMethod] = useState<string>('cash');
+
+  // Upload image states
+  const [, setSelectedImage] = useState<File | null>(null);
+  const [previewImage, setPreviewImage] = useState<string>('');
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string>('');
+  const [imageUploading, setImageUploading] = useState<boolean>(false);
 
   // History modal
   const [paymentHistoryModalOpen, setPaymentHistoryModalOpen] = useState<boolean>(false);
@@ -121,6 +137,7 @@ const Payments: React.FC = () => {
         const paidAmount = Number(item?.paidAmount) || 0;
         const finalAmount = Math.max(0, originalAmount - discountAmount);
         const remainingAmount = Math.max(0, finalAmount - paidAmount);
+
         return {
           id: String(item?.id || `${student.id}-${year}-${monthNum}-${item?.class?.id || 'unknown'}`),
           childName: student?.name || item?.student?.name || '-',
@@ -135,7 +152,13 @@ const Payments: React.FC = () => {
           remainingAmount,
           status: String(item?.status || 'pending'),
           paymentHistory: Array.isArray(item?.histories) ? item.histories : [],
-        };
+          paymentRequests: Array.isArray(item?.paymentRequests) ? item.paymentRequests : [],
+          // Thêm các field gốc để modal có thể truy cập - ưu tiên lấy từ item (API response)
+          student: item?.student || { id: student.id, name: student.name },
+          class: item?.class,
+          totalLessons: item?.totalLessons,
+          totalAmount: item?.totalAmount,
+        } as any;
       });
 
       setPaymentData({ invoices });
@@ -231,10 +254,11 @@ const Payments: React.FC = () => {
   const handlePayment = (invoice: PaymentTransaction) => {
     setSelectedInvoice(invoice);
     setPaymentAmount(String(invoice.remainingAmount || 0));
-    setPaymentNote('');
-    setPaymentMethod('cash');
     setPaymentError('');
     setPaymentSuccess('');
+    setSelectedImage(null);
+    setPreviewImage('');
+    setUploadedImageUrl('');
     setPaymentDialogOpen(true);
   };
 
@@ -242,10 +266,59 @@ const Payments: React.FC = () => {
     setPaymentDialogOpen(false);
     setSelectedInvoice(null);
     setPaymentAmount('');
-    setPaymentNote('');
-    setPaymentMethod('cash');
     setPaymentError('');
     setPaymentSuccess('');
+    setSelectedImage(null);
+    setPreviewImage('');
+    setUploadedImageUrl('');
+  };
+
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setPaymentError('Vui lòng chọn file ảnh');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setPaymentError('Kích thước ảnh không được vượt quá 5MB');
+      return;
+    }
+
+    setSelectedImage(file);
+
+    // Preview image
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPreviewImage(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    // Upload to cloudinary
+    try {
+      setImageUploading(true);
+      setPaymentError('');
+      const uploadRes = await uploadFileAPI(file);
+      setUploadedImageUrl(uploadRes.data.data.url);
+      setSnackbar({ open: true, message: 'Tải ảnh thành công', severity: 'success' });
+    } catch (error: any) {
+      setPaymentError('Tải ảnh thất bại. Vui lòng thử lại.');
+      setSelectedImage(null);
+      setPreviewImage('');
+      setUploadedImageUrl('');
+    } finally {
+      setImageUploading(false);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+    setPreviewImage('');
+    setUploadedImageUrl('');
   };
 
   const handleOpenPaymentHistory = (payment: PaymentTransaction) => {
@@ -267,6 +340,10 @@ const Payments: React.FC = () => {
       setPaymentError('Vui lòng nhập số tiền thanh toán');
       return;
     }
+    if (!uploadedImageUrl) {
+      setPaymentError('Vui lòng tải lên ảnh bằng chứng thanh toán');
+      return;
+    }
     const amount = parseFloat(paymentAmount);
     if (isNaN(amount) || amount <= 0) {
       setPaymentError('Số tiền thanh toán không hợp lệ');
@@ -280,10 +357,9 @@ const Payments: React.FC = () => {
     const confirmData = {
       paymentId: selectedInvoice.id,
       amount,
-      method: paymentMethod,
-      note: paymentNote || `Thanh toán học phí tháng ${selectedInvoice.month}`
+      imageProof: uploadedImageUrl
     };
-    setPaymentConfirmData({ invoice: selectedInvoice, paymentData: confirmData });
+    setPaymentConfirmData({ invoice: selectedInvoice, paymentData: confirmData as any });
     setPaymentConfirmOpen(true);
   };
 
@@ -294,13 +370,16 @@ const Payments: React.FC = () => {
     setPaymentError('');
     setPaymentSuccess('');
     try {
-      await payTuitionAPI(paymentConfirmData.paymentData);
-      setPaymentSuccess('Thanh toán thành công!');
-      setSnackbar({ open: true, message: 'Thanh toán thành công!', severity: 'success' });
+      await requestPaymentAPI(paymentConfirmData.paymentData.paymentId, {
+        amount: paymentConfirmData.paymentData.amount,
+        imageProof: (paymentConfirmData.paymentData as any).imageProof
+      });
+      setPaymentSuccess('Gửi yêu cầu thanh toán thành công!');
+      setSnackbar({ open: true, message: 'Yêu cầu thanh toán đã được gửi. Vui lòng chờ admin xác nhận.', severity: 'success' });
       handleClosePaymentDialog();
       await fetchPaymentData();
     } catch (error: any) {
-      const msg = error?.response?.data?.message || 'Có lỗi xảy ra khi thanh toán';
+      const msg = error?.response?.data?.message || 'Có lỗi xảy ra khi gửi yêu cầu thanh toán';
       setPaymentError(msg);
       setSnackbar({ open: true, message: msg, severity: 'error' });
     } finally {
@@ -486,16 +565,55 @@ const Payments: React.FC = () => {
                         <TableCell align="center"><Typography variant="body2" sx={{ fontWeight: 500 }}>{formatCurrency(invoice.paidAmount)}</Typography></TableCell>
                         <TableCell align="center"><Typography variant="body2" sx={{ fontWeight: 500 }}>{formatCurrency(invoice.remainingAmount)}</Typography></TableCell>
                         <TableCell align="center">
-                          <Chip
-                            label={getStatusLabel(invoice.status)}
-                            color={getStatusColor(invoice.status)}
-                            size="small"
-                            variant="outlined"
-                          />
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, alignItems: 'center' }}>
+                            <Chip
+                              label={getStatusLabel(invoice.status)}
+                              color={getStatusColor(invoice.status)}
+                              size="small"
+                              variant="outlined"
+                            />
+                            {invoice.paymentRequests && invoice.paymentRequests.length > 0 && (
+                              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, justifyContent: 'center' }}>
+                                {invoice.paymentRequests.map((req) => (
+                                  <Tooltip
+                                    key={req.id}
+                                    title={
+                                      req.status === 'pending'
+                                        ? 'Yêu cầu thanh toán đang chờ admin duyệt'
+                                        : req.status === 'approved'
+                                        ? `Đã duyệt lúc ${new Date(req.processedAt || '').toLocaleString('vi-VN')}`
+                                        : `Bị từ chối: ${req.rejectionReason || 'Không có lý do'}`
+                                    }
+                                  >
+                                    <Chip
+                                      icon={
+                                        req.status === 'pending' ? <PendingIcon /> :
+                                        req.status === 'approved' ? <ApprovedIcon /> :
+                                        <RejectedIcon />
+                                      }
+                                      label={`${formatCurrency(req.amount)} - ${
+                                        req.status === 'pending' ? 'Chờ duyệt' :
+                                        req.status === 'approved' ? 'Đã duyệt' :
+                                        'Bị từ chối'
+                                      }`}
+                                      size="small"
+                                      color={
+                                        req.status === 'pending' ? 'warning' :
+                                        req.status === 'approved' ? 'success' :
+                                        'error'
+                                      }
+                                      sx={{ fontSize: '0.7rem' }}
+                                    />
+                                  </Tooltip>
+                                ))}
+                              </Box>
+                            )}
+                          </Box>
                         </TableCell>
                         <TableCell align="left">
                           <Box sx={{ display: 'flex', gap: 1, justifyContent: 'left' }}>
-                            {invoice.status.toLowerCase() !== 'paid' ? (
+                            {invoice.status.toLowerCase() !== 'paid' &&
+                             !invoice.paymentRequests?.some(req => req.status === 'pending') && (
                               <Button
                                 variant="contained"
                                 color="primary"
@@ -504,16 +622,18 @@ const Payments: React.FC = () => {
                               >
                                 Thanh toán
                               </Button>
-                            ) : null}
-                            {invoice.paymentHistory && invoice.paymentHistory.length > 0 && (
-                              <IconButton
-                                size="small"
-                                color="info"
-                                onClick={() => handleOpenPaymentHistory(invoice)}
-                                title="Xem lịch sử thanh toán"
-                              >
-                                <HistoryIcon />
-                              </IconButton>
+                            )}
+                            {((invoice.paymentHistory && invoice.paymentHistory.length > 0) ||
+                              (invoice.paymentRequests && invoice.paymentRequests.length > 0)) && (
+                              <Tooltip title="Xem lịch sử thanh toán">
+                                <IconButton
+                                  size="small"
+                                  color="info"
+                                  onClick={() => handleOpenPaymentHistory(invoice)}
+                                >
+                                  <HistoryIcon />
+                                </IconButton>
+                              </Tooltip>
                             )}
                           </Box>
                         </TableCell>
@@ -554,7 +674,7 @@ const Payments: React.FC = () => {
           pb: 2
         }}>
           <Typography variant="h5" fontWeight={600} color="#1e293b">
-            Thanh toán học phí
+            Gửi yêu cầu thanh toán
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
             {selectedInvoice?.childName} - {selectedInvoice?.className}
@@ -603,42 +723,98 @@ const Payments: React.FC = () => {
                 </Grid>
               </Box>
             </Grid>
-            <Grid item xs={12} sm={6}>
+
+            <Grid item xs={12}>
               <TextField
-                label="Số tiền thanh toán"
+                label="Số tiền thanh toán *"
                 type="number"
                 fullWidth
                 value={paymentAmount}
                 onChange={(e) => setPaymentAmount(e.target.value)}
-                inputProps={{ min: 0 }}
+                inputProps={{ min: 0, max: selectedInvoice?.remainingAmount }}
                 required
+                helperText="Nhập số tiền bạn đã thanh toán"
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth>
-                <InputLabel>Phương thức thanh toán</InputLabel>
-                <Select
-                  value={paymentMethod}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                  label="Phương thức thanh toán"
-                >
-                  <MenuItem value="cash">Tiền mặt</MenuItem>
-                  <MenuItem value="bank_transfer">Chuyển khoản</MenuItem>
-                  <MenuItem value="card">Thẻ</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
+
             <Grid item xs={12}>
-              <TextField
-                label="Ghi chú"
-                fullWidth
-                multiline
-                minRows={2}
-                value={paymentNote}
-                onChange={(e) => setPaymentNote(e.target.value)}
-                placeholder="Ghi chú về khoản thanh toán (tùy chọn)"
-              />
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Ảnh bằng chứng thanh toán *
+              </Typography>
+              <Box sx={{
+                border: '2px dashed #cbd5e1',
+                borderRadius: 2,
+                p: 3,
+                textAlign: 'center',
+                bgcolor: '#f8fafc',
+                position: 'relative'
+              }}>
+                {!previewImage ? (
+                  <>
+                    <input
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      id="payment-proof-upload"
+                      type="file"
+                      onChange={handleImageSelect}
+                      disabled={imageUploading}
+                    />
+                    <label htmlFor="payment-proof-upload">
+                      <Button
+                        component="span"
+                        variant="outlined"
+                        startIcon={imageUploading ? <CircularProgress size={20} /> : <UploadIcon />}
+                        disabled={imageUploading}
+                        sx={{ mb: 1 }}
+                      >
+                        {imageUploading ? 'Đang tải...' : 'Tải ảnh lên'}
+                      </Button>
+                    </label>
+                    <Typography variant="caption" display="block" color="text.secondary">
+                      Ảnh chụp biên lai, hóa đơn chuyển khoản (PNG, JPG, tối đa 5MB)
+                    </Typography>
+                  </>
+                ) : (
+                  <Box sx={{ position: 'relative' }}>
+                    <Box
+                      component="img"
+                      src={previewImage}
+                      alt="Payment proof"
+                      sx={{
+                        maxWidth: '100%',
+                        maxHeight: 300,
+                        borderRadius: 1,
+                        boxShadow: 2
+                      }}
+                    />
+                    <IconButton
+                      size="small"
+                      sx={{
+                        position: 'absolute',
+                        top: 8,
+                        right: 8,
+                        bgcolor: 'error.main',
+                        color: 'white',
+                        '&:hover': { bgcolor: 'error.dark' }
+                      }}
+                      onClick={handleRemoveImage}
+                    >
+                      <CloseIcon fontSize="small" />
+                    </IconButton>
+                    {uploadedImageUrl && (
+                      <Chip
+                        icon={<ImageIcon />}
+                        label="Đã tải lên"
+                        color="success"
+                        size="small"
+                        sx={{ mt: 1 }}
+                      />
+                    )}
+                  </Box>
+                )}
+              </Box>
             </Grid>
+
             {paymentError && (
               <Grid item xs={12}>
                 <Alert severity="error">{paymentError}</Alert>
@@ -649,6 +825,12 @@ const Payments: React.FC = () => {
                 <Alert severity="success">{paymentSuccess}</Alert>
               </Grid>
             )}
+
+            <Grid item xs={12}>
+              <Alert severity="info" sx={{ mt: 1 }}>
+                Yêu cầu thanh toán sẽ được gửi đến admin để xác nhận. Bạn sẽ nhận được thông báo khi yêu cầu được xử lý.
+              </Alert>
+            </Grid>
           </Grid>
         </DialogContent>
         <DialogActions sx={{ p: 3, bgcolor: '#f8fafc' }}>
@@ -662,7 +844,7 @@ const Payments: React.FC = () => {
           <Button
             onClick={handleConfirmPayment}
             variant="contained"
-            disabled={!paymentAmount || paymentLoading}
+            disabled={!paymentAmount || !uploadedImageUrl || paymentLoading || imageUploading}
             sx={{
               borderRadius: 2,
               bgcolor: '#667eea',
@@ -670,7 +852,7 @@ const Payments: React.FC = () => {
               px: 3
             }}
           >
-            {paymentLoading ? 'Đang xử lý...' : 'Xác nhận thanh toán'}
+            {paymentLoading ? 'Đang gửi...' : 'Gửi yêu cầu thanh toán'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -700,7 +882,7 @@ const Payments: React.FC = () => {
         onClose={() => setPaymentConfirmOpen(false)}
         onConfirm={handleConfirmPaymentFinal}
         title="Xác nhận thanh toán"
-        message={`Bạn có chắc chắn muốn thanh toán ${formatCurrency(paymentConfirmData?.paymentData.amount || 0)} cho hóa đơn học phí tháng ${paymentConfirmData?.invoice.month} của ${paymentConfirmData?.invoice.childName}?`}
+        message={`Bạn có chắc chắn muốn gửi yêu cầu thanh toán ${formatCurrency(paymentConfirmData?.paymentData.amount || 0)} cho hóa đơn học phí tháng ${paymentConfirmData?.invoice.month} của ${paymentConfirmData?.invoice.childName}?`}
         confirmText="Xác nhận"
         cancelText="Hủy"
         loading={paymentLoading}
