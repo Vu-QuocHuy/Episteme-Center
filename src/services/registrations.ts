@@ -11,6 +11,24 @@ export const createRegistrationAPI = (data: {
   classId: string;
 }) => axiosInstance.post(`/registrations`, data);
 
+// Helper function to format filters with quotes for strings, without for boolean/number
+const formatFiltersString = (filters: Record<string, any>): string => {
+  const parts = Object.entries(filters).map(([key, value]) => {
+    if (typeof value === 'string') {
+      // Add quotes for string values: {"name":"Nguyễn"}
+      return `"${key}":"${value}"`;
+    } else if (typeof value === 'boolean') {
+      // No quotes for boolean: {processed:false}
+      return `${key}:${value}`;
+    } else if (typeof value === 'number') {
+      // No quotes for number
+      return `${key}:${value}`;
+    }
+    return `${key}:${value}`;
+  });
+  return `{${parts.join(',')}}`;
+};
+
 export const getAllRegistrationsAPI = (params?: {
   page?: number;
   limit?: number;
@@ -22,16 +40,16 @@ export const getAllRegistrationsAPI = (params?: {
     class?: string;
   };
 }) => {
-  // Build query params with filters as JSON string
+  // Build query params
   const queryParams: Record<string, any> = {};
 
   if (params?.page) queryParams.page = params.page;
   if (params?.limit) queryParams.limit = params.limit;
   if (params?.sort) queryParams.sort = params.sort;
 
-  // Backend expects filters as JSON string
+  // Format filters with quotes for strings, without for boolean: {"name":"Nguyễn"}, {processed:false}
   if (params?.filters && Object.keys(params.filters).length > 0) {
-    queryParams.filters = JSON.stringify(params.filters);
+    queryParams.filters = formatFiltersString(params.filters);
   }
 
   return axiosInstance.get(`/registrations`, { params: queryParams });

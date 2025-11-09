@@ -65,7 +65,7 @@ const HomeHeader: React.FC = () => {
         return;
       }
 
-      // Debounce - chỉ check sau 100ms
+      // Debounce - chỉ check sau 200ms để giảm lag
       clearTimeout(timeoutId);
       timeoutId = setTimeout(() => {
         // Check if any dropdown is open
@@ -75,18 +75,21 @@ const HomeHeader: React.FC = () => {
 
         const target = e.target as HTMLElement;
 
-        // Check if mouse is on a menu button
+        // Check if mouse is on a menu button or menu item container
         const isOnMenuButton = target.closest('button') !== null &&
                                Object.values(menuRefs.current).some(ref => ref && ref.contains(target));
+
+        // Check if mouse is on any Box container that wraps menu items
+        const isOnMenuContainer = Object.values(menuRefs.current).some(ref => ref && ref.contains(target));
 
         // Check if mouse is on dropdown menu (MUI Portal)
         const isOnDropdown = target.closest('[role="menu"]') !== null;
 
-        // If not on button and not on dropdown -> close all
-        if (!isOnMenuButton && !isOnDropdown) {
+        // If not on button, container, and not on dropdown -> close all
+        if (!isOnMenuButton && !isOnMenuContainer && !isOnDropdown) {
           setDropdownAnchor({});
         }
-      }, 100);
+      }, 200);
     };
 
     document.addEventListener('mousemove', handleGlobalMouseMove);
@@ -297,11 +300,19 @@ const HomeHeader: React.FC = () => {
         color: COLORS.text.primary,
         borderBottom: 'none',
         boxShadow: scrolled ? 1 : 'none',
-        transition: 'all 0.3s',
+        transition: 'box-shadow 0.3s',
         borderRadius: 0,
+        zIndex: 1100,
       }}
     >
-      <Toolbar sx={{ minHeight: 72, px: { xs: 2, md: 4 }, display: 'flex', justifyContent: 'space-between' }}>
+      <Toolbar sx={{
+        minHeight: 72,
+        maxHeight: 72,
+        px: { xs: 2, md: 4 },
+        display: 'flex',
+        justifyContent: 'space-between',
+        overflow: 'visible'
+      }}>
         {/* Logo */}
         <Box sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }} onClick={() => navigate('/')}>
           <SchoolIcon sx={{ fontSize: 32, color: COLORS.primary.text, mr: 1 }} />
@@ -390,58 +401,78 @@ const HomeHeader: React.FC = () => {
                 alignItems: 'center',
                 height: '100%',
                 zIndex: 1,
+                willChange: 'transform',
+                backfaceVisibility: 'hidden',
               }}
             >
               {displayMenuItems.map((menuItem) => (
                 <Box
                   key={menuItem.id}
                   ref={(el) => { menuRefs.current[menuItem.id] = el as HTMLElement | null; }}
-                  sx={{ position: 'relative' }}
+                  sx={{
+                    position: 'relative',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                  }}
                   onMouseEnter={(e) => {
-                    // Clear all timeouts
+                    // Clear all close timeouts
                     Object.keys(closeTimeoutRef.current).forEach(key => {
                       clearTimeout(closeTimeoutRef.current[key]);
                     });
                     closeTimeoutRef.current = {};
 
-                    // Close all dropdowns first
-                    setDropdownAnchor({});
-
-                    // Then open this dropdown if has children
+                    // Check if this menu has children
                     if (menuItem.childrenMenu && menuItem.childrenMenu.length > 0) {
                       const buttonElement = e.currentTarget.querySelector('button');
                       if (buttonElement) {
+                        // Close other dropdowns smoothly
+                        setDropdownAnchor(prev => {
+                          const newState: any = {};
+                          // Only keep current menu open
+                          newState[menuItem.id] = buttonElement;
+                          return newState;
+                        });
+
                         // Set flag to prevent immediate close
                         justOpenedRef.current = true;
-                        setDropdownAnchor({ [menuItem.id]: buttonElement });
-                        // Reset flag after 300ms
                         setTimeout(() => {
                           justOpenedRef.current = false;
                         }, 300);
                       }
+                    } else {
+                      // No children, close all dropdowns
+                      setDropdownAnchor({});
                     }
                   }}
-
+                  onMouseLeave={() => {
+                    // Don't close immediately, wait a bit
+                    // This prevents flickering when moving mouse between button and dropdown
+                  }}
                 >
                   <Button
                     onClick={() => handleMenuClick(menuItem)}
                     endIcon={menuItem.childrenMenu && menuItem.childrenMenu.length > 0 ? <ArrowDownIcon /> : null}
                     sx={{
                       mx: 1.5,
+                      px: 2,
+                      py: 1,
                       color: activeSection === (menuItem.slug || menuItem.title) ? COLORS.primary.main : '#111',
-                      fontWeight: 600, // ✅ Chữ đậm cho tất cả menu items
+                      fontWeight: 600,
                       fontSize: '1rem',
                       borderRadius: 1,
                       bgcolor: dropdownAnchor[menuItem.id] ? '#f5f5f5' : 'transparent',
                       outline: 'none',
                       boxShadow: 'none',
-                      transition: 'all 0.2s ease',
+                      border: '1px solid transparent',
+                      transition: 'background-color 0.2s ease, border-color 0.2s ease',
+                      minHeight: 40,
                       '&:focus, &:active': {
                         outline: 'none',
                         boxShadow: 'none',
                       },
                       '&:hover': {
                         bgcolor: '#f5f5f5',
+                        border: '1px solid transparent',
                       },
                     }}
                   >
@@ -454,17 +485,22 @@ const HomeHeader: React.FC = () => {
                       anchorEl={dropdownAnchor[menuItem.id]}
                       open={Boolean(dropdownAnchor[menuItem.id])}
                       onClose={() => handleDropdownClose(menuItem.id)}
-                      anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-                      transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+                      anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+                      transformOrigin={{ vertical: 'top', horizontal: 'center' }}
                       disableAutoFocusItem
                       disableAutoFocus
+                      disableScrollLock
+                      disablePortal={false}
                       sx={{
                         mt: 0.5,
+                        pointerEvents: 'none',
                         '& .MuiPaper-root': {
+                          pointerEvents: 'auto',
                           borderRadius: 2,
                           boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
                           border: '1px solid rgba(0,0,0,0.08)',
                           minWidth: 200,
+                          marginTop: '4px',
                         },
                         '& .MuiList-root': {
                           py: 1,
@@ -472,9 +508,29 @@ const HomeHeader: React.FC = () => {
                       }}
                       MenuListProps={{
                         autoFocusItem: false,
+                        onMouseLeave: () => {
+                          // Close dropdown when mouse leaves the menu
+                          closeTimeoutRef.current[menuItem.id] = setTimeout(() => {
+                            handleDropdownClose(menuItem.id);
+                          }, 150);
+                        },
+                        onMouseEnter: () => {
+                          // Cancel close timeout when mouse re-enters
+                          if (closeTimeoutRef.current[menuItem.id]) {
+                            clearTimeout(closeTimeoutRef.current[menuItem.id]);
+                          }
+                        }
                       }}
                       TransitionProps={{
                         timeout: 200,
+                      }}
+                      slotProps={{
+                        paper: {
+                          style: {
+                            transform: 'none',
+                            position: 'absolute',
+                          }
+                        }
                       }}
                     >
                       {menuItem.childrenMenu
@@ -489,6 +545,8 @@ const HomeHeader: React.FC = () => {
                               px: 2.5,
                               py: 1.2,
                               fontSize: '0.95rem',
+                              fontWeight: 500,
+                              transition: 'background-color 0.2s ease',
                               '&:hover': {
                                 bgcolor: '#f5f5f5',
                               }

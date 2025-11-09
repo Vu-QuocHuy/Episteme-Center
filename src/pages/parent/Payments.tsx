@@ -626,13 +626,13 @@ const Payments: React.FC = () => {
                             {((invoice.paymentHistory && invoice.paymentHistory.length > 0) ||
                               (invoice.paymentRequests && invoice.paymentRequests.length > 0)) && (
                               <Tooltip title="Xem lịch sử thanh toán">
-                                <IconButton
-                                  size="small"
-                                  color="info"
-                                  onClick={() => handleOpenPaymentHistory(invoice)}
-                                >
-                                  <HistoryIcon />
-                                </IconButton>
+                              <IconButton
+                                size="small"
+                                color="info"
+                                onClick={() => handleOpenPaymentHistory(invoice)}
+                              >
+                                <HistoryIcon />
+                              </IconButton>
                               </Tooltip>
                             )}
                           </Box>

@@ -3,6 +3,7 @@ import {
   Box, Typography, Grid, Card, CardContent, List, ListItem, ListItemText, Avatar,
   Chip, LinearProgress, Alert, Button,
   Dialog, DialogContent, Divider, Collapse,ListItemIcon, IconButton,
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
 } from '@mui/material';
 import {
   FamilyRestroom as FamilyIcon, School as SchoolIcon, Person as PersonIcon,
@@ -10,7 +11,7 @@ import {
       Schedule as ScheduleIcon, Description as DescriptionIcon,
     Percent as PercentIcon, CheckCircle as CheckCircleIcon, Cancel as CancelIcon,
     Close as CloseIcon, AttachMoney as AttachMoneyIcon, Group as GroupIcon, Event as EventIcon, AssignmentLate as AssignmentLateIcon,
-    ExpandMore as ExpandMoreIcon, ExpandLess as ExpandLessIcon,
+    ExpandMore as ExpandMoreIcon, ExpandLess as ExpandLessIcon, MeetingRoom as RoomIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
@@ -46,6 +47,13 @@ interface Child {
   completedClasses: number;
   attendanceRate: number;
   classes: ChildClass[];
+  attendanceStats?: {
+    totalSessions: number;
+    presentSessions: number;
+    absentSessions: number;
+    lateSessions: number;
+  };
+  detailedAttendance?: any[];
 }
 
 interface ChildrenData {
@@ -100,36 +108,84 @@ const Children: React.FC = () => {
             : Array.isArray(payload?.enrolledClasses) ? payload.enrolledClasses
             : Array.isArray(payload?.classIds) ? payload.classIds.map((id: any) => ({ classId: id }))
             : [];
-          // Normalize class entries: prefer nested class fields
-          const classes = rawClasses.map((c: any) => ({
-            id: String(c.classId || c.id || c.class?.id || ''),
-            classId: c.classId || c.id || c.class?.id,
-            status: c.status || c.classStatus,
-            enrollmentDate: c.enrollmentDate,
-            feePerLesson: c.feePerLesson || c.class?.feePerLesson,
-            schedule: c.schedule || c.class?.schedule,
-            description: c.description || c.class?.description,
-            grade: c.grade || c.class?.grade,
-            room: c.room || c.class?.room,
-            name: c.name || c.class?.name,
-            discountPercent: c.discountPercent,
-          }));
+          // Normalize class entries: API returns {discountPercent, class: {...}, isActive}
+          const classes = rawClasses.map((c: any) => {
+            // If class data is nested under 'class' property
+            const classData = c.class || c;
+            return {
+              id: String(classData.id || c.classId || ''),
+              classId: classData.id || c.classId,
+              name: classData.name,
+              grade: classData.grade,
+              section: classData.section,
+              room: classData.room,
+              feePerLesson: classData.feePerLesson,
+              schedule: classData.schedule,
+              description: classData.description,
+              status: c.isActive ? 'active' : 'inactive',
+              isActive: c.isActive,
+              discountPercent: c.discountPercent,
+              enrollmentDate: c.enrollmentDate,
+            };
+          });
           // eslint-disable-next-line no-console
           console.log('[Children] Mapped classes for', s.id, classes);
           const classCount = classes.length;
-          const activeCount = classes.filter((c: any) => (c.status) === 'active').length;
-          const completedCount = classes.filter((c: any) => (c.status) === 'completed').length;
+          const activeCount = classes.filter((c: any) => c.isActive === true).length;
+          const completedCount = classes.filter((c: any) => c.isActive === false).length;
+
+          // Fetch attendance/session data for this student
+          let attendanceStats = {
+            totalSessions: 0,
+            presentSessions: 0,
+            absentSessions: 0,
+            lateSessions: 0,
+          };
+          let detailedAttendance: any[] = [];
+          let attendanceRate = 0;
+
+          try {
+            const sessionRes = await getSessionsByStudentAPI(String(s.id));
+            const sessionData: any = (sessionRes as any)?.data?.data || (sessionRes as any)?.data || sessionRes || {};
+
+            // Extract attendance stats
+            if (sessionData.attendanceStats) {
+              attendanceStats = {
+                totalSessions: sessionData.attendanceStats.totalSessions || 0,
+                presentSessions: sessionData.attendanceStats.presentSessions || 0,
+                absentSessions: sessionData.attendanceStats.absentSessions || 0,
+                lateSessions: sessionData.attendanceStats.lateSessions || 0,
+              };
+
+              // Calculate attendance rate (present + late = participated, only absent = not participated)
+              if (attendanceStats.totalSessions > 0) {
+                attendanceRate = Math.round(((attendanceStats.presentSessions + attendanceStats.lateSessions) / attendanceStats.totalSessions) * 100);
+              }
+            }
+
+            // Extract detailed attendance
+            if (sessionData.detailedAttendance) {
+              detailedAttendance = sessionData.detailedAttendance;
+            }
+          } catch (err) {
+            // eslint-disable-next-line no-console
+            console.warn('[Children] GET /sessions/:studentId failed for', s.id, err);
+          }
+
           return {
             id: s.id,
             studentId: s.id,
-            name: s.name,
-            email: s.email,
-            phone: s.phone,
+            name: s.name || payload.name,
+            email: s.email || payload.email,
+            phone: s.phone || payload.phone,
+            dateOfBirth: payload.dayOfBirth,
             totalClasses: classCount,
             activeClasses: activeCount,
             completedClasses: completedCount,
-            attendanceRate: 0,
+            attendanceRate: attendanceRate,
             classes: classes,
+            attendanceStats: attendanceStats,
+            detailedAttendance: detailedAttendance,
           } as Child;
         } catch {
           // eslint-disable-next-line no-console
@@ -190,6 +246,12 @@ const Children: React.FC = () => {
       case 'active':
       case 'đang học':
         return 'success';
+      case 'upcoming':
+      case 'sắp khai giảng':
+        return 'warning';
+      case 'closed':
+      case 'đã kết thúc':
+        return 'default';
       case 'completed':
       case 'hoàn thành':
         return 'default';
@@ -208,6 +270,12 @@ const Children: React.FC = () => {
       case 'active':
       case 'đang học':
         return 'Đang học';
+      case 'upcoming':
+      case 'sắp khai giảng':
+        return 'Sắp khai giảng';
+      case 'closed':
+      case 'đã kết thúc':
+        return 'Đã kết thúc';
       case 'completed':
       case 'hoàn thành':
         return 'Hoàn thành';
@@ -224,39 +292,64 @@ const Children: React.FC = () => {
     setChildDetailsOpen(true);
     setDetailLoading(true);
     try {
-      // 1) Always get sessions to ensure attendance and derive classIds if needed
-      let derivedClassIds: string[] = [];
-      try {
-        const att = await getSessionsByStudentAPI(String((child as any).studentId || child.id));
-        const payload: any = (att as any)?.data?.data || (att as any)?.data || att || {};
-        const sessionsList: any[] = Array.isArray(payload?.result) ? payload.result
-          : Array.isArray(payload) ? payload
-          : Array.isArray(payload?.sessions) ? payload.sessions
-          : [];
-        // Normalize attendance summary
-        const totalSessions = sessionsList.length;
-        const presentSessions = sessionsList.filter((s: any) => String(s?.status || '').toLowerCase() === 'present').length;
-        const absentSessions = sessionsList.filter((s: any) => String(s?.status || '').toLowerCase() === 'absent').length;
-        const lateSessions = sessionsList.filter((s: any) => String(s?.status || '').toLowerCase() === 'late').length;
-        const attendanceRate = totalSessions > 0 ? Math.round((presentSessions / totalSessions) * 100) : 0;
-        setAttendanceData({ totalSessions, presentSessions, absentSessions, lateSessions, attendanceRate, sessions: sessionsList });
-        const ids = new Set<string>();
-        sessionsList.forEach((s: any) => {
-          const cid = s?.class?.id || s?.classId || s?.class_id || s?.classID || s?.classroom?.id || s?.classInfo?.id;
-          if (cid) ids.add(String(cid));
+      // 1) Use pre-loaded attendance data from child object
+      if (child.attendanceStats && child.detailedAttendance) {
+        // Use existing attendance data
+        const attendanceRate = child.attendanceRate || 0;
+        setAttendanceData({
+          totalSessions: child.attendanceStats.totalSessions,
+          presentSessions: child.attendanceStats.presentSessions,
+          absentSessions: child.attendanceStats.absentSessions,
+          lateSessions: child.attendanceStats.lateSessions,
+          attendanceRate: attendanceRate,
+          sessions: child.detailedAttendance || []
         });
-        derivedClassIds = Array.from(ids);
-        // eslint-disable-next-line no-console
-        console.log('Derived classIds from sessions:', derivedClassIds);
-      } catch (e) {
-        // eslint-disable-next-line no-console
-        console.warn('getSessionsByStudentAPI failed or returned no sessions', e);
+      } else {
+        // Fallback: fetch if not available (shouldn't happen normally)
+        try {
+          const att = await getSessionsByStudentAPI(String((child as any).studentId || child.id));
+          const payload: any = (att as any)?.data?.data || (att as any)?.data || att || {};
+          const sessionsList: any[] = Array.isArray(payload?.detailedAttendance) ? payload.detailedAttendance
+            : Array.isArray(payload?.result) ? payload.result
+            : Array.isArray(payload) ? payload
+            : Array.isArray(payload?.sessions) ? payload.sessions
+            : [];
+
+          const stats = payload.attendanceStats || {
+            totalSessions: sessionsList.length,
+            presentSessions: sessionsList.filter((s: any) => String(s?.status || '').toLowerCase() === 'present').length,
+            absentSessions: sessionsList.filter((s: any) => String(s?.status || '').toLowerCase() === 'absent').length,
+            lateSessions: sessionsList.filter((s: any) => String(s?.status || '').toLowerCase() === 'late').length,
+          };
+
+          // Calculate attendance rate (present + late = participated, only absent = not participated)
+          const attendanceRate = stats.totalSessions > 0
+            ? Math.round(((stats.presentSessions + stats.lateSessions) / stats.totalSessions) * 100)
+            : 0;
+
+          setAttendanceData({
+            ...stats,
+            attendanceRate,
+            sessions: sessionsList
+          });
+        } catch (e) {
+          // eslint-disable-next-line no-console
+          console.warn('getSessionsByStudentAPI failed or returned no sessions', e);
+          setAttendanceData({
+            totalSessions: 0,
+            presentSessions: 0,
+            absentSessions: 0,
+            lateSessions: 0,
+            attendanceRate: 0,
+            sessions: []
+          });
+        }
       }
 
-      // 2) Prefer class IDs from student detail, fallback to derived from sessions
+      // 2) Use class IDs from student detail
       const classes: any[] = Array.isArray((child as any).classes) && (child as any).classes.length > 0
         ? (child as any).classes
-        : derivedClassIds.map((id) => ({ classId: id }));
+        : [];
       // eslint-disable-next-line no-console
       console.log('Class IDs used for fetching details:', classes.map((c: any) => c.classId || c.id));
 
@@ -373,7 +466,7 @@ const Children: React.FC = () => {
                   <Box>
                     <Typography variant="h4">{childrenData.completedClasses}</Typography>
                     <Typography variant="body2" color="textSecondary">
-                      Lớp đã hoàn thành
+                      Lớp đã kết thúc
                     </Typography>
                   </Box>
                 </Box>
@@ -395,51 +488,104 @@ const Children: React.FC = () => {
                       </Avatar>
                       <Box>
                         <Typography variant="h6">{child.name}</Typography>
-                        <Typography variant="body2" color="textSecondary">
-                          {child.grade && `${child.grade}${child.section ? ` - ${child.section}` : ''}`}
-                        </Typography>
-                        {child.dateOfBirth && (
-                          <Typography variant="body2" color="textSecondary">
-                            Sinh ngày: {formatDate(child.dateOfBirth)}
-                          </Typography>
-                        )}
                       </Box>
                     </Box>
                     <Box />
                   </Box>
 
-                  <Box display="flex" justifyContent="space-between" mb={2}>
-                    <Box>
-                      <Typography variant="body2" color="textSecondary">
-                        Lớp đang học
-                      </Typography>
-                      <Typography variant="h6" color="primary">
-                        {child.activeClasses}
-                      </Typography>
-                    </Box>
-                    <Box>
-                      <Typography variant="body2" color="textSecondary">
-                        Tỷ lệ tham gia
-                      </Typography>
-                      <Typography variant="h6" color="success.main">
-                        {child.attendanceRate}%
-                      </Typography>
-                    </Box>
-                    <Box>
-                      <Typography variant="body2" color="textSecondary">
-                        Lớp đã hoàn thành
-                      </Typography>
-                      <Typography variant="h6" color="default">
-                        {child.completedClasses}
-                      </Typography>
-                    </Box>
-                  </Box>
+                  <Grid container spacing={2} mb={2}>
+                    <Grid item xs={4}>
+                      <Box>
+                        <Typography variant="body2" color="textSecondary">
+                          Lớp đang học
+                        </Typography>
+                        <Typography variant="h6" color="primary">
+                          {child.activeClasses}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={4}>
+                      <Box>
+                        <Typography variant="body2" color="textSecondary">
+                          Tỷ lệ tham gia
+                        </Typography>
+                        <Typography variant="h6" color="success.main">
+                          {child.attendanceRate}%
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={4}>
+                      <Box>
+                        <Typography variant="body2" color="textSecondary">
+                          Tổng lớp học
+                        </Typography>
+                        <Typography variant="h6" color="default">
+                          {child.totalClasses}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                  </Grid>
 
                   <LinearProgress
                     variant="determinate"
                     value={child.attendanceRate}
                     sx={{ mb: 2, height: 8, borderRadius: 4 }}
                   />
+
+                  {child.attendanceStats && child.attendanceStats.totalSessions > 0 && (
+                    <Box sx={{
+                      bgcolor: 'rgba(0, 0, 0, 0.02)',
+                      p: 1.5,
+                      borderRadius: 1,
+                      mb: 2
+                    }}>
+                      <Typography variant="caption" color="textSecondary" gutterBottom display="block">
+                        Chi tiết điểm danh
+                      </Typography>
+                      <Grid container spacing={1}>
+                        <Grid item xs={3}>
+                          <Box textAlign="center">
+                            <Typography variant="caption" color="textSecondary" display="block" gutterBottom>
+                              Tổng
+                            </Typography>
+                            <Typography variant="h6" fontWeight={700}>
+                              {child.attendanceStats.totalSessions}
+                            </Typography>
+                          </Box>
+                        </Grid>
+                        <Grid item xs={3}>
+                          <Box textAlign="center">
+                            <Typography variant="caption" color="textSecondary" display="block" gutterBottom>
+                              Có mặt
+                            </Typography>
+                            <Typography variant="h6" fontWeight={700} color="success.main">
+                              {child.attendanceStats.presentSessions}
+                            </Typography>
+                          </Box>
+                        </Grid>
+                        <Grid item xs={3}>
+                          <Box textAlign="center">
+                            <Typography variant="caption" color="textSecondary" display="block" gutterBottom>
+                              Vắng
+                            </Typography>
+                            <Typography variant="h6" fontWeight={700} color="error.main">
+                              {child.attendanceStats.absentSessions}
+                            </Typography>
+                          </Box>
+                        </Grid>
+                        <Grid item xs={3}>
+                          <Box textAlign="center">
+                            <Typography variant="caption" color="textSecondary" display="block" gutterBottom>
+                              Muộn
+                            </Typography>
+                            <Typography variant="h6" fontWeight={700} color="warning.main">
+                              {child.attendanceStats.lateSessions}
+                            </Typography>
+                          </Box>
+                        </Grid>
+                      </Grid>
+                    </Box>
+                  )}
 
                   <Box display="flex" justifyContent="space-between" alignItems="center">
                     <Button
@@ -503,7 +649,7 @@ const Children: React.FC = () => {
             {selectedChild && (
               <Box>
                 {/* Danh sách lớp học */}
-                <Typography variant="h6" gutterBottom sx={{ mb: 3, color: 'primary.main' }}>
+                <Typography variant="h6" gutterBottom sx={{ mb: 3, fontWeight: 700 }}>
                   Danh sách lớp học
                 </Typography>
 
@@ -529,8 +675,8 @@ const Children: React.FC = () => {
                               }))}
                             >
                               <Box display="flex" alignItems="center" gap={2}>
-                                <Typography variant="h6" color="primary">
-                                  {classData.name || 'Tên lớp không xác định'}
+                                <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                                  Lớp {classData.name || 'Không xác định'}
                     </Typography>
                                 <Chip
                                   label={getStatusLabel(classData.status)}
@@ -542,11 +688,6 @@ const Children: React.FC = () => {
                                   variant="outlined"
                                   size="small"
                                 />
-                                <Chip
-                                  label={`Phòng ${classData.room || 'N/A'}`}
-                                  variant="outlined"
-                                  size="small"
-                                />
                               </Box>
                               <IconButton size="small">
                                 {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
@@ -555,182 +696,352 @@ const Children: React.FC = () => {
 
                             <Collapse in={expanded}>
                               <Divider sx={{ my: 2 }} />
-                              <Grid container spacing={2}>
-                                {/* Teacher Info */}
-                                <Grid item xs={12} md={6}>
-                                  <Box display="flex" alignItems="center" mb={1}>
-                                    <PersonIcon sx={{ mr: 1, color: 'primary.main' }} />
-                                    <Typography variant="subtitle2" color="primary">
-                                      Thông tin giáo viên
-                                    </Typography>
-                                  </Box>
-                                  <Typography variant="body2">
-                                    {classData.teacher?.name || 'Chưa phân công'}
-                                  </Typography>
-                                  {classData.teacher?.email && (
-                                    <Typography variant="body2" color="textSecondary">
-                                      {classData.teacher.email}
-                                    </Typography>
-                                  )}
-                                </Grid>
 
-                                {/* Enrollment Info */}
-                                <Grid item xs={12} md={6}>
-                                  <Box display="flex" alignItems="center" mb={1}>
-                                    <GroupIcon sx={{ mr: 1, color: 'primary.main' }} />
-                                    <Typography variant="subtitle2" color="primary">
-                                      Thông tin đăng ký
-                                    </Typography>
-                                  </Box>
-                                  <Typography variant="body2">
-                                    Sĩ số: {classData.students?.length || 0} học sinh
-                                  </Typography>
-                                  <Typography variant="body2" color="textSecondary">
-                                    Ngày bắt đầu: {classData.startDate ? formatDate(classData.startDate) : 'N/A'}
-                                  </Typography>
-                                </Grid>
+                              {/* Thông tin cơ bản */}
+                              <Paper elevation={0} sx={{ p: 2.5, mb: 2, bgcolor: 'rgba(0, 0, 0, 0.02)', borderRadius: 2 }}>
+                                <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>
+                                  Thông tin cơ bản
+                                </Typography>
+                                <Grid container spacing={3}>
+                                  {/* Room */}
+                                  <Grid item xs={12} sm={6} md={3}>
+                                    <Box>
+                                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+                                        <RoomIcon sx={{ fontSize: 18, mr: 0.5, color: 'text.secondary' }} />
+                                        <Typography variant="caption" color="text.secondary">
+                                          Phòng học
+                                        </Typography>
+                                      </Box>
+                                      <Typography variant="body1" sx={{ fontWeight: 600, pl: 3 }}>
+                                        {classData.room || 'Chưa xác định'}
+                                      </Typography>
+                                    </Box>
+                                  </Grid>
 
-                                {/* Fee Info */}
-                                <Grid item xs={12} md={6}>
-                                  <Box display="flex" alignItems="center" mb={1}>
-                                    <AttachMoneyIcon sx={{ mr: 1, color: 'primary.main' }} />
-                                    <Typography variant="subtitle2" color="primary">
-                                      Học phí
-                                    </Typography>
-                                  </Box>
-                                  <Typography variant="body2">
-                                    {classData.feePerLesson ? `${classData.feePerLesson.toLocaleString('vi-VN')} VND/buổi` : 'Chưa cập nhật'}
+                                  {/* Fee */}
+                                  <Grid item xs={12} sm={6} md={3}>
+                                    <Box>
+                                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+                                        <AttachMoneyIcon sx={{ fontSize: 18, mr: 0.5, color: 'success.main' }} />
+                                        <Typography variant="caption" color="text.secondary">
+                                          Học phí / buổi
+                                        </Typography>
+                                      </Box>
+                                      <Typography variant="body1" sx={{ fontWeight: 600, color: 'success.main', pl: 3 }}>
+                                        {classData.feePerLesson
+                                          ? `${classData.feePerLesson.toLocaleString('vi-VN')} ₫`
+                                          : 'Chưa xác định'}
+                                      </Typography>
+                                    </Box>
+                                  </Grid>
+
+                                  {/* Discount */}
+                                  <Grid item xs={12} sm={6} md={3}>
+                                    <Box>
+                                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+                                        <PercentIcon sx={{ fontSize: 18, mr: 0.5, color: 'warning.main' }} />
+                                        <Typography variant="caption" color="text.secondary">
+                                          Giảm giá
+                                        </Typography>
+                                      </Box>
+                                      {(() => {
+                                        const originalClass = (selectedChild as any)?.classes?.find((c: any) =>
+                                          (c.id === classId || c.classId === classId)
+                                        );
+                                        const discountPercent = originalClass?.discountPercent;
+
+                                        return (
+                                          <Typography
+                                            variant="body1"
+                                            sx={{ fontWeight: 600, pl: 3 }}
+                                            color={discountPercent ? "warning.main" : "text.secondary"}
+                                          >
+                                            {discountPercent ? `${discountPercent}%` : 'Không có'}
+                                          </Typography>
+                                        );
+                                      })()}
+                                    </Box>
+                                  </Grid>
+
+                                  {/* Teacher */}
+                                  <Grid item xs={12} sm={6} md={3}>
+                                    <Box>
+                                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+                                        <PersonIcon sx={{ fontSize: 18, mr: 0.5, color: 'primary.main' }} />
+                                        <Typography variant="caption" color="text.secondary">
+                                          Giáo viên
+                                        </Typography>
+                                      </Box>
+                                      <Typography variant="body1" sx={{ fontWeight: 600, pl: 3 }}>
+                                        {classData.teacher?.name || 'Chưa phân công'}
+                                      </Typography>
+                                    </Box>
+                                  </Grid>
+                                </Grid>
+                              </Paper>
+
+                              {/* Lịch học */}
+                              <Paper elevation={0} sx={{ p: 2.5, mb: 2, bgcolor: 'rgba(25, 118, 210, 0.05)', borderRadius: 2 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                                  <ScheduleIcon sx={{ fontSize: 20, mr: 1, color: 'info.main' }} />
+                                  <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                                    Lịch học
                                   </Typography>
-                                  {classData.discountPercent && (
-                                    <Typography variant="body2" color="success.main">
-                                      Giảm giá: {classData.discountPercent}%
-                                    </Typography>
-                                  )}
-                                </Grid>
+                                </Box>
+                                {classData.schedule ? (
+                                  <Grid container spacing={2}>
+                                    {/* Days of week */}
+                                    <Grid item xs={12} md={4}>
+                                      <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5 }}>
+                                        Ngày học trong tuần
+                                      </Typography>
+                                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                        {(() => {
+                                          const dayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+                                          const daysArr = classData.schedule.days_of_week || classData.schedule.dayOfWeeks || [];
+                                          return Array.isArray(daysArr)
+                                            ? daysArr.map((d: any) => dayNames[d] || '').filter(Boolean).join(', ') || '-'
+                                            : '-';
+                                        })()}
+                                      </Typography>
+                                    </Grid>
 
-                                {/* Schedule Info */}
-                                <Grid item xs={12} md={6}>
-                                  <Box display="flex" alignItems="center" mb={1}>
-                                    <ScheduleIcon sx={{ mr: 1, color: 'primary.main' }} />
-                                    <Typography variant="subtitle2" color="primary">
-                                      Lịch học
-                                    </Typography>
-                                  </Box>
-                                  <Typography variant="body2">
-                                    {formatScheduleCompat(classData.schedule)}
+                                    {/* Time slots */}
+                                    <Grid item xs={12} md={4}>
+                                      <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5 }}>
+                                        Giờ học
+                                      </Typography>
+                                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                        {(() => {
+                                          const startTime = classData.schedule.time_slots?.start_time || classData.schedule.timeSlots?.startTime;
+                                          const endTime = classData.schedule.time_slots?.end_time || classData.schedule.timeSlots?.endTime;
+                                          return startTime && endTime ? `${startTime} - ${endTime}` : '-';
+                                        })()}
+                                      </Typography>
+                                    </Grid>
+
+                                    {/* Duration */}
+                                    <Grid item xs={12} md={4}>
+                                      <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5 }}>
+                                        Thời gian học
+                                      </Typography>
+                                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                        {(() => {
+                                          const startDate = classData.schedule.start_date || classData.schedule.startDate;
+                                          const endDate = classData.schedule.end_date || classData.schedule.endDate;
+                                          return startDate && endDate
+                                            ? `${new Date(startDate).toLocaleDateString('vi-VN')} - ${new Date(endDate).toLocaleDateString('vi-VN')}`
+                                            : '-';
+                                        })()}
+                                      </Typography>
+                                    </Grid>
+                                  </Grid>
+                                ) : (
+                                  <Typography variant="body2" color="text.secondary">
+                                    Chưa có lịch học
                                   </Typography>
-                                </Grid>
+                                )}
+                              </Paper>
 
-                                {/* Learning Progress */}
-                                <Grid item xs={12}>
-                                  <Box display="flex" alignItems="center" mb={1}>
-                                    <TrendingUpIcon sx={{ mr: 1, color: 'primary.main' }} />
-                                    <Typography variant="subtitle2" color="primary">
-                                      Tiến độ học tập
+                              {/* Description */}
+                              {classData.description && (
+                                <Paper elevation={0} sx={{ p: 2.5, mb: 2, bgcolor: 'rgba(0, 0, 0, 0.02)', borderRadius: 2 }}>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+                                    <DescriptionIcon sx={{ fontSize: 20, mr: 1, color: 'text.secondary' }} />
+                                    <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                                      Mô tả lớp học
                                     </Typography>
                                   </Box>
-                                  <Box display="flex" alignItems="center" gap={2}>
-                                    <LinearProgress
-                                      variant="determinate"
-                                      value={classData.progress || 0}
-                                      sx={{ flexGrow: 1, height: 8, borderRadius: 4 }}
-                                    />
-                                    <Typography variant="body2" color="primary">
-                                      {classData.progress || 0}%
-                                    </Typography>
-                                  </Box>
-                                </Grid>
-
-                                                                 {/* Description */}
-                                 {classData.description && (
-                                   <Grid item xs={12}>
-                                     <Box display="flex" alignItems="center" mb={1}>
-                                       <DescriptionIcon sx={{ mr: 1, color: 'primary.main' }} />
-                                       <Typography variant="subtitle2" color="primary">
-                                         Mô tả
-                                       </Typography>
-                                     </Box>
-                                     <Typography variant="body2">
-                                       {classData.description}
-                                     </Typography>
-                                   </Grid>
-                                 )}
-                               </Grid>
+                                  <Typography variant="body2" sx={{ lineHeight: 1.7, color: 'text.secondary' }}>
+                                    {classData.description}
+                                  </Typography>
+                                </Paper>
+                              )}
 
                                {/* Thông tin điểm danh cho lớp này */}
                                {attendanceData && attendanceData.sessions && (
                                  <>
                                    <Divider sx={{ my: 3 }} />
-                                   <Typography variant="h6" gutterBottom sx={{ mb: 2, color: 'primary.main' }}>
+                                   <Typography variant="h6" gutterBottom sx={{ mb: 2, fontWeight: 700 }}>
                                      Thông tin điểm danh
                                    </Typography>
 
-                                   <Grid container spacing={2} sx={{ mb: 3 }}>
-                                     <Grid item xs={12} sm={6} md={3}>
-                                       <StatCard
-                                         title="Tổng số buổi"
-                                         value={attendanceData.totalSessions || 0}
-                                         icon={<EventIcon />}
-                                         color="primary"
-                                       />
-                                     </Grid>
-                                     <Grid item xs={12} sm={6} md={3}>
-                                       <StatCard
-                                         title="Có mặt"
-                                         value={attendanceData.presentSessions || 0}
-                                         icon={<CheckCircleIcon />}
-                                         color="success"
-                                       />
-                                     </Grid>
-                                     <Grid item xs={12} sm={6} md={3}>
-                                       <StatCard
-                                         title="Vắng"
-                                         value={attendanceData.absentSessions || 0}
-                                         icon={<CancelIcon />}
-                                         color="error"
-                                       />
-                                     </Grid>
-                                     {(attendanceData.lateSessions || 0) > 0 && (
-                                       <Grid item xs={12} sm={6} md={3}>
-                                         <StatCard
-                                           title="Đi muộn"
-                                           value={attendanceData.lateSessions || 0}
-                                           icon={<AssignmentLateIcon />}
-                                           color="warning"
-                                         />
+                                   {(() => {
+                                     // Calculate stats for this specific class
+                                     const classSessions = (attendanceData.sessions || [])
+                                       .filter((session: any) => {
+                                         const sessionClassId = session?.class?.id || session?.classId;
+                                         return sessionClassId === classId;
+                                       });
+
+                                     const totalSessions = classSessions.length;
+                                     const presentSessions = classSessions.filter((s: any) =>
+                                       String(s?.status || '').toLowerCase() === 'present'
+                                     ).length;
+                                     const absentSessions = classSessions.filter((s: any) =>
+                                       String(s?.status || '').toLowerCase() === 'absent'
+                                     ).length;
+                                     const lateSessions = classSessions.filter((s: any) =>
+                                       String(s?.status || '').toLowerCase() === 'late'
+                                     ).length;
+                                     const attendanceRate = totalSessions > 0
+                                       ? Math.round(((presentSessions + lateSessions) / totalSessions) * 100)
+                                       : 0;
+
+                                     return (
+                                       <Grid container spacing={2} sx={{ mb: 3 }}>
+                                         <Grid item xs={12} sm={6} md={3}>
+                                           <StatCard
+                                             title="Tổng số buổi"
+                                             value={totalSessions}
+                                             icon={<EventIcon />}
+                                             color="primary"
+                                           />
+                                         </Grid>
+                                         <Grid item xs={12} sm={6} md={3}>
+                                           <StatCard
+                                             title="Có mặt"
+                                             value={presentSessions}
+                                             icon={<CheckCircleIcon />}
+                                             color="success"
+                                           />
+                                         </Grid>
+                                         <Grid item xs={12} sm={6} md={3}>
+                                           <StatCard
+                                             title="Vắng"
+                                             value={absentSessions}
+                                             icon={<CancelIcon />}
+                                             color="error"
+                                           />
+                                         </Grid>
+                                         {lateSessions > 0 && (
+                                           <Grid item xs={12} sm={6} md={3}>
+                                             <StatCard
+                                               title="Đi muộn"
+                                               value={lateSessions}
+                                               icon={<AssignmentLateIcon />}
+                                               color="warning"
+                                             />
+                                           </Grid>
+                                         )}
+                                         <Grid item xs={12} sm={6} md={3}>
+                                           <StatCard
+                                             title="Tỷ lệ tham gia"
+                                             value={`${attendanceRate}%`}
+                                             icon={<PercentIcon />}
+                                             color="info"
+                                           />
+                                         </Grid>
                                        </Grid>
-                                     )}
-                                     <Grid item xs={12} sm={6} md={3}>
-                                       <StatCard
-                                         title="Tỷ lệ tham gia"
-                                         value={`${attendanceData.attendanceRate || 0}%`}
-                                         icon={<PercentIcon />}
-                                         color="info"
-                                       />
-                                     </Grid>
-                                   </Grid>
+                                     );
+                                   })()}
 
                                    <Card>
                                      <CardContent>
-                                       <Typography variant="h6" gutterBottom>
+                                       <Typography variant="h6" gutterBottom sx={{ fontWeight: 700, mb: 2 }}>
                                          Danh sách buổi học
                                        </Typography>
-                                       <List>
-                                         {(attendanceData.sessions || []).map((session: any, index: number) => (
-                                           <ListItem key={index} divider>
-                                             <ListItemIcon>
-                                               {session.status === 'present' && <CheckCircleIcon color="success" />}
-                                               {session.status === 'absent' && <CancelIcon color="error" />}
-                                               {session.status === 'late' && <AssignmentLateIcon color="warning" />}
-                                               {!session.status && <EventIcon color="disabled" />}
-                                             </ListItemIcon>
-                                             <ListItemText
-                                               primary={`Buổi ${index + 1} - ${session.date ? formatDate(session.date) : 'N/A'}`}
-                                               secondary={session.note || 'Không có ghi chú'}
-                                             />
-                                           </ListItem>
-                                         ))}
-                                       </List>
+                                       <TableContainer component={Paper} variant="outlined">
+                                         <Table>
+                                           <TableHead>
+                                             <TableRow sx={{ bgcolor: 'rgba(0, 0, 0, 0.04)' }}>
+                                               <TableCell sx={{ fontWeight: 700 }}>Buổi học</TableCell>
+                                               <TableCell sx={{ fontWeight: 700 }}>Thời gian</TableCell>
+                                               <TableCell sx={{ fontWeight: 700 }}>Trạng thái</TableCell>
+                                               <TableCell sx={{ fontWeight: 700 }}>Ghi chú</TableCell>
+                                             </TableRow>
+                                           </TableHead>
+                                           <TableBody>
+                                             {(attendanceData.sessions || [])
+                                               .filter((session: any) => {
+                                                 // Filter sessions for this specific class
+                                                 const sessionClassId = session?.class?.id || session?.classId;
+                                                 return sessionClassId === classId;
+                                               })
+                                               .map((session: any, index: number) => {
+                                               const getStatusConfig = (status: string) => {
+                                                 switch (status?.toLowerCase()) {
+                                                   case 'present':
+                                                     return {
+                                                       label: 'Có mặt',
+                                                       color: 'success' as const,
+                                                       icon: <CheckCircleIcon sx={{ fontSize: 18, mr: 0.5 }} />
+                                                     };
+                                                   case 'absent':
+                                                     return {
+                                                       label: 'Vắng mặt',
+                                                       color: 'error' as const,
+                                                       icon: <CancelIcon sx={{ fontSize: 18, mr: 0.5 }} />
+                                                     };
+                                                   case 'late':
+                                                     return {
+                                                       label: 'Đi muộn',
+                                                       color: 'warning' as const,
+                                                       icon: <AssignmentLateIcon sx={{ fontSize: 18, mr: 0.5 }} />
+                                                     };
+                                                   default:
+                                                     return {
+                                                       label: 'Chưa xác định',
+                                                       color: 'default' as const,
+                                                       icon: <EventIcon sx={{ fontSize: 18, mr: 0.5 }} />
+                                                     };
+                                                 }
+                                               };
+
+                                               const statusConfig = getStatusConfig(session.status);
+
+                                               return (
+                                                 <TableRow key={index} hover>
+                                                   <TableCell>
+                                                     <Typography variant="body2" fontWeight={600}>
+                                                       Buổi {index + 1}
+                                                     </Typography>
+                                                   </TableCell>
+                                                   <TableCell>
+                                                     <Typography variant="body2">
+                                                       {session.date ? formatDate(session.date) : '-'}
+                                                     </Typography>
+                                                   </TableCell>
+                                                   <TableCell>
+                                                     <Chip
+                                                       icon={statusConfig.icon}
+                                                       label={statusConfig.label}
+                                                       color={statusConfig.color}
+                                                       size="small"
+                                                       sx={{ fontWeight: 600 }}
+                                                     />
+                                                   </TableCell>
+                                                   <TableCell>
+                                                     <Typography variant="body2" color="text.secondary">
+                                                       {session.note || '-'}
+                                                     </Typography>
+                                                   </TableCell>
+                                                 </TableRow>
+                                               );
+                                             })}
+                                             {(() => {
+                                               const filteredSessions = (attendanceData.sessions || [])
+                                                 .filter((session: any) => {
+                                                   const sessionClassId = session?.class?.id || session?.classId;
+                                                   return sessionClassId === classId;
+                                                 });
+
+                                               if (filteredSessions.length === 0) {
+                                                 return (
+                                                   <TableRow>
+                                                     <TableCell colSpan={4} align="center">
+                                                       <Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>
+                                                         Chưa có buổi học nào cho lớp này
+                                                       </Typography>
+                                                     </TableCell>
+                                                   </TableRow>
+                                                 );
+                                               }
+                                               return null;
+                                             })()}
+                                           </TableBody>
+                                         </Table>
+                                       </TableContainer>
                                      </CardContent>
                                    </Card>
                                  </>

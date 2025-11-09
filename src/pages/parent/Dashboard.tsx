@@ -285,10 +285,10 @@ const Dashboard = () => {
                                       : scheduleItem.isActive === false
                                         ? 'Ngừng học'
                                         : scheduleItem.class?.status === 'active'
-                                          ? 'Đang học'
-                                          : scheduleItem.class?.status === 'completed'
-                                            ? 'Đã hoàn thành'
-                                            : scheduleItem.class?.status || 'N/A'
+                                      ? 'Đang học'
+                                      : scheduleItem.class?.status === 'completed'
+                                        ? 'Đã hoàn thành'
+                                        : scheduleItem.class?.status || 'N/A'
                                   }
                                   color={
                                     scheduleItem.isActive === true
@@ -296,10 +296,10 @@ const Dashboard = () => {
                                       : scheduleItem.isActive === false
                                         ? 'error'
                                         : scheduleItem.class?.status === 'active'
-                                          ? 'success'
-                                          : scheduleItem.class?.status === 'completed'
-                                            ? 'default'
-                                            : 'default'
+                                      ? 'success'
+                                      : scheduleItem.class?.status === 'completed'
+                                        ? 'default'
+                                        : 'default'
                                   }
                                   size="small"
                                 />
