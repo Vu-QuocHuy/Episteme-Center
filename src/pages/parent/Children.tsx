@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Box, Typography, Grid, Card, CardContent, List, ListItem, ListItemText, Avatar,
+  Box, Typography, Grid, Card, CardContent, Avatar,
   Chip, LinearProgress, Alert, Button,
-  Dialog, DialogContent, Divider, Collapse,ListItemIcon, IconButton,
+  Dialog, DialogContent, Divider, Collapse, IconButton,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
 } from '@mui/material';
 import {
@@ -10,7 +10,7 @@ import {
   TrendingUp as TrendingUpIcon, Class as ClassIcon,
       Schedule as ScheduleIcon, Description as DescriptionIcon,
     Percent as PercentIcon, CheckCircle as CheckCircleIcon, Cancel as CancelIcon,
-    Close as CloseIcon, AttachMoney as AttachMoneyIcon, Group as GroupIcon, Event as EventIcon, AssignmentLate as AssignmentLateIcon,
+    Close as CloseIcon, AttachMoney as AttachMoneyIcon, Event as EventIcon, AssignmentLate as AssignmentLateIcon,
     ExpandMore as ExpandMoreIcon, ExpandLess as ExpandLessIcon, MeetingRoom as RoomIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
@@ -221,22 +221,6 @@ const Children: React.FC = () => {
 
   const formatDate = (dateString: string): string => {
     return new Date(dateString).toLocaleDateString('vi-VN');
-  };
-
-  const formatScheduleCompat = (schedule: any): string => {
-    if (!schedule || typeof schedule !== 'object') return '-';
-    const dayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-    const daysArr: number[] = schedule.days_of_week || schedule.dayOfWeeks || [];
-    const days = Array.isArray(daysArr) ? daysArr.map((d) => dayNames[d] || '').filter(Boolean).join(', ') : '';
-    const startTime = schedule.time_slots?.start_time || schedule.timeSlots?.startTime;
-    const endTime = schedule.time_slots?.end_time || schedule.timeSlots?.endTime;
-    const timeStr = startTime && endTime ? `${startTime} - ${endTime}` : '';
-    const startDate = schedule.start_date || schedule.startDate;
-    const endDate = schedule.end_date || schedule.endDate;
-    const dateStr = startDate && endDate
-      ? `${new Date(startDate).toLocaleDateString('vi-VN')} - ${new Date(endDate).toLocaleDateString('vi-VN')}`
-      : '';
-    return [days, timeStr, dateStr].filter(Boolean).join(' | ') || '-';
   };
 
   const getStatusColor = (status: any): 'success' | 'warning' | 'error' | 'default' => {

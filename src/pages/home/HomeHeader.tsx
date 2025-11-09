@@ -426,7 +426,7 @@ const HomeHeader: React.FC = () => {
                       const buttonElement = e.currentTarget.querySelector('button');
                       if (buttonElement) {
                         // Close other dropdowns smoothly
-                        setDropdownAnchor(prev => {
+                        setDropdownAnchor(() => {
                           const newState: any = {};
                           // Only keep current menu open
                           newState[menuItem.id] = buttonElement;
