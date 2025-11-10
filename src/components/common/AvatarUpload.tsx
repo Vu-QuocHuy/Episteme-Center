@@ -146,9 +146,32 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({
       const response = await uploadAvatarAPI({ imageUrl, publicId });
 
       if (response.data) {
-        // Update user context
-        if (updateUser && response.data.user) {
-          updateUser({ ...response.data.user });
+        // Update user context with new avatar
+        if (updateUser) {
+          const avatarUpdateData = {
+            avatar: imageUrl,
+            avatarPublicId: publicId,
+          };
+
+          // Merge with response user data if available
+          if (response.data.user) {
+            updateUser({ ...response.data.user, ...avatarUpdateData });
+          } else {
+            updateUser(avatarUpdateData);
+          }
+
+          // Also update localStorage directly to ensure immediate sync
+          const userData = localStorage.getItem('userData');
+          if (userData) {
+            try {
+              const parsedUser = JSON.parse(userData);
+              parsedUser.avatar = imageUrl;
+              parsedUser.avatarPublicId = publicId;
+              localStorage.setItem('userData', JSON.stringify(parsedUser));
+            } catch (err) {
+              console.error('Error updating localStorage:', err);
+            }
+          }
         }
 
         // Call callback if provided

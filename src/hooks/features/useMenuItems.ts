@@ -15,27 +15,32 @@ export const useMenuItems = () => {
         const response = await getAllMenusAPI();
         if (response.data?.data) {
           // Transform API data to match the new NavigationMenuItem shape
-          const transformedItems: NavigationMenuItem[] = response.data.data.map((item: any) => ({
-            id: item.id,
-            slug: item.slug,
-            title: item.title,
-            order: item.order,
-            isActive: item.isActive,
-            createdAt: item.createdAt,
-            updatedAt: item.updatedAt,
-            deletedAt: item.deletedAt,
-            childrenMenu: (item.childrenMenu || []).map((child: any) => ({
-              id: child.id,
-              slug: child.slug,
-              title: child.title,
-              order: child.order,
-              isActive: child.isActive,
-              createdAt: child.createdAt,
-              updatedAt: child.updatedAt,
-              deletedAt: child.deletedAt,
-              childrenMenu: []
-            }))
-          }));
+          const transformedItems: NavigationMenuItem[] = response.data.data.map((item: any) => {
+            // API có thể trả về children hoặc childrenMenu
+            const childrenArray = item.children || item.childrenMenu || [];
+            
+            return {
+              id: item.id,
+              slug: item.slug,
+              title: item.title,
+              order: item.order,
+              isActive: item.isActive,
+              createdAt: item.createdAt,
+              updatedAt: item.updatedAt,
+              deletedAt: item.deletedAt,
+              childrenMenu: childrenArray.map((child: any) => ({
+                id: child.id,
+                slug: child.slug,
+                title: child.title,
+                order: child.order,
+                isActive: child.isActive,
+                createdAt: child.createdAt,
+                updatedAt: child.updatedAt,
+                deletedAt: child.deletedAt,
+                childrenMenu: []
+              }))
+            };
+          });
           setMenuItems(transformedItems);
         }
       } catch (error) {

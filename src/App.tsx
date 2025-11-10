@@ -90,8 +90,9 @@ const AppContent: React.FC = () => {
           {/* Teacher Detail Route - Must be before dynamic menu routes */}
           <Route path="/doi-ngu-giang-vien/:slug" element={<TeacherDetail />} />
 
-          {/* Dynamic Menu Routes */}
+          {/* Dynamic Menu Routes - Support nested paths */}
           <Route path="/:slug" element={<DynamicMenuPage />} />
+          <Route path="/:parentSlug/:childSlug" element={<DynamicMenuPage />} />
 
                     <Route path="/profile" element={
             !user ? <Navigate to="/" replace /> : (

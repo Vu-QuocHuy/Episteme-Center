@@ -8,7 +8,7 @@ import PublicLayout from '../components/layouts/PublicLayout';
 
 
 const DynamicMenuPage: React.FC = () => {
-  const { slug } = useParams<{ slug: string }>();
+  const { slug, parentSlug, childSlug } = useParams<{ slug?: string; parentSlug?: string; childSlug?: string }>();
   const { menuItems } = useMenuItems();
   const [menuItem, setMenuItem] = useState<MenuItem | null>(null);
   const [loading, setLoading] = useState(true);
@@ -16,9 +16,12 @@ const DynamicMenuPage: React.FC = () => {
   const [articles, setArticles] = useState<any[]>([]);
   // We render all articles stacked; no selection needed
 
+  // Combine slug from params - support both /:slug and /:parentSlug/:childSlug
+  const fullSlug = childSlug ? `${parentSlug}/${childSlug}` : slug;
+
   useEffect(() => {
     const fetchMenuItem = async () => {
-      if (!slug) return;
+      if (!fullSlug) return;
 
       // ✅ Nếu menuItems chưa load (array rỗng), giữ loading state và chờ
       if (menuItems.length === 0) {
@@ -30,10 +33,7 @@ const DynamicMenuPage: React.FC = () => {
         setLoading(true);
 
         // Find menu item from existing menuItems data
-        console.log('Looking for slug:', slug);
-        console.log('Available menuItems:', menuItems);
-        const foundMenuItem = findMenuItemBySlug(menuItems, slug);
-        console.log('Found menu item:', foundMenuItem);
+        const foundMenuItem = findMenuItemBySlug(menuItems, fullSlug);
 
         if (foundMenuItem) {
           setMenuItem(foundMenuItem);
@@ -71,21 +71,16 @@ const DynamicMenuPage: React.FC = () => {
     };
 
     fetchMenuItem();
-  }, [slug, menuItems]);
+  }, [fullSlug, menuItems]);
 
   // Helper function to find menu item by slug recursively
   const findMenuItemBySlug = (items: MenuItem[], targetSlug: string): MenuItem | null => {
-    console.log('findMenuItemBySlug called with:', { items, targetSlug });
-
     for (const item of items) {
       // Remove leading slash for comparison
       const itemSlug = item.slug?.replace(/^\//, '') || '';
       const cleanTargetSlug = targetSlug.replace(/^\//, '');
 
-      console.log('Comparing:', { itemSlug, cleanTargetSlug, match: itemSlug === cleanTargetSlug });
-
       if (itemSlug === cleanTargetSlug) {
-        console.log('Found match:', item);
         return item;
       }
 
@@ -95,7 +90,6 @@ const DynamicMenuPage: React.FC = () => {
         if (found) return found;
       }
     }
-    console.log('No match found');
     return null;
   };
 
@@ -140,11 +134,8 @@ const DynamicMenuPage: React.FC = () => {
     );
   }
 
-  console.log('Render check:', { error, menuItem, loading, menuItemsLength: menuItems.length });
-
   // Only show error if: has explicit error OR (menuItems loaded but menuItem not found)
   if (error || (!menuItem && menuItems.length > 0)) {
-    console.log('Showing error page because:', { error: !!error, menuItem: !!menuItem, menuItemsLoaded: menuItems.length > 0 });
     return (
       <PublicLayout>
       <Container maxWidth="lg" sx={{ py: 8 }}>
