@@ -64,6 +64,7 @@ import { USER_ROLES } from './constants';
 // Dynamic Menu Pages
 import DynamicMenuPage from './pages/DynamicMenuPage';
 import LayoutBuilder from './pages/admin/LayoutBuilder';
+import AllTeachersPage from './pages/AllTeachersPage';
 
 const AppContent: React.FC = () => {
   const { user } = useAuth();
@@ -81,6 +82,13 @@ const AppContent: React.FC = () => {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/auth/verify-email" element={<VerifyEmail />} />
           <Route path="/unauthorized" element={<UnauthorizedAccess />} />
+
+          {/* All Teachers Page - Must be before dynamic routes */}
+          <Route path="/giao-vien" element={<AllTeachersPage />} />
+          <Route path="/gioi-thieu/doi-ngu-giang-vien" element={<AllTeachersPage />} />
+
+          {/* Teacher Detail Route - Must be before dynamic menu routes */}
+          <Route path="/doi-ngu-giang-vien/:slug" element={<TeacherDetail />} />
 
           {/* Dynamic Menu Routes */}
           <Route path="/:slug" element={<DynamicMenuPage />} />
@@ -190,9 +198,6 @@ const AppContent: React.FC = () => {
                 </ProtectedRoute>
               }
             />
-
-            {/* Teacher Detail Route - Public (must be after all other routes) */}
-            <Route path="/teacher/view/:slug" element={<TeacherDetail />} />
 
             {/* Catch all route - redirect to home */}
             <Route path="*" element={<Navigate to="/" replace />} />

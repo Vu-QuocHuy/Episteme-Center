@@ -4,14 +4,9 @@ import { createQueryParams } from '../utils/apiHelpers';
 import type { ApiParams, ParentData } from './api';
 
 export const createParentAPI = (data: ParentData) => {
-  const formData = new URLSearchParams();
-  Object.entries(data).forEach(([key, value]) => {
-    if (value !== undefined && value !== null) {
-      formData.append(key, String(value));
-    }
-  });
-  return axiosInstance.post(API_CONFIG.ENDPOINTS.PARENTS.CREATE, formData, {
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'x-lang': 'vi' }
+  // Send as JSON for consistency with other APIs
+  return axiosInstance.post(API_CONFIG.ENDPOINTS.PARENTS.CREATE, data, {
+    headers: { 'x-lang': 'vi' }
   });
 };
 
@@ -22,15 +17,8 @@ export const getParentByIdAPI = (id: string) =>
   axiosInstance.get(API_CONFIG.ENDPOINTS.PARENTS.GET_BY_ID(id), { headers: { 'x-lang': 'vi' } });
 
 export const updateParentAPI = (id: string, data: Partial<ParentData>) => {
-  const formData = new URLSearchParams();
-  Object.entries(data).forEach(([key, value]) => {
-    if (value !== undefined && value !== null) {
-      formData.append(key, String(value));
-    }
-  });
-  return axiosInstance.patch(API_CONFIG.ENDPOINTS.PARENTS.UPDATE(id), formData, {
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-  });
+  // Send as JSON to support nested objects (userData, parentData)
+  return axiosInstance.patch(API_CONFIG.ENDPOINTS.PARENTS.UPDATE(id), data);
 };
 
 export const deleteParentAPI = (id: string) => axiosInstance.delete(API_CONFIG.ENDPOINTS.PARENTS.DELETE(id));

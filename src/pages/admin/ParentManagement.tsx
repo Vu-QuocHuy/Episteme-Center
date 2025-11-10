@@ -6,7 +6,7 @@ import DashboardLayout from '../../components/layouts/DashboardLayout';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import NotificationSnackbar from '../../components/common/NotificationSnackbar';
 import { useParentManagement } from '../../hooks/features/useParentManagement';
-import { useParentForm } from '../../hooks/features/useParentForm';
+// import { useParentForm } from '../../hooks/features/useParentForm';
 import ParentTable from '../../components/features/parent/ParentTable';
 import ParentFilters from '../../components/features/parent/ParentFilters';
 import ParentViewDialog from '../../components/features/parent/ParentViewDialog';
@@ -42,7 +42,7 @@ const ParentManagement: React.FC = () => {
     fetchParents,
     handlePageChange
   } = useParentManagement();
-  const { handleSubmit } = useParentForm();
+  // const { handleSubmit } = useParentForm();
 
   // Dialog handlers with useCallback
   const handleOpenDialog = useCallback(async (p: Parent | null = null): Promise<void> => {
@@ -179,18 +179,16 @@ const ParentManagement: React.FC = () => {
             fetchParents();
           }
         }}
-        onSubmit={async () => {
-          try {
-            const result = await handleSubmit(selectedParentForEdit);
-            if (result.success) {
-              setSnackbar({ open: true, message: selectedParentForEdit ? 'Cập nhật phụ huynh thành công!' : 'Thêm phụ huynh thành công!', severity: 'success' });
-              handleCloseFormDialog();
-            } else {
-              setSnackbar({ open: true, message: result.message || 'Có lỗi xảy ra', severity: 'error' });
-            }
-          } catch (error: any) {
-            setSnackbar({ open: true, message: error.message || 'Có lỗi xảy ra', severity: 'error' });
-          }
+        onSubmit={(result) => {
+          // Refresh danh sách phụ huynh
+          fetchParents();
+
+          // Show notification
+          setSnackbar({
+            open: true,
+            message: result.message || (result.success ? 'Thành công!' : 'Có lỗi xảy ra'),
+            severity: result.success ? 'success' : 'error'
+          });
         }}
       />
     </DashboardLayout>

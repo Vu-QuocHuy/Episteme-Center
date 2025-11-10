@@ -26,21 +26,36 @@ import {
 } from '@mui/icons-material';
 import { Parent, Student } from '../../../types';
 import { useParentForm } from '../../../hooks/features/useParentForm';
-import { getParentByIdAPI, getParentChildrenAPI } from '../../../services/parents';
+import { getParentByIdAPI, getParentChildrenAPI, createParentAPI, updateParentAPI } from '../../../services/parents';
 import { getAllStudentsAPI } from '../../../services/students';
+import {
+  validateName,
+  validateEmail,
+  validatePhone,
+  validateAddress,
+  validateGender
+} from '../../../validations/commonValidation';
 
 interface ParentFormProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: () => Promise<void>;
+  onSubmit?: (result: { success: boolean; message?: string }) => void;
   parent?: Parent | null;
   loading?: boolean;
   onMessage?: (message: string, type: 'success' | 'error') => void;
 }
-const ParentForm: React.FC<ParentFormProps> = ({ open, onClose, onSubmit, parent, loading = false, onMessage }) => {
+
+interface FormErrors {
+  name?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  dayOfBirth?: string;
+  gender?: string;
+}
+const ParentForm: React.FC<ParentFormProps> = ({ open, onClose, onSubmit, parent, loading: externalLoading = false, onMessage }) => {
   const {
     form,
-    formLoading,
     handleChange,
     setFormData,
     resetForm,
@@ -53,7 +68,9 @@ const ParentForm: React.FC<ParentFormProps> = ({ open, onClose, onSubmit, parent
   const [studentQuery, setStudentQuery] = useState<string>('');
   const [studentOptions, setStudentOptions] = useState<Student[]>([]);
   const [refreshKey, setRefreshKey] = useState<number>(0);
-  const busy = loading || formLoading;
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<FormErrors>({});
+  const busy = loading || externalLoading;
 
   // Debounce search query
   const debouncedStudentQuery = useDebounce(studentQuery, 500);
@@ -141,8 +158,119 @@ const ParentForm: React.FC<ParentFormProps> = ({ open, onClose, onSubmit, parent
     }
   }, []);
 
+  // Helper function to validate date format (yyyy-mm-dd from input type="date")
+  const validateDateOfBirth = (dateStr: string): string => {
+    if (!dateStr) return 'Ngày sinh không được để trống';
+
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return 'Ngày sinh không hợp lệ';
+
+    const today = new Date();
+    if (date >= today) return 'Ngày sinh phải nhỏ hơn ngày hiện tại';
+
+    return '';
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {};
+
+    // Validate name
+    const nameError = validateName(form.name);
+    if (nameError) newErrors.name = nameError;
+
+    // Validate email
+    const emailError = validateEmail(form.email);
+    if (emailError) newErrors.email = emailError;
+
+    // Validate phone
+    const phoneError = validatePhone(form.phone);
+    if (phoneError) newErrors.phone = phoneError;
+
+    // Validate address
+    const addressError = validateAddress(form.address);
+    if (addressError) newErrors.address = addressError;
+
+    // Validate date of birth
+    const dobError = validateDateOfBirth(form.dayOfBirth);
+    if (dobError) newErrors.dayOfBirth = dobError;
+
+    // Validate gender
+    const genderError = validateGender(form.gender);
+    if (genderError) newErrors.gender = genderError;
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const submit = async () => {
-    await onSubmit();
+    if (!validateForm()) {
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const toAPIDateFormat = (dob: string): string => {
+        if (!dob) return '';
+        // Support both dd/mm/yyyy and yyyy-mm-dd
+        if (dob.includes('-')) {
+          const [year, month, day] = dob.split('-');
+          return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        }
+        const [day, month, year] = dob.split('/');
+        return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      };
+
+      let body: any;
+      if (parent) {
+        // Update existing parent
+        body = {
+          userData: {
+            name: form.name,
+            email: form.email,
+            phone: form.phone,
+            dayOfBirth: toAPIDateFormat(form.dayOfBirth),
+            gender: form.gender,
+            address: form.address,
+          },
+          parentData: {
+            canSeeTeacherInfo: form.canSeeTeacherInfo,
+          }
+        };
+
+        await updateParentAPI(parent.id, body);
+      } else {
+        // Create new parent
+        body = {
+          email: form.email,
+          name: form.name,
+          dayOfBirth: toAPIDateFormat(form.dayOfBirth),
+          phone: form.phone,
+          address: form.address,
+          gender: form.gender,
+          canSeeTeacherInfo: form.canSeeTeacherInfo,
+        };
+
+        await createParentAPI(body);
+      }
+
+      // Notify parent component
+      if (onSubmit) {
+        onSubmit({ success: true, message: parent ? 'Cập nhật phụ huynh thành công!' : 'Thêm phụ huynh thành công!' });
+      }
+
+      resetForm();
+      onClose();
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || 'Có lỗi xảy ra khi lưu phụ huynh';
+
+      // Notify parent component
+      if (onSubmit) {
+        onSubmit({ success: false, message: errorMessage });
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const addChildFromSearch = async (student: any) => {
@@ -262,29 +390,82 @@ const ParentForm: React.FC<ParentFormProps> = ({ open, onClose, onSubmit, parent
               <Box sx={{ p: 2, bgcolor: 'white', borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
                 <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
-                    <TextField fullWidth label="Họ và tên" name="name" value={form.name} onChange={handleChange} />
+                    <TextField
+                      fullWidth
+                      label="Họ và tên"
+                      name="name"
+                      value={form.name}
+                      onChange={handleChange}
+                      error={!!errors.name}
+                      helperText={errors.name}
+                      required
+                    />
             </Grid>
             <Grid item xs={12} md={6}>
-                    <TextField fullWidth label="Email" name="email" type="email" value={form.email} onChange={handleChange} />
+                    <TextField
+                      fullWidth
+                      label="Email"
+                      name="email"
+                      type="email"
+                      value={form.email}
+                      onChange={handleChange}
+                      error={!!errors.email}
+                      helperText={errors.email}
+                      required
+                    />
             </Grid>
 
             <Grid item xs={12} md={6}>
-                    <TextField fullWidth label="Ngày sinh" name="dayOfBirth" type="date" value={toDisplayDate(form.dayOfBirth)} onChange={handleChange} InputLabelProps={{ shrink: true }} />
+                    <TextField
+                      fullWidth
+                      label="Ngày sinh"
+                      name="dayOfBirth"
+                      type="date"
+                      value={toDisplayDate(form.dayOfBirth)}
+                      onChange={handleChange}
+                      InputLabelProps={{ shrink: true }}
+                      error={!!errors.dayOfBirth}
+                      helperText={errors.dayOfBirth}
+                      required
+                    />
             </Grid>
             <Grid item xs={12} md={6}>
-                    <TextField fullWidth label="Số điện thoại" name="phone" value={form.phone} onChange={handleChange} />
+                    <TextField
+                      fullWidth
+                      label="Số điện thoại"
+                      name="phone"
+                      value={form.phone}
+                      onChange={handleChange}
+                      error={!!errors.phone}
+                      helperText={errors.phone}
+                      required
+                    />
             </Grid>
             <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
+              <FormControl fullWidth error={!!errors.gender} required>
                       <InputLabel>Giới tính</InputLabel>
                       <Select name="gender" label="Giới tính" value={form.gender} onChange={(e: any) => handleChange(e as any)}>
                         <MenuItem value="male">Nam</MenuItem>
                         <MenuItem value="female">Nữ</MenuItem>
                 </Select>
+                {errors.gender && (
+                  <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.5 }}>
+                    {errors.gender}
+                  </Typography>
+                )}
               </FormControl>
             </Grid>
             <Grid item xs={12} md={6}>
-                    <TextField fullWidth label="Địa chỉ" name="address" value={form.address} onChange={handleChange} />
+                    <TextField
+                      fullWidth
+                      label="Địa chỉ"
+                      name="address"
+                      value={form.address}
+                      onChange={handleChange}
+                      error={!!errors.address}
+                      helperText={errors.address}
+                      required
+                    />
             </Grid>
             <Grid item xs={12}>
               <Box display="flex" alignItems="center" gap={1}>

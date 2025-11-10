@@ -1,9 +1,22 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Grid, MenuItem, Select, TextField, Typography, FormControl, InputLabel } from '@mui/material';
 import { Editor } from '@tinymce/tinymce-react';
 import UploadIcon from '@mui/icons-material/Upload';
+import {
+  HeroConfigForm,
+  FeatureCardsConfigForm,
+  StatisticsConfigForm,
+  CourseCardsConfigForm,
+} from './ConfigForms';
+import {
+  ComponentType,
+  HeroConfig,
+  FeatureCardsConfig,
+  StatisticsConfig,
+  CourseCardsConfig,
+} from './types';
 
-export type ItemType = 'text' | 'image' | 'input';
+export type ItemType = ComponentType;
 
 interface AddItemDialogProps {
   open: boolean;
@@ -18,22 +31,86 @@ interface AddItemDialogProps {
 }
 
 const AddItemDialog: React.FC<AddItemDialogProps> = ({ open, onClose, onAdd, newItem, setNewItem, editorContent, setEditorContent, onUploadImage, uploading }) => {
+  // State for advanced component configs
+  const [heroConfig, setHeroConfig] = useState<HeroConfig>({
+    title: 'Tiêu đề chính',
+    subtitle: 'Mô tả phụ',
+    ctaButtons: [],
+    alignment: 'center',
+    height: 'medium',
+  });
+
+  const [featureCardsConfig, setFeatureCardsConfig] = useState<FeatureCardsConfig>({
+    cards: [],
+    columns: 3,
+    cardStyle: 'raised',
+  });
+
+  const [statisticsConfig, setStatisticsConfig] = useState<StatisticsConfig>({
+    stats: [],
+    columns: 4,
+  });
+
+  const [courseCardsConfig, setCourseCardsConfig] = useState<CourseCardsConfig>({
+    courses: [],
+    layout: 'grid',
+    columns: 3,
+    showPrice: true,
+  });
+
+  // Reset configs when type changes
+  useEffect(() => {
+    if (newItem.type === 'hero' && heroConfig.ctaButtons.length === 0) {
+      setHeroConfig({
+        ...heroConfig,
+        ctaButtons: [{ text: 'Tìm hiểu thêm', link: '#', style: 'contained', color: 'primary' }],
+      });
+    }
+  }, [newItem.type]);
+
+  // Handle add with proper config serialization
+  const handleAdd = () => {
+    // For advanced components, serialize config to content
+    if (newItem.type === 'hero') {
+      setNewItem(prev => ({ ...prev, content: JSON.stringify(heroConfig) }));
+    } else if (newItem.type === 'feature-cards') {
+      setNewItem(prev => ({ ...prev, content: JSON.stringify(featureCardsConfig) }));
+    } else if (newItem.type === 'statistics') {
+      setNewItem(prev => ({ ...prev, content: JSON.stringify(statisticsConfig) }));
+    } else if (newItem.type === 'course-cards') {
+      setNewItem(prev => ({ ...prev, content: JSON.stringify(courseCardsConfig) }));
+    }
+
+    // Small delay to ensure state update
+    setTimeout(() => {
+      onAdd();
+    }, 50);
+  };
+
+  // Parse existing config when editing
+  useEffect(() => {
+    if (newItem.content && newItem.i) {
+      try {
+        const parsed = JSON.parse(newItem.content);
+        if (newItem.type === 'hero') setHeroConfig(parsed);
+        else if (newItem.type === 'feature-cards') setFeatureCardsConfig(parsed);
+        else if (newItem.type === 'statistics') setStatisticsConfig(parsed);
+        else if (newItem.type === 'course-cards') setCourseCardsConfig(parsed);
+      } catch (e) {
+        // Content is not JSON, likely old text/image/input type
+      }
+    }
+  }, [newItem.i, open]);
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>Thêm thành phần mới</DialogTitle>
+      <DialogTitle>
+        {newItem.i ? 'Chỉnh sửa thành phần' : 'Thêm thành phần mới'}
+      </DialogTitle>
       <DialogContent>
         <Box sx={{ pt: 2 }}>
           <Grid container spacing={2}>
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="ID (tùy chọn)"
-                value={newItem.i}
-                onChange={(e) => setNewItem(prev => ({ ...prev, i: e.target.value }))}
-                helperText="Để trống để tự động tạo ID"
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
+            <Grid item xs={12}>
               <FormControl fullWidth>
                 <InputLabel>Loại thành phần</InputLabel>
                 <Select
@@ -41,13 +118,18 @@ const AddItemDialog: React.FC<AddItemDialogProps> = ({ open, onClose, onAdd, new
                   label="Loại thành phần"
                   onChange={(e) => setNewItem(prev => ({ ...prev, type: e.target.value as any }))}
                 >
-                  <MenuItem value="text">Văn bản</MenuItem>
-                  <MenuItem value="image">Hình ảnh</MenuItem>
-                  <MenuItem value="input">Input field</MenuItem>
+                  <MenuItem value="text">📝 Văn bản (Rich Text)</MenuItem>
+                  <MenuItem value="image">🖼️ Hình ảnh</MenuItem>
+                  <MenuItem value="input">📋 Input field</MenuItem>
+                  <MenuItem value="hero">🎯 Hero Section</MenuItem>
+                  <MenuItem value="feature-cards">⭐ Feature Cards</MenuItem>
+                  <MenuItem value="statistics">📊 Statistics Counter</MenuItem>
+                  <MenuItem value="course-cards">📚 Course Cards</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
 
+            {/* BASIC COMPONENTS */}
             {newItem.type === 'text' && (
               <Grid item xs={12}>
                 <Typography variant="subtitle2" gutterBottom>Nội dung văn bản:</Typography>
@@ -117,12 +199,53 @@ const AddItemDialog: React.FC<AddItemDialogProps> = ({ open, onClose, onAdd, new
                 />
               </Grid>
             )}
+
+            {/* ADVANCED COMPONENTS */}
+            {newItem.type === 'hero' && (
+              <Grid item xs={12}>
+                <HeroConfigForm
+                  config={heroConfig}
+                  onChange={setHeroConfig}
+                  onUploadImage={onUploadImage}
+                />
+              </Grid>
+            )}
+
+            {newItem.type === 'feature-cards' && (
+              <Grid item xs={12}>
+                <FeatureCardsConfigForm
+                  config={featureCardsConfig}
+                  onChange={setFeatureCardsConfig}
+                />
+              </Grid>
+            )}
+
+            {newItem.type === 'statistics' && (
+              <Grid item xs={12}>
+                <StatisticsConfigForm
+                  config={statisticsConfig}
+                  onChange={setStatisticsConfig}
+                />
+              </Grid>
+            )}
+
+            {newItem.type === 'course-cards' && (
+              <Grid item xs={12}>
+                <CourseCardsConfigForm
+                  config={courseCardsConfig}
+                  onChange={setCourseCardsConfig}
+                  onUploadImage={onUploadImage}
+                />
+              </Grid>
+            )}
           </Grid>
         </Box>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Hủy</Button>
-        <Button onClick={onAdd} variant="contained">Thêm thành phần</Button>
+        <Button onClick={handleAdd} variant="contained">
+          {newItem.i ? 'Cập nhật' : 'Thêm thành phần'}
+        </Button>
       </DialogActions>
     </Dialog>
   );

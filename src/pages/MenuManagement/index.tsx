@@ -242,10 +242,17 @@ const MenuManagement: React.FC = () => {
 
     // Auto-generate slug when title changes
     if (field === 'title') {
+      const generatedSlug = generateSlug(value);
+
+      // Nếu đang tạo submenu, thêm slug của menu cha vào đầu
+      const finalSlug = selectedParentMenu && selectedParentMenu.slug
+        ? `${selectedParentMenu.slug}/${generatedSlug}`
+        : generatedSlug;
+
       setFormData(prev => ({
         ...prev,
         title: value,
-        slug: generateSlug(value),
+        slug: finalSlug,
       }));
     }
   };
@@ -262,6 +269,21 @@ const MenuManagement: React.FC = () => {
               <Typography variant="subtitle1">{item.title}</Typography>
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              {/* Nút Layout đứng đầu tiên nếu menu KHÔNG có submenu */}
+              {(!item.childrenMenu || item.childrenMenu.length === 0) && (
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/admin/layout-builder/${item.id}?mode=create`);
+                  }}
+                  title="Tạo Layout cho trang này"
+                  sx={{ minWidth: 'auto', px: 1, py: 0.5, fontSize: '0.75rem' }}
+                >
+                  Layout
+                </Button>
+              )}
               <IconButton
                 size="small"
                 onClick={(e) => {
@@ -272,18 +294,6 @@ const MenuManagement: React.FC = () => {
               >
                 <AddIcon />
               </IconButton>
-              <Button
-                size="small"
-                variant="outlined"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate(`/admin/layout-builder/${item.id}?mode=create`); // ✅ Sử dụng UUID thay vì slug
-                }}
-                title="Tạo Layout"
-                sx={{ minWidth: 'auto', px: 1, py: 0.5, fontSize: '0.75rem' }}
-              >
-                Layout
-              </Button>
               <IconButton
                 size="small"
                 onClick={(e) => {
@@ -411,7 +421,11 @@ const MenuManagement: React.FC = () => {
                   label="Slug"
                   value={formData.slug}
                   onChange={(e) => handleInputChange('slug', e.target.value)}
-                  helperText="URL-friendly version của tiêu đề (không bắt buộc)"
+                  helperText={
+                    selectedParentMenu
+                      ? `Slug sẽ có dạng: ${selectedParentMenu.slug}/tên-submenu`
+                      : "URL-friendly version của tiêu đề (tự động tạo từ tiêu đề)"
+                  }
                 />
               </Grid>
               <Grid item xs={12} md={6}>

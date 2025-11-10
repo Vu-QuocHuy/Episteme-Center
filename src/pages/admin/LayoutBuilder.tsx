@@ -20,6 +20,13 @@ import AddItemDialog from './layout-builder/AddItemDialog';
 import PreviewDialog from './layout-builder/PreviewDialog';
 import { useMenuItems } from '../../hooks/features/useMenuItems';
 import { commonStyles } from '../../utils/styles';
+import { ComponentType } from './layout-builder/types';
+import {
+  renderHeroSection,
+  renderFeatureCards,
+  renderStatistics,
+  renderCourseCards,
+} from './layout-builder/componentRenderers';
 // Removed unused style imports
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
@@ -34,7 +41,7 @@ interface LayoutItem {
 
 interface ContentItem {
   i: string;
-  type: 'text' | 'image' | 'input';
+  type: ComponentType;
   content: string;
 }
 
@@ -67,7 +74,7 @@ const LayoutBuilder: React.FC = () => {
   const [layouts, setLayouts] = useState<{ lg: LayoutItem[] }>({ lg: [] });
   const [title, setTitle] = useState('');
   const [items, setItems] = useState<ContentItem[]>([]);
-  const [newItem, setNewItem] = useState<{ i: string; type: 'text' | 'image' | 'input'; content: string }>({
+  const [newItem, setNewItem] = useState<{ i: string; type: ComponentType; content: string }>({
     i: '',
     type: 'text',
     content: ''
@@ -395,6 +402,29 @@ const LayoutBuilder: React.FC = () => {
       }
 
       let contentHTML = '';
+
+      // Handle advanced components (full-width, ignore grid positioning)
+      if (['hero', 'feature-cards', 'statistics', 'course-cards'].includes(item.type)) {
+        try {
+          const config = JSON.parse(item.content);
+
+          switch (item.type) {
+            case 'hero':
+              return renderHeroSection(config);
+            case 'feature-cards':
+              return renderFeatureCards(config);
+            case 'statistics':
+              return renderStatistics(config);
+            case 'course-cards':
+              return renderCourseCards(config);
+          }
+        } catch (error) {
+          console.error('Error parsing component config:', error);
+          contentHTML = `<div style="padding: 20px; color: red;">Error rendering component</div>`;
+        }
+      }
+
+      // Handle basic components (use grid positioning)
       switch (item.type) {
         case 'text':
           contentHTML = `<div style="font-size: clamp(1rem, 1.5vw, 1.2rem); line-height: 1.6; height: 100%; overflow: auto;">${item.content || 'Default Text'}</div>`;
@@ -526,6 +556,62 @@ const LayoutBuilder: React.FC = () => {
     const item = items.find(i => i.i === layoutItem.i);
     if (!item) return <div style={{ color: 'red' }}>Invalid Item</div>;
 
+    // For advanced components, show a preview placeholder
+    const advancedComponentTypes = ['hero', 'feature-cards', 'statistics', 'course-cards'];
+    if (advancedComponentTypes.includes(item.type)) {
+      const componentLabels = {
+        'hero': '🎯 Hero Section',
+        'feature-cards': '⭐ Feature Cards',
+        'statistics': '📊 Statistics',
+        'course-cards': '📚 Course Cards',
+      };
+
+      try {
+        const config = JSON.parse(item.content);
+        const label = componentLabels[item.type as keyof typeof componentLabels] || item.type;
+
+        return (
+          <div
+            ref={itemRefs.current[layoutItem.i]}
+            style={{
+              width: '100%',
+              height: '100%',
+              overflow: 'hidden',
+              padding: '16px',
+              backgroundColor: '#f5f5f5',
+              border: '2px dashed #1976d2',
+              borderRadius: '8px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px'
+            }}
+          >
+            <Typography variant="h6" sx={{ fontWeight: 600, color: '#1976d2' }}>
+              {label}
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#666', textAlign: 'center' }}>
+              {item.type === 'hero' && `Tiêu đề: ${config.title}`}
+              {item.type === 'feature-cards' && `${config.cards?.length || 0} cards`}
+              {item.type === 'statistics' && `${config.stats?.length || 0} thống kê`}
+              {item.type === 'course-cards' && `${config.courses?.length || 0} khóa học`}
+            </Typography>
+            <Typography variant="caption" sx={{ color: '#999' }}>
+              Xem trước đầy đủ khi lưu
+            </Typography>
+          </div>
+        );
+      } catch (error) {
+        return (
+          <div style={{ padding: '16px', color: 'red' }}>
+            Error parsing component config
+          </div>
+        );
+      }
+    }
+
+    // For basic components, render normally
     return (
       <div
         ref={itemRefs.current[layoutItem.i]}

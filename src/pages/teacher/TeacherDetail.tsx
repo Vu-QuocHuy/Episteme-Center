@@ -19,6 +19,7 @@ import {
 } from '@mui/icons-material';
 import { getTeacherByIdAPI, getTeacherBySlugAPI, getTypicalTeacherDetailAPI } from '../../services/teachers';
 import { Teacher } from '../../types';
+import PublicLayout from '../../components/layouts/PublicLayout';
 
 const TeacherDetail: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -90,60 +91,65 @@ const TeacherDetail: React.FC = () => {
 
   if (loading) {
     return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Grid container spacing={4}>
-          <Grid item xs={12} md={4}>
-            <Skeleton variant="rectangular" height={400} />
-            <Skeleton variant="text" sx={{ fontSize: '2rem', mt: 2 }} />
-            <Skeleton variant="text" sx={{ fontSize: '1rem', mt: 1 }} />
+      <PublicLayout>
+        <Container maxWidth="lg" sx={{ py: 4 }}>
+          <Grid container spacing={4}>
+            <Grid item xs={12} md={4}>
+              <Skeleton variant="rectangular" height={400} />
+              <Skeleton variant="text" sx={{ fontSize: '2rem', mt: 2 }} />
+              <Skeleton variant="text" sx={{ fontSize: '1rem', mt: 1 }} />
+            </Grid>
+            <Grid item xs={12} md={8}>
+              <Skeleton variant="text" sx={{ fontSize: '1.5rem', mb: 2 }} />
+              <Skeleton variant="rectangular" height={200} sx={{ mb: 2 }} />
+              <Skeleton variant="text" sx={{ fontSize: '1.5rem', mb: 2 }} />
+              <Skeleton variant="rectangular" height={200} sx={{ mb: 2 }} />
+              <Skeleton variant="text" sx={{ fontSize: '1.5rem', mb: 2 }} />
+              <Skeleton variant="rectangular" height={200} />
+            </Grid>
           </Grid>
-          <Grid item xs={12} md={8}>
-            <Skeleton variant="text" sx={{ fontSize: '1.5rem', mb: 2 }} />
-            <Skeleton variant="rectangular" height={200} sx={{ mb: 2 }} />
-            <Skeleton variant="text" sx={{ fontSize: '1.5rem', mb: 2 }} />
-            <Skeleton variant="rectangular" height={200} sx={{ mb: 2 }} />
-            <Skeleton variant="text" sx={{ fontSize: '1.5rem', mb: 2 }} />
-            <Skeleton variant="rectangular" height={200} />
-          </Grid>
-        </Grid>
-      </Container>
+        </Container>
+      </PublicLayout>
     );
   }
 
   if (error || !teacher) {
     return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Typography variant="h4" color="error" textAlign="center">
-          {error || 'Không tìm thấy thông tin giáo viên'}
-        </Typography>
-      </Container>
+      <PublicLayout>
+        <Container maxWidth="lg" sx={{ py: 4 }}>
+          <Typography variant="h4" color="error" textAlign="center">
+            {error || 'Không tìm thấy thông tin giáo viên'}
+          </Typography>
+        </Container>
+      </PublicLayout>
     );
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      {/* Breadcrumb */}
-      <Breadcrumbs sx={{ mb: 4 }}>
-        <Link
-          component="button"
-          variant="body1"
-          onClick={() => navigate('/')}
-          sx={{ cursor: 'pointer', textDecoration: 'none' }}
-        >
-          Trang chủ
-        </Link>
-        <Link
-          component="button"
-          variant="body1"
-          onClick={() => navigate('/')}
-          sx={{ cursor: 'pointer', textDecoration: 'none' }}
-        >
-          Đội ngũ giảng viên
-        </Link>
-        <Typography variant="body1" color="text.primary" fontWeight="bold">
-          {teacher.name}
-        </Typography>
-      </Breadcrumbs>
+    <PublicLayout>
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        {/* Breadcrumb */}
+        <Breadcrumbs sx={{ mb: 4 }}>
+          <Link
+            component="button"
+            variant="body1"
+            onClick={() => navigate('/')}
+            sx={{ cursor: 'pointer', textDecoration: 'none' }}
+          >
+            Trang chủ
+          </Link>
+          <Link
+            component="button"
+            variant="body1"
+            onClick={() => navigate('/giao-vien')}
+            sx={{ cursor: 'pointer', textDecoration: 'none' }}
+          >
+            Đội ngũ giảng viên
+          </Link>
+          <Typography variant="body1" color="text.primary" fontWeight="bold">
+            {teacher.name}
+          </Typography>
+        </Breadcrumbs>
 
       <Grid container spacing={4}>
         {/* Left Column - Profile */}
@@ -419,7 +425,8 @@ const TeacherDetail: React.FC = () => {
           </Paper>
         </Grid>
       </Grid>
-    </Container>
+      </Container>
+    </PublicLayout>
   );
 };
 
