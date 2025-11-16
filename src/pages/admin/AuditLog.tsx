@@ -289,15 +289,20 @@ const AuditLog: React.FC = () => {
   return (
     <DashboardLayout role="admin">
       <Box sx={commonStyles.pageContainer}>
-        <Typography variant="h4" component="h1" gutterBottom fontWeight="bold">
-          Nhật ký Hệ thống
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          Theo dõi các hoạt động và thay đổi trong hệ thống
-        </Typography>
+        <Box sx={commonStyles.contentContainer}>
+          <Box sx={commonStyles.pageHeader}>
+            <Box>
+              <Typography sx={commonStyles.pageTitle}>
+                Nhật ký Hệ thống
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                Theo dõi các hoạt động và thay đổi trong hệ thống
+              </Typography>
+            </Box>
+          </Box>
 
-        {/* Filter Section */}
-        <Paper variant="outlined" sx={{ mb: 3, p: 3 }}>
+          {/* Filter Section */}
+          <Paper variant="outlined" sx={{ mb: 3, p: 3 }}>
           <Grid container spacing={2}>
             <Grid item xs={12} sm={6} md={4}>
               <TextField
@@ -360,6 +365,7 @@ const AuditLog: React.FC = () => {
               variant="contained"
               onClick={handleApplyFilters}
               disabled={loading}
+              sx={commonStyles.primaryButton}
             >
               Áp dụng
             </Button>
@@ -367,6 +373,7 @@ const AuditLog: React.FC = () => {
               variant="outlined"
               onClick={handleClearFilters}
               disabled={loading}
+              sx={commonStyles.secondaryButton}
             >
               Xóa bộ lọc
             </Button>
@@ -384,9 +391,8 @@ const AuditLog: React.FC = () => {
             Không có log nào
           </Box>
         ) : (
-          <Box sx={commonStyles.contentContainer}>
-            <Stack spacing={2}>
-              <TableContainer component={Paper} variant="outlined" sx={commonStyles.tableContainer}>
+          <Stack spacing={2}>
+            <TableContainer component={Paper} variant="outlined" sx={commonStyles.tableContainer}>
                 <Table>
                   <TableHead>
                     <TableRow>
@@ -466,35 +472,35 @@ const AuditLog: React.FC = () => {
                 />
               </Box>
             </Stack>
-          </Box>
         )}
 
-        {/* Detail Dialog */}
-        <Dialog
-          open={detailDialogOpen}
-          onClose={handleCloseDetail}
-          maxWidth="lg"
-          fullWidth
-        >
-          <DialogTitle>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Typography variant="h6" component="div">
-                Chi tiết Log
-              </Typography>
-              <IconButton edge="end" onClick={handleCloseDetail} size="small">
-                <CloseIcon />
-              </IconButton>
-            </Box>
-          </DialogTitle>
-          <DialogContent dividers>
-            {renderDetailContent()}
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCloseDetail} variant="outlined">
-              Đóng
-            </Button>
-          </DialogActions>
-        </Dialog>
+          {/* Detail Dialog */}
+          <Dialog
+            open={detailDialogOpen}
+            onClose={handleCloseDetail}
+            maxWidth="lg"
+            fullWidth
+          >
+            <DialogTitle>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Typography variant="h6" component="div">
+                  Chi tiết Log
+                </Typography>
+                <IconButton edge="end" onClick={handleCloseDetail} size="small">
+                  <CloseIcon />
+                </IconButton>
+              </Box>
+            </DialogTitle>
+            <DialogContent dividers>
+              {renderDetailContent()}
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleCloseDetail} variant="outlined">
+                Đóng
+              </Button>
+            </DialogActions>
+          </Dialog>
+        </Box>
       </Box>
     </DashboardLayout>
   );
