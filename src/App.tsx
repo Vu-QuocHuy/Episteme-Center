@@ -65,6 +65,7 @@ import { USER_ROLES } from './constants';
 import DynamicMenuPage from './pages/DynamicMenuPage';
 import LayoutBuilder from './pages/admin/LayoutBuilder';
 import AllTeachersPage from './pages/AllTeachersPage';
+import CoursesPage from './pages/CoursesPage';
 
 const AppContent: React.FC = () => {
   const { user } = useAuth();
@@ -89,6 +90,11 @@ const AppContent: React.FC = () => {
 
           {/* Teacher Detail Route - Must be before dynamic menu routes */}
           <Route path="/doi-ngu-giang-vien/:slug" element={<TeacherDetail />} />
+
+          {/* Courses Pages - Must be before dynamic menu routes */}
+          <Route path="/khoa-hoc/khoa-hoc-danh-cho-hoc-sinh-cap-1" element={<CoursesPage />} />
+          <Route path="/khoa-hoc/khoa-hoc-danh-cho-hoc-sinh-cap-2" element={<CoursesPage />} />
+          <Route path="/khoa-hoc/khoa-hoc-danh-cho-hoc-sinh-cap-3" element={<CoursesPage />} />
 
           {/* Dynamic Menu Routes - Support nested paths */}
           <Route path="/:slug" element={<DynamicMenuPage />} />

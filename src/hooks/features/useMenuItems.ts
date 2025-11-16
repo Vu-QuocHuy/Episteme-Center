@@ -18,7 +18,7 @@ export const useMenuItems = () => {
           const transformedItems: NavigationMenuItem[] = response.data.data.map((item: any) => {
             // API có thể trả về children hoặc childrenMenu
             const childrenArray = item.children || item.childrenMenu || [];
-            
+
             return {
               id: item.id,
               slug: item.slug,

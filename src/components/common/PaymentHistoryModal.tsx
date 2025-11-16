@@ -17,8 +17,14 @@ import {
   Chip,
   CircularProgress,
   Grid,
-  Alert
+  Alert,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails
 } from '@mui/material';
+import {
+  ExpandMore as ExpandMoreIcon
+} from '@mui/icons-material';
 import {
   Receipt as ReceiptIcon,
   Payment as PaymentIcon,
@@ -413,30 +419,36 @@ const PaymentHistoryModal: React.FC<PaymentHistoryModalProps> = ({
           <Box sx={{ p: 4 }}>
             {/* Payment Details Section */}
             {showPaymentDetails && paymentDetails && (
-              <Paper sx={{
-                p: 3,
-                mb: 3,
-                borderRadius: 2,
-                background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
-                border: '1px solid #e0e6ed',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
-              }}>
-                <Typography variant="h6" gutterBottom sx={{
-                  color: '#2c3e50',
-                  fontWeight: 600,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1,
-                  mb: 2
-                }}>
-                  <Box sx={{
-                    width: 4,
-                    height: 20,
-                    bgcolor: '#667eea',
-                    borderRadius: 2
-                  }} />
-                  Thông tin thanh toán
-                </Typography>
+              <Accordion defaultExpanded sx={{ mb: 3, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
+                <AccordionSummary
+                  expandIcon={<ExpandMoreIcon />}
+                  sx={{
+                    background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+                    border: '1px solid #e0e6ed',
+                    px: 3,
+                    py: 2,
+                    '&:hover': {
+                      bgcolor: 'rgba(102, 126, 234, 0.05)'
+                    }
+                  }}
+                >
+                  <Typography variant="h6" sx={{
+                    color: '#2c3e50',
+                    fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1
+                  }}>
+                    <Box sx={{
+                      width: 4,
+                      height: 20,
+                      bgcolor: '#667eea',
+                      borderRadius: 2
+                    }} />
+                    Thông tin thanh toán
+                  </Typography>
+                </AccordionSummary>
+                <AccordionDetails sx={{ p: 0 }}>
                 <Box sx={{
                   p: 2,
                   bgcolor: 'white',
@@ -566,33 +578,41 @@ const PaymentHistoryModal: React.FC<PaymentHistoryModalProps> = ({
                     )}
                   </Grid>
                 </Box>
-              </Paper>
+                </AccordionDetails>
+              </Accordion>
             )}
 
             {/* Payment History Table */}
-            <Paper sx={{
-              p: 3,
-              borderRadius: 2,
-              background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
-              border: '1px solid #e0e6ed',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
-            }}>
-              <Typography variant="h6" gutterBottom sx={{
-                color: '#2c3e50',
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1,
-                mb: 2
-              }}>
-                <Box sx={{
-                  width: 4,
-                  height: 20,
-                  bgcolor: '#667eea',
-                  borderRadius: 2
-                }} />
-                Lịch sử giao dịch
-              </Typography>
+            <Accordion defaultExpanded sx={{ borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
+              <AccordionSummary
+                expandIcon={<ExpandMoreIcon />}
+                sx={{
+                  background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+                  border: '1px solid #e0e6ed',
+                  px: 3,
+                  py: 2,
+                  '&:hover': {
+                    bgcolor: 'rgba(102, 126, 234, 0.05)'
+                  }
+                }}
+              >
+                <Typography variant="h6" sx={{
+                  color: '#2c3e50',
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1
+                }}>
+                  <Box sx={{
+                    width: 4,
+                    height: 20,
+                    bgcolor: '#667eea',
+                    borderRadius: 2
+                  }} />
+                  Lịch sử giao dịch
+                </Typography>
+              </AccordionSummary>
+              <AccordionDetails sx={{ p: 0 }}>
               <Box sx={{
                 bgcolor: 'white',
                 borderRadius: 2,
@@ -674,7 +694,8 @@ const PaymentHistoryModal: React.FC<PaymentHistoryModalProps> = ({
                   </TableContainer>
                 )}
               </Box>
-            </Paper>
+              </AccordionDetails>
+            </Accordion>
 
             {/* Payment Requests Section */}
             {paymentRequests.length > 0 && (

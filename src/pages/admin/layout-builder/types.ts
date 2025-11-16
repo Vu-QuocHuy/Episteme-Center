@@ -251,3 +251,4 @@ export type ComponentConfig =
   | { type: 'gallery'; config: GalleryConfig }
   | { type: 'pricing-table'; config: PricingTableConfig }
   | { type: 'map'; config: MapConfig };
+

@@ -9,21 +9,21 @@ import {
 import {
   Payment as PaymentIcon,
   Search as SearchIcon, Receipt as ReceiptIcon, MoneyOff as MoneyOffIcon, Discount as DiscountIcon,
-  History as HistoryIcon, CloudUpload as UploadIcon, Image as ImageIcon, Close as CloseIcon,
-  HourglassEmpty as PendingIcon, CheckCircle as ApprovedIcon, Cancel as RejectedIcon,
+  History as HistoryIcon,
+  QrCode2 as QrCodeIcon,
+  Close as CloseIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
 import { getParentByIdAPI } from '../../services/parents';
-import { getPaymentsByStudentAPI, requestPaymentAPI } from '../../services/payments';
-import { uploadFileAPI } from '../../services/files';
+import { getPaymentsByStudentAPI, getQRCodeAPI } from '../../services/payments';
 import { commonStyles } from '../../utils/styles';
 import PaymentHistoryModal from '../../components/common/PaymentHistoryModal';
 import NotificationSnackbar from '../../components/common/NotificationSnackbar';
-import ConfirmDialog from '../../components/common/ConfirmDialog';
 
 interface PaymentTransaction {
   id: string;
+  paymentId?: string; // Payment ID thực tế từ API
   childName: string;
   className: string;
   month: string | number;
@@ -40,29 +40,10 @@ interface PaymentTransaction {
   paymentMethod?: string;
   description?: string;
   paymentHistory?: any[];
-  paymentRequests?: Array<{
-    id: number;
-    amount: number;
-    imageProof: string;
-    status: 'pending' | 'approved' | 'rejected';
-    requestedAt: string;
-    processedAt?: string;
-    rejectionReason?: string;
-  }>;
 }
 
 interface PaymentData {
   invoices: PaymentTransaction[];
-}
-
-interface PaymentConfirmData {
-  invoice: PaymentTransaction;
-  paymentData: {
-    paymentId: string;
-    amount: number;
-    method: string;
-    note: string;
-  };
 }
 
 const Payments: React.FC = () => {
@@ -77,15 +58,12 @@ const Payments: React.FC = () => {
   const [paymentDialogOpen, setPaymentDialogOpen] = useState<boolean>(false);
   const [selectedInvoice, setSelectedInvoice] = useState<PaymentTransaction | null>(null);
   const [paymentAmount, setPaymentAmount] = useState<string>('');
-  const [paymentLoading, setPaymentLoading] = useState<boolean>(false);
   const [paymentError, setPaymentError] = useState<string>('');
-  const [paymentSuccess, setPaymentSuccess] = useState<string>('');
 
-  // Upload image states
-  const [, setSelectedImage] = useState<File | null>(null);
-  const [previewImage, setPreviewImage] = useState<string>('');
-  const [uploadedImageUrl, setUploadedImageUrl] = useState<string>('');
-  const [imageUploading, setImageUploading] = useState<boolean>(false);
+  // QR Code states
+  const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
+  const [qrCodeLoading, setQrCodeLoading] = useState<boolean>(false);
+  const [qrDialogOpen, setQrDialogOpen] = useState<boolean>(false);
 
   // History modal
   const [paymentHistoryModalOpen, setPaymentHistoryModalOpen] = useState<boolean>(false);
@@ -93,10 +71,6 @@ const Payments: React.FC = () => {
 
   // Snackbar
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' | 'warning' }>({ open: false, message: '', severity: 'success' });
-
-  // Confirm dialog
-  const [paymentConfirmOpen, setPaymentConfirmOpen] = useState<boolean>(false);
-  const [paymentConfirmData, setPaymentConfirmData] = useState<PaymentConfirmData | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -138,8 +112,12 @@ const Payments: React.FC = () => {
         const finalAmount = Math.max(0, originalAmount - discountAmount);
         const remainingAmount = Math.max(0, finalAmount - paidAmount);
 
+        // Lưu paymentId thực tế từ API (item.id)
+        const paymentId = String(item?.id || '');
+
         return {
-          id: String(item?.id || `${student.id}-${year}-${monthNum}-${item?.class?.id || 'unknown'}`),
+          id: paymentId || `${student.id}-${year}-${monthNum}-${item?.class?.id || 'unknown'}`,
+          paymentId: paymentId, // Lưu paymentId riêng để dùng cho API
           childName: student?.name || item?.student?.name || '-',
           className: item?.class?.name || '-',
           month: `${monthNum}/${year}`,
@@ -255,10 +233,7 @@ const Payments: React.FC = () => {
     setSelectedInvoice(invoice);
     setPaymentAmount(String(invoice.remainingAmount || 0));
     setPaymentError('');
-    setPaymentSuccess('');
-    setSelectedImage(null);
-    setPreviewImage('');
-    setUploadedImageUrl('');
+    setQrCodeUrl('');
     setPaymentDialogOpen(true);
   };
 
@@ -267,58 +242,49 @@ const Payments: React.FC = () => {
     setSelectedInvoice(null);
     setPaymentAmount('');
     setPaymentError('');
-    setPaymentSuccess('');
-    setSelectedImage(null);
-    setPreviewImage('');
-    setUploadedImageUrl('');
+    setQrCodeUrl('');
   };
 
-  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      setPaymentError('Vui lòng chọn file ảnh');
+  const handleGenerateQRCode = async (paymentId: string, amount: number) => {
+    if (!paymentId || !amount || amount <= 0) {
+      setPaymentError('Số tiền thanh toán không hợp lệ');
       return;
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setPaymentError('Kích thước ảnh không được vượt quá 5MB');
-      return;
-    }
-
-    setSelectedImage(file);
-
-    // Preview image
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setPreviewImage(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-
-    // Upload to cloudinary
     try {
-      setImageUploading(true);
+      setQrCodeLoading(true);
       setPaymentError('');
-      const uploadRes = await uploadFileAPI(file);
-      setUploadedImageUrl(uploadRes.data.data.url);
-      setSnackbar({ open: true, message: 'Tải ảnh thành công', severity: 'success' });
+
+      const response = await getQRCodeAPI(amount, paymentId);
+
+      // Response structure: { statusCode: 200, data: { qrUrl: "...", ... } }
+      const qrUrl = response.data?.data?.qrUrl;
+      if (qrUrl) {
+        setQrCodeUrl(qrUrl);
+        setQrDialogOpen(true); // Mở QR dialog
+        setSnackbar({ open: true, message: 'Đã tạo mã QR. Vui lòng quét để thanh toán.', severity: 'success' });
+      } else {
+        setPaymentError('Không thể tạo mã QR');
+      }
     } catch (error: any) {
-      setPaymentError('Tải ảnh thất bại. Vui lòng thử lại.');
-      setSelectedImage(null);
-      setPreviewImage('');
-      setUploadedImageUrl('');
+      const msg = error?.response?.data?.message || 'Có lỗi xảy ra khi tạo mã QR';
+      setPaymentError(msg);
+      setSnackbar({ open: true, message: msg, severity: 'error' });
     } finally {
-      setImageUploading(false);
+      setQrCodeLoading(false);
     }
   };
 
-  const handleRemoveImage = () => {
-    setSelectedImage(null);
-    setPreviewImage('');
-    setUploadedImageUrl('');
+  const handleCloseQRDialog = () => {
+    setQrDialogOpen(false);
+    // Đóng cả dialog nhập số tiền
+    setPaymentDialogOpen(false);
+    setSelectedInvoice(null);
+    setPaymentAmount('');
+    setPaymentError('');
+    setQrCodeUrl('');
+    // Tự động refresh danh sách thanh toán khi đóng dialog
+    fetchPaymentData();
   };
 
   const handleOpenPaymentHistory = (payment: PaymentTransaction) => {
@@ -335,15 +301,8 @@ const Payments: React.FC = () => {
     setSnackbar({ ...snackbar, open: false });
   };
 
-  const handleConfirmPayment = () => {
-    if (!selectedInvoice || !paymentAmount) {
-      setPaymentError('Vui lòng nhập số tiền thanh toán');
-      return;
-    }
-    if (!uploadedImageUrl) {
-      setPaymentError('Vui lòng tải lên ảnh bằng chứng thanh toán');
-      return;
-    }
+  const handleRegenerateQRCode = () => {
+    if (!selectedInvoice) return;
     const amount = parseFloat(paymentAmount);
     if (isNaN(amount) || amount <= 0) {
       setPaymentError('Số tiền thanh toán không hợp lệ');
@@ -354,38 +313,15 @@ const Payments: React.FC = () => {
       setPaymentError('Số tiền thanh toán không được vượt quá số tiền còn lại');
       return;
     }
-    const confirmData = {
-      paymentId: selectedInvoice.id,
-      amount,
-      imageProof: uploadedImageUrl
-    };
-    setPaymentConfirmData({ invoice: selectedInvoice, paymentData: confirmData as any });
-    setPaymentConfirmOpen(true);
-  };
 
-  const handleConfirmPaymentFinal = async () => {
-    if (!paymentConfirmData) return;
-    setPaymentLoading(true);
-    setPaymentConfirmOpen(false);
-    setPaymentError('');
-    setPaymentSuccess('');
-    try {
-      await requestPaymentAPI(paymentConfirmData.paymentData.paymentId, {
-        amount: paymentConfirmData.paymentData.amount,
-        imageProof: (paymentConfirmData.paymentData as any).imageProof
-      });
-      setPaymentSuccess('Gửi yêu cầu thanh toán thành công!');
-      setSnackbar({ open: true, message: 'Yêu cầu thanh toán đã được gửi. Vui lòng chờ admin xác nhận.', severity: 'success' });
-      handleClosePaymentDialog();
-      await fetchPaymentData();
-    } catch (error: any) {
-      const msg = error?.response?.data?.message || 'Có lỗi xảy ra khi gửi yêu cầu thanh toán';
-      setPaymentError(msg);
-      setSnackbar({ open: true, message: msg, severity: 'error' });
-    } finally {
-      setPaymentLoading(false);
-      setPaymentConfirmData(null);
+    // Sử dụng paymentId thực tế từ API, fallback về id nếu không có
+    const paymentId = selectedInvoice.paymentId || selectedInvoice.id;
+    if (!paymentId) {
+      setPaymentError('Không tìm thấy mã thanh toán');
+      return;
     }
+
+    handleGenerateQRCode(paymentId, amount);
   };
 
   if (loading) {
@@ -572,48 +508,11 @@ const Payments: React.FC = () => {
                               size="small"
                               variant="outlined"
                             />
-                            {invoice.paymentRequests && invoice.paymentRequests.length > 0 && (
-                              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, justifyContent: 'center' }}>
-                                {invoice.paymentRequests.map((req) => (
-                                  <Tooltip
-                                    key={req.id}
-                                    title={
-                                      req.status === 'pending'
-                                        ? 'Yêu cầu thanh toán đang chờ admin duyệt'
-                                        : req.status === 'approved'
-                                        ? `Đã duyệt lúc ${new Date(req.processedAt || '').toLocaleString('vi-VN')}`
-                                        : `Bị từ chối: ${req.rejectionReason || 'Không có lý do'}`
-                                    }
-                                  >
-                                    <Chip
-                                      icon={
-                                        req.status === 'pending' ? <PendingIcon /> :
-                                        req.status === 'approved' ? <ApprovedIcon /> :
-                                        <RejectedIcon />
-                                      }
-                                      label={`${formatCurrency(req.amount)} - ${
-                                        req.status === 'pending' ? 'Chờ duyệt' :
-                                        req.status === 'approved' ? 'Đã duyệt' :
-                                        'Bị từ chối'
-                                      }`}
-                                      size="small"
-                                      color={
-                                        req.status === 'pending' ? 'warning' :
-                                        req.status === 'approved' ? 'success' :
-                                        'error'
-                                      }
-                                      sx={{ fontSize: '0.7rem' }}
-                                    />
-                                  </Tooltip>
-                                ))}
-                              </Box>
-                            )}
                           </Box>
                         </TableCell>
                         <TableCell align="left">
                           <Box sx={{ display: 'flex', gap: 1, justifyContent: 'left' }}>
-                            {invoice.status.toLowerCase() !== 'paid' &&
-                             !invoice.paymentRequests?.some(req => req.status === 'pending') && (
+                            {invoice.status.toLowerCase() !== 'paid' && (
                               <Button
                                 variant="contained"
                                 color="primary"
@@ -623,8 +522,7 @@ const Payments: React.FC = () => {
                                 Thanh toán
                               </Button>
                             )}
-                            {((invoice.paymentHistory && invoice.paymentHistory.length > 0) ||
-                              (invoice.paymentRequests && invoice.paymentRequests.length > 0)) && (
+                            {invoice.paymentHistory && invoice.paymentHistory.length > 0 && (
                               <Tooltip title="Xem lịch sử thanh toán">
                               <IconButton
                                 size="small"
@@ -674,10 +572,10 @@ const Payments: React.FC = () => {
           pb: 2
         }}>
           <Typography variant="h5" fontWeight={600} color="#1e293b">
-            Gửi yêu cầu thanh toán
+            Thanh toán học phí bằng QR Code
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-            {selectedInvoice?.childName} - {selectedInvoice?.className}
+            {selectedInvoice?.childName} - {selectedInvoice?.className} - Tháng {selectedInvoice?.month}/{selectedInvoice?.year}
           </Typography>
         </DialogTitle>
         <DialogContent sx={{ p: 3 }}>
@@ -726,133 +624,182 @@ const Payments: React.FC = () => {
 
             <Grid item xs={12}>
               <TextField
-                label="Số tiền thanh toán *"
+                label="Số tiền thanh toán"
                 type="number"
                 fullWidth
                 value={paymentAmount}
                 onChange={(e) => setPaymentAmount(e.target.value)}
                 inputProps={{ min: 0, max: selectedInvoice?.remainingAmount }}
                 required
-                helperText="Nhập số tiền bạn đã thanh toán"
+                placeholder="Nhập số tiền bạn muốn thanh toán"
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    fontSize: '1.1rem',
+                    fontWeight: 600,
+                  }
+                }}
               />
-            </Grid>
-
-            <Grid item xs={12}>
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                Ảnh bằng chứng thanh toán *
-              </Typography>
-              <Box sx={{
-                border: '2px dashed #cbd5e1',
-                borderRadius: 2,
-                p: 3,
-                textAlign: 'center',
-                bgcolor: '#f8fafc',
-                position: 'relative'
-              }}>
-                {!previewImage ? (
-                  <>
-                    <input
-                      accept="image/*"
-                      style={{ display: 'none' }}
-                      id="payment-proof-upload"
-                      type="file"
-                      onChange={handleImageSelect}
-                      disabled={imageUploading}
-                    />
-                    <label htmlFor="payment-proof-upload">
-                      <Button
-                        component="span"
-                        variant="outlined"
-                        startIcon={imageUploading ? <CircularProgress size={20} /> : <UploadIcon />}
-                        disabled={imageUploading}
-                        sx={{ mb: 1 }}
-                      >
-                        {imageUploading ? 'Đang tải...' : 'Tải ảnh lên'}
-                      </Button>
-                    </label>
-                    <Typography variant="caption" display="block" color="text.secondary">
-                      Ảnh chụp biên lai, hóa đơn chuyển khoản (PNG, JPG, tối đa 5MB)
-                    </Typography>
-                  </>
-                ) : (
-                  <Box sx={{ position: 'relative' }}>
-                    <Box
-                      component="img"
-                      src={previewImage}
-                      alt="Payment proof"
-                      sx={{
-                        maxWidth: '100%',
-                        maxHeight: 300,
-                        borderRadius: 1,
-                        boxShadow: 2
-                      }}
-                    />
-                    <IconButton
-                      size="small"
-                      sx={{
-                        position: 'absolute',
-                        top: 8,
-                        right: 8,
-                        bgcolor: 'error.main',
-                        color: 'white',
-                        '&:hover': { bgcolor: 'error.dark' }
-                      }}
-                      onClick={handleRemoveImage}
-                    >
-                      <CloseIcon fontSize="small" />
-                    </IconButton>
-                    {uploadedImageUrl && (
-                      <Chip
-                        icon={<ImageIcon />}
-                        label="Đã tải lên"
-                        color="success"
-                        size="small"
-                        sx={{ mt: 1 }}
-                      />
-                    )}
-                  </Box>
-                )}
-              </Box>
             </Grid>
 
             {paymentError && (
               <Grid item xs={12}>
-                <Alert severity="error">{paymentError}</Alert>
+                <Alert severity="error" sx={{ borderRadius: 2 }}>{paymentError}</Alert>
               </Grid>
             )}
-            {paymentSuccess && (
-              <Grid item xs={12}>
-                <Alert severity="success">{paymentSuccess}</Alert>
-              </Grid>
-            )}
-
-            <Grid item xs={12}>
-              <Alert severity="info" sx={{ mt: 1 }}>
-                Yêu cầu thanh toán sẽ được gửi đến admin để xác nhận. Bạn sẽ nhận được thông báo khi yêu cầu được xử lý.
-              </Alert>
-            </Grid>
           </Grid>
         </DialogContent>
-        <DialogActions sx={{ p: 3, bgcolor: '#f8fafc' }}>
+        <DialogActions sx={{ p: 3, bgcolor: '#f8fafc', gap: 2 }}>
           <Button
             onClick={handleClosePaymentDialog}
             variant="outlined"
-            sx={{ borderRadius: 2 }}
+            size="large"
+            sx={{
+              borderRadius: 2,
+              px: 4,
+              py: 1.2,
+              fontWeight: 600
+            }}
           >
             Hủy
           </Button>
           <Button
-            onClick={handleConfirmPayment}
+            onClick={handleRegenerateQRCode}
             variant="contained"
-            disabled={!paymentAmount || !uploadedImageUrl || paymentLoading || imageUploading}
+            size="large"
+            disabled={qrCodeLoading || !paymentAmount || parseFloat(paymentAmount) <= 0}
+            startIcon={qrCodeLoading ? <CircularProgress size={20} color="inherit" /> : <QrCodeIcon />}
             sx={{
               borderRadius: 2,
-              bgcolor: '#667eea',
-              '&:hover': { bgcolor: '#5a6fd8' },
-              px: 3
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 8px 20px rgba(102, 126, 234, 0.4)',
+              },
+              px: 4,
+              py: 1.2,
+              fontWeight: 700,
+              boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+              transition: 'all 0.3s ease',
+              '&:disabled': {
+                background: 'linear-gradient(135deg, #ccc 0%, #999 100%)',
+              }
             }}
           >
-            {paymentLoading ? 'Đang gửi...' : 'Gửi yêu cầu thanh toán'}
+            {qrCodeLoading ? 'Đang xử lý...' : 'Thanh toán'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* QR Code Dialog */}
+      <Dialog
+        open={qrDialogOpen}
+        onClose={handleCloseQRDialog}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 4,
+            overflow: 'hidden',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+          }
+        }}
+      >
+        <Box
+          sx={{
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            p: 3,
+            color: 'white',
+            position: 'relative',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2
+          }}
+        >
+          <IconButton
+            onClick={handleCloseQRDialog}
+            sx={{
+              position: 'absolute',
+              right: 8,
+              top: 8,
+              color: 'white',
+              bgcolor: 'rgba(255,255,255,0.1)',
+              '&:hover': {
+                bgcolor: 'rgba(255,255,255,0.2)',
+              }
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+          <QrCodeIcon sx={{ fontSize: 48 }} />
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="h5" fontWeight={700} gutterBottom>
+              Quét mã QR để thanh toán
+            </Typography>
+            <Typography variant="body2" sx={{ opacity: 0.9 }}>
+              Mở app ngân hàng và quét mã dưới đây
+            </Typography>
+          </Box>
+        </Box>
+
+        <DialogContent sx={{ p: 4, textAlign: 'center', bgcolor: '#f8fafc' }}>
+          {qrCodeUrl ? (
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 3
+              }}
+            >
+              {/* QR Code với animation */}
+              <Box
+                sx={{
+                  p: 3,
+                  bgcolor: 'white',
+                  borderRadius: 3,
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+                  animation: 'fadeIn 0.5s ease-in',
+                  '@keyframes fadeIn': {
+                    from: { opacity: 0, transform: 'scale(0.9)' },
+                    to: { opacity: 1, transform: 'scale(1)' }
+                  }
+                }}
+              >
+                <Box
+                  component="img"
+                  src={qrCodeUrl}
+                  alt="QR Code Payment"
+                  sx={{
+                    width: '100%',
+                    maxWidth: 300,
+                    height: 'auto',
+                    display: 'block'
+                  }}
+                />
+              </Box>
+            </Box>
+          ) : (
+            <CircularProgress size={60} />
+          )}
+        </DialogContent>
+
+        <DialogActions sx={{ p: 3, bgcolor: 'white', borderTop: '1px solid #e0e0e0', justifyContent: 'flex-end' }}>
+          <Button
+            onClick={handleCloseQRDialog}
+            variant="contained"
+            sx={{
+              borderRadius: 2,
+              px: 4,
+              py: 1.2,
+              fontWeight: 600,
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
+              }
+            }}
+          >
+            Đóng
           </Button>
         </DialogActions>
       </Dialog>
@@ -874,18 +821,6 @@ const Payments: React.FC = () => {
         onClose={handleCloseSnackbar}
         message={snackbar.message}
         severity={snackbar.severity}
-      />
-
-      {/* Confirm Dialog for Payment */}
-      <ConfirmDialog
-        open={paymentConfirmOpen}
-        onClose={() => setPaymentConfirmOpen(false)}
-        onConfirm={handleConfirmPaymentFinal}
-        title="Xác nhận thanh toán"
-        message={`Bạn có chắc chắn muốn gửi yêu cầu thanh toán ${formatCurrency(paymentConfirmData?.paymentData.amount || 0)} cho hóa đơn học phí tháng ${paymentConfirmData?.invoice.month} của ${paymentConfirmData?.invoice.childName}?`}
-        confirmText="Xác nhận"
-        cancelText="Hủy"
-        loading={paymentLoading}
       />
     </DashboardLayout>
   );

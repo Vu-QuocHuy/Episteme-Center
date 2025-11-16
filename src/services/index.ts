@@ -16,3 +16,4 @@ export * as RegistrationService from './registrations';
 export * as RoleService from './roles';
 export * as TransactionService from './transactions';
 export * as AuditService from './audit';
+export * as CronService from './cron';

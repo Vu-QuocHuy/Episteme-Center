@@ -28,7 +28,36 @@ export const getClassByIdAPI = (id: string) => {
 
 // API mới: Lấy thông tin lớp học cho banner (không cần auth)
 export const getClassBannerInfoAPI = (id: string) => {
-  return axiosInstance.get(`/classes/${id}/banner-info`, {
+  return axiosInstance.get(API_CONFIG.ENDPOINTS.CLASSES.BANNER_INFO(id), {
+    headers: {
+      'x-lang': 'vi'
+    }
+  });
+};
+
+// API mới: Lấy danh sách lớp học công khai (không cần auth)
+// Dùng để hiển thị ở menu khóa học
+export const getPublicClassesAPI = (params?: {
+  page?: number;
+  limit?: number;
+  gradeStart?: number;
+  gradeEnd?: number;
+}) => {
+  const queryParams: any = {};
+
+  if (params?.page) queryParams.page = params.page;
+  if (params?.limit) queryParams.limit = params.limit;
+
+  // Filters for grade range
+  if (params?.gradeStart !== undefined || params?.gradeEnd !== undefined) {
+    const filters: any = {};
+    if (params?.gradeStart !== undefined) filters.gradeStart = params.gradeStart;
+    if (params?.gradeEnd !== undefined) filters.gradeEnd = params.gradeEnd;
+    queryParams.filters = JSON.stringify(filters);
+  }
+
+  return axiosInstance.get(API_CONFIG.ENDPOINTS.CLASSES.PUBLIC, {
+    params: queryParams,
     headers: {
       'x-lang': 'vi'
     }

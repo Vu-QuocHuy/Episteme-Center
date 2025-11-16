@@ -1,21 +1,10 @@
 import React from 'react';
-import { Box, TextField, MenuItem, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Pagination, IconButton, Tooltip, Dialog, DialogTitle, DialogContent, DialogActions, Button, CircularProgress, Typography, Badge, Chip } from '@mui/material';
+import { Box, TextField, MenuItem, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Pagination, IconButton, Tooltip, Dialog, DialogTitle, DialogContent, DialogActions, Button, CircularProgress, Typography } from '@mui/material';
 import { Download as DownloadIcon } from '@mui/icons-material';
-import { History as HistoryIcon, Payment as PaymentIcon, CheckCircle as ApproveIcon, Cancel as RejectIcon } from '@mui/icons-material';
+import { History as HistoryIcon, Payment as PaymentIcon } from '@mui/icons-material';
 import PaymentHistoryModal from '../../../../components/common/PaymentHistoryModal';
-import { getAllPaymentsAPI, payStudentAPI, exportPaymentsReportAPI, processPaymentRequestAPI } from '../../../../services/payments';
+import { getAllPaymentsAPI, payStudentAPI, exportPaymentsReportAPI } from '../../../../services/payments';
 import * as XLSX from 'xlsx';
-
-interface PaymentRequest {
-  id: number;
-  amount: number;
-  imageProof: string;
-  status: 'pending' | 'approved' | 'rejected';
-  requestedAt: string;
-  processedAt: string | null;
-  processedBy: any;
-  rejectionReason: string | null;
-}
 
 interface PaymentHistory {
   id: string;
@@ -37,7 +26,6 @@ interface StudentPayment {
   status: string;
   student: { id: string; name: string; email?: string; phone?: string };
   class: { id: string; name: string };
-  paymentRequests?: PaymentRequest[];
   histories?: PaymentHistory[];
 }
 
@@ -68,13 +56,6 @@ const StudentPaymentsTab: React.FC<Props> = ({ onTotalsChange }) => {
   const [studentPaymentForm, setStudentPaymentForm] = React.useState<{ amount: string; method: string; note: string }>({ amount: '', method: 'cash', note: '' });
   const [studentPaymentLoading, setStudentPaymentLoading] = React.useState<boolean>(false);
   const [exportLoading, setExportLoading] = React.useState<boolean>(false);
-
-  // Payment Request Dialog States
-  const [openRequestDialog, setOpenRequestDialog] = React.useState<boolean>(false);
-  const [selectedRequest, setSelectedRequest] = React.useState<PaymentRequest | null>(null);
-  const [selectedPaymentForRequest, setSelectedPaymentForRequest] = React.useState<StudentPayment | null>(null);
-  const [rejectionReason, setRejectionReason] = React.useState<string>('');
-  const [requestProcessing, setRequestProcessing] = React.useState<boolean>(false);
 
   const computeAndEmitTotals = React.useCallback((list: StudentPayment[]) => {
     const totalStudentFees = list.reduce((t, p) => t + (p.totalAmount ?? 0), 0);
@@ -234,99 +215,6 @@ const StudentPaymentsTab: React.FC<Props> = ({ onTotalsChange }) => {
     }
   };
 
-  // Payment Request Handlers
-  const onOpenRequestDialog = (request: PaymentRequest, payment: StudentPayment) => {
-    setSelectedRequest(request);
-    setSelectedPaymentForRequest(payment);
-    setRejectionReason('');
-    setOpenRequestDialog(true);
-  };
-
-  const onCloseRequestDialog = () => {
-    setOpenRequestDialog(false);
-    setSelectedRequest(null);
-    setSelectedPaymentForRequest(null);
-    setRejectionReason('');
-  };
-
-  const handleApproveRequest = async () => {
-    console.log('=== handleApproveRequest START ===');
-    console.log('selectedRequest:', selectedRequest);
-
-    if (!selectedRequest) {
-      console.error('❌ selectedRequest is null or undefined');
-      return;
-    }
-
-    console.log('Request ID:', selectedRequest.id);
-    console.log('Request ID type:', typeof selectedRequest.id);
-
-    setRequestProcessing(true);
-    try {
-      console.log('🔄 Calling processPaymentRequestAPI with action: approve');
-      const response = await processPaymentRequestAPI(String(selectedRequest.id), 'approve');
-      console.log('✅ API Response:', response);
-
-      onCloseRequestDialog();
-      await fetchPayments(pagination.page);
-      console.log('✅ Payment request approved successfully');
-    } catch (error: any) {
-      console.error('❌ Lỗi khi phê duyệt yêu cầu:', error);
-      console.error('❌ Error details:', {
-        message: error?.message,
-        response: error?.response,
-        responseData: error?.response?.data,
-        status: error?.response?.status,
-        statusText: error?.response?.statusText
-      });
-      alert(`Có lỗi xảy ra khi phê duyệt yêu cầu: ${error?.response?.data?.message || error?.message || 'Vui lòng thử lại.'}`);
-    } finally {
-      setRequestProcessing(false);
-      console.log('=== handleApproveRequest END ===');
-    }
-  };
-
-  const handleRejectRequest = async () => {
-    console.log('=== handleRejectRequest START ===');
-    console.log('selectedRequest:', selectedRequest);
-    console.log('rejectionReason:', rejectionReason);
-
-    if (!selectedRequest || !rejectionReason.trim()) {
-      console.error('❌ Missing required data:', {
-        hasSelectedRequest: !!selectedRequest,
-        rejectionReasonLength: rejectionReason?.trim()?.length || 0
-      });
-      alert('Vui lòng nhập lý do từ chối.');
-      return;
-    }
-
-    console.log('Request ID:', selectedRequest.id);
-    console.log('Request ID type:', typeof selectedRequest.id);
-
-    setRequestProcessing(true);
-    try {
-      console.log('🔄 Calling processPaymentRequestAPI with action: reject');
-      const response = await processPaymentRequestAPI(String(selectedRequest.id), 'reject', rejectionReason);
-      console.log('✅ API Response:', response);
-
-      onCloseRequestDialog();
-      await fetchPayments(pagination.page);
-      console.log('✅ Payment request rejected successfully');
-    } catch (error: any) {
-      console.error('❌ Lỗi khi từ chối yêu cầu:', error);
-      console.error('❌ Error details:', {
-        message: error?.message,
-        response: error?.response,
-        responseData: error?.response?.data,
-        status: error?.response?.status,
-        statusText: error?.response?.statusText
-      });
-      alert(`Có lỗi xảy ra khi từ chối yêu cầu: ${error?.response?.data?.message || error?.message || 'Vui lòng thử lại.'}`);
-    } finally {
-      setRequestProcessing(false);
-      console.log('=== handleRejectRequest END ===');
-    }
-  };
   return (
     <>
       <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -450,21 +338,6 @@ const StudentPaymentsTab: React.FC<Props> = ({ onTotalsChange }) => {
                         </IconButton>
                       </Tooltip>
                     )}
-                    {p.paymentRequests && p.paymentRequests.some(req => req.status === 'pending') && (
-                      <Tooltip title="Xử lý yêu cầu thanh toán">
-                        <IconButton
-                          color="warning"
-                          onClick={() => {
-                            const pendingRequest = p.paymentRequests!.find(req => req.status === 'pending');
-                            if (pendingRequest) onOpenRequestDialog(pendingRequest, p);
-                          }}
-                        >
-                          <Badge badgeContent={p.paymentRequests.filter(req => req.status === 'pending').length} color="error">
-                            <ApproveIcon />
-                          </Badge>
-                        </IconButton>
-                      </Tooltip>
-                    )}
                   </Box>
                 </TableCell>
               </TableRow>
@@ -511,124 +384,6 @@ const StudentPaymentsTab: React.FC<Props> = ({ onTotalsChange }) => {
           <Button onClick={onClosePayDialog} variant="outlined">Hủy</Button>
           <Button onClick={handleSubmitStudentPayment} variant="contained" disabled={!studentPaymentForm.amount || studentPaymentLoading}>
             {studentPaymentLoading ? <CircularProgress size={20} /> : 'Thanh toán'}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Payment Request Dialog */}
-      <Dialog open={openRequestDialog} onClose={onCloseRequestDialog} maxWidth="md" fullWidth>
-        <DialogTitle>Xử lý yêu cầu thanh toán</DialogTitle>
-        <DialogContent>
-          {selectedRequest && selectedPaymentForRequest && (
-            <Box>
-              {/* Student & Payment Info */}
-              <Box sx={{ mb: 3, p: 2, bgcolor: 'background.paper', borderRadius: 1, border: '1px solid #e0e0e0' }}>
-                <Typography variant="h6" gutterBottom>Thông tin học phí</Typography>
-                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                  <Box>
-                    <Typography variant="body2" color="text.secondary">Học sinh:</Typography>
-                    <Typography variant="body1" fontWeight={600}>{selectedPaymentForRequest.student?.name}</Typography>
-                  </Box>
-                  <Box>
-                    <Typography variant="body2" color="text.secondary">Lớp học:</Typography>
-                    <Typography variant="body1" fontWeight={600}>{selectedPaymentForRequest.class?.name}</Typography>
-                  </Box>
-                  <Box>
-                    <Typography variant="body2" color="text.secondary">Tháng/Năm:</Typography>
-                    <Typography variant="body1">{selectedPaymentForRequest.month}/{selectedPaymentForRequest.year}</Typography>
-                  </Box>
-                  <Box>
-                    <Typography variant="body2" color="text.secondary">Số tiền cần đóng:</Typography>
-                    <Typography variant="body1" color="primary" fontWeight={600}>
-                      {((selectedPaymentForRequest.totalAmount || 0) - (selectedPaymentForRequest.discountAmount || 0) - (selectedPaymentForRequest.paidAmount || 0)).toLocaleString()} ₫
-                    </Typography>
-                  </Box>
-                </Box>
-              </Box>
-
-              {/* Payment Request Details */}
-              <Box sx={{ mb: 3, p: 2, bgcolor: '#fff3e0', borderRadius: 1, border: '1px solid #ffb74d' }}>
-                <Typography variant="h6" gutterBottom>Thông tin yêu cầu thanh toán</Typography>
-                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mb: 2 }}>
-                  <Box>
-                    <Typography variant="body2" color="text.secondary">Số tiền yêu cầu:</Typography>
-                    <Typography variant="body1" fontWeight={600} color="warning.dark">
-                      {selectedRequest.amount.toLocaleString()} ₫
-                    </Typography>
-                  </Box>
-                  <Box>
-                    <Typography variant="body2" color="text.secondary">Thời gian gửi:</Typography>
-                    <Typography variant="body1">
-                      {new Date(selectedRequest.requestedAt).toLocaleString('vi-VN')}
-                    </Typography>
-                  </Box>
-                  <Box>
-                    <Typography variant="body2" color="text.secondary">Trạng thái:</Typography>
-                    <Chip
-                      label={selectedRequest.status === 'pending' ? 'Đang chờ duyệt' : selectedRequest.status === 'approved' ? 'Đã phê duyệt' : 'Đã từ chối'}
-                      color={selectedRequest.status === 'pending' ? 'warning' : selectedRequest.status === 'approved' ? 'success' : 'error'}
-                      size="small"
-                    />
-                  </Box>
-                </Box>
-
-                {/* Payment Proof Image */}
-                <Box>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>Ảnh chứng từ:</Typography>
-                  <Box
-                    component="img"
-                    src={selectedRequest.imageProof}
-                    alt="Chứng từ thanh toán"
-                    sx={{
-                      width: '100%',
-                      maxHeight: 400,
-                      objectFit: 'contain',
-                      borderRadius: 1,
-                      border: '1px solid #e0e0e0',
-                      cursor: 'pointer',
-                      '&:hover': { opacity: 0.9 }
-                    }}
-                    onClick={() => window.open(selectedRequest.imageProof, '_blank')}
-                  />
-                </Box>
-              </Box>
-
-              {/* Rejection Reason Input (for reject action) */}
-              <Box sx={{ mt: 2 }}>
-                <TextField
-                  label="Lý do từ chối (nếu từ chối)"
-                  multiline
-                  rows={3}
-                  fullWidth
-                  value={rejectionReason}
-                  onChange={(e) => setRejectionReason(e.target.value)}
-                  placeholder="Nhập lý do từ chối yêu cầu thanh toán..."
-                />
-              </Box>
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={onCloseRequestDialog} variant="outlined" disabled={requestProcessing}>
-            Đóng
-          </Button>
-          <Button
-            onClick={handleRejectRequest}
-            variant="outlined"
-            color="error"
-            startIcon={<RejectIcon />}
-            disabled={requestProcessing || !rejectionReason.trim()}
-          >
-            {requestProcessing ? <CircularProgress size={20} /> : 'Từ chối'}
-          </Button>
-          <Button
-            onClick={handleApproveRequest}
-            variant="contained"
-            color="success"
-            startIcon={<ApproveIcon />}
-            disabled={requestProcessing}
-          >
-            {requestProcessing ? <CircularProgress size={20} /> : 'Phê duyệt'}
           </Button>
         </DialogActions>
       </Dialog>

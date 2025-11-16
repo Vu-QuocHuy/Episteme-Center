@@ -41,6 +41,7 @@ export interface ApiEndpoints {
     SCHEDULE: (id: string) => string;
     ATTENDANCE: (id: string) => string;
     MONTHLY_CHANGES: string;
+    STATISTICS: string;
   };
   CLASSES: {
     GET_ALL: string;
@@ -53,6 +54,8 @@ export interface ApiEndpoints {
     GET_AVAILABLE_STUDENTS: (id: string) => string;
     ADD_STUDENTS: (id: string) => string;
     REMOVE_STUDENTS: (id: string) => string;
+    BANNER_INFO: (id: string) => string;
+    PUBLIC: string;
   };
   PARENTS: {
     CREATE: string;
@@ -74,8 +77,8 @@ export interface ApiEndpoints {
     GET_ALL: string;
     GET_BY_STUDENT: (id: string) => string;
     PAY_STUDENT: (id: string) => string;
-    REQUEST_PAYMENT: (paymentId: string) => string;
-    PROCESS_REQUEST: (paymentRequestId: string) => string;
+    GET_QR_CODE: string;
+    CONFIRM_PAYMENTS: string;
     GET_TEACHER_PAYMENTS: string;
     EXPORT_REPORT: string;
     TEACHER_EXPORT_REPORT: string;
@@ -161,6 +164,9 @@ export interface ApiEndpoints {
     UPDATE: (id: string) => string;
     DELETE: (id: string) => string;
   };
+  CRON: {
+    UPDATE_CLASS_STATUS: string;
+  };
   // Posts endpoints (like FE-webcntt-main)
   POSTS: {
     GET_LATEST: string;
@@ -245,6 +251,7 @@ export const API_CONFIG: ApiConfig = {
       SCHEDULE: (id: string) => `/students/schedule/${id}`,
       ATTENDANCE: (id: string) => `/students/${id}/attendance`,
       MONTHLY_CHANGES: '/students/monthly-changes',
+      STATISTICS: '/students/statistics',
     },
     // Class endpoints
     CLASSES: {
@@ -258,6 +265,8 @@ export const API_CONFIG: ApiConfig = {
       GET_AVAILABLE_STUDENTS: (id: string) => `/classes/available-students/${id}`,
       ADD_STUDENTS: (id: string) => `/classes/add-students/${id}`,
       REMOVE_STUDENTS: (id: string) => `/classes/remove-students/${id}`,
+      BANNER_INFO: (id: string) => `/classes/${id}/banner-info`,
+      PUBLIC: '/classes/public',
     },
     PARENTS: {
       CREATE: '/parents',
@@ -280,8 +289,8 @@ export const API_CONFIG: ApiConfig = {
       GET_ALL: '/payments/all',
       GET_BY_STUDENT: (id: string) => `/payments/students/${id}`,
       PAY_STUDENT: (id: string) => `/payments/pay-student/${id}`,
-      REQUEST_PAYMENT: (paymentId: string) => `/payments/request/${paymentId}`,
-      PROCESS_REQUEST: (paymentRequestId: string) => `/payments/process/${paymentRequestId}`,
+      GET_QR_CODE: '/payments/qrcode',
+      CONFIRM_PAYMENTS: '/payments/confirm-payments',
       GET_TEACHER_PAYMENTS: '/teacher-payments/all',
       EXPORT_REPORT: '/payments/report',
       TEACHER_EXPORT_REPORT: '/teacher-payments/report',
@@ -371,6 +380,10 @@ export const API_CONFIG: ApiConfig = {
       GET_BY_ID: (id: string) => `/registrations/${id}`,
       UPDATE: (id: string) => `/registrations/${id}`,
       DELETE: (id: string) => `/registrations/${id}`,
+    },
+    // Cron endpoints
+    CRON: {
+      UPDATE_CLASS_STATUS: '/api/v1/cron/update-class-status',
     },
     // Posts endpoints (like FE-webcntt-main)
     POSTS: {

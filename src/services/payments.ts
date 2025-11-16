@@ -81,47 +81,29 @@ export const exportTeacherPaymentsReportAPI = (filters?: Record<string, any>) =>
 
 export const payTuitionAPI = (data: any) => axiosInstance.patch(API_CONFIG.ENDPOINTS.PARENTS.PAY_TUITION_FEE, data);
 
-// Payment Request API for Parent
-export const requestPaymentAPI = (paymentId: string, data: {
-  amount: number;
-  imageProof: string;
-}) => {
-  const formData = new URLSearchParams();
-  formData.append('amount', String(data.amount));
-  formData.append('imageProof', data.imageProof);
-  return axiosInstance.patch(API_CONFIG.ENDPOINTS.PAYMENTS.REQUEST_PAYMENT(paymentId), formData, {
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-  });
-};
+// Get QR Code for Payment
+export const getQRCodeAPI = (amount: number, paymentId: string) => {
+  // Đảm bảo amount là số nguyên (integer) và > 0
+  const amountInt = Math.floor(Math.abs(Number(amount)));
 
-// Payment Request API for Admin
-export const processPaymentRequestAPI = (paymentRequestId: string, action: 'approve' | 'reject', rejectionReason?: string) => {
-  console.log('🔵 processPaymentRequestAPI called with:', {
-    paymentRequestId,
-    paymentRequestIdType: typeof paymentRequestId,
-    action,
-    rejectionReason
-  });
-
-  const endpoint = API_CONFIG.ENDPOINTS.PAYMENTS.PROCESS_REQUEST(String(paymentRequestId));
-  console.log('🔵 API Endpoint:', endpoint);
-
-  // Map frontend action to backend status value
-  const status = action === 'approve' ? 'approved' : 'rejected';
-
-  const formData = new URLSearchParams();
-  formData.append('status', status);
-  if (action === 'reject' && rejectionReason) {
-    formData.append('rejectionReason', rejectionReason);
+  if (amountInt <= 0 || isNaN(amountInt)) {
+    throw new Error('Số tiền phải là số nguyên lớn hơn 0');
   }
 
-  console.log('🔵 FormData:', {
-    status: formData.get('status'),
-    rejectionReason: formData.get('rejectionReason')
-  });
-  console.log('🔵 FormData string:', formData.toString());
+  // Vấn đề: XMLHttpRequest không gửi body trong GET request theo HTTP spec
+  // Postman có thể làm được với disableBodyPruning, nhưng browser không
+  // Giải pháp: Gửi qua query params thay vì body
+  // Backend đã được điều chỉnh để đọc từ @Query() thay vì @Body()
 
-  return axiosInstance.patch(endpoint, formData, {
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+  // Sử dụng axios.get với params option để axios tự động encode query params
+  return axiosInstance.get(API_CONFIG.ENDPOINTS.PAYMENTS.GET_QR_CODE, {
+    params: {
+      amount: amountInt,
+      paymentId: paymentId
+    },
+    headers: {
+      'x-lang': 'vi'
+    },
+    withCredentials: true
   });
 };
