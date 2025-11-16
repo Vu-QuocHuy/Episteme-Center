@@ -13,8 +13,6 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "env:setup": "node scripts/setup-env.cjs",
-    "env:check": "node scripts/setup-env.cjs",
     "clean": "rimraf dist"
   },
   "dependencies": {
