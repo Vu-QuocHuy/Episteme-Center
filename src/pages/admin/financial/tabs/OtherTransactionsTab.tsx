@@ -174,19 +174,19 @@ const OtherTransactionsTab: React.FC<Props> = () => {
     const list = Array.isArray(payload.result) ? payload.result as Transaction[] : transactions;
 
     const rows = list.map((t) => ({
-      'Danh mục': t.category?.name || '-',
-      'Loại': t.category?.type === 'revenue' ? 'Thu' : 'Chi',
       'Mô tả': t.description || '-',
-      'Ngày': (t.transactionAt || t.transaction_at) ? new Date(t.transactionAt || (t.transaction_at as string)).toLocaleDateString('vi-VN') : '-',
+      'Loại': t.category?.type === 'revenue' ? 'Thu' : 'Chi',
+      'Danh mục': t.category?.name || '-',
       'Số tiền (₫)': t.amount || 0,
+      'Ngày thực hiện': (t.transactionAt || t.transaction_at) ? new Date(t.transactionAt || (t.transaction_at as string)).toLocaleDateString('vi-VN') : '-',
     }));
     const totalAmount = rows.reduce((s, r) => s + Number((r as any)['Số tiền (₫)'] || 0), 0);
     rows.push({
-      'Danh mục': 'Tổng',
+      'Mô tả': 'Tổng',
       'Loại': '',
-      'Mô tả': '',
-      'Ngày': '',
+      'Danh mục': '',
       'Số tiền (₫)': totalAmount,
+      'Ngày thực hiện': '',
     } as any);
     const ws = XLSX.utils.json_to_sheet(rows);
     const colWidths = Object.keys(rows[0] || {}).map((k) => ({ wch: Math.max(k.length, ...rows.map(r => String((r as any)[k] ?? '').length)) + 2 }));
@@ -369,22 +369,41 @@ const OtherTransactionsTab: React.FC<Props> = () => {
         <Table>
           <TableHead>
             <TableRow sx={{ bgcolor: '#f8fafc' }}>
-              <TableCell sx={{ fontWeight: 600 }}>Danh mục</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Loại</TableCell>
               <TableCell sx={{ fontWeight: 600 }}>Mô tả</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Ngày</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Loại</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Danh mục</TableCell>
               <TableCell align="right" sx={{ fontWeight: 600 }}>Số tiền</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Ngày thực hiện</TableCell>
               <TableCell align="center" sx={{ fontWeight: 600 }}>Thao tác</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {transactions.map((t, idx) => (
               <TableRow key={t.id || idx} hover>
-                <TableCell><Typography variant="body2" fontWeight={500}>{t.category?.name || '-'}</Typography></TableCell>
-                <TableCell><Chip label={t.category?.type === 'revenue' ? 'Thu' : 'Chi'} color={t.category?.type === 'revenue' ? 'success' : 'error'} size="small" /></TableCell>
                 <TableCell><Typography variant="body2">{t.description || '-'}</Typography></TableCell>
+                <TableCell>
+                  <Box
+                    component="span"
+                    sx={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      px: 1.25,
+                      py: 0.25,
+                      borderRadius: 1,
+                      fontSize: '0.8125rem',
+                      fontWeight: 600,
+                      color: t.category?.type === 'revenue' ? '#2e7d32' : '#c62828',
+                      border: `1px solid ${t.category?.type === 'revenue' ? '#2e7d32' : '#c62828'}`,
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {t.category?.type === 'revenue' ? 'Thu' : 'Chi'}
+                  </Box>
+                </TableCell>
+                <TableCell><Typography variant="body2" fontWeight={500}>{t.category?.name || '-'}</Typography></TableCell>
+                <TableCell align="right"><Typography variant="body2" color="text.primary">{t.amount ? t.amount.toLocaleString() : '0'} ₫</Typography></TableCell>
                 <TableCell><Typography variant="body2" color="text.secondary">{(t.transactionAt || t.transaction_at) ? new Date(t.transactionAt || (t.transaction_at as string)).toLocaleDateString('vi-VN') : '-'}</Typography></TableCell>
-                <TableCell align="right"><Typography variant="body2" fontWeight={600} color={t.category?.type === 'revenue' ? 'success.main' : 'error.main'}>{t.amount ? t.amount.toLocaleString() : '0'} ₫</Typography></TableCell>
                 <TableCell align="center">
                   <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
                     <Tooltip title="Chỉnh sửa"><IconButton size="small" sx={{ color: 'primary.main' }} onClick={() => handleEditTransaction(t)}><EditIcon fontSize="small" /></IconButton></Tooltip>

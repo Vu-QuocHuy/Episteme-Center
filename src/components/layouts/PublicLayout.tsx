@@ -29,7 +29,7 @@ const PublicLayout: React.FC<PublicLayoutProps> = ({
         component="main"
         sx={{
           flexGrow: 1,
-          pt: showHeader ? '72px' : 0, // Match HomeHeader minHeight: 72px
+          pt: showHeader ? { xs: '72px', md: '72px' } : 0, // Match HomeHeader minHeight: 72px, ensure content is not hidden
           width: '100%'
         }}
       >
