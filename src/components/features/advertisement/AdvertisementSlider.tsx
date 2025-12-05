@@ -128,7 +128,7 @@ const AdvertisementSlider: React.FC<AdvertisementSliderProps> = ({
       sx={{
         position: 'relative',
         width: '100%',
-        ...(height ? { height } : { aspectRatio: '16/9' }),
+        ...(height ? { height, minHeight: height } : { aspectRatio: '16/9' }),
       }}
     >
       <Slider {...settings}>
@@ -138,10 +138,10 @@ const AdvertisementSlider: React.FC<AdvertisementSliderProps> = ({
             sx={{
               position: 'relative',
               width: '100%',
-              ...(height ? { height } : { aspectRatio: '16/9' }), // If height provided, use it; otherwise keep ratio
+              ...(height ? { height, minHeight: height } : { aspectRatio: '16/9' }), // If height provided, use it; otherwise keep ratio
               overflow: 'hidden',
               '@media (max-width: 768px)': {
-                ...(height ? { height } : { aspectRatio: '16/9' }), // Keep consistent sizing on mobile
+                ...(height ? { height: Math.max(height * 0.7, 400), minHeight: Math.max(height * 0.7, 400) } : { aspectRatio: '16/9' }), // Responsive height on mobile
               }
             }}
           >
@@ -174,12 +174,37 @@ const AdvertisementSlider: React.FC<AdvertisementSliderProps> = ({
                 right: 0,
                 background: 'linear-gradient(transparent, rgba(0,0,0,0.85))',
                 color: 'white',
-                p: { xs: 2, md: 3 }
+                p: { xs: 2.5, md: 4 },
+                minHeight: { xs: '180px', md: '220px' }, // Ensure minimum height for content
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'flex-end'
               }}>
-                <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ fontSize: { xs: '1.5rem', md: '2rem' } }}>
+                <Typography
+                  variant="h4"
+                  fontWeight="bold"
+                  gutterBottom
+                  sx={{
+                    fontSize: { xs: '1.5rem', md: '2rem' },
+                    mb: 1.5,
+                    lineHeight: 1.2
+                  }}
+                >
                   {ad.title}
                 </Typography>
-                <Typography variant="body1" sx={{ mb: 2, opacity: 0.9, fontSize: { xs: '0.9rem', md: '1rem' } }}>
+                <Typography
+                  variant="body1"
+                  sx={{
+                    mb: 2,
+                    opacity: 0.9,
+                    fontSize: { xs: '0.9rem', md: '1rem' },
+                    lineHeight: 1.5,
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden'
+                  }}
+                >
                   {ad.content || ad.description}
                 </Typography>
                 {onRegisterClick && ad.classId && (
@@ -204,7 +229,8 @@ const AdvertisementSlider: React.FC<AdvertisementSliderProps> = ({
                         transform: 'translateY(-2px)',
                         boxShadow: '0 6px 20px rgba(211, 47, 47, 0.6)',
                       },
-                      transition: 'all 0.3s ease'
+                      transition: 'all 0.3s ease',
+                      alignSelf: 'flex-start'
                     }}
                   >
                     ĐĂNG KÝ NGAY

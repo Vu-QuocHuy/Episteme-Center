@@ -64,7 +64,6 @@ const ClassRegistrationModal: React.FC<ClassRegistrationModalProps> = ({
   open,
   onClose,
   classId,
-  className,
   onSuccess
 }) => {
   const [classInfo, setClassInfo] = useState<ClassInfo | null>(null);
@@ -205,7 +204,7 @@ const ClassRegistrationModal: React.FC<ClassRegistrationModalProps> = ({
       fullWidth
       PaperProps={{
         sx: {
-          borderRadius: 0,
+          borderRadius: 2,
           maxHeight: '90vh'
         }
       }}
@@ -225,11 +224,6 @@ const ClassRegistrationModal: React.FC<ClassRegistrationModalProps> = ({
             <Typography variant="h6" sx={{ fontWeight: 600, lineHeight: 1.2 }}>
               Đăng ký tư vấn
             </Typography>
-            {className && (
-              <Typography variant="caption" sx={{ opacity: 0.9, display: 'block' }}>
-                {className}
-              </Typography>
-            )}
           </Box>
         </Box>
         <IconButton
@@ -274,13 +268,13 @@ const ClassRegistrationModal: React.FC<ClassRegistrationModalProps> = ({
                     borderLeft: '4px solid',
                     borderColor: 'primary.main'
                   }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                       <SchoolIcon sx={{ color: 'primary.main', fontSize: 22 }} />
                       <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, flexWrap: 'wrap' }}>
                         <Typography variant="subtitle2" fontWeight={700}>
                           Tên lớp học:
                         </Typography>
-                        <Typography variant="h6" fontWeight={700}>
+                        <Typography variant="body1" fontWeight={600}>
                           {classInfo.name}
                         </Typography>
                       </Box>
@@ -388,7 +382,7 @@ const ClassRegistrationModal: React.FC<ClassRegistrationModalProps> = ({
                           <Typography variant="subtitle2" fontWeight={700}>
                             Học phí:
                           </Typography>
-                          <Typography variant="h5" fontWeight={700}>
+                          <Typography variant="body1" fontWeight={600}>
                             {classInfo.feePerLesson.toLocaleString('vi-VN')}đ / buổi học
                           </Typography>
                         </Box>
@@ -503,22 +497,9 @@ const ClassRegistrationModal: React.FC<ClassRegistrationModalProps> = ({
                   onChange={handleChange('note')}
                   disabled={submitting}
                   multiline
-                  rows={2}
+                  rows={4}
                   size="small"
                 />
-
-                <Box sx={{
-                  p: 1.5,
-                  bgcolor: 'success.lighter',
-                  borderRadius: 1,
-                  border: '1px solid',
-                  borderColor: 'success.light'
-                }}>
-                  <Typography variant="caption" color="success.dark" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <Box component="span" sx={{ fontSize: '1.2rem' }}>✓</Box>
-                    <strong>Cam kết:</strong> Tư vấn miễn phí, liên hệ trong 24h
-                  </Typography>
-                </Box>
 
                 <Button
                   fullWidth
@@ -527,7 +508,7 @@ const ClassRegistrationModal: React.FC<ClassRegistrationModalProps> = ({
                   disabled={submitting || !form.name.trim() || !form.email.trim()}
                   sx={{
                     py: 1.2,
-                    borderRadius: 0,
+                    borderRadius: 2,
                     fontWeight: 700,
                     fontSize: '0.95rem',
                     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',

@@ -22,6 +22,7 @@ import { getPublicClassesAPI } from '../services/classes';
 import { getArticlesByMenuIdAPI } from '../services/articles';
 import { useMenuItems } from '../hooks/features/useMenuItems';
 import { MenuItem } from '../types';
+import ClassRegistrationModal from '../components/features/home/ClassRegistrationModal';
 
 interface Class {
   id: string;
@@ -51,7 +52,7 @@ interface Class {
   };
 }
 
-const CoursesPage: React.FC = () => {
+const SchedulePage: React.FC = () => {
   const location = useLocation();
   const { menuItems } = useMenuItems();
   const [classes, setClasses] = useState<Class[]>([]);
@@ -59,29 +60,12 @@ const CoursesPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false); // Control showing all classes or just first 2 rows
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
+  const [selectedClassName, setSelectedClassName] = useState<string>('');
 
   // Get slug from current pathname (remove leading slash)
   const fullSlug = location.pathname.replace(/^\//, '');
-
-  // Determine grade range based on slug
-  const getGradeRange = (slug: string): { gradeStart: number; gradeEnd: number; title: string } | null => {
-    const slugLower = slug.toLowerCase();
-
-    // Tiểu học patterns: tieu-hoc, cap-1, cap 1, cấp 1, lớp 1-5, grade 1-5
-    if (slugLower.match(/tieu[\s-]*hoc|cap[\s-]*1|lop[\s-]*[1-5]|grade[\s-]*[1-5]|primary|elementary/)) {
-      return { gradeStart: 1, gradeEnd: 5, title: 'Khóa học dành cho học sinh tiểu học (Lớp 1-5)' };
-    }
-    // Trung học cơ sở patterns: thcs, cap-2, cap 2, cấp 2, lớp 6-9, grade 6-9
-    else if (slugLower.match(/thcs|trung[\s-]*hoc[\s-]*co[\s-]*so|cap[\s-]*2|lop[\s-]*[6-9]|grade[\s-]*[6-9]|middle[\s-]*school|junior/)) {
-      return { gradeStart: 6, gradeEnd: 9, title: 'Khóa học dành cho học sinh trung học cơ sở (Lớp 6-9)' };
-    }
-    // Trung học phổ thông patterns: thpt, cap-3, cap 3, cấp 3, lớp 10-12, grade 10-12
-    else if (slugLower.match(/thpt|trung[\s-]*hoc[\s-]*pho[\s-]*thong|cap[\s-]*3|lop[\s-]*1[0-2]|grade[\s-]*1[0-2]|high[\s-]*school|senior/)) {
-      return { gradeStart: 10, gradeEnd: 12, title: 'Khóa học dành cho học sinh trung học phổ thông (Lớp 10-12)' };
-    }
-
-    return null;
-  };
 
   // Find menu item by slug
   const findMenuItemBySlug = (items: MenuItem[], targetSlug: string): MenuItem | null => {
@@ -133,26 +117,21 @@ const CoursesPage: React.FC = () => {
           }
         }
 
-        // Fetch classes from API
-        const gradeRange = getGradeRange(fullSlug);
-        if (gradeRange) {
-          try {
-            const response = await getPublicClassesAPI({
-              page: 1,
-              limit: 100,
-              gradeStart: gradeRange.gradeStart,
-              gradeEnd: gradeRange.gradeEnd,
-            });
+        // Fetch all upcoming classes from API
+        try {
+          const response = await getPublicClassesAPI({
+            page: 1,
+            limit: 100,
+          });
 
-            const classesData = response.data?.data?.result || response.data?.data || [];
-            setClasses(classesData);
-          } catch (classError) {
-            console.error('Error fetching classes:', classError);
-            setClasses([]);
-          }
-        } else {
-          // If no grade range detected, still show the page but with empty classes
-          // This allows the page to display articles or header even without classes
+          const classesData = response.data?.data?.result || response.data?.data || [];
+          // Filter only upcoming classes
+          const upcomingClasses = classesData.filter((classItem: Class) =>
+            classItem.status?.toLowerCase() === 'upcoming'
+          );
+          setClasses(upcomingClasses);
+        } catch (classError) {
+          console.error('Error fetching classes:', classError);
           setClasses([]);
         }
       } catch (err: any) {
@@ -245,6 +224,12 @@ const CoursesPage: React.FC = () => {
     }
   };
 
+  const handleRegisterClick = (classId: string | null, className: string) => {
+    setSelectedClassId(classId);
+    setSelectedClassName(className);
+    setModalOpen(true);
+  };
+
   if (loading) {
     return (
       <PublicLayout>
@@ -269,8 +254,6 @@ const CoursesPage: React.FC = () => {
     );
   }
 
-  const gradeRange = fullSlug ? getGradeRange(fullSlug) : null;
-
   return (
     <PublicLayout>
       <Box sx={{ bgcolor: '#fafafa', minHeight: '100vh' }}>
@@ -291,12 +274,10 @@ const CoursesPage: React.FC = () => {
             <Box textAlign="center" py={8}>
               <SchoolIcon sx={{ fontSize: 80, color: '#bbb', mb: 2 }} />
               <Typography variant="h6" color="text.secondary" gutterBottom>
-                Chưa có khóa học nào
+                Chưa có lớp sắp khai giảng
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {gradeRange
-                  ? 'Hiện tại chưa có khóa học nào cho cấp học này. Vui lòng quay lại sau.'
-                  : 'Không tìm thấy khóa học phù hợp. Vui lòng liên hệ với chúng tôi để biết thêm thông tin.'}
+                Hiện tại chưa có lớp học nào sắp khai giảng. Vui lòng quay lại sau.
               </Typography>
             </Box>
           ) : (
@@ -428,6 +409,7 @@ const CoursesPage: React.FC = () => {
                         <Button
                           variant="contained"
                           fullWidth
+                          onClick={() => handleRegisterClick(classItem.id, classItem.name)}
                           sx={{
                             bgcolor: '#1976d2',
                             '&:hover': {
@@ -475,8 +457,16 @@ const CoursesPage: React.FC = () => {
           )}
         </Container>
       </Box>
+
+      {/* Registration Modal */}
+      <ClassRegistrationModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        classId={selectedClassId}
+        className={selectedClassName}
+      />
     </PublicLayout>
   );
 };
 
-export default CoursesPage;
+export default SchedulePage;

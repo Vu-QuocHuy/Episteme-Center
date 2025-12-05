@@ -466,6 +466,14 @@ const HomeHeader: React.FC = () => {
                       border: '1px solid transparent',
                       transition: 'background-color 0.2s ease, border-color 0.2s ease',
                       minHeight: 40,
+                      whiteSpace: (() => {
+                        // Đếm số từ trong title
+                        const wordCount = menuItem.title?.split(/\s+/).filter(word => word.length > 0).length || 0;
+                        // Chỉ xuống dòng khi có nhiều hơn 3 từ
+                        return wordCount <= 3 ? 'nowrap' : 'normal';
+                      })(),
+                      lineHeight: 1.2,
+                      textAlign: 'center',
                       '&:focus, &:active': {
                         outline: 'none',
                         boxShadow: 'none',

@@ -1,12 +1,26 @@
-import { useRef, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Slider from 'react-slick';
-import { Card, CardContent, Avatar, Typography, Box, Button, IconButton, CircularProgress } from '@mui/material';
-import { ChevronLeft, ChevronRight } from '@mui/icons-material';
-import { getFeedbacksAPI } from '../../../services/feedback';
-import { Feedback } from '../../../types';
-import 'slick-carousel/slick/slick.css';
-import 'slick-carousel/slick/slick-theme.css';
+import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
+import {
+  Box,
+  Container,
+  Typography,
+  Grid,
+  Card,
+  CardContent,
+  CircularProgress,
+  Alert,
+  Avatar,
+  Button,
+} from '@mui/material';
+import {
+  Star as StarIcon,
+} from '@mui/icons-material';
+import PublicLayout from '../components/layouts/PublicLayout';
+import { getFeedbacksAPI } from '../services/feedback';
+import { getArticlesByMenuIdAPI } from '../services/articles';
+import { useMenuItems } from '../hooks/features/useMenuItems';
+import { MenuItem } from '../types';
+import { Feedback } from '../types';
 
 const AVATAR_SIZE = 110;
 const AVATAR_BORDER = 4;
@@ -101,7 +115,7 @@ const getSocialIcon = (url: string) => {
 };
 
 const FeedbackCard = ({ feedback }: { feedback: Feedback }) => (
-  <Box sx={{ px: 2, pb: 2, display: "flex", flexDirection: "column", alignItems: "center" }}>
+  <Box sx={{ px: 2, pb: 2, display: "flex", flexDirection: "column", alignItems: "center", height: '100%' }}>
     {/* Avatar nằm ngoài card, không che nội dung */}
     <Box
       sx={{
@@ -113,7 +127,7 @@ const FeedbackCard = ({ feedback }: { feedback: Feedback }) => (
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        mb: `-${AVATAR_SIZE / 2 + AVATAR_MARGIN / 2}px`, // kéo card lên gần avatar
+        mb: `-${AVATAR_SIZE / 2 + AVATAR_MARGIN / 2}px`,
         zIndex: 2,
         position: "relative"
       }}
@@ -136,7 +150,7 @@ const FeedbackCard = ({ feedback }: { feedback: Feedback }) => (
         border: "2px solid #e53935",
         borderRadius: 4,
         minHeight: 340,
-        pt: `${AVATAR_SIZE / 2 + AVATAR_MARGIN}px`, // đủ lớn để không bị che
+        pt: `${AVATAR_SIZE / 2 + AVATAR_MARGIN}px`,
         pb: 2,
         px: 2,
         boxShadow: "0 2px 8px rgba(229,57,53,0.08)",
@@ -146,14 +160,15 @@ const FeedbackCard = ({ feedback }: { feedback: Feedback }) => (
         alignItems: "center",
         background: "#fff",
         width: "100%",
-        position: "relative"
+        position: "relative",
+        height: '100%'
       }}
     >
-      <CardContent sx={{ width: "100%", p: 0 }}>
-        <Typography variant="body1" sx={{ mb: 2, minHeight: 100, textAlign: "justify", fontSize: '1.1rem', lineHeight: 1.6 }}>
+      <CardContent sx={{ width: "100%", p: 0, display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
+        <Typography variant="body1" sx={{ mb: 2, minHeight: 100, textAlign: "justify", fontSize: '1.1rem', lineHeight: 1.6, flexGrow: 1 }}>
           {feedback.description}
         </Typography>
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mt: 2 }}>
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mt: 'auto' }}>
           <Typography variant="h6" sx={{ color: "#e53935", fontWeight: "bold" }}>
             {feedback.name}
           </Typography>
@@ -173,220 +188,151 @@ const FeedbackCard = ({ feedback }: { feedback: Feedback }) => (
   </Box>
 );
 
-const FeedbackHome = () => {
-  const navigate = useNavigate();
-  const sliderRef = useRef<any>();
+const TestimonialsPage: React.FC = () => {
+  const location = useLocation();
+  const { menuItems } = useMenuItems();
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
+  const [articles, setArticles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch feedbacks from API
+  const fullSlug = location.pathname.replace(/^\//, '');
+
+  const findMenuItemBySlug = (items: MenuItem[], targetSlug: string): MenuItem | null => {
+    for (const item of items) {
+      const itemSlug = item.slug?.replace(/^\//, '') || '';
+      const cleanTargetSlug = targetSlug.replace(/^\//, '');
+
+      if (itemSlug === cleanTargetSlug) {
+        return item;
+      }
+
+      if (item.childrenMenu && item.childrenMenu.length > 0) {
+        const found = findMenuItemBySlug(item.childrenMenu, targetSlug);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
   useEffect(() => {
-    const fetchFeedbacks = async () => {
+    const fetchData = async () => {
+      if (!fullSlug || menuItems.length === 0) return;
+
       try {
         setLoading(true);
-        const response = await getFeedbacksAPI();
-        if (response.data?.data?.result) {
-          setFeedbacks(response.data.data.result);
-        } else {
+        setError(null);
+
+        const foundMenuItem = findMenuItemBySlug(menuItems, fullSlug);
+
+        // Fetch articles from layoutBuilder
+        if (foundMenuItem?.id) {
+          try {
+            const articlesResponse = await getArticlesByMenuIdAPI(foundMenuItem.id);
+            if (articlesResponse.data?.data?.result) {
+              const sortedArticles = articlesResponse.data.data.result
+                .filter((article: any) => article.isActive !== false)
+                .sort((a: any, b: any) => {
+                  if (a.order !== b.order) {
+                    return (a.order || 999) - (b.order || 999);
+                  }
+                  return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+                });
+              setArticles(sortedArticles);
+            }
+          } catch (articleError) {
+            console.log('No articles found for this menu');
+            setArticles([]);
+          }
+        }
+
+        // Fetch all feedbacks
+        try {
+          const response = await getFeedbacksAPI({ page: 1, limit: 100 });
+          if (response.data?.data?.result) {
+            setFeedbacks(response.data.data.result);
+          } else {
+            setFeedbacks([]);
+          }
+        } catch (feedbackError) {
+          console.error('Error fetching feedbacks:', feedbackError);
           setFeedbacks([]);
         }
-      } catch (err) {
-        console.error('Error fetching feedbacks:', err);
-        setError('Không thể tải dữ liệu đánh giá');
-        setFeedbacks([]);
+      } catch (err: any) {
+        console.error('Error fetching data:', err);
+        setError(err?.response?.data?.message || 'Không thể tải dữ liệu');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchFeedbacks();
-  }, []);
-
-  // Khi slider chuyển
-  const handleBeforeChange = (_oldIndex: number, _newIndex: number) => {
-    // Handle slide change if needed
-  };
-
-  // Xử lý điều hướng mũi tên
-  const handlePrev = () => {
-    sliderRef.current?.slickPrev();
-  };
-
-  const handleNext = () => {
-    sliderRef.current?.slickNext();
-  };
-
-  const settings = {
-    dots: false,
-    infinite: feedbacks.length > 3,
-    speed: 500,
-    slidesToShow: Math.min(3, feedbacks.length),
-    slidesToScroll: 1,
-    arrows: false,
-    beforeChange: handleBeforeChange,
-    responsive: [
-      {
-        breakpoint: 1024,
-        settings: {
-          slidesToShow: Math.min(2, feedbacks.length),
-        },
-      },
-      {
-        breakpoint: 600,
-        settings: {
-          slidesToShow: 1,
-        },
-      },
-    ],
-  };
+    fetchData();
+  }, [fullSlug, menuItems]);
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 8 }}>
-        <CircularProgress />
-      </Box>
+      <PublicLayout>
+        <Container maxWidth="lg" sx={{ py: 8 }}>
+          <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+            <CircularProgress size={60} />
+          </Box>
+        </Container>
+      </PublicLayout>
     );
   }
 
   if (error) {
     return (
-      <Box sx={{ textAlign: 'center', py: 8 }}>
-        <Typography color="error" variant="h6">
-          {error}
-        </Typography>
-      </Box>
-    );
-  }
-
-  if (feedbacks.length === 0) {
-    return (
-      <Box sx={{ textAlign: 'center', py: 8 }}>
-        <Typography variant="h6" color="text.secondary">
-          Chưa có đánh giá nào
-        </Typography>
-      </Box>
+      <PublicLayout>
+        <Container maxWidth="lg" sx={{ py: 8 }}>
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        </Container>
+      </PublicLayout>
     );
   }
 
   return (
-    <Box sx={{ position: 'relative', px: 4 }}>
-      {/* Tiêu đề */}
-      <Typography
-        variant="h4"
-        sx={{
-          textAlign: 'center',
-          mb: 4,
-          color: '#000',
-          fontWeight: 'bold',
-          fontSize: { xs: '1.5rem', sm: '2rem', md: '2.125rem' }
-        }}
-      >
-        Phụ huynh và học sinh nói gì sau khóa học
-      </Typography>
+    <PublicLayout>
+      <Box sx={{ bgcolor: '#fafafa', minHeight: '100vh' }}>
+        {/* Articles from layoutBuilder */}
+        {articles.length > 0 && (
+          <Box sx={{ width: '100%' }}>
+            {articles.map((article, index) => (
+              <Box key={article.id || index}>
+                <div dangerouslySetInnerHTML={{ __html: article.content }} />
+              </Box>
+            ))}
+          </Box>
+        )}
 
-      {/* Mũi tên trái */}
-      {feedbacks.length > 3 && (
-        <IconButton
-          onClick={handlePrev}
-          sx={{
-            position: 'absolute',
-            left: 0,
-            top: '50%',
-            transform: 'translateY(-50%)',
-            zIndex: 10,
-            bgcolor: '#f5f5f5 !important',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-            width: 48,
-            height: 48,
-            '&:hover': {
-              bgcolor: '#e0e0e0 !important',
-              boxShadow: '0 6px 16px rgba(0,0,0,0.2)',
-            },
-            '&:active': {
-              bgcolor: '#d0d0d0 !important',
-            },
-            '&:focus': {
-              bgcolor: '#f5f5f5 !important',
-              outline: 'none',
-            },
-            '@media (max-width: 600px)': {
-              left: 8,
-            }
-          }}
-        >
-          <ChevronLeft sx={{ color: '#e53935', fontSize: 28 }} />
-        </IconButton>
-      )}
-
-      {/* Mũi tên phải */}
-      {feedbacks.length > 3 && (
-        <IconButton
-          onClick={handleNext}
-          sx={{
-            position: 'absolute',
-            right: 0,
-            top: '50%',
-            transform: 'translateY(-50%)',
-            zIndex: 10,
-            bgcolor: '#f5f5f5 !important',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-            width: 48,
-            height: 48,
-            '&:hover': {
-              bgcolor: '#e0e0e0 !important',
-              boxShadow: '0 6px 16px rgba(0,0,0,0.2)',
-            },
-            '&:active': {
-              bgcolor: '#d0d0d0 !important',
-            },
-            '&:focus': {
-              bgcolor: '#f5f5f5 !important',
-              outline: 'none',
-            },
-            '@media (max-width: 600px)': {
-              right: 8,
-            }
-          }}
-        >
-          <ChevronRight sx={{ color: '#e53935', fontSize: 28 }} />
-        </IconButton>
-      )}
-
-      <Slider
-        {...settings}
-        ref={sliderRef}
-        className="feedback-home-slider"
-      >
-        {feedbacks.map((feedback) => (
-          <FeedbackCard feedback={feedback} key={feedback.id} />
-        ))}
-      </Slider>
-
-      {/* Nút xem tất cả đánh giá */}
-      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-        <Button
-          variant="outlined"
-          onClick={() => navigate('/cam-nhan-hoc-vien')}
-          sx={{
-            px: 4,
-            py: 1.5,
-            borderRadius: 2,
-            textTransform: 'none',
-            fontWeight: 600,
-            borderColor: '#e53935',
-            color: '#e53935',
-            '&:hover': {
-              borderColor: '#c62828',
-              bgcolor: 'rgba(229, 57, 53, 0.04)',
-            },
-          }}
-        >
-          Xem tất cả đánh giá
-        </Button>
+        <Container maxWidth="lg" sx={{ pb: 6, pt: articles.length > 0 ? 4 : 8 }}>
+          {feedbacks.length === 0 ? (
+            <Box textAlign="center" py={8}>
+              <StarIcon sx={{ fontSize: 80, color: '#bbb', mb: 2 }} />
+              <Typography variant="h6" color="text.secondary" gutterBottom>
+                Chưa có đánh giá nào
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Hiện tại chưa có đánh giá nào từ học viên. Vui lòng quay lại sau.
+              </Typography>
+            </Box>
+          ) : (
+            <>
+              <Grid container spacing={3}>
+                {feedbacks.map((feedback) => (
+                  <Grid item xs={12} sm={6} md={4} key={feedback.id}>
+                    <FeedbackCard feedback={feedback} />
+                  </Grid>
+                ))}
+              </Grid>
+            </>
+          )}
+        </Container>
       </Box>
-    </Box>
+    </PublicLayout>
   );
 };
 
-export default FeedbackHome;
+export default TestimonialsPage;

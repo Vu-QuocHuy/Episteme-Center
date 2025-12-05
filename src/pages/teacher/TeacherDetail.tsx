@@ -5,17 +5,17 @@ import {
   Container,
   Typography,
   Avatar,
-  Breadcrumbs,
-  Link,
   Divider,
   Paper,
   Grid,
   Skeleton,
-  Chip
+  Chip,
+  Button
 } from '@mui/material';
 import {
   Phone as PhoneIcon,
-  Email as EmailIcon
+  Email as EmailIcon,
+  ArrowBack as ArrowBackIcon
 } from '@mui/icons-material';
 import { getTeacherByIdAPI, getTeacherBySlugAPI, getTypicalTeacherDetailAPI } from '../../services/teachers';
 import { Teacher } from '../../types';
@@ -125,31 +125,34 @@ const TeacherDetail: React.FC = () => {
     );
   }
 
+  const handleGoBack = () => {
+    // Check if there's history to go back to
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      // Fallback to teachers list page if no history
+      navigate('/gioi-thieu/doi-ngu-giang-vien');
+    }
+  };
+
   return (
     <PublicLayout>
       <Container maxWidth="lg" sx={{ py: 4 }}>
-        {/* Breadcrumb */}
-        <Breadcrumbs sx={{ mb: 4 }}>
-          <Link
-            component="button"
-            variant="body1"
-            onClick={() => navigate('/')}
-            sx={{ cursor: 'pointer', textDecoration: 'none' }}
-          >
-            Trang chủ
-          </Link>
-          <Link
-            component="button"
-            variant="body1"
-            onClick={() => navigate('/giao-vien')}
-            sx={{ cursor: 'pointer', textDecoration: 'none' }}
-          >
-            Đội ngũ giảng viên
-          </Link>
-          <Typography variant="body1" color="text.primary" fontWeight="bold">
-            {teacher.name}
-          </Typography>
-        </Breadcrumbs>
+        {/* Quay lại button */}
+        <Button
+          startIcon={<ArrowBackIcon />}
+          onClick={handleGoBack}
+          sx={{
+            mb: 4,
+            textTransform: 'none',
+            color: 'text.secondary',
+            '&:hover': {
+              bgcolor: 'action.hover',
+            },
+          }}
+        >
+          Quay lại
+        </Button>
 
       <Grid container spacing={4}>
         {/* Left Column - Profile */}

@@ -10,58 +10,114 @@ import {
   Container,
   Grid,
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { getAllTeachersAPI } from '../services/teachers';
-import { Teacher } from '../types';
+import { getArticlesByMenuIdAPI } from '../services/articles';
+import { useMenuItems } from '../hooks/features/useMenuItems';
+import { Teacher, MenuItem } from '../types';
 import PublicLayout from '../components/layouts/PublicLayout';
 
 const AllTeachersPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { menuItems } = useMenuItems();
   const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [articles, setArticles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
 
   const INITIAL_DISPLAY_COUNT = 8; // 2 hàng x 4 cột
 
-  // Fetch all teachers from API
+  const fullSlug = location.pathname.replace(/^\//, '');
+
+  const findMenuItemBySlug = (items: MenuItem[], targetSlug: string): MenuItem | null => {
+    for (const item of items) {
+      const itemSlug = item.slug?.replace(/^\//, '') || '';
+      const cleanTargetSlug = targetSlug.replace(/^\//, '');
+
+      if (itemSlug === cleanTargetSlug) {
+        return item;
+      }
+
+      if (item.childrenMenu && item.childrenMenu.length > 0) {
+        const found = findMenuItemBySlug(item.childrenMenu, targetSlug);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
+  // Fetch data from API
   useEffect(() => {
-    const fetchTeachers = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await getAllTeachersAPI({
-          page: 1,
-          limit: 100, // Lấy nhiều để hiển thị tất cả khi cần
-        });
 
-        // Handle different response formats
-        let teachersData = [];
-        if (response.data?.data?.result) {
-          teachersData = response.data.data.result;
-        } else if (response.data?.data && Array.isArray(response.data.data)) {
-          teachersData = response.data.data;
-        } else if (response.data && typeof response.data === 'object') {
-          teachersData = (response.data as any).result || (response.data as any).teachers || [];
-        } else if (Array.isArray(response.data)) {
-          teachersData = response.data;
+        // Fetch articles from layoutBuilder if menu items are available
+        if (fullSlug && menuItems.length > 0) {
+          const foundMenuItem = findMenuItemBySlug(menuItems, fullSlug);
+
+          if (foundMenuItem?.id) {
+            try {
+              const articlesResponse = await getArticlesByMenuIdAPI(foundMenuItem.id);
+              if (articlesResponse.data?.data?.result) {
+                const sortedArticles = articlesResponse.data.data.result
+                  .filter((article: any) => article.isActive !== false)
+                  .sort((a: any, b: any) => {
+                    if (a.order !== b.order) {
+                      return (a.order || 999) - (b.order || 999);
+                    }
+                    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+                  });
+                setArticles(sortedArticles);
+              }
+            } catch (articleError) {
+              console.log('No articles found for this menu');
+              setArticles([]);
+            }
+          }
         }
 
-        // Filter active teachers only
-        const activeTeachers = teachersData.filter((teacher: any) => teacher.isActive !== false);
+        // Always fetch teachers from API
+        try {
+          const response = await getAllTeachersAPI({
+            page: 1,
+            limit: 100, // Lấy nhiều để hiển thị tất cả khi cần
+          });
 
-        setTeachers(activeTeachers);
-      } catch (err) {
-        console.error('Error fetching teachers:', err);
-        setError('Không thể tải dữ liệu giáo viên');
-        setTeachers([]);
+          // Handle different response formats
+          let teachersData = [];
+          if (response.data?.data?.result) {
+            teachersData = response.data.data.result;
+          } else if (response.data?.data && Array.isArray(response.data.data)) {
+            teachersData = response.data.data;
+          } else if (response.data && typeof response.data === 'object') {
+            teachersData = (response.data as any).result || (response.data as any).teachers || [];
+          } else if (Array.isArray(response.data)) {
+            teachersData = response.data;
+          }
+
+          // Filter active teachers only
+          const activeTeachers = teachersData.filter((teacher: any) => teacher.isActive !== false);
+
+          setTeachers(activeTeachers);
+        } catch (teacherError) {
+          console.error('Error fetching teachers:', teacherError);
+          setError('Không thể tải dữ liệu giáo viên');
+          setTeachers([]);
+        }
+      } catch (err: any) {
+        console.error('Error fetching data:', err);
+        setError(err?.response?.data?.message || 'Không thể tải dữ liệu');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchTeachers();
-  }, []);
+    fetchData();
+  }, [fullSlug, menuItems]);
 
   // Function to convert name to URL-friendly slug
   const createSlug = (name: string): string => {
@@ -77,7 +133,7 @@ const AllTeachersPage = () => {
 
   const handleTeacherClick = (teacher: Teacher) => {
     const slug = createSlug(teacher.name);
-    navigate(`/doi-ngu-giang-vien/${slug}`, { state: { teacherId: teacher.id } });
+    navigate(`/gioi-thieu/doi-ngu-giang-vien/${slug}`, { state: { teacherId: teacher.id } });
   };
 
   // Helper function to format qualifications
@@ -136,34 +192,20 @@ const AllTeachersPage = () => {
 
   return (
     <PublicLayout>
-      <Container maxWidth="lg" sx={{ py: 8 }}>
-        {/* Tiêu đề */}
-        <Typography
-          variant="h3"
-          sx={{
-            textAlign: 'center',
-            mb: 2,
-            color: '#000',
-            fontWeight: 'bold',
-            fontSize: { xs: '1.75rem', sm: '2.5rem', md: '3rem' }
-          }}
-        >
-          Đội ngũ giảng viên
-        </Typography>
+      <Box sx={{ bgcolor: '#fafafa', minHeight: '100vh' }}>
+        {/* Articles from layoutBuilder */}
+        {articles.length > 0 && (
+          <Box sx={{ width: '100%' }}>
+            {articles.map((article, index) => (
+              <Box key={article.id || index}>
+                <div dangerouslySetInnerHTML={{ __html: article.content }} />
+              </Box>
+            ))}
+          </Box>
+        )}
 
-        <Typography
-          variant="subtitle1"
-          sx={{
-            textAlign: 'center',
-            mb: 6,
-            color: 'text.secondary',
-            fontSize: { xs: '0.95rem', sm: '1.1rem' }
-          }}
-        >
-          {teachers.length} giảng viên chất lượng cao
-        </Typography>
-
-        {/* Grid hiển thị giáo viên */}
+        <Container maxWidth="lg" sx={{ pb: 6, pt: articles.length > 0 ? 4 : 8 }}>
+          {/* Grid hiển thị giáo viên */}
         <Grid container spacing={3}>
           {displayedTeachers.map((teacher) => (
             <Grid item xs={12} sm={6} md={3} key={teacher.id}>
@@ -316,7 +358,8 @@ const AllTeachersPage = () => {
             </Button>
           </Box>
         )}
-      </Container>
+        </Container>
+      </Box>
     </PublicLayout>
   );
 };

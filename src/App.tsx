@@ -65,6 +65,8 @@ import DynamicMenuPage from './pages/DynamicMenuPage';
 import LayoutBuilder from './pages/admin/LayoutBuilder';
 import AllTeachersPage from './pages/AllTeachersPage';
 import CoursesPage from './pages/CoursesPage';
+import SchedulePage from './pages/SchedulePage';
+import TestimonialsPage from './pages/TestimonialsPage';
 
 const AppContent: React.FC = () => {
   const { user } = useAuth();
@@ -88,12 +90,24 @@ const AppContent: React.FC = () => {
           <Route path="/gioi-thieu/doi-ngu-giang-vien" element={<AllTeachersPage />} />
 
           {/* Teacher Detail Route - Must be before dynamic menu routes */}
-          <Route path="/doi-ngu-giang-vien/:slug" element={<TeacherDetail />} />
+          <Route path="/gioi-thieu/doi-ngu-giang-vien/:slug" element={<TeacherDetail />} />
 
           {/* Courses Pages - Must be before dynamic menu routes */}
           <Route path="/khoa-hoc/khoa-hoc-danh-cho-hoc-sinh-cap-1" element={<CoursesPage />} />
           <Route path="/khoa-hoc/khoa-hoc-danh-cho-hoc-sinh-cap-2" element={<CoursesPage />} />
           <Route path="/khoa-hoc/khoa-hoc-danh-cho-hoc-sinh-cap-3" element={<CoursesPage />} />
+          {/* Additional course routes with different slug patterns */}
+          <Route path="/khoa-hoc/khoa-hoc-danh-cho-hoc-sinh-tieu-hoc" element={<CoursesPage />} />
+          <Route path="/khoa-hoc/khoa-hoc-danh-cho-hoc-sinh-thcs" element={<CoursesPage />} />
+          <Route path="/khoa-hoc/khoa-hoc-danh-cho-hoc-sinh-thpt" element={<CoursesPage />} />
+          <Route path="/khoa-hoc/khoa-hoc-danh-cho-hoc-sinh-trung-hoc-co-so" element={<CoursesPage />} />
+          <Route path="/khoa-hoc/khoa-hoc-danh-cho-hoc-sinh-trung-hoc-pho-thong" element={<CoursesPage />} />
+
+          {/* Schedule Page - Upcoming classes */}
+          <Route path="/lich-khai-giang" element={<SchedulePage />} />
+
+          {/* Testimonials Page - Student feedback */}
+          <Route path="/cam-nhan-hoc-vien" element={<TestimonialsPage />} />
 
           {/* Dynamic Menu Routes - Support nested paths */}
           <Route path="/:slug" element={<DynamicMenuPage />} />
@@ -138,9 +152,11 @@ const AppContent: React.FC = () => {
                   <Route path="registrations" element={<RegistrationManagement />} />
                   <Route path="audit-log" element={<AuditLog />} />
 
+                    {/* Testimonials Management Route */}
+                    <Route path="testimonials" element={<TestimonialsManagement />} />
+
                     {/* Homepage Management Routes */}
-                    <Route path="homepage" element={<Navigate to="/admin/homepage/testimonials" replace />} />
-                    <Route path="homepage/testimonials" element={<TestimonialsManagement />} />
+                    <Route path="homepage" element={<Navigate to="/admin/homepage/footer-settings" replace />} />
                     <Route path="homepage/footer-settings" element={<FooterSettings />} />
 
                   {/* Menu Management Routes */}

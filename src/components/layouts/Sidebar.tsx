@@ -43,6 +43,7 @@ const getMenuItemsByRole = (role: string): MenuItem[] => {
         { text: 'Quản lý Menu', icon: <MenuIcon />, path: '/admin/menu-management' },
         { text: 'Quản lý vai trò', icon: <SecurityIcon />, path: '/admin/roles-management' },
         { text: 'Thống kê', icon: <AssessmentIcon />, path: '/admin/statistics' },
+        { text: 'Cảm nhận học viên', icon: <SchoolIcon />, path: '/admin/testimonials' },
         { text: 'Quản lý trang chủ', icon: <WebIcon />, path: '/admin/homepage' },
         { text: 'Audit Logs', icon: <ListAltIcon />, path: '/admin/audit-log' },
 
@@ -317,25 +318,6 @@ const Sidebar: React.FC<SidebarProps> = ({ open }) => {
                   </ListItem>
                   {homepageOpen && (
                     <List component="div" disablePadding sx={{ pl: open ? 4 : 0 }}>
-                      <ListItemButton
-                        selected={location.pathname === '/admin/homepage/testimonials'}
-                        onClick={() => {
-                          if (!open) {
-                            openSidebar();
-                          }
-                          navigate('/admin/homepage/testimonials');
-                        }}
-                        sx={{
-                          minHeight: 40,
-                          justifyContent: open ? 'initial' : 'center',
-                          px: 2.5,
-                          borderRadius: 2,
-                          ml: open ? 2 : 0,
-                          my: 0.25
-                        }}
-                      >
-                        {open && <ListItemText primary="Đánh giá học viên" />}
-                      </ListItemButton>
                       <ListItemButton
                         selected={location.pathname === '/admin/homepage/footer-settings'}
                         onClick={() => {
