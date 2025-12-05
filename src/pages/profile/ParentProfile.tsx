@@ -20,7 +20,6 @@ import {
   Edit as EditIcon,
   Save as SaveIcon,
   Cancel as CancelIcon,
-  Visibility as VisibilityIcon,
   Lock as LockIcon,
   VerifiedUser as VerifiedUserIcon,
 } from '@mui/icons-material';
@@ -31,14 +30,15 @@ import { validateUserUpdate } from '../../validations/commonValidation';
 import { validateParentUpdate } from '../../validations/parentValidation';
 import { commonStyles } from '../../utils/styles';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
-import { AvatarUpload } from '../../components/common';
+import { AvatarUpload, ChangePasswordDialog, VerifyEmailDialog } from '../../components/common';
 
 interface UserUpdateData {
   name: string;
   email: string;
+  dayOfBirth: string;
   phone: string;
-  gender: string;
   address: string;
+  gender: string;
 }
 
 interface ParentUpdateData {
@@ -48,9 +48,10 @@ interface ParentUpdateData {
 interface UserUpdateErrors {
   name?: string;
   email?: string;
+  dayOfBirth?: string;
   phone?: string;
-  gender?: string;
   address?: string;
+  gender?: string;
 }
 
 interface ParentUpdateErrors {
@@ -63,13 +64,16 @@ const ParentProfile: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [verifyEmailOpen, setVerifyEmailOpen] = useState(false);
 
   const [userFormData, setUserFormData] = useState<UserUpdateData>({
     name: user?.name || '',
     email: user?.email || '',
+    dayOfBirth: user?.dayOfBirth ? new Date(user.dayOfBirth).toISOString().split('T')[0] : '',
     phone: user?.phone || '',
-    gender: user?.gender || '',
     address: user?.address || '',
+    gender: user?.gender || '',
   });
 
   const [parentFormData, setParentFormData] = useState<ParentUpdateData>({
@@ -84,9 +88,10 @@ const ParentProfile: React.FC = () => {
       setUserFormData({
         name: user.name || '',
         email: user.email || '',
+        dayOfBirth: user?.dayOfBirth ? new Date(user.dayOfBirth).toISOString().split('T')[0] : '',
         phone: user.phone || '',
-        gender: user.gender || '',
         address: user.address || '',
+        gender: user.gender || '',
       });
 
       setParentFormData({
@@ -182,9 +187,10 @@ const ParentProfile: React.FC = () => {
     setUserFormData({
       name: user?.name || '',
       email: user?.email || '',
+      dayOfBirth: user?.dayOfBirth ? new Date(user.dayOfBirth).toISOString().split('T')[0] : '',
       phone: user?.phone || '',
-      gender: user?.gender || '',
       address: user?.address || '',
+      gender: user?.gender || '',
     });
 
     setParentFormData({
@@ -258,19 +264,6 @@ const ParentProfile: React.FC = () => {
                   {user.name}
                 </Typography>
 
-                  {/* Parent Role and Permission */}
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-                    <Chip
-                      label="Phụ huynh"
-                      color="primary"
-                      size="small"
-                    />
-                  <Chip
-                    label={parentFormData.canSeeTeacherInfo ? 'Có thể xem thông tin giáo viên' : 'Không thể xem thông tin giáo viên'}
-                    color={parentFormData.canSeeTeacherInfo ? 'success' : 'default'}
-                    size="small"
-                  />
-                </Box>
                 </CardContent>
               </Card>
             </Grid>
@@ -287,28 +280,70 @@ const ParentProfile: React.FC = () => {
                     <Grid item xs={12} sm={6}>
                       <Box sx={{ mb: 3 }}>
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
-                          Email
+                          Họ và tên
                         </Typography>
-                        <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                          {user.email}
-                        </Typography>
-              </Box>
+                        {isEditing ? (
+                          <TextField
+                            fullWidth
+                            value={userFormData.name}
+                            onChange={(e) => handleUserInputChange('name', e.target.value)}
+                            error={!!userErrors.name}
+                            helperText={userErrors.name}
+                            size="small"
+                          />
+                        ) : (
+                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                            {user.name}
+                          </Typography>
+                        )}
+                      </Box>
 
                       <Box sx={{ mb: 3 }}>
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
-                          Quyền xem thông tin giáo viên
+                          Ngày sinh
                         </Typography>
-                        <Chip
-                          label={parentFormData.canSeeTeacherInfo ? 'Có thể xem thông tin giáo viên' : 'Không thể xem thông tin giáo viên'}
-                          color={parentFormData.canSeeTeacherInfo ? 'success' : 'default'}
-                          size="small"
-                        />
-            </Box>
+                        {isEditing ? (
+                          <TextField
+                            fullWidth
+                            type="date"
+                            value={userFormData.dayOfBirth}
+                            onChange={(e) => handleUserInputChange('dayOfBirth', e.target.value)}
+                            error={!!userErrors.dayOfBirth}
+                            helperText={userErrors.dayOfBirth}
+                            size="small"
+                            InputLabelProps={{ shrink: true }}
+                          />
+                        ) : (
+                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                            {user?.dayOfBirth ? new Date(user.dayOfBirth).toLocaleDateString('vi-VN') : 'Chưa cập nhật'}
+                          </Typography>
+                        )}
+                      </Box>
 
                       <Box sx={{ mb: 3 }}>
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
-                          Trạng thái email
-            </Typography>
+                          Địa chỉ
+                        </Typography>
+                        {isEditing ? (
+                          <TextField
+                            fullWidth
+                            value={userFormData.address}
+                            onChange={(e) => handleUserInputChange('address', e.target.value)}
+                            error={!!userErrors.address}
+                            helperText={userErrors.address}
+                            size="small"
+                          />
+                        ) : (
+                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                            {user.address || 'Chưa cập nhật'}
+                          </Typography>
+                        )}
+                      </Box>
+
+                      <Box sx={{ mb: 3 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
+                          Trạng thái xác thực email
+                        </Typography>
                         <Chip
                           label="Chưa xác thực"
                           color="warning"
@@ -319,41 +354,33 @@ const ParentProfile: React.FC = () => {
                     </Grid>
 
                     {/* Right Column */}
-              <Grid item xs={12} sm={6}>
+                    <Grid item xs={12} sm={6}>
                       <Box sx={{ mb: 3 }}>
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
-                    Họ và tên
-                  </Typography>
-                {isEditing ? (
-                  <TextField
-                    fullWidth
-                    value={userFormData.name}
-                    onChange={(e) => handleUserInputChange('name', e.target.value)}
-                    error={!!userErrors.name}
-                    helperText={userErrors.name}
-                    size="small"
-                  />
-                ) : (
-                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                            {user.name}
-                          </Typography>
-                        )}
-                </Box>
+                          Email
+                        </Typography>
+                        <TextField
+                          fullWidth
+                          value={user.email}
+                          size="small"
+                          InputProps={{ readOnly: true }}
+                        />
+                      </Box>
 
                       <Box sx={{ mb: 3 }}>
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
-                    Số điện thoại
-                  </Typography>
-                {isEditing ? (
-                  <TextField
-                    fullWidth
-                    value={userFormData.phone}
-                    onChange={(e) => handleUserInputChange('phone', e.target.value)}
-                    error={!!userErrors.phone}
-                    helperText={userErrors.phone}
-                    size="small"
-                  />
-                ) : (
+                          Số điện thoại
+                        </Typography>
+                        {isEditing ? (
+                          <TextField
+                            fullWidth
+                            value={userFormData.phone}
+                            onChange={(e) => handleUserInputChange('phone', e.target.value)}
+                            error={!!userErrors.phone}
+                            helperText={userErrors.phone}
+                            size="small"
+                          />
+                        ) : (
                           <Typography variant="body1" sx={{ fontWeight: 500 }}>
                             {user.phone || 'Chưa cập nhật'}
                           </Typography>
@@ -362,109 +389,36 @@ const ParentProfile: React.FC = () => {
 
                       <Box sx={{ mb: 3 }}>
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
-                    Giới tính
-                  </Typography>
-                {isEditing ? (
-                  <FormControl fullWidth size="small">
-                    <Select
-                      value={userFormData.gender}
-                      onChange={(e) => handleUserInputChange('gender', e.target.value)}
-                      error={!!userErrors.gender}
-                    >
-                      <MenuItem value="male">Nam</MenuItem>
-                      <MenuItem value="female">Nữ</MenuItem>
-                      <MenuItem value="other">Khác</MenuItem>
-                    </Select>
-                  </FormControl>
-                ) : (
-                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                    {userFormData.gender === 'male' ? 'Nam' : userFormData.gender === 'female' ? 'Nữ' : 'Khác'}
-                  </Typography>
-                )}
-                      </Box>
-
-                      <Box sx={{ mb: 3 }}>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
-                          Vai trò
+                          Giới tính
                         </Typography>
-                        <Chip
-                          label="Phụ huynh"
-                          color="primary"
-                          size="small"
-                        />
-                      </Box>
-              </Grid>
-
-                    {/* Address Field - Full Width */}
-              <Grid item xs={12}>
-                      <Box sx={{ mb: 3 }}>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
-                    Địa chỉ
-                  </Typography>
-                {isEditing ? (
-                  <TextField
-                    fullWidth
-                    multiline
-                    rows={3}
-                    value={userFormData.address}
-                    onChange={(e) => handleUserInputChange('address', e.target.value)}
-                    error={!!userErrors.address}
-                    helperText={userErrors.address}
-                    size="small"
-                  />
-                ) : (
+                        {isEditing ? (
+                          <FormControl fullWidth size="small">
+                            <Select
+                              value={userFormData.gender}
+                              onChange={(e) => handleUserInputChange('gender', e.target.value)}
+                              error={!!userErrors.gender}
+                            >
+                              <MenuItem value="male">Nam</MenuItem>
+                              <MenuItem value="female">Nữ</MenuItem>
+                              <MenuItem value="other">Khác</MenuItem>
+                            </Select>
+                          </FormControl>
+                        ) : (
                           <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                            {user.address || 'Chưa cập nhật'}
+                            {userFormData.gender === 'male' ? 'Nam' : userFormData.gender === 'female' ? 'Nữ' : 'Khác'}
                           </Typography>
-                )}
+                        )}
                       </Box>
-            </Grid>
+                    </Grid>
 
-                    {/* Parent Specific Fields - Full Width */}
-                    {isEditing && (
-              <Grid item xs={12}>
-                        <Box sx={{ mb: 3 }}>
-                          <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
-                    Quyền xem thông tin giáo viên
-                  </Typography>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={parentFormData.canSeeTeacherInfo}
-                        onChange={(e) => handleParentInputChange('canSeeTeacherInfo', e.target.checked)}
-                        color="primary"
-                      />
-                    }
-                    label={parentFormData.canSeeTeacherInfo ? 'Có thể xem thông tin giáo viên' : 'Không thể xem thông tin giáo viên'}
-                  />
-                        </Box>
-                      </Grid>
-                )}
               </Grid>
 
                   {/* Action Buttons */}
                   <Box sx={{ display: 'flex', gap: 2, mt: 4, flexWrap: 'wrap' }}>
                     <Button
                       variant="outlined"
-                      startIcon={<VisibilityIcon />}
-                      sx={{
-                        borderRadius: 2,
-                        px: 3,
-                        py: 1,
-                        borderColor: '#3b82f6',
-                        color: '#3b82f6',
-                        '&:hover': {
-                          borderColor: '#2563eb',
-                          bgcolor: '#eff6ff'
-                        }
-                      }}
-                    >
-                      Xem thông tin con
-                    </Button>
-
-                    <Button
-                      variant="outlined"
                       startIcon={<LockIcon />}
+                      onClick={() => setChangePasswordOpen(true)}
                       sx={{
                         borderRadius: 2,
                         px: 3,
@@ -483,6 +437,7 @@ const ParentProfile: React.FC = () => {
                     <Button
                       variant="outlined"
                       startIcon={<VerifiedUserIcon />}
+                      onClick={() => setVerifyEmailOpen(true)}
                       sx={{
                         borderRadius: 2,
                         px: 3,
@@ -562,6 +517,20 @@ const ParentProfile: React.FC = () => {
           </Grid>
         </Box>
       </Box>
+
+      <ChangePasswordDialog
+        open={changePasswordOpen}
+        onClose={() => setChangePasswordOpen(false)}
+      />
+
+      <VerifyEmailDialog
+        open={verifyEmailOpen}
+        onClose={() => setVerifyEmailOpen(false)}
+        userEmail={user?.email || ''}
+        onSuccess={() => {
+          console.log('Email verified successfully');
+        }}
+      />
     </DashboardLayout>
   );
 };

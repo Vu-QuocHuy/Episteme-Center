@@ -252,3 +252,4 @@ export type ComponentConfig =
   | { type: 'pricing-table'; config: PricingTableConfig }
   | { type: 'map'; config: MapConfig };
 
+

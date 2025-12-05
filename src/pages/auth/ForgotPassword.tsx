@@ -22,7 +22,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from '../../hooks/useForm';
-import { forgotPasswordAPI, verifyCodeAPI, resetPasswordAPI } from '../../services/auth';
+import { sendRequestPasswordAPI, resetPasswordAPI } from '../../services/auth';
 import { validateOtpCode } from '../../validations/forgotPasswordValidation';
 import { validateEmail, validatePassword } from '../../validations/commonValidation';
 import { validationRules } from '../../utils/validation';
@@ -85,11 +85,11 @@ const ForgotPassword: React.FC = () => {
     }
 
     try {
-      await forgotPasswordAPI(values.email);
+      await sendRequestPasswordAPI(values.email);
       setEmail(values.email);
       setCurrentStep('verify');
     } catch (error: any) {
-      console.error('Forgot password failed:', error);
+      console.error('Send request password failed:', error);
       if (error.response?.data?.message) {
         setError(error.response.data.message);
       } else {
@@ -109,36 +109,9 @@ const ForgotPassword: React.FC = () => {
       return;
     }
 
-    setIsSubmitting(true);
-    setError('');
-
-    try {
-      const response = await verifyCodeAPI(verificationCode, email);
-      console.log('Verify code response:', response);
-
-      // Kiểm tra response để lấy token hoặc thông tin cần thiết
-      // Có thể response.data chứa token hoặc response trực tiếp chứa token
-      const token = response.data?.token || response.data?.resetToken;
-
-      if (token) {
-        // setResetToken(token);
-        setCurrentStep('reset');
-      } else {
-        // Nếu không có token trong response, có thể backend đã xác thực thành công
-        // và token sẽ được gửi qua URL hoặc email
-        console.log('No token in response, proceeding to reset step with verification code:', verificationCode);
-        setCurrentStep('reset');
-      }
-    } catch (error: any) {
-      console.error('Verify code failed:', error);
-      if (error.response?.data?.message) {
-        setError(error.response.data.message);
-      } else {
-        setError('Mã xác thực không đúng. Vui lòng thử lại.');
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
+    // Với API mới, không cần verify code riêng, chỉ cần chuyển sang bước reset
+    // Code sẽ được gửi kèm trong request reset password
+    setCurrentStep('reset');
   };
 
   const handleResetPassword = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
@@ -146,6 +119,12 @@ const ForgotPassword: React.FC = () => {
 
     // Validate các trường cần thiết cho bước reset password
     const errors: FormErrors = {};
+
+    // Validate verification code
+    const codeError = validateOtpCode(verificationCode);
+    if (codeError) {
+      errors.verificationCode = codeError;
+    }
 
     // Validate password
     const passwordError = validatePassword(newPassword);
@@ -168,7 +147,8 @@ const ForgotPassword: React.FC = () => {
     setError('');
 
     try {
-      await resetPasswordAPI(email, verificationCode, newPassword);
+      // API mới: resetPasswordAPI(email, code, newPassword, confirmPassword)
+      await resetPasswordAPI(email, verificationCode, newPassword, confirmPassword);
       setCurrentStep('success');
     } catch (error: any) {
       console.error('Reset password failed:', error);
@@ -191,13 +171,17 @@ const ForgotPassword: React.FC = () => {
     setError('');
 
     try {
-      await forgotPasswordAPI(email);
+      await sendRequestPasswordAPI(email);
       setError('');
-      // Hiển thị thông báo thành công
-      alert('Mã xác thực mới đã được gửi đến email của bạn');
+      setSnackbarOpen(true);
+      // Hiển thị thông báo thành công qua snackbar
     } catch (error: any) {
       console.error('Resend code failed:', error);
-      setError('Có lỗi xảy ra khi gửi lại mã. Vui lòng thử lại.');
+      if (error.response?.data?.message) {
+        setError(error.response.data.message);
+      } else {
+        setError('Có lỗi xảy ra khi gửi lại mã. Vui lòng thử lại.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -469,8 +453,42 @@ const ForgotPassword: React.FC = () => {
         return (
           <Box component="form" onSubmit={handleResetPassword} sx={{ mt: 1 }}>
             <Typography variant="body2" color="textSecondary" sx={{ mb: 3, textAlign: 'center' }}>
-              Nhập mật khẩu mới cho tài khoản của bạn
+              Nhập mật khẩu mới cho tài khoản <strong>{email}</strong>
             </Typography>
+
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              id="verificationCode"
+              label="Mã xác thực"
+              name="verificationCode"
+              type="text"
+              autoFocus
+              value={verificationCode}
+              onChange={(e) => {
+                const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                setVerificationCode(value);
+                if (formErrors.verificationCode) {
+                  setFormErrors(prev => ({ ...prev, verificationCode: undefined }));
+                }
+              }}
+              error={!!formErrors.verificationCode}
+              helperText={formErrors.verificationCode || 'Nhập mã 6 chữ số đã được gửi đến email'}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2,
+                  backgroundColor: 'white',
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#764ba2',
+                    boxShadow: 'none',
+                  },
+                  '&.Mui-focused': {
+                    backgroundColor: 'white',
+                  }
+                }
+              }}
+            />
 
             <TextField
               margin="normal"
@@ -688,10 +706,19 @@ const ForgotPassword: React.FC = () => {
 
             {error && (
               <NotificationSnackbar
-                open={snackbarOpen}
+                open={!!error}
                 onClose={handleSnackbarClose}
                 message={error}
                 severity="error"
+              />
+            )}
+
+            {snackbarOpen && !error && (
+              <NotificationSnackbar
+                open={snackbarOpen}
+                onClose={handleSnackbarClose}
+                message="Mã xác thực mới đã được gửi đến email của bạn"
+                severity="success"
               />
             )}
 

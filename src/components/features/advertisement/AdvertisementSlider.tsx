@@ -124,10 +124,21 @@ const AdvertisementSlider: React.FC<AdvertisementSliderProps> = ({
   };
 
   return (
-    <Box sx={{ position: 'relative' }}>
+    <Box sx={{ position: 'relative', width: '100%' }}>
       <Slider {...settings}>
         {sortedAds.map((ad, idx) => (
-          <Box key={ad.id || idx} sx={{ position: 'relative', height: height, overflow: 'hidden' }}>
+          <Box
+            key={ad.id || idx}
+            sx={{
+              position: 'relative',
+              width: '100%',
+              aspectRatio: '16/9', // Fixed 16:9 aspect ratio
+              overflow: 'hidden',
+              '@media (max-width: 768px)': {
+                aspectRatio: '16/9', // Keep same ratio on mobile
+              }
+            }}
+          >
             <Card
               sx={{
                 height: '100%',
@@ -139,10 +150,16 @@ const AdvertisementSlider: React.FC<AdvertisementSliderProps> = ({
             >
               <CardMedia
                 component="img"
-                height="100%"
                 image={ad.imageUrl || ad.image}
                 alt={ad.title}
-                sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                sx={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover'
+                }}
               />
               <Box sx={{
                 position: 'absolute',

@@ -11,7 +11,7 @@ interface WelcomeAdPopupProps {
   height?: number;
 }
 
-const WelcomeAdPopup: React.FC<WelcomeAdPopupProps> = ({ open, onClose, ads, width = 400, height = 400 }) => {
+const WelcomeAdPopup: React.FC<WelcomeAdPopupProps> = ({ open, onClose, ads, width = 600, height = 450 }) => {
   if (!ads || !Array.isArray(ads) || ads.length === 0) return null;
 
   // Chọn quảng cáo có priority nhỏ nhất, nếu cùng priority thì lấy createdAt sớm nhất
@@ -33,33 +33,35 @@ const WelcomeAdPopup: React.FC<WelcomeAdPopupProps> = ({ open, onClose, ads, wid
       maxWidth={false}
       PaperProps={{
         sx: {
-          borderRadius: 3,
+          borderRadius: 2,
           bgcolor: 'transparent',
           boxShadow: 'none',
           overflow: 'visible',
-          width: width,
-          height: height,
+          width: { xs: '90%', sm: width },
+          maxWidth: width,
+          aspectRatio: '4/3', // Fixed 4:3 aspect ratio
         },
       }}
       sx={{
         '& .MuiBackdrop-root': {
-          backgroundColor: 'rgba(0, 0, 0, 0.7)',
-          backdropFilter: 'blur(8px)',
+          backgroundColor: 'rgba(0, 0, 0, 0.6)',
+          backdropFilter: 'blur(4px)',
         },
       }}
     >
       <Box
         sx={{
           position: 'relative',
-          animation: 'welcomeSlideIn 0.6s ease-out',
-          '@keyframes welcomeSlideIn': {
+          width: '100%',
+          animation: 'fadeInScale 0.4s ease-out',
+          '@keyframes fadeInScale': {
             '0%': {
               opacity: 0,
-              transform: 'scale(0.8) translateY(-50px)',
+              transform: 'scale(0.95)',
             },
             '100%': {
               opacity: 1,
-              transform: 'scale(1) translateY(0)',
+              transform: 'scale(1)',
             },
           },
         }}
@@ -69,114 +71,89 @@ const WelcomeAdPopup: React.FC<WelcomeAdPopupProps> = ({ open, onClose, ads, wid
           onClick={onClose}
           sx={{
             position: 'absolute',
-            right: -10,
-            top: -10,
+            right: -12,
+            top: -12,
             zIndex: 10,
-            bgcolor: 'error.main',
-            color: 'white',
-            width: 40,
-            height: 40,
+            bgcolor: 'white',
+            color: 'text.primary',
+            width: 36,
+            height: 36,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
             '&:hover': {
-              bgcolor: 'error.dark',
-              transform: 'scale(1.1)'
+              bgcolor: 'grey.100',
+              transform: 'rotate(90deg)',
             },
-            transition: 'all 0.3s'
+            transition: 'all 0.3s ease',
           }}
         >
-          <CloseIcon />
+          <CloseIcon fontSize="small" />
         </IconButton>
 
         <Card
           sx={{
-            borderRadius: 3,
+            borderRadius: 2,
             overflow: 'hidden',
-            boxShadow: 8,
-            border: '3px solid',
-            borderColor: 'primary.main',
-            position: 'relative'
+            boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+            position: 'relative',
+            width: '100%',
+            aspectRatio: '4/3', // Fixed 4:3 aspect ratio
           }}
         >
           <CardMedia
             component="img"
-            height={height}
             image={welcomeAd.imageUrl || welcomeAd.image}
             alt={welcomeAd.title}
             sx={{
-              filter: 'brightness(0.8)',
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
             }}
           />
 
-          {/* Overlay for text */}
+          {/* Overlay for text - Clean and minimal */}
           <Box
             sx={{
               position: 'absolute',
               bottom: 0,
               left: 0,
               right: 0,
-              background: 'linear-gradient(transparent, rgba(0,0,0,0.7))',
+              background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.5) 50%, transparent 100%)',
               color: 'white',
-              p: 3
+              p: { xs: 2.5, sm: 3 },
             }}
           >
             <Typography
               variant="h5"
               component="h2"
               gutterBottom
-              fontWeight="bold"
-              sx={{ color: 'white' }}
+              sx={{
+                fontWeight: 700,
+                fontSize: { xs: '1.25rem', sm: '1.5rem' },
+                mb: 1,
+                lineHeight: 1.3,
+              }}
             >
               {welcomeAd.title}
             </Typography>
 
-            <Typography
-              variant="body1"
-              sx={{
-                lineHeight: 1.6,
-                color: 'rgba(255,255,255,0.9)'
-              }}
-            >
-              {welcomeAd.content || welcomeAd.description}
-            </Typography>
+            {welcomeAd.content || welcomeAd.description ? (
+              <Typography
+                variant="body2"
+                sx={{
+                  lineHeight: 1.6,
+                  color: 'rgba(255,255,255,0.95)',
+                  fontSize: { xs: '0.875rem', sm: '1rem' },
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                }}
+              >
+                {welcomeAd.content || welcomeAd.description}
+              </Typography>
+            ) : null}
           </Box>
         </Card>
-
-        {/* Decorative elements */}
-        <Box
-          sx={{
-            position: 'absolute',
-            bottom: -20,
-            right: -20,
-            width: 60,
-            height: 60,
-            borderRadius: '50%',
-            bgcolor: 'primary.main',
-            opacity: 0.1,
-            animation: 'pulse 2s infinite',
-            '@keyframes pulse': {
-              '0%': { transform: 'scale(1)', opacity: 0.1 },
-              '50%': { transform: 'scale(1.2)', opacity: 0.2 },
-              '100%': { transform: 'scale(1)', opacity: 0.1 },
-            },
-          }}
-        />
-
-        <Box
-          sx={{
-            position: 'absolute',
-            top: -15,
-            right: 30,
-            width: 30,
-            height: 30,
-            borderRadius: '50%',
-            bgcolor: 'secondary.main',
-            opacity: 0.2,
-            animation: 'float 3s ease-in-out infinite',
-            '@keyframes float': {
-              '0%, 100%': { transform: 'translateY(0)' },
-              '50%': { transform: 'translateY(-10px)' },
-            },
-          }}
-        />
       </Box>
     </Dialog>
   );

@@ -33,7 +33,6 @@ import RegistrationManagement from './pages/admin/RegistrationManagement';
 
 
 import MenuManagement from './pages/admin/MenuManagement';
-import BannerManagement from './pages/admin/BannerManagement';
 import TestimonialsManagement from './pages/admin/TestimonialsManagement';
 import FooterSettings from './pages/admin/FooterSettings';
 import AdminProfile from './pages/profile/AdminProfile';
@@ -140,8 +139,7 @@ const AppContent: React.FC = () => {
                   <Route path="audit-log" element={<AuditLog />} />
 
                     {/* Homepage Management Routes */}
-                    <Route path="homepage" element={<Navigate to="/admin/homepage/banner" replace />} />
-                    <Route path="homepage/banner" element={<BannerManagement />} />
+                    <Route path="homepage" element={<Navigate to="/admin/homepage/testimonials" replace />} />
                     <Route path="homepage/testimonials" element={<TestimonialsManagement />} />
                     <Route path="homepage/footer-settings" element={<FooterSettings />} />
 

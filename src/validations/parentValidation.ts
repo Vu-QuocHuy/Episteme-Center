@@ -1,8 +1,9 @@
-import { validateEmail, validatePhone, validateDayOfBirth, validateAddress, validateGender, validateName } from './commonValidation';
+import { validateEmail, validatePhone, validateDayOfBirth, validateAddress, validateGender, validateName, validatePassword } from './commonValidation';
 
 export interface ParentFormData {
   name: string;
   email: string;
+  password?: string;
   phone: string;
   dayOfBirth: string;
   address: string;
@@ -17,6 +18,7 @@ export interface ParentUpdateData {
 export interface ParentValidationErrors {
   name?: string;
   email?: string;
+  password?: string;
   phone?: string;
   dayOfBirth?: string;
   address?: string;
@@ -34,22 +36,35 @@ export interface ParentUpdateErrors {
 export function validateParent(form: ParentFormData, isNewParent: boolean = false): ParentValidationErrors {
   const errors: ParentValidationErrors = {};
 
-  // Tạm thời bỏ validate khi tạo mới
-  if (!isNewParent) {
-    const nameError = validateName(form.name);
-    if (nameError) errors.name = nameError;
-    const emailError = validateEmail(form.email);
-    if (emailError) errors.email = emailError;
+  // Validate name
+  const nameError = validateName(form.name);
+  if (nameError) errors.name = nameError;
 
-    const phoneError = validatePhone(form.phone);
-    if (phoneError) errors.phone = phoneError;
-    const dobError = validateDayOfBirth(form.dayOfBirth);
-    if (dobError) errors.dayOfBirth = dobError;
-    const addressError = validateAddress(form.address);
-    if (addressError) errors.address = addressError;
-    const genderError = validateGender(form.gender);
-    if (genderError) errors.gender = genderError;
+  // Validate email
+  const emailError = validateEmail(form.email);
+  if (emailError) errors.email = emailError;
+
+  // Validate password (only for new parent)
+  if (isNewParent) {
+    const passwordError = validatePassword(form.password || '');
+    if (passwordError) errors.password = passwordError;
   }
+
+  // Validate phone
+  const phoneError = validatePhone(form.phone);
+  if (phoneError) errors.phone = phoneError;
+
+  // Validate day of birth
+  const dobError = validateDayOfBirth(form.dayOfBirth);
+  if (dobError) errors.dayOfBirth = dobError;
+
+  // Validate address
+  const addressError = validateAddress(form.address);
+  if (addressError) errors.address = addressError;
+
+  // Validate gender
+  const genderError = validateGender(form.gender);
+  if (genderError) errors.gender = genderError;
 
   return errors;
 }

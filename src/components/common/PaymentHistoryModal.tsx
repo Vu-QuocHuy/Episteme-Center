@@ -419,7 +419,7 @@ const PaymentHistoryModal: React.FC<PaymentHistoryModalProps> = ({
           <Box sx={{ p: 4 }}>
             {/* Payment Details Section */}
             {showPaymentDetails && paymentDetails && (
-              <Accordion defaultExpanded sx={{ mb: 3, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
+              <Accordion sx={{ mb: 3, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
                 <AccordionSummary
                   expandIcon={<ExpandMoreIcon />}
                   sx={{
@@ -583,7 +583,7 @@ const PaymentHistoryModal: React.FC<PaymentHistoryModalProps> = ({
             )}
 
             {/* Payment History Table */}
-            <Accordion defaultExpanded sx={{ borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
+            <Accordion sx={{ borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
               <AccordionSummary
                 expandIcon={<ExpandMoreIcon />}
                 sx={{

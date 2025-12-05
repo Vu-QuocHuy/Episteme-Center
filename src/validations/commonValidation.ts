@@ -98,6 +98,7 @@ export interface UserUpdateData {
   phone?: string;
   gender?: string;
   address?: string;
+  dayOfBirth?: string;
 }
 
 export interface UserUpdateErrors {
@@ -106,6 +107,7 @@ export interface UserUpdateErrors {
   phone?: string;
   gender?: string;
   address?: string;
+  dayOfBirth?: string;
 }
 
 export function validateUserUpdate(data: UserUpdateData): UserUpdateErrors {

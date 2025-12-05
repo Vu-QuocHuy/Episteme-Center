@@ -16,7 +16,7 @@ import {
   Grid,
   Paper
 } from '@mui/material';
-import { Save as SaveIcon, Cancel as CancelIcon, Edit as EditIcon } from '@mui/icons-material';
+import { Save as SaveIcon, Cancel as CancelIcon, Edit as EditIcon, Add as AddIcon } from '@mui/icons-material';
 import { Student } from '../../../types';
 import {
   validateName,
@@ -24,7 +24,8 @@ import {
   validatePhone,
   validateAddress,
   validateGender,
-  validateDiscountCode
+  validateDiscountCode,
+  validatePassword
 } from '../../../validations/commonValidation';
 import { createStudentAPI, updateStudentAPI } from '../../../services/students';
 
@@ -39,6 +40,7 @@ interface StudentFormProps {
 interface FormData {
   name: string;
   email: string;
+  password: string;
   phone: string;
   address: string;
   dateOfBirth: string;
@@ -48,6 +50,7 @@ interface FormData {
 interface FormErrors {
   name?: string;
   email?: string;
+  password?: string;
   phone?: string;
   address?: string;
   dateOfBirth?: string;
@@ -65,6 +68,7 @@ const StudentForm: React.FC<StudentFormProps> = ({
   const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
+    password: '',
     phone: '',
     address: '',
     dateOfBirth: '',
@@ -82,6 +86,7 @@ const StudentForm: React.FC<StudentFormProps> = ({
       setFormData({
         name: student.name || student.userId?.name || '',
         email: student.email || student.userId?.email || '',
+        password: '', // Không hiển thị password khi edit
         phone: student.phone || student.userId?.phone || '',
         address: student.address || student.userId?.address || '',
         dateOfBirth: student.dayOfBirth ? new Date(student.dayOfBirth).toISOString().split('T')[0] :
@@ -107,6 +112,7 @@ const StudentForm: React.FC<StudentFormProps> = ({
     setFormData({
       name: '',
       email: '',
+      password: '',
       phone: '',
       address: '',
       dateOfBirth: '',
@@ -164,6 +170,12 @@ const StudentForm: React.FC<StudentFormProps> = ({
     const emailError = validateEmail(formData.email);
     if (emailError) newErrors.email = emailError;
 
+    // Validate password (only for new students)
+    if (!student) {
+      const passwordError = validatePassword(formData.password);
+      if (passwordError) newErrors.password = passwordError;
+    }
+
     // Validate phone
     const phoneError = validatePhone(formData.phone);
     if (phoneError) newErrors.phone = phoneError;
@@ -218,7 +230,7 @@ const StudentForm: React.FC<StudentFormProps> = ({
           }
         : {
             email: formData.email,
-            password: 'password123',
+            password: formData.password,
             name: formData.name,
             dayOfBirth: formData.dateOfBirth,
             phone: formData.phone,
@@ -298,7 +310,7 @@ const StudentForm: React.FC<StudentFormProps> = ({
             {student ? 'Chỉnh sửa thông tin học sinh' : 'Thêm học sinh mới'}
           </Typography>
           <Typography variant="body2" sx={{ opacity: 0.9 }}>
-            Cập nhật thông tin học sinh
+            {student ? 'Cập nhật thông tin học sinh' : 'Nhập thông tin học sinh mới'}
           </Typography>
         </Box>
         <Box sx={{
@@ -309,7 +321,7 @@ const StudentForm: React.FC<StudentFormProps> = ({
           alignItems: 'center',
           justifyContent: 'center'
         }}>
-          <EditIcon sx={{ fontSize: 28, color: 'white' }} />
+          {student ? <EditIcon sx={{ fontSize: 28, color: 'white' }} /> : <AddIcon sx={{ fontSize: 28, color: 'white' }} />}
         </Box>
       </DialogTitle>
 
@@ -345,6 +357,21 @@ const StudentForm: React.FC<StudentFormProps> = ({
               />
             </Grid>
 
+            {!student && (
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Mật khẩu"
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => handleInputChange('password', e.target.value)}
+                  error={!!errors.password}
+                  helperText={errors.password || 'Mật khẩu phải có ít nhất 8 ký tự, bao gồm cả chữ và số'}
+                  required
+                />
+              </Grid>
+            )}
+
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
@@ -378,6 +405,7 @@ const StudentForm: React.FC<StudentFormProps> = ({
                 onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
                 error={!!errors.dateOfBirth}
                 helperText={errors.dateOfBirth}
+                InputLabelProps={{ shrink: true }}
                 required
               />
             </Grid>
@@ -406,10 +434,11 @@ const StudentForm: React.FC<StudentFormProps> = ({
             </Box>
           </Paper>
 
-          <Box sx={{ mt: 3 }}>
-            <Paper sx={{ p: 3, borderRadius: 2, background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)', border: '1px solid #e0e6ed' }}>
-              {sectionTitle('Danh sách lớp đang học')}
-              <Box sx={{ p: 2, bgcolor: 'white', borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+          {student && (
+            <Box sx={{ mt: 3 }}>
+              <Paper sx={{ p: 3, borderRadius: 2, background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)', border: '1px solid #e0e6ed' }}>
+                {sectionTitle('Danh sách lớp đang học')}
+                <Box sx={{ p: 2, bgcolor: 'white', borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
                 <Grid container spacing={2}>
                   {classEdits.map((item, idx) => (
                     <React.Fragment key={idx}>
@@ -462,6 +491,7 @@ const StudentForm: React.FC<StudentFormProps> = ({
               </Box>
             </Paper>
           </Box>
+          )}
         </Box>
       </DialogContent>
 

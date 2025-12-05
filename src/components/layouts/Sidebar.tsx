@@ -318,25 +318,6 @@ const Sidebar: React.FC<SidebarProps> = ({ open }) => {
                   {homepageOpen && (
                     <List component="div" disablePadding sx={{ pl: open ? 4 : 0 }}>
                       <ListItemButton
-                        selected={location.pathname === '/admin/homepage/banner'}
-                        onClick={() => {
-                          if (!open) {
-                            openSidebar();
-                          }
-                          navigate('/admin/homepage/banner');
-                        }}
-                        sx={{
-                          minHeight: 40,
-                          justifyContent: open ? 'initial' : 'center',
-                          px: 2.5,
-                          borderRadius: 2,
-                          ml: open ? 2 : 0,
-                          my: 0.25
-                        }}
-                      >
-                        {open && <ListItemText primary="Quản lý Banner" />}
-                      </ListItemButton>
-                      <ListItemButton
                         selected={location.pathname === '/admin/homepage/testimonials'}
                         onClick={() => {
                           if (!open) {

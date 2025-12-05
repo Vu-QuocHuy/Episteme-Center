@@ -24,11 +24,12 @@ export const loginAdminAPI = (data: LoginData) => {
   });
 };
 
-export const changePasswordAPI = (oldPassword: string, newPassword: string) => {
+export const changePasswordAPI = (oldPassword: string, newPassword: string, confirmPassword: string) => {
   const formData = new URLSearchParams();
   formData.append('oldPassword', oldPassword);
   formData.append('newPassword', newPassword);
-  return axiosInstance.post(API_CONFIG.ENDPOINTS.AUTH.CHANGE_PASSWORD, formData, {
+  formData.append('confirmPassword', confirmPassword);
+  return axiosInstance.patch(API_CONFIG.ENDPOINTS.AUTH.CHANGE_PASSWORD, formData, {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
   });
 };
@@ -50,16 +51,24 @@ export const verifyCodeAPI = (code: string, email: string) => {
   });
 };
 
-export const resetPasswordAPI = (email: string, code: string, password: string) => {
+export const resetPasswordAPI = (email: string, code: string, newPassword: string, confirmPassword: string) => {
   const formData = new URLSearchParams();
   formData.append('email', email);
-  formData.append('code', code);
-  formData.append('password', password);
-  return axiosInstance.post(API_CONFIG.ENDPOINTS.AUTH.RESET_PASSWORD, formData, {
+  formData.append('newPassword', newPassword);
+  formData.append('confirmPassword', confirmPassword);
+  return axiosInstance.patch(`${API_CONFIG.ENDPOINTS.AUTH.RESET_PASSWORD}?code=${code}`, formData, {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
   });
 };
 
 export const refreshTokenAPI = () => axiosInstance.get(API_CONFIG.ENDPOINTS.AUTH.REFRESH_TOKEN);
 export const sendVerificationEmailAPI = () => axiosInstance.post(API_CONFIG.ENDPOINTS.AUTH.SEND_VERIFICATION_EMAIL);
-export const verifyEmailAPI = (token: string) => axiosInstance.post(`${API_CONFIG.ENDPOINTS.AUTH.VERIFY_EMAIL}?token=${token}`);
+export const sendVerifyEmailAPI = () => axiosInstance.post(API_CONFIG.ENDPOINTS.AUTH.SEND_VERIFY_EMAIL);
+export const verifyEmailAPI = (code: string) => axiosInstance.patch(`${API_CONFIG.ENDPOINTS.AUTH.VERIFY_EMAIL}?code=${code}`);
+export const sendRequestPasswordAPI = (email: string) => {
+  const formData = new URLSearchParams();
+  formData.append('email', email);
+  return axiosInstance.post(API_CONFIG.ENDPOINTS.AUTH.SEND_REQUEST_PASSWORD, formData, {
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+  });
+};

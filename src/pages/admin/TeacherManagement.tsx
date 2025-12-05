@@ -368,7 +368,7 @@ const TeacherManagement: React.FC = () => {
             <TeacherForm
               open={openDialog}
               onClose={handleCloseDialog}
-              teacher={form as any}
+              teacher={selectedTeacher}
               onSubmit={handleFormSubmit}
               loading={formLoading || loadingDetail}
             />

@@ -22,7 +22,8 @@ import {
 } from '@mui/material';
 import {
   Save as SaveIcon,
-  Edit as EditIcon
+  Edit as EditIcon,
+  Add as AddIcon
 } from '@mui/icons-material';
 import { Parent, Student } from '../../../types';
 import { useParentForm } from '../../../hooks/features/useParentForm';
@@ -33,7 +34,8 @@ import {
   validateEmail,
   validatePhone,
   validateAddress,
-  validateGender
+  validateGender,
+  validatePassword
 } from '../../../validations/commonValidation';
 
 interface ParentFormProps {
@@ -48,6 +50,7 @@ interface ParentFormProps {
 interface FormErrors {
   name?: string;
   email?: string;
+  password?: string;
   phone?: string;
   address?: string;
   dayOfBirth?: string;
@@ -182,6 +185,12 @@ const ParentForm: React.FC<ParentFormProps> = ({ open, onClose, onSubmit, parent
     const emailError = validateEmail(form.email);
     if (emailError) newErrors.email = emailError;
 
+    // Validate password (only for new parent)
+    if (!parent) {
+      const passwordError = validatePassword(form.password || '');
+      if (passwordError) newErrors.password = passwordError;
+    }
+
     // Validate phone
     const phoneError = validatePhone(form.phone);
     if (phoneError) newErrors.phone = phoneError;
@@ -243,6 +252,7 @@ const ParentForm: React.FC<ParentFormProps> = ({ open, onClose, onSubmit, parent
         // Create new parent
         body = {
           email: form.email,
+          password: form.password,
           name: form.name,
           dayOfBirth: toAPIDateFormat(form.dayOfBirth),
           phone: form.phone,
@@ -363,7 +373,7 @@ const ParentForm: React.FC<ParentFormProps> = ({ open, onClose, onSubmit, parent
           </Typography>
         </Box>
         <Box sx={{ bgcolor: 'rgba(255,255,255,0.2)', borderRadius: '50%', p: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <EditIcon sx={{ fontSize: 28, color: 'white' }} />
+          {parent ? <EditIcon sx={{ fontSize: 28, color: 'white' }} /> : <AddIcon sx={{ fontSize: 28, color: 'white' }} />}
         </Box>
       </DialogTitle>
 
@@ -414,6 +424,22 @@ const ParentForm: React.FC<ParentFormProps> = ({ open, onClose, onSubmit, parent
                       required
                     />
             </Grid>
+
+            {!parent && (
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Mật khẩu"
+                  name="password"
+                  type="password"
+                  value={form.password || ''}
+                  onChange={handleChange}
+                  error={!!errors.password}
+                  helperText={errors.password || 'Mật khẩu phải có ít nhất 8 ký tự, bao gồm cả chữ và số'}
+                  required
+                />
+              </Grid>
+            )}
 
             <Grid item xs={12} md={6}>
                     <TextField

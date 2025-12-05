@@ -28,6 +28,7 @@ export const useParentForm = (): UseParentFormReturn => {
   const [form, setForm] = useState<ParentFormData>({
     name: '',
     email: '',
+    password: '',
     dayOfBirth: '',
     phone: '',
     address: '',
@@ -66,6 +67,7 @@ export const useParentForm = (): UseParentFormReturn => {
       setForm({
         name: '',
         email: '',
+        password: '',
         dayOfBirth: '',
         phone: '',
         address: '',
@@ -79,6 +81,7 @@ export const useParentForm = (): UseParentFormReturn => {
     setForm({
       name: '',
       email: '',
+      password: '',
       dayOfBirth: '',
       phone: '',
       address: '',

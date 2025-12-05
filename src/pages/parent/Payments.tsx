@@ -12,6 +12,10 @@ import {
   History as HistoryIcon,
   QrCode2 as QrCodeIcon,
   Close as CloseIcon,
+  Cancel as CancelIcon,
+  AttachMoney as AttachMoneyIcon,
+  Paid as PaidIcon,
+  AccountBalanceWallet as WalletIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
@@ -494,7 +498,9 @@ const Payments: React.FC = () => {
                               variant="outlined"
                             />
                           ) : (
-                            '-'
+                            <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.secondary' }}>
+                              {formatCurrency(0)}
+                            </Typography>
                           )}
                         </TableCell>
                         <TableCell align="center" sx={{ fontWeight: 'bold' }}><Typography variant="body2" sx={{ fontWeight: 500 }}>{formatCurrency(invoice.finalAmount)}</Typography></TableCell>
@@ -562,102 +568,121 @@ const Payments: React.FC = () => {
         PaperProps={{
           sx: {
             borderRadius: 3,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
+            boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+            overflow: 'hidden'
           }
         }}
       >
         <DialogTitle sx={{
-          bgcolor: '#f8fafc',
-          borderBottom: '1px solid #e2e8f0',
-          pb: 2
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          color: 'white',
+          py: 3,
+          px: 4,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 2
         }}>
-          <Typography variant="h5" fontWeight={600} color="#1e293b">
-            Thanh toán học phí bằng QR Code
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-            {selectedInvoice?.childName} - {selectedInvoice?.className} - Tháng {selectedInvoice?.month}/{selectedInvoice?.year}
-          </Typography>
+          <QrCodeIcon sx={{ fontSize: 28 }} />
+          <Box>
+            <Typography variant="h5" sx={{ fontWeight: 600, mb: 0.5 }}>
+              Thanh toán học phí
+            </Typography>
+            <Typography variant="body2" sx={{ opacity: 0.9 }}>
+              {selectedInvoice?.childName} - {selectedInvoice?.className} - Tháng {selectedInvoice?.month}
+            </Typography>
+          </Box>
         </DialogTitle>
-        <DialogContent sx={{ p: 3 }}>
-          <Grid container spacing={2}>
-            <Grid item xs={12}>
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                Thông tin hóa đơn:
-              </Typography>
-              <Box sx={{ p: 2, bgcolor: '#f8fafc', borderRadius: 1, mb: 2 }}>
-                <Grid container spacing={1}>
-                  <Grid item xs={6}>
-                    <Typography variant="body2" color="text.secondary">Tổng tiền:</Typography>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Typography variant="body2" fontWeight={500}>
-                      {formatCurrency(selectedInvoice?.originalAmount || 0)}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Typography variant="body2" color="text.secondary">Giảm giá:</Typography>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Typography variant="body2" fontWeight={500}>
-                      {formatCurrency(selectedInvoice?.discountAmount || 0)}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Typography variant="body2" color="text.secondary">Đã thanh toán:</Typography>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Typography variant="body2" fontWeight={500} color="success.main">
-                      {formatCurrency(selectedInvoice?.paidAmount || 0)}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Typography variant="body2" color="text.secondary">Còn thiếu:</Typography>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Typography variant="body2" fontWeight={500} color="error.main">
-                      {formatCurrency(selectedInvoice?.remainingAmount || 0)}
-                    </Typography>
-                  </Grid>
+        <DialogContent sx={{ p: 4, pt: 4, bgcolor: '#f9fafb', mt: 2 }}>
+          {/* Summary Cards */}
+          {selectedInvoice && (
+            <>
+              <Grid container spacing={2} sx={{ mb: 3 }}>
+                <Grid item xs={12} sm={4}>
+                  <Paper elevation={0} sx={{ p: 2.5, border: '1px solid #e0e0e0', borderRadius: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5, color: 'text.secondary', fontSize: 12 }}>
+                      <AttachMoneyIcon fontSize="small" /> Tổng số tiền
+                    </Box>
+                    <Box sx={{ fontWeight: 700, fontSize: 18 }}>
+                      {formatCurrency((selectedInvoice.originalAmount || 0) - (selectedInvoice.discountAmount || 0))}
+                    </Box>
+                  </Paper>
                 </Grid>
-              </Box>
-            </Grid>
-
-            <Grid item xs={12}>
-              <TextField
-                label="Số tiền thanh toán"
-                type="number"
-                fullWidth
-                value={paymentAmount}
-                onChange={(e) => setPaymentAmount(e.target.value)}
-                inputProps={{ min: 0, max: selectedInvoice?.remainingAmount }}
-                required
-                placeholder="Nhập số tiền bạn muốn thanh toán"
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    fontSize: '1.1rem',
-                    fontWeight: 600,
-                  }
-                }}
-              />
-            </Grid>
-
-            {paymentError && (
-              <Grid item xs={12}>
-                <Alert severity="error" sx={{ borderRadius: 2 }}>{paymentError}</Alert>
+                <Grid item xs={12} sm={4}>
+                  <Paper elevation={0} sx={{ p: 2.5, border: '1px solid #e0e0e0', borderRadius: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5, color: 'text.secondary', fontSize: 12 }}>
+                      <PaidIcon fontSize="small" /> Đã thanh toán
+                    </Box>
+                    <Box sx={{ fontWeight: 700, fontSize: 18, color: 'success.main' }}>
+                      {formatCurrency(selectedInvoice.paidAmount || 0)}
+                    </Box>
+                  </Paper>
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <Paper elevation={0} sx={{ p: 2.5, border: '1px solid #e0e0e0', borderRadius: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5, color: 'text.secondary', fontSize: 12 }}>
+                      <WalletIcon fontSize="small" /> Còn lại
+                    </Box>
+                    <Box sx={{ fontWeight: 700, fontSize: 18, color: 'error.main' }}>
+                      {formatCurrency(selectedInvoice.remainingAmount || 0)}
+                    </Box>
+                  </Paper>
+                </Grid>
               </Grid>
-            )}
-          </Grid>
+            </>
+          )}
+
+          <Paper sx={{ p: 3, borderRadius: 2, bgcolor: 'white', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+            <Grid container spacing={3}>
+              <Grid item xs={12}>
+                <TextField
+                  label="Số tiền thanh toán"
+                  type="number"
+                  fullWidth
+                  value={paymentAmount}
+                  onChange={(e) => setPaymentAmount(e.target.value)}
+                  inputProps={{ min: 0, max: selectedInvoice?.remainingAmount }}
+                  required
+                  placeholder="Nhập số tiền bạn muốn thanh toán"
+                  InputProps={{
+                    startAdornment: <InputAdornment position="start">₫</InputAdornment>
+                  }}
+                  helperText={selectedInvoice ? `Tối đa: ${formatCurrency(selectedInvoice.remainingAmount || 0)}` : undefined}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2,
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#667eea',
+                      }
+                    }
+                  }}
+                />
+              </Grid>
+
+              {paymentError && (
+                <Grid item xs={12}>
+                  <Alert severity="error" sx={{ borderRadius: 2 }}>{paymentError}</Alert>
+                </Grid>
+              )}
+            </Grid>
+          </Paper>
         </DialogContent>
-        <DialogActions sx={{ p: 3, bgcolor: '#f8fafc', gap: 2 }}>
+        <DialogActions sx={{ p: 3, pt: 0, bgcolor: '#f8f9fa', gap: 2 }}>
           <Button
             onClick={handleClosePaymentDialog}
             variant="outlined"
-            size="large"
+            startIcon={<CancelIcon />}
             sx={{
+              px: 3,
+              py: 1.5,
               borderRadius: 2,
-              px: 4,
-              py: 1.2,
-              fontWeight: 600
+              fontWeight: 600,
+              textTransform: 'none',
+              borderColor: '#667eea',
+              color: '#667eea',
+              '&:hover': {
+                borderColor: '#5a6fd8',
+                bgcolor: 'rgba(102, 126, 234, 0.04)'
+              }
             }}
           >
             Hủy
@@ -665,28 +690,27 @@ const Payments: React.FC = () => {
           <Button
             onClick={handleRegenerateQRCode}
             variant="contained"
-            size="large"
             disabled={qrCodeLoading || !paymentAmount || parseFloat(paymentAmount) <= 0}
             startIcon={qrCodeLoading ? <CircularProgress size={20} color="inherit" /> : <QrCodeIcon />}
             sx={{
+              px: 3,
+              py: 1.5,
               borderRadius: 2,
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              '&:hover': {
-                background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
-                transform: 'translateY(-2px)',
-                boxShadow: '0 8px 20px rgba(102, 126, 234, 0.4)',
-              },
-              px: 4,
-              py: 1.2,
-              fontWeight: 700,
+              fontWeight: 600,
+              textTransform: 'none',
+              bgcolor: '#667eea',
               boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
-              transition: 'all 0.3s ease',
+              '&:hover': {
+                bgcolor: '#5a6fd8',
+                boxShadow: '0 6px 16px rgba(102, 126, 234, 0.4)',
+                transform: 'translateY(-1px)'
+              },
               '&:disabled': {
-                background: 'linear-gradient(135deg, #ccc 0%, #999 100%)',
+                bgcolor: '#ccc'
               }
             }}
           >
-            {qrCodeLoading ? 'Đang xử lý...' : 'Thanh toán'}
+            {qrCodeLoading ? 'Đang xử lý...' : 'Tạo mã QR thanh toán'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -710,27 +734,11 @@ const Payments: React.FC = () => {
             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
             p: 3,
             color: 'white',
-            position: 'relative',
             display: 'flex',
             alignItems: 'center',
             gap: 2
           }}
         >
-          <IconButton
-            onClick={handleCloseQRDialog}
-            sx={{
-              position: 'absolute',
-              right: 8,
-              top: 8,
-              color: 'white',
-              bgcolor: 'rgba(255,255,255,0.1)',
-              '&:hover': {
-                bgcolor: 'rgba(255,255,255,0.2)',
-              }
-            }}
-          >
-            <CloseIcon />
-          </IconButton>
           <QrCodeIcon sx={{ fontSize: 48 }} />
           <Box sx={{ flex: 1 }}>
             <Typography variant="h5" fontWeight={700} gutterBottom>

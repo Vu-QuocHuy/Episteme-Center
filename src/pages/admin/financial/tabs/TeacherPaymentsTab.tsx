@@ -9,7 +9,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-
+  Typography,
   Pagination,
   Button,
   IconButton,
@@ -441,32 +441,29 @@ const TeacherPaymentsTab: React.FC<Props> = () => {
         <DialogTitle sx={{
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           color: 'white',
-          py: 2.5,
-          px: 3,
+          py: 3,
+          px: 4,
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between'
+          gap: 2
         }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <Box sx={{ bgcolor: 'rgba(255,255,255,0.2)', borderRadius: '50%', p: 0.75, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <PaymentIcon htmlColor="#fff" />
-            </Box>
-            <Box>
-              <Box sx={{ fontWeight: 700, fontSize: 16 }}>Thanh toán lương giáo viên</Box>
-              {editingPayment && (
-                <Box sx={{ fontSize: 12, opacity: 0.9 }}>
-                  {editingPayment.teacher?.name || editingPayment.teacherId?.userId?.name || editingPayment.teacherId?.name || ''}
-                </Box>
-              )}
-            </Box>
+          <PaymentIcon sx={{ fontSize: 28 }} />
+          <Box>
+            <Typography variant="h5" sx={{ fontWeight: 600, mb: 0.5 }}>
+              Thanh toán lương giáo viên
+            </Typography>
+            {editingPayment && (
+              <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                {editingPayment.teacher?.name || editingPayment.teacherId?.userId?.name || editingPayment.teacherId?.name || ''}
+              </Typography>
+            )}
           </Box>
         </DialogTitle>
-        <DialogContent sx={{ p: 0 }}>
-          <Box sx={{ p: 4 }}>
+        <DialogContent sx={{ p: 4, pt: 4, bgcolor: '#f9fafb', mt: 2 }}>
           {/* Summary */}
           {dialogSummary && (
             <>
-              <Grid container spacing={2} sx={{ mb: 2 }}>
+              <Grid container spacing={2} sx={{ mb: 3 }}>
                 <Grid item xs={12} sm={4}>
                   <Paper elevation={0} sx={{ p: 2.5, border: '1px solid #e0e0e0', borderRadius: 2 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5, color: 'text.secondary', fontSize: 12 }}>
@@ -492,31 +489,17 @@ const TeacherPaymentsTab: React.FC<Props> = () => {
                   </Paper>
                 </Grid>
               </Grid>
-              <Divider sx={{ mb: 2 }} />
+              <Divider sx={{ mb: 3 }} />
             </>
           )}
           {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
+            <Alert severity="error" sx={{ mb: 3 }}>
               {error}
             </Alert>
           )}
 
-          <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
-                <InputLabel>Phương thức thanh toán</InputLabel>
-                <Select
-                  value={formData.method}
-                  onChange={(e) => setFormData({ ...formData, method: e.target.value })}
-                  label="Phương thức thanh toán"
-                >
-                  <MenuItem value="banking">Chuyển khoản</MenuItem>
-                  <MenuItem value="cash">Tiền mặt</MenuItem>
-                  <MenuItem value="check">Séc</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-
+          <Paper sx={{ p: 3, borderRadius: 2, bgcolor: 'white', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+            <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
@@ -527,7 +510,36 @@ const TeacherPaymentsTab: React.FC<Props> = () => {
                 inputProps={{ min: 0 }}
                 InputProps={{ startAdornment: <InputAdornment position="start">₫</InputAdornment> }}
                 helperText={dialogSummary ? `Tối đa: ${dialogSummary.remainingAmount.toLocaleString()} ₫` : undefined}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#667eea',
+                    }
+                  }
+                }}
               />
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth>
+                <InputLabel>Phương thức thanh toán</InputLabel>
+                <Select
+                  value={formData.method}
+                  onChange={(e) => setFormData({ ...formData, method: e.target.value })}
+                  label="Phương thức thanh toán"
+                  sx={{
+                    borderRadius: 2,
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#667eea',
+                    }
+                  }}
+                >
+                  <MenuItem value="banking">Chuyển khoản</MenuItem>
+                  <MenuItem value="cash">Tiền mặt</MenuItem>
+                  <MenuItem value="check">Séc</MenuItem>
+                </Select>
+              </FormControl>
             </Grid>
 
             <Grid item xs={12}>
@@ -539,29 +551,63 @@ const TeacherPaymentsTab: React.FC<Props> = () => {
                 value={formData.note}
                 onChange={(e) => setFormData({ ...formData, note: e.target.value })}
                 placeholder="Nhập ghi chú về khoản thanh toán này..."
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#667eea',
+                    }
+                  }
+                }}
               />
             </Grid>
-
-
           </Grid>
-          </Box>
+          </Paper>
         </DialogContent>
-        <DialogActions sx={{ justifyContent: 'space-between', p: 3, borderTop: '1px solid #e0e6ed', backgroundColor: '#f8f9fa' }}>
-          <Box sx={{ pl: 1, color: 'text.secondary', fontSize: 13 }}>
-            {dialogSummary && (
-              <>Sau thanh toán còn lại: <b>{Math.max(dialogSummary.remainingAmount - (formData.paidAmount || 0), 0).toLocaleString()} ₫</b></>
-            )}
-          </Box>
-          <Box>
-            <Button onClick={handleCloseDialog} sx={{ mr: 1 }}>Hủy</Button>
-            <Button
-              onClick={handleSubmit}
-              variant="contained"
-              disabled={loading}
-            >
-              {loading ? 'Đang xử lý...' : 'Xác nhận thanh toán'}
-            </Button>
-          </Box>
+        <DialogActions sx={{ justifyContent: 'flex-end', p: 3, borderTop: '1px solid #e0e6ed', backgroundColor: '#f8f9fa', gap: 2 }}>
+          <Button
+            onClick={handleCloseDialog}
+            variant="outlined"
+            sx={{
+              px: 3,
+              py: 1.5,
+              borderRadius: 2,
+              fontWeight: 600,
+              textTransform: 'none',
+              borderColor: '#667eea',
+              color: '#667eea',
+              '&:hover': {
+                borderColor: '#5a6fd8',
+                bgcolor: 'rgba(102, 126, 234, 0.04)'
+              }
+            }}
+          >
+            Hủy
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            variant="contained"
+            disabled={loading}
+            sx={{
+              px: 3,
+              py: 1.5,
+              borderRadius: 2,
+              fontWeight: 600,
+              textTransform: 'none',
+              bgcolor: '#667eea',
+              boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+              '&:hover': {
+                bgcolor: '#5a6fd8',
+                boxShadow: '0 6px 16px rgba(102, 126, 234, 0.4)',
+                transform: 'translateY(-1px)'
+              },
+              '&:disabled': {
+                bgcolor: '#ccc'
+              }
+            }}
+          >
+            {loading ? 'Đang xử lý...' : 'Xác nhận thanh toán'}
+          </Button>
         </DialogActions>
       </Dialog>
     </>

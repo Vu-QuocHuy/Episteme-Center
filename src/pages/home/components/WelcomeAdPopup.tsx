@@ -27,19 +27,14 @@ const HomeWelcomeAdPopup: React.FC = () => {
     fetchAdvertisements();
   }, []);
 
-    // Show popup after delay
+    // Show popup after delay - hiển thị mỗi khi vào trang chủ
   useEffect(() => {
-    if (popupConfig.isActive && advertisements.length > 0 && popupConfig.showOnFirstVisit) {
-      const hasVisited = localStorage.getItem('hasVisitedHomepage');
+    if (popupConfig.isActive && advertisements.length > 0) {
+      const timer = setTimeout(() => {
+        setShowPopup(true);
+      }, popupConfig.showDelay);
 
-      if (!hasVisited) {
-        const timer = setTimeout(() => {
-          setShowPopup(true);
-          localStorage.setItem('hasVisitedHomepage', 'true');
-        }, popupConfig.showDelay);
-
-        return () => clearTimeout(timer);
-      }
+      return () => clearTimeout(timer);
     }
   }, [popupConfig, advertisements]);
 

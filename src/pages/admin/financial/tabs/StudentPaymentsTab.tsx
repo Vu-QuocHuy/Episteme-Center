@@ -1,7 +1,6 @@
 import React from 'react';
-import { Box, TextField, MenuItem, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Pagination, IconButton, Tooltip, Dialog, DialogTitle, DialogContent, DialogActions, Button, CircularProgress, Typography } from '@mui/material';
-import { Download as DownloadIcon } from '@mui/icons-material';
-import { History as HistoryIcon, Payment as PaymentIcon } from '@mui/icons-material';
+import { Box, TextField, MenuItem, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Pagination, IconButton, Tooltip, Dialog, DialogTitle, DialogContent, DialogActions, Button, CircularProgress, Typography, Grid, Paper, Divider } from '@mui/material';
+import { Download as DownloadIcon, Payment as PaymentIcon, History as HistoryIcon, Cancel as CancelIcon, Save as SaveIcon, AttachMoney as AttachMoneyIcon, Paid as PaidIcon, AccountBalanceWallet as WalletIcon } from '@mui/icons-material';
 import PaymentHistoryModal from '../../../../components/common/PaymentHistoryModal';
 import { getAllPaymentsAPI, payStudentAPI, exportPaymentsReportAPI } from '../../../../services/payments';
 import * as XLSX from 'xlsx';
@@ -196,6 +195,15 @@ const StudentPaymentsTab: React.FC<Props> = ({ onTotalsChange }) => {
   };
   const onClosePayDialog = () => { setOpenPayDialog(false); setSelectedPayment(null); setStudentPaymentForm({ amount: '', method: 'cash', note: '' }); };
 
+  // Calculate summary for student payment
+  const getPaymentSummary = () => {
+    if (!selectedPayment) return null;
+    const totalAmount = (selectedPayment.totalAmount || 0) - (selectedPayment.discountAmount || 0);
+    const paidAmount = selectedPayment.paidAmount || 0;
+    const remainingAmount = totalAmount - paidAmount;
+    return { totalAmount, paidAmount, remainingAmount };
+  };
+
   const handleChangeStudentPaymentField = (key: 'amount' | 'method' | 'note', value: string) => {
     setStudentPaymentForm(prev => ({ ...prev, [key]: value }));
   };
@@ -362,28 +370,187 @@ const StudentPaymentsTab: React.FC<Props> = ({ onTotalsChange }) => {
       )}
 
       {/* Student Payment Dialog */}
-      <Dialog open={openPayDialog} onClose={onClosePayDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>Thanh toán học phí</DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" color="text.secondary" gutterBottom>
-            {selectedPayment?.student?.name} - {selectedPayment?.class?.name}
-          </Typography>
-          <Box sx={{ mt: 2 }}>
-            <TextField label="Số tiền thanh toán" type="number" fullWidth value={studentPaymentForm.amount} onChange={(e) => handleChangeStudentPaymentField('amount', e.target.value)} inputProps={{ min: 0 }} required />
+      <Dialog
+        open={openPayDialog}
+        onClose={onClosePayDialog}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+            overflow: 'hidden'
+          }
+        }}
+      >
+        <DialogTitle sx={{
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          color: 'white',
+          py: 3,
+          px: 4,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 2
+        }}>
+          <PaymentIcon sx={{ fontSize: 28 }} />
+          <Box>
+            <Typography variant="h5" sx={{ fontWeight: 600, mb: 0.5 }}>
+              Thanh toán học phí
+            </Typography>
+            <Typography variant="body2" sx={{ opacity: 0.9 }}>
+              {selectedPayment?.student?.name} - {selectedPayment?.class?.name}
+            </Typography>
           </Box>
-          <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
-            <TextField select fullWidth label="Phương thức thanh toán" value={studentPaymentForm.method} onChange={(e) => handleChangeStudentPaymentField('method', e.target.value)}>
-              <MenuItem value="cash">Tiền mặt</MenuItem>
-              <MenuItem value="bank_transfer">Chuyển khoản</MenuItem>
-              <MenuItem value="card">Thẻ</MenuItem>
-            </TextField>
-            <TextField label="Ghi chú" fullWidth value={studentPaymentForm.note} onChange={(e) => handleChangeStudentPaymentField('note', e.target.value)} />
-          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ p: 4, pt: 4, bgcolor: '#f9fafb', mt: 2 }}>
+          {/* Summary */}
+          {getPaymentSummary() && (
+            <>
+              <Grid container spacing={2} sx={{ mb: 3 }}>
+                <Grid item xs={12} sm={4}>
+                  <Paper elevation={0} sx={{ p: 2.5, border: '1px solid #e0e0e0', borderRadius: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5, color: 'text.secondary', fontSize: 12 }}>
+                      <AttachMoneyIcon fontSize="small" /> Tổng số tiền
+                    </Box>
+                    <Box sx={{ fontWeight: 700, fontSize: 18 }}>
+                      {getPaymentSummary()!.totalAmount.toLocaleString()} ₫
+                    </Box>
+                  </Paper>
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <Paper elevation={0} sx={{ p: 2.5, border: '1px solid #e0e0e0', borderRadius: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5, color: 'text.secondary', fontSize: 12 }}>
+                      <PaidIcon fontSize="small" /> Đã thanh toán
+                    </Box>
+                    <Box sx={{ fontWeight: 700, fontSize: 18, color: 'success.main' }}>
+                      {getPaymentSummary()!.paidAmount.toLocaleString()} ₫
+                    </Box>
+                  </Paper>
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <Paper elevation={0} sx={{ p: 2.5, border: '1px solid #e0e0e0', borderRadius: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5, color: 'text.secondary', fontSize: 12 }}>
+                      <WalletIcon fontSize="small" /> Còn lại
+                    </Box>
+                    <Box sx={{ fontWeight: 700, fontSize: 18, color: 'error.main' }}>
+                      {getPaymentSummary()!.remainingAmount.toLocaleString()} ₫
+                    </Box>
+                  </Paper>
+                </Grid>
+              </Grid>
+              <Divider sx={{ mb: 3 }} />
+            </>
+          )}
+
+          <Paper sx={{ p: 3, borderRadius: 2, bgcolor: 'white', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  label="Số tiền thanh toán"
+                  type="number"
+                  fullWidth
+                  value={studentPaymentForm.amount}
+                  onChange={(e) => handleChangeStudentPaymentField('amount', e.target.value)}
+                  inputProps={{ min: 0 }}
+                  required
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2,
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#667eea',
+                      }
+                    }
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  select
+                  fullWidth
+                  label="Phương thức thanh toán"
+                  value={studentPaymentForm.method}
+                  onChange={(e) => handleChangeStudentPaymentField('method', e.target.value)}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2,
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#667eea',
+                      }
+                    }
+                  }}
+                >
+                  <MenuItem value="cash">Tiền mặt</MenuItem>
+                  <MenuItem value="bank_transfer">Chuyển khoản</MenuItem>
+                  <MenuItem value="card">Thẻ</MenuItem>
+                </TextField>
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="Ghi chú"
+                  fullWidth
+                  multiline
+                  rows={3}
+                  value={studentPaymentForm.note}
+                  onChange={(e) => handleChangeStudentPaymentField('note', e.target.value)}
+                  placeholder="Nhập ghi chú (nếu có)"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2,
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#667eea',
+                      }
+                    }
+                  }}
+                />
+              </Grid>
+            </Grid>
+          </Paper>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={onClosePayDialog} variant="outlined">Hủy</Button>
-          <Button onClick={handleSubmitStudentPayment} variant="contained" disabled={!studentPaymentForm.amount || studentPaymentLoading}>
-            {studentPaymentLoading ? <CircularProgress size={20} /> : 'Thanh toán'}
+        <DialogActions sx={{ p: 3, pt: 0, bgcolor: '#f8f9fa', gap: 2 }}>
+          <Button
+            onClick={onClosePayDialog}
+            variant="outlined"
+            startIcon={<CancelIcon />}
+            sx={{
+              px: 3,
+              py: 1.5,
+              borderRadius: 2,
+              fontWeight: 600,
+              textTransform: 'none',
+              borderColor: '#667eea',
+              color: '#667eea',
+              '&:hover': {
+                borderColor: '#5a6fd8',
+                bgcolor: 'rgba(102, 126, 234, 0.04)'
+              }
+            }}
+          >
+            Hủy
+          </Button>
+          <Button
+            onClick={handleSubmitStudentPayment}
+            variant="contained"
+            disabled={!studentPaymentForm.amount || studentPaymentLoading}
+            startIcon={studentPaymentLoading ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
+            sx={{
+              px: 3,
+              py: 1.5,
+              borderRadius: 2,
+              fontWeight: 600,
+              textTransform: 'none',
+              bgcolor: '#667eea',
+              boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+              '&:hover': {
+                bgcolor: '#5a6fd8',
+                boxShadow: '0 6px 16px rgba(102, 126, 234, 0.4)',
+                transform: 'translateY(-1px)'
+              },
+              '&:disabled': {
+                bgcolor: '#ccc'
+              }
+            }}
+          >
+            {studentPaymentLoading ? 'Đang xử lý...' : 'Thanh toán'}
           </Button>
         </DialogActions>
       </Dialog>

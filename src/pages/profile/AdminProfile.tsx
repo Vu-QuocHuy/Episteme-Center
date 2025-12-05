@@ -26,7 +26,7 @@ import { updateUserAPI } from '../../services/users';
 import { validateUserUpdate } from '../../validations/commonValidation';
 import { commonStyles } from '../../utils/styles';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
-import { AvatarUpload } from '../../components/common';
+import { AvatarUpload, ChangePasswordDialog, VerifyEmailDialog } from '../../components/common';
 
 interface UserUpdateData {
   name: string;
@@ -50,6 +50,8 @@ const AdminProfile: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [verifyEmailOpen, setVerifyEmailOpen] = useState(false);
 
   const [formData, setFormData] = useState<UserUpdateData>({
     name: user?.name || '',
@@ -225,9 +227,12 @@ const AdminProfile: React.FC = () => {
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
                           Email
                         </Typography>
-                        <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                          {user.email}
-                        </Typography>
+                        <TextField
+                          fullWidth
+                          value={user.email}
+                          size="small"
+                          InputProps={{ readOnly: true }}
+                        />
                       </Box>
 
                       <Box sx={{ mb: 3 }}>
@@ -347,8 +352,6 @@ const AdminProfile: React.FC = () => {
                           </Typography>
                           <TextField
                             fullWidth
-                            multiline
-                            rows={3}
                             value={formData.address}
                             onChange={(e) => handleInputChange('address', e.target.value)}
                             error={!!errors.address}
@@ -365,6 +368,7 @@ const AdminProfile: React.FC = () => {
                     <Button
                       variant="outlined"
                       startIcon={<LockIcon />}
+                      onClick={() => setChangePasswordOpen(true)}
                       sx={{
                         borderRadius: 2,
                         px: 3,
@@ -383,6 +387,7 @@ const AdminProfile: React.FC = () => {
                     <Button
                       variant="outlined"
                       startIcon={<VerifiedUserIcon />}
+                      onClick={() => setVerifyEmailOpen(true)}
                       sx={{
                         borderRadius: 2,
                         px: 3,
@@ -462,6 +467,21 @@ const AdminProfile: React.FC = () => {
           </Grid>
         </Box>
       </Box>
+
+      <ChangePasswordDialog
+        open={changePasswordOpen}
+        onClose={() => setChangePasswordOpen(false)}
+      />
+
+      <VerifyEmailDialog
+        open={verifyEmailOpen}
+        onClose={() => setVerifyEmailOpen(false)}
+        userEmail={user?.email || ''}
+        onSuccess={() => {
+          // Có thể cập nhật trạng thái email trong user context nếu cần
+          console.log('Email verified successfully');
+        }}
+      />
     </DashboardLayout>
   );
 };

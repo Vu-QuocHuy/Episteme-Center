@@ -10,6 +10,8 @@ export interface ApiEndpoints {
     RESET_PASSWORD: string;
     VERIFY_EMAIL: string;
     SEND_VERIFICATION_EMAIL: string;
+    SEND_VERIFY_EMAIL: string;
+    SEND_REQUEST_PASSWORD: string;
   };
   ADMIN: {
     CREATE: string;
@@ -216,6 +218,8 @@ export const API_CONFIG: ApiConfig = {
       RESET_PASSWORD: '/auth/reset-password',
       VERIFY_EMAIL: '/auth/verify-email',
       SEND_VERIFICATION_EMAIL: '/auth/send-verification-email',
+      SEND_VERIFY_EMAIL: '/auth/send-verify-email',
+      SEND_REQUEST_PASSWORD: '/auth/send-request-password',
     },
     // Admin endpoints
     ADMIN: {

@@ -18,7 +18,7 @@ import {
   Switch,
   Paper
 } from '@mui/material';
-import { Save as SaveIcon, Cancel as CancelIcon, Edit as EditIcon } from '@mui/icons-material';
+import { Save as SaveIcon, Cancel as CancelIcon, Edit as EditIcon, Add as AddIcon } from '@mui/icons-material';
 import { Teacher } from '../../../types';
 
 interface TeacherFormProps {
@@ -232,11 +232,11 @@ const TeacherForm: React.FC<TeacherFormProps> = ({
             {teacher ? 'Chỉnh sửa thông tin giáo viên' : 'Thêm giáo viên mới'}
           </Typography>
           <Typography variant="body2" sx={{ opacity: 0.9 }}>
-            Cập nhật thông tin giáo viên
+            {teacher ? 'Cập nhật thông tin giáo viên' : 'Nhập thông tin giáo viên mới'}
           </Typography>
         </Box>
         <Box sx={{ bgcolor: 'rgba(255,255,255,0.2)', borderRadius: '50%', p: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <EditIcon sx={{ fontSize: 28, color: 'white' }} />
+          {teacher ? <EditIcon sx={{ fontSize: 28, color: 'white' }} /> : <AddIcon sx={{ fontSize: 28, color: 'white' }} />}
         </Box>
       </DialogTitle>
 
@@ -400,30 +400,34 @@ const TeacherForm: React.FC<TeacherFormProps> = ({
                     placeholder="Business English, Speaking"
                   />
                 </Grid>
-                <Grid item xs={12} md={6}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={formData.isActive}
-                        onChange={(e) => handleInputChange('isActive', e.target.checked)}
-                        color="primary"
+                {teacher && (
+                  <>
+                    <Grid item xs={12} md={6}>
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={formData.isActive}
+                            onChange={(e) => handleInputChange('isActive', e.target.checked)}
+                            color="primary"
+                          />
+                        }
+                        label="Trạng thái hoạt động"
                       />
-                    }
-                    label="Trạng thái hoạt động"
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={formData.typical}
-                        onChange={(e) => handleInputChange('typical', e.target.checked)}
-                        color="primary"
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={formData.typical}
+                            onChange={(e) => handleInputChange('typical', e.target.checked)}
+                            color="primary"
+                          />
+                        }
+                        label="Giáo viên tiêu biểu"
                       />
-                    }
-                    label="Giáo viên tiêu biểu"
-                  />
-                </Grid>
+                    </Grid>
+                  </>
+                )}
               </Grid>
             </Box>
           </Paper>
