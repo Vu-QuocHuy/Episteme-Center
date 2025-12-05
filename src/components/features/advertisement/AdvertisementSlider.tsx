@@ -86,7 +86,7 @@ const AdvertisementSlider: React.FC<AdvertisementSliderProps> = ({
   ads,
   showArrows = true,
   showDots = true,
-  height = 550,
+  height,
   onRegisterClick
 }) => {
   if (!ads || ads.length === 0) return null;
@@ -124,7 +124,13 @@ const AdvertisementSlider: React.FC<AdvertisementSliderProps> = ({
   };
 
   return (
-    <Box sx={{ position: 'relative', width: '100%' }}>
+    <Box
+      sx={{
+        position: 'relative',
+        width: '100%',
+        ...(height ? { height } : { aspectRatio: '16/9' }),
+      }}
+    >
       <Slider {...settings}>
         {sortedAds.map((ad, idx) => (
           <Box
@@ -132,10 +138,10 @@ const AdvertisementSlider: React.FC<AdvertisementSliderProps> = ({
             sx={{
               position: 'relative',
               width: '100%',
-              aspectRatio: '16/9', // Fixed 16:9 aspect ratio
+              ...(height ? { height } : { aspectRatio: '16/9' }), // If height provided, use it; otherwise keep ratio
               overflow: 'hidden',
               '@media (max-width: 768px)': {
-                aspectRatio: '16/9', // Keep same ratio on mobile
+                ...(height ? { height } : { aspectRatio: '16/9' }), // Keep consistent sizing on mobile
               }
             }}
           >

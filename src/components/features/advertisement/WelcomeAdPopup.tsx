@@ -39,7 +39,7 @@ const WelcomeAdPopup: React.FC<WelcomeAdPopupProps> = ({ open, onClose, ads, wid
           overflow: 'visible',
           width: { xs: '90%', sm: width },
           maxWidth: width,
-          aspectRatio: '4/3', // Fixed 4:3 aspect ratio
+          ...(height ? { height } : { aspectRatio: '4/3' }), // Keep 4:3 ratio if height not provided
         },
       }}
       sx={{
@@ -96,7 +96,7 @@ const WelcomeAdPopup: React.FC<WelcomeAdPopupProps> = ({ open, onClose, ads, wid
             boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
             position: 'relative',
             width: '100%',
-            aspectRatio: '4/3', // Fixed 4:3 aspect ratio
+            ...(height ? { height } : { aspectRatio: '4/3' }), // Respect custom height when provided
           }}
         >
           <CardMedia

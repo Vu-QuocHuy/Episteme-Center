@@ -11,7 +11,6 @@ import {
   Search as SearchIcon, Receipt as ReceiptIcon, MoneyOff as MoneyOffIcon, Discount as DiscountIcon,
   History as HistoryIcon,
   QrCode2 as QrCodeIcon,
-  Close as CloseIcon,
   Cancel as CancelIcon,
   AttachMoney as AttachMoneyIcon,
   Paid as PaidIcon,

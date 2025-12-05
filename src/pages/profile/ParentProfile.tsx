@@ -13,8 +13,6 @@ import {
   Select,
   MenuItem,
   Chip,
-  Switch,
-  FormControlLabel,
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -81,7 +79,7 @@ const ParentProfile: React.FC = () => {
   });
 
   const [userErrors, setUserErrors] = useState<UserUpdateErrors>({});
-  const [parentErrors, setParentErrors] = useState<ParentUpdateErrors>({});
+  const [, setParentErrors] = useState<ParentUpdateErrors>({});
 
   useEffect(() => {
     if (user) {
@@ -108,20 +106,6 @@ const ParentProfile: React.FC = () => {
 
     if (userErrors[field]) {
       setUserErrors(prev => ({
-        ...prev,
-        [field]: undefined,
-      }));
-    }
-  };
-
-  const handleParentInputChange = (field: keyof ParentUpdateData, value: boolean) => {
-    setParentFormData(prev => ({
-      ...prev,
-      [field]: value,
-    }));
-
-    if (parentErrors[field]) {
-      setParentErrors(prev => ({
         ...prev,
         [field]: undefined,
       }));
