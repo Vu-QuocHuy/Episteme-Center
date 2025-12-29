@@ -43,6 +43,7 @@ import {
 import { uploadFileAPI, deleteFileAPI } from '../../services/files';
 import { getAllClassesAPI } from '../../services/classes';
 import NotificationSnackbar from '../../components/common/NotificationSnackbar';
+import { useLazySearch } from '../../hooks/common/useLazySearch';
 // Optional: add your own validations if needed
 
 interface Advertisement {
@@ -106,12 +107,35 @@ const AdvertisementManagement: React.FC = () => {
   const [uploadedPublicId, setUploadedPublicId] = useState<string | undefined>(undefined);
   const [originalPublicId, setOriginalPublicId] = useState<string | undefined>(undefined);
   const [classId, setClassId] = useState<string>('');
-  // isActive is driven by backend; not required in form
-  const [classSearch, setClassSearch] = useState<string>('');
-  const [classOptions, setClassOptions] = useState<Array<{ id: string; name: string; grade?: number; section?: number; year?: number }>>([]);
-  const [classLoading, setClassLoading] = useState<boolean>(false);
   const [snackbar, setSnackbar] = useState<SnackbarState>({ open: false, message: '', severity: 'success' });
   const [formErrors, setFormErrors] = useState<FormErrors>({});
+
+  // Lazy search hook for class selection
+  const {
+    searchQuery: classSearch,
+    setSearchQuery: setClassSearch,
+    items: classOptions,
+    loading: classLoading,
+    hasMore: hasMoreClasses,
+    loadMore: loadMoreClasses,
+    reset: resetClassSearch
+  } = useLazySearch<{ id: string; name: string; grade?: number; section?: number; year?: number }>({
+    fetchFn: async (params) => {
+      const res = await getAllClassesAPI(params);
+      return res.data;
+    },
+    enabled: openDialog,
+    loadOnMount: true, // Load initial suggestions when dialog opens
+    pageSize: 10,
+    debounceDelay: 500,
+    transformFn: (c: any) => ({
+      id: c.id,
+      name: c.name,
+      grade: c.grade,
+      section: c.section,
+      year: c.year
+    })
+  });
 
   // Lấy danh sách quảng cáo từ API
   useEffect(() => {
@@ -204,31 +228,8 @@ const AdvertisementManagement: React.FC = () => {
   const handleCloseDialog = (): void => {
     setOpenDialog(false);
     setEditingAd(null);
+    resetClassSearch();
   };
-
-  // Fetch class options with debounce only when dialog open and user types a query
-  useEffect(() => {
-    let active = true;
-    const query = classSearch?.trim();
-    if (!openDialog || !query) {
-      // Do not call API on page load or when no search query
-      return;
-    }
-    const handler = setTimeout(async () => {
-      try {
-        setClassLoading(true);
-        const res = await getAllClassesAPI({ page: 1, limit: 10, name: query });
-        const list = res.data?.data?.result || res.data?.data || res.data || [];
-        const options = (list || []).map((c: any) => ({ id: c.id, name: c.name, grade: c.grade, section: c.section, year: c.year }));
-        if (active) setClassOptions(options);
-      } catch (_err) {
-        if (active) setClassOptions([]);
-      } finally {
-        if (active) setClassLoading(false);
-      }
-    }, 300);
-    return () => { active = false; clearTimeout(handler); };
-  }, [classSearch, openDialog]);
 
   const handleCloseNotification = (): void => {
     setSnackbar({ ...snackbar, open: false });
@@ -649,6 +650,19 @@ const AdvertisementManagement: React.FC = () => {
                           onChange={(_, val) => setClassId(val?.id || '')}
                           inputValue={classSearch}
                           onInputChange={(_, val) => setClassSearch(val)}
+                          ListboxProps={{
+                            onScroll: (event: React.SyntheticEvent) => {
+                              const listboxNode = event.currentTarget;
+                              if (
+                                listboxNode.scrollTop + listboxNode.clientHeight >=
+                                listboxNode.scrollHeight - 5 &&
+                                hasMoreClasses &&
+                                !classLoading
+                              ) {
+                                loadMoreClasses();
+                              }
+                            }
+                          }}
                           renderInput={(params) => (
                             <TextField
                               {...params}
@@ -665,6 +679,29 @@ const AdvertisementManagement: React.FC = () => {
                               }}
                             />
                           )}
+                          renderOption={(props, option) => (
+                            <Box component="li" {...props} key={option.id}>
+                              <Box>
+                                <Typography variant="body1">{option.name}</Typography>
+                                {(option.grade || option.section || option.year) && (
+                                  <Typography variant="body2" color="text.secondary">
+                                    {[
+                                      option.grade && `Khối ${option.grade}`,
+                                      option.section && `Lớp ${option.section}`,
+                                      option.year && `Năm ${option.year}`
+                                    ]
+                                      .filter(Boolean)
+                                      .join(' • ')}
+                                  </Typography>
+                                )}
+                              </Box>
+                            </Box>
+                          )}
+                          noOptionsText={
+                            classLoading ? 'Đang tải...' : 
+                            classSearch ? 'Không tìm thấy lớp học' : 
+                            'Nhập tên lớp để tìm kiếm'
+                          }
                         />
                       </Grid>
                       {/* Trạng thái hoạt động do backend quản lý, không cần trong form tạo/sửa */}

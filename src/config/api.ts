@@ -10,7 +10,6 @@ export interface ApiEndpoints {
     RESET_PASSWORD: string;
     VERIFY_EMAIL: string;
     SEND_VERIFICATION_EMAIL: string;
-    SEND_VERIFY_EMAIL: string;
     SEND_REQUEST_PASSWORD: string;
   };
   ADMIN: {
@@ -79,11 +78,10 @@ export interface ApiEndpoints {
     GET_ALL: string;
     GET_BY_STUDENT: (id: string) => string;
     PAY_STUDENT: (id: string) => string;
-    GET_QR_CODE: string;
-    CONFIRM_PAYMENTS: string;
     GET_TEACHER_PAYMENTS: string;
     EXPORT_REPORT: string;
     TEACHER_EXPORT_REPORT: string;
+    GET_QR_CODE: string;
   };
   SCHEDULES: {
     GET_STUDENT_SCHEDULE: string;
@@ -166,9 +164,6 @@ export interface ApiEndpoints {
     UPDATE: (id: string) => string;
     DELETE: (id: string) => string;
   };
-  CRON: {
-    UPDATE_CLASS_STATUS: string;
-  };
   // Posts endpoints (like FE-webcntt-main)
   POSTS: {
     GET_LATEST: string;
@@ -195,7 +190,14 @@ export interface ApiEndpoints {
     UPDATE: (id: string) => string;
     DELETE: (id: string) => string;
   };
-
+  FOOTER_SETTINGS: {
+    GET: string;
+    CREATE: string;
+    UPDATE: string;
+  };
+  CRON: {
+    UPDATE_CLASS_STATUS: string;
+  };
 }
 
 export interface ApiConfig {
@@ -203,8 +205,24 @@ export interface ApiConfig {
   ENDPOINTS: ApiEndpoints;
 }
 
+// ✅ Centralized API Configuration - Chỉ cần sửa ở .env
+// - Development: Nếu USE_PROXY=true → dùng Vite proxy (/api)
+// - Production: Gọi trực tiếp đến VITE_API_BASE_URL
+const getBaseUrl = () => {
+  const useProxy = import.meta.env.VITE_USE_PROXY === 'true';
+  const apiUrl = import.meta.env.VITE_API_BASE_URL;
+
+  // Nếu set USE_PROXY và đang dev, dùng proxy
+  if (useProxy && import.meta.env.DEV) {
+    return '/api';
+  }
+
+  // Ngược lại, dùng URL trực tiếp
+  return apiUrl || '/api';
+};
+
 export const API_CONFIG: ApiConfig = {
-  BASE_URL: import.meta.env.DEV ? '/api' : (import.meta.env.VITE_API_BASE_URL || 'http://103.199.18.103:8080/api/v1'),
+  BASE_URL: getBaseUrl(),
   ENDPOINTS: {
     // Auth endpoints
     AUTH: {
@@ -218,7 +236,6 @@ export const API_CONFIG: ApiConfig = {
       RESET_PASSWORD: '/auth/reset-password',
       VERIFY_EMAIL: '/auth/verify-email',
       SEND_VERIFICATION_EMAIL: '/auth/send-verification-email',
-      SEND_VERIFY_EMAIL: '/auth/send-verify-email',
       SEND_REQUEST_PASSWORD: '/auth/send-request-password',
     },
     // Admin endpoints
@@ -293,11 +310,10 @@ export const API_CONFIG: ApiConfig = {
       GET_ALL: '/payments/all',
       GET_BY_STUDENT: (id: string) => `/payments/students/${id}`,
       PAY_STUDENT: (id: string) => `/payments/pay-student/${id}`,
-      GET_QR_CODE: '/payments/qrcode',
-      CONFIRM_PAYMENTS: '/payments/confirm-payments',
       GET_TEACHER_PAYMENTS: '/teacher-payments/all',
       EXPORT_REPORT: '/payments/report',
       TEACHER_EXPORT_REPORT: '/teacher-payments/report',
+      GET_QR_CODE: '/payments/qr-code',
     },
     SCHEDULES: {
       GET_STUDENT_SCHEDULE: '/schedules/student/me',
@@ -385,10 +401,6 @@ export const API_CONFIG: ApiConfig = {
       UPDATE: (id: string) => `/registrations/${id}`,
       DELETE: (id: string) => `/registrations/${id}`,
     },
-    // Cron endpoints
-    CRON: {
-      UPDATE_CLASS_STATUS: '/api/v1/cron/update-class-status',
-    },
     // Posts endpoints (like FE-webcntt-main)
     POSTS: {
       GET_LATEST: '/posts/latest',
@@ -415,6 +427,15 @@ export const API_CONFIG: ApiConfig = {
       UPDATE: (id: string) => `/articles/${id}`,
       DELETE: (id: string) => `/articles/${id}`,
     },
-
+    // Footer Settings endpoints
+    FOOTER_SETTINGS: {
+      GET: '/footer-settings',
+      CREATE: '/footer-settings',
+      UPDATE: '/footer-settings',
+    },
+    // Cron endpoints
+    CRON: {
+      UPDATE_CLASS_STATUS: '/cron/update-class-status',
+    },
   },
 };

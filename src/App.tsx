@@ -61,7 +61,6 @@ import { USER_ROLES } from './constants';
 
 // Dynamic Menu Pages
 import DynamicMenuPage from './pages/DynamicMenuPage';
-import LayoutBuilder from './pages/admin/LayoutBuilder';
 import AllTeachersPage from './pages/AllTeachersPage';
 import CoursesPage from './pages/CoursesPage';
 import SchedulePage from './pages/SchedulePage';
@@ -107,6 +106,9 @@ const AppContent: React.FC = () => {
 
           {/* Testimonials Page - Student feedback */}
           <Route path="/cam-nhan-hoc-vien" element={<TestimonialsPage />} />
+
+          {/* Public teacher page - must be before /teacher/* protected route */}
+          <Route path="/teacher" element={<AllTeachersPage />} />
 
           {/* Dynamic Menu Routes - Support nested paths */}
           <Route path="/:slug" element={<DynamicMenuPage />} />
@@ -157,8 +159,6 @@ const AppContent: React.FC = () => {
                   {/* Menu Management Routes */}
                       <Route path="menu" element={<MenuManagement />} />
                      <Route path="menu-management" element={<MenuManagement />} />
-                  <Route path="layout-builder/:id" element={<LayoutBuilder />} />
-                     <Route path="layout-builder/:slug" element={<LayoutBuilder />} />
                      <Route path="profile" element={<AdminProfile />} />
                     <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
                     </Routes>

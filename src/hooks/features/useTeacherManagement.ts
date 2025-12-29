@@ -15,8 +15,6 @@ interface UseTeacherManagementReturn {
   totalRecords: number;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
-  emailFilter: string;
-  setEmailFilter: (email: string) => void;
   isActiveFilter: string;
   setIsActiveFilter: (filter: string) => void;
   fetchData: (pageNum?: number) => Promise<void>;
@@ -38,10 +36,8 @@ export const useTeacherManagement = (): UseTeacherManagementReturn => {
   const [totalPages, setTotalPages] = useState<number>(1);
   const [totalRecords, setTotalRecords] = useState<number>(0);
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [emailFilter, setEmailFilter] = useState<string>('');
   const [isActiveFilter, setIsActiveFilter] = useState<string>('');
   const [debouncedSearch, setDebouncedSearch] = useState<string>('');
-  const [debouncedEmail, setDebouncedEmail] = useState<string>('');
 
   // Debounce search input
   useEffect(() => {
@@ -51,14 +47,6 @@ export const useTeacherManagement = (): UseTeacherManagementReturn => {
     return () => clearTimeout(handler);
   }, [searchQuery]);
 
-  // Debounce email filter
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedEmail(emailFilter);
-    }, 500);
-    return () => clearTimeout(handler);
-  }, [emailFilter]);
-
   const fetchTeachers = useCallback(async (pageNum: number = 1): Promise<void> => {
     setLoading(true);
     setLoadingTable(true);
@@ -66,39 +54,11 @@ export const useTeacherManagement = (): UseTeacherManagementReturn => {
       const params: Record<string, any> = {
         page: pageNum,
         limit: 10,
+        // Note: New API doesn't seem to support name or isActive filters based on Postman
+        // ...(debouncedSearch && { name: debouncedSearch }),
+        // ...(isActiveFilter && { isActive: isActiveFilter })
       };
 
-      // Build filters object for backend - only add fields that have values
-      const filterOptions: Record<string, any> = {};
-
-      // Only add name filter if search query exists and is not empty
-      if (debouncedSearch && debouncedSearch.trim() !== '') {
-        filterOptions.name = debouncedSearch.trim();
-      }
-
-      // Only add email filter if email query exists and is not empty
-      if (debouncedEmail && debouncedEmail.trim() !== '') {
-        filterOptions.email = debouncedEmail.trim();
-      }
-
-      // Only add isActive filter if status is selected (not "Tất cả")
-      if (isActiveFilter && isActiveFilter !== '') {
-        if (isActiveFilter === 'active') {
-          filterOptions.isActive = true;
-        } else if (isActiveFilter === 'inactive') {
-          filterOptions.isActive = false;
-        }
-      }
-
-      // Only add filters param if at least one filter is set
-      if (Object.keys(filterOptions).length > 0) {
-        params.filters = filterOptions;
-        console.log('🔍 Applying filters:', filterOptions);
-      } else {
-        console.log('🔍 No filters applied - fetching all teachers');
-      }
-
-      console.log('🔍 Final API params:', params);
       const response = await getAllTeachersAPI(params);
       console.log('📊 Teachers API Response:', response);
 
@@ -122,7 +82,7 @@ export const useTeacherManagement = (): UseTeacherManagementReturn => {
       setLoading(false);
       setLoadingTable(false);
     }
-  }, [debouncedSearch, debouncedEmail, isActiveFilter]);
+  }, [debouncedSearch, isActiveFilter]);
 
   const deleteTeacher = useCallback(async (teacherId: string): Promise<{ success: boolean; message: string }> => {
     setLoading(true);
@@ -170,7 +130,7 @@ export const useTeacherManagement = (): UseTeacherManagementReturn => {
   // Fetch teachers when dependencies change
   useEffect(() => {
     fetchTeachers(page);
-  }, [page, debouncedSearch, debouncedEmail, isActiveFilter, fetchTeachers]);
+  }, [page, debouncedSearch, isActiveFilter, fetchTeachers]);
 
   return {
     data: teachers,
@@ -185,8 +145,6 @@ export const useTeacherManagement = (): UseTeacherManagementReturn => {
     totalRecords,
     searchQuery,
     setSearchQuery,
-    emailFilter,
-    setEmailFilter,
     isActiveFilter,
     setIsActiveFilter,
     fetchData: fetchTeachers,

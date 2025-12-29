@@ -55,7 +55,7 @@ const CoursesPage: React.FC = () => {
   const location = useLocation();
   const { menuItems } = useMenuItems();
   const [classes, setClasses] = useState<Class[]>([]);
-  const [articles, setArticles] = useState<any[]>([]); // Articles from layoutBuilder
+  const [articles, setArticles] = useState<any[]>([]); // Articles for banner/intro content
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false); // Control showing all classes or just first 2 rows
@@ -112,7 +112,7 @@ const CoursesPage: React.FC = () => {
         // Find menu item
         const foundMenuItem = findMenuItemBySlug(menuItems, fullSlug);
 
-        // Fetch articles from layoutBuilder (banner/intro content)
+        // Fetch articles for banner/intro content
         if (foundMenuItem?.id) {
           try {
             const articlesResponse = await getArticlesByMenuIdAPI(foundMenuItem.id);
@@ -274,7 +274,7 @@ const CoursesPage: React.FC = () => {
   return (
     <PublicLayout>
       <Box sx={{ bgcolor: '#fafafa', minHeight: '100vh' }}>
-        {/* Articles from layoutBuilder (Banner/Intro) */}
+        {/* Articles content (Banner/Intro) */}
         {articles.length > 0 && (
           <Box sx={{ width: '100%' }}>
             {articles.map((article, index) => (

@@ -63,7 +63,7 @@ export const resetPasswordAPI = (email: string, code: string, newPassword: strin
 
 export const refreshTokenAPI = () => axiosInstance.get(API_CONFIG.ENDPOINTS.AUTH.REFRESH_TOKEN);
 export const sendVerificationEmailAPI = () => axiosInstance.post(API_CONFIG.ENDPOINTS.AUTH.SEND_VERIFICATION_EMAIL);
-export const sendVerifyEmailAPI = () => axiosInstance.post(API_CONFIG.ENDPOINTS.AUTH.SEND_VERIFY_EMAIL);
+export const sendVerifyEmailAPI = () => axiosInstance.post(API_CONFIG.ENDPOINTS.AUTH.SEND_VERIFICATION_EMAIL);
 export const verifyEmailAPI = (code: string) => axiosInstance.patch(`${API_CONFIG.ENDPOINTS.AUTH.VERIFY_EMAIL}?code=${code}`);
 export const sendRequestPasswordAPI = (email: string) => {
   const formData = new URLSearchParams();

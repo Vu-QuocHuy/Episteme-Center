@@ -162,8 +162,8 @@ const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
             name: s?.student?.name,
             email: s?.student?.email,
             phone: s?.student?.phone,
-            // Map trạng thái từ API: isActivce (boolean) -> 'active' | 'inactive'
-            status: s?.isActivce ? 'active' : 'inactive',
+            // Map trạng thái từ API: isActive (boolean) -> 'active' | 'inactive'
+            status: s?.isActive ? 'active' : 'inactive',
           }))
         : [];
       setStudentsDetail(mappedStudents);

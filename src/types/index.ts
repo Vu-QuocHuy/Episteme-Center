@@ -755,7 +755,6 @@ export interface Advertisement {
   isActive?: boolean;
   startDate?: string;
   endDate?: string;
-  classId?: string | null;
 }
 
 // Home Page Content Management Types
@@ -826,7 +825,8 @@ export interface MenuItem {
   // Extended fields used by navigation/pages (ensure presence where code expects)
   title: string;
   slug?: string;
-  childrenMenu?: MenuItem[];
+  children?: MenuItem[];
+  childrenMenu?: MenuItem[]; // Alias for children, used in transformed data
 }
 
 // Navigation types used by header/hooks

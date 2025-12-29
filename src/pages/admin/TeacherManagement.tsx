@@ -4,7 +4,6 @@ import {
   Typography,
   Button,
   Grid,
-  Pagination,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -50,32 +49,28 @@ const TeacherManagement: React.FC = () => {
     selectedTeacher: teacherDetail,
     loading,
     loadingDetail,
-    page,
-    totalPages,
     totalRecords,
     searchQuery,
     setSearchQuery,
-    emailFilter,
-    setEmailFilter,
     isActiveFilter,
     setIsActiveFilter,
     fetchTeachers,
     getTeacherById,
-    deleteTeacher,
-    handlePageChange,
+    deleteTeacher
   } = useTeacherManagement();
 
   // Teacher form hook
   const {
+    form,
     loading: formLoading,
     setFormData,
     resetForm,
+    handleSubmit
   } = useTeacherForm();
 
   // Local state
   const [openDialog, setOpenDialog] = useState<boolean>(false);
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
-  const [originalTeacherData, setOriginalTeacherData] = useState<any>(null);
   const [openViewDialog, setOpenViewDialog] = useState<boolean>(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState<boolean>(false);
   const [teacherToDelete, setTeacherToDelete] = useState<Teacher | null>(null);
@@ -90,9 +85,6 @@ const TeacherManagement: React.FC = () => {
 
       // Sử dụng dữ liệu từ API response để set form
       if (detailData) {
-        // Lưu originalData để so sánh sau này
-        setOriginalTeacherData(detailData);
-
         // Map API response to form structure (sử dụng type assertion vì form cần structure cũ)
         const formData = {
           id: detailData.id,
@@ -111,10 +103,8 @@ const TeacherManagement: React.FC = () => {
           description: detailData.description,
           qualifications: detailData.qualifications,
           specializations: detailData.specializations,
-          salaryPerLesson: detailData.salaryPerLesson,
+          salary: detailData.salary,
           workExperience: detailData.workExperience,
-          introduction: detailData.introduction,
-          typical: detailData.typical,
         } as Teacher;
         setFormData(formData);
       } else {
@@ -123,7 +113,6 @@ const TeacherManagement: React.FC = () => {
     } else {
       // Tạo mới teacher
       setSelectedTeacher(null);
-      setOriginalTeacherData(null);
       resetForm();
     }
     setOpenDialog(true);
@@ -133,7 +122,6 @@ const TeacherManagement: React.FC = () => {
     setOpenDialog(false);
     setTimeout(() => {
       setSelectedTeacher(null);
-      setOriginalTeacherData(null);
       resetForm();
     }, 100);
   };
@@ -155,98 +143,18 @@ const TeacherManagement: React.FC = () => {
 
 
   // Action handlers
-  const handleFormSubmit = async (teacherData: Partial<Teacher>): Promise<void> => {
-    try {
-      if (selectedTeacher && originalTeacherData) {
-        // Chỉnh sửa teacher - chỉ gửi field thay đổi
-        const changedFields: any = {};
-
-        // So sánh các field và chỉ lấy những field thay đổi
-        if (teacherData.name !== originalTeacherData.name) {
-          changedFields.name = teacherData.name;
-        }
-        if (teacherData.email !== originalTeacherData.email) {
-          changedFields.email = teacherData.email;
-        }
-        if (teacherData.phone !== originalTeacherData.phone) {
-          changedFields.phone = teacherData.phone;
-        }
-        if (teacherData.address !== originalTeacherData.address) {
-          changedFields.address = teacherData.address;
-        }
-        if (teacherData.gender !== originalTeacherData.gender) {
-          changedFields.gender = teacherData.gender;
-        }
-        // So sánh dayOfBirth (chuyển sang ISO date để so sánh)
-        const newDate = teacherData.dayOfBirth ? new Date(teacherData.dayOfBirth as any).toISOString().split('T')[0] : null;
-        const oldDate = originalTeacherData.dayOfBirth ? new Date(originalTeacherData.dayOfBirth).toISOString().split('T')[0] : null;
-        if (newDate !== oldDate) {
-          changedFields.dayOfBirth = teacherData.dayOfBirth;
-        }
-        if (teacherData.description !== originalTeacherData.description) {
-          changedFields.description = teacherData.description;
-        }
-        if (JSON.stringify(teacherData.qualifications) !== JSON.stringify(originalTeacherData.qualifications)) {
-          changedFields.qualifications = teacherData.qualifications;
-        }
-        if (JSON.stringify(teacherData.specializations) !== JSON.stringify(originalTeacherData.specializations)) {
-          changedFields.specializations = teacherData.specializations;
-        }
-        if (teacherData.salaryPerLesson !== originalTeacherData.salaryPerLesson) {
-          changedFields.salaryPerLesson = teacherData.salaryPerLesson;
-        }
-        if (teacherData.introduction !== originalTeacherData.introduction) {
-          changedFields.introduction = teacherData.introduction;
-        }
-        if (teacherData.workExperience !== originalTeacherData.workExperience) {
-          changedFields.workExperience = teacherData.workExperience;
-        }
-        if (teacherData.isActive !== originalTeacherData.isActive) {
-          changedFields.isActive = teacherData.isActive;
-        }
-        if (teacherData.typical !== originalTeacherData.typical) {
-          changedFields.typical = teacherData.typical;
-        }
-
-        console.log('🔄 Chỉ gửi các field thay đổi:', changedFields);
-
-        // Gọi API update với chỉ các field thay đổi
-        const { updateTeacherAPI } = await import('../../services/teachers');
-        await updateTeacherAPI(selectedTeacher.id, changedFields);
-
-        setSnackbar({ open: true, message: 'Cập nhật giáo viên thành công!', severity: 'success' });
-      } else {
-        // Tạo mới teacher - gửi tất cả data
-        const { createTeacherAPI } = await import('../../services/teachers');
-        const createData = {
-          name: teacherData.name || '',
-          email: teacherData.email || '',
-          password: (teacherData as any).password || '',
-          phone: teacherData.phone || '',
-          address: teacherData.address || '',
-          gender: teacherData.gender || '',
-          dayOfBirth: teacherData.dayOfBirth || '',
-          description: teacherData.description || '',
-          qualifications: teacherData.qualifications || [],
-          specializations: teacherData.specializations || [],
-          salaryPerLesson: teacherData.salaryPerLesson || 0,
-          introduction: teacherData.introduction || '',
-          workExperience: teacherData.workExperience || '',
-          isActive: teacherData.isActive ?? true,
-          typical: teacherData.typical ?? false,
-        };
-        await createTeacherAPI(createData as any);
-
-        setSnackbar({ open: true, message: 'Tạo giáo viên mới thành công!', severity: 'success' });
-      }
-
+  const handleFormSubmit = async (): Promise<void> => {
+    const result = await handleSubmit(selectedTeacher || undefined, () => {
       handleCloseDialog();
       if (fetchTeachers) {
         fetchTeachers();
       }
-    } catch (error: any) {
-      const errorMessage = error?.response?.data?.message || 'Có lỗi xảy ra';
-      setSnackbar({ open: true, message: errorMessage, severity: 'error' });
+    });
+
+    if (result.success) {
+      setSnackbar({ open: true, message: result.message || 'Thành công', severity: 'success' });
+    } else {
+      setSnackbar({ open: true, message: result.message || 'Có lỗi xảy ra', severity: 'error' });
     }
   };
 
@@ -333,8 +241,6 @@ const TeacherManagement: React.FC = () => {
             <TeacherFilters
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}
-              emailFilter={emailFilter}
-              setEmailFilter={setEmailFilter}
               isActiveFilter={isActiveFilter || ''}
               setIsActiveFilter={setIsActiveFilter || (() => {})}
             />
@@ -346,28 +252,11 @@ const TeacherManagement: React.FC = () => {
               onEdit={handleOpenDialog}
               onDelete={handleDeleteTeacher}
               onViewDetails={handleOpenViewDialog}
-            />
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-                <Pagination
-                  count={totalPages}
-                  page={page}
-                  onChange={(_event, value) => handlePageChange(_event as React.SyntheticEvent, value)}
-                  size="large"
-                  color="primary"
-                  showFirstButton
-                  showLastButton
-                />
-              </Box>
-            )}
-
-            {/* Dialogs */}
+            />            {/* Dialogs */}
             <TeacherForm
               open={openDialog}
               onClose={handleCloseDialog}
-              teacher={selectedTeacher}
+              teacher={form as any}
               onSubmit={handleFormSubmit}
               loading={formLoading || loadingDetail}
             />

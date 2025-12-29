@@ -203,21 +203,8 @@ const ForgotPassword: React.FC = () => {
       <Box sx={{
         minHeight: '100vh',
         display: 'flex',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        position: 'relative',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'url(/images/login-bg.jpg)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          opacity: 0.1,
-          zIndex: 0
-        }
+        background: '#ffffff',
+        position: 'relative'
       }}>
         <Container component="main" maxWidth="sm" sx={{
           display: 'flex',
@@ -646,21 +633,8 @@ const ForgotPassword: React.FC = () => {
     <Box sx={{
       minHeight: '100vh',
       display: 'flex',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      position: 'relative',
-      '&::before': {
-        content: '""',
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: 'url(/images/login-bg.jpg)',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        opacity: 0.1,
-        zIndex: 0
-      }
+      background: '#ffffff',
+      position: 'relative'
     }}>
       <Container component="main" maxWidth="sm" sx={{
         display: 'flex',

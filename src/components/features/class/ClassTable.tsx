@@ -624,7 +624,7 @@ const ClassDetailsModal: React.FC<ClassDetailsModalProps> = ({
                       Giảm giá: {s.discountPercent || 0}%
                     </Typography>
                     <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-                      Trạng thái: {s.isActivce ? 'Đang học' : 'Đã nghỉ'}
+                      Trạng thái: {s.isActive ? 'Đang học' : 'Đã nghỉ'}
                     </Typography>
                   </Paper>
                 </Grid>

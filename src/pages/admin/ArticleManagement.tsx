@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -31,6 +30,7 @@ import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { getAllMenusAPI } from '../../services/menus';
 import { getAllArticlesAPI, updateArticleAPI, deleteArticleAPI } from '../../services/articles';
 import { MenuItem as MenuItemType } from '../../types';
+import ArticleForm from '../../components/articles/ArticleForm';
 
 interface Article {
   id: string;
@@ -46,7 +46,6 @@ interface Article {
 }
 
 const ArticleManagement: React.FC = () => {
-  const navigate = useNavigate();
   const [menuItems, setMenuItems] = useState<MenuItemType[]>([]);
   const [articles, setArticles] = useState<Article[]>([]);
   const [selectedMenu, setSelectedMenu] = useState<string>('');
@@ -55,6 +54,8 @@ const ArticleManagement: React.FC = () => {
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [articleToDelete, setArticleToDelete] = useState<Article | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingArticle, setEditingArticle] = useState<Article | null>(null);
 
   const [notification, setNotification] = useState<{
     open: boolean;
@@ -250,7 +251,10 @@ const ArticleManagement: React.FC = () => {
             <Button
               variant="contained"
               startIcon={<AddIcon />}
-              onClick={() => navigate('/admin/menu')}
+              onClick={() => {
+                setEditingArticle(null);
+                setFormOpen(true);
+              }}
             >
               Tạo Bài viết Mới
             </Button>
@@ -356,7 +360,10 @@ const ArticleManagement: React.FC = () => {
                                       <Button
                                         size="small"
                                         startIcon={<EditIcon />}
-                                        onClick={() => navigate(`/admin/layout-builder/${article.id}?mode=edit`)}
+                                        onClick={() => {
+                                          setEditingArticle(article);
+                                          setFormOpen(true);
+                                        }}
                                       >
                                         Chỉnh sửa
                                       </Button>
@@ -472,6 +479,23 @@ const ArticleManagement: React.FC = () => {
               {notification.message}
             </Alert>
           </Snackbar>
+
+          {/* Article Form Dialog */}
+          <ArticleForm
+            open={formOpen}
+            onClose={() => {
+              setFormOpen(false);
+              setEditingArticle(null);
+            }}
+            onSuccess={() => {
+              if (selectedMenu) {
+                fetchArticles(selectedMenu);
+              }
+            }}
+            article={editingArticle}
+            menuItems={menuItems}
+            defaultMenuId={selectedMenu}
+          />
     </Box>
   );
 };

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -42,7 +41,6 @@ import { commonStyles } from '../../utils/styles';
 import ArticleManagement from '../admin/ArticleManagement';
 
 const MenuManagement: React.FC = () => {
-  const navigate = useNavigate();
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(0);
@@ -269,21 +267,6 @@ const MenuManagement: React.FC = () => {
               <Typography variant="subtitle1">{item.title}</Typography>
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              {/* Nút Layout đứng đầu tiên nếu menu KHÔNG có submenu */}
-              {(!item.childrenMenu || item.childrenMenu.length === 0) && (
-                <Button
-                  size="small"
-                  variant="outlined"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigate(`/admin/layout-builder/${item.id}?mode=create`);
-                  }}
-                  title="Tạo Layout cho trang này"
-                  sx={{ minWidth: 'auto', px: 1, py: 0.5, fontSize: '0.75rem' }}
-                >
-                  Layout
-                </Button>
-              )}
               <IconButton
                 size="small"
                 onClick={(e) => {

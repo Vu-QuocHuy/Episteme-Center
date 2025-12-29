@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { getFooterSettingsAPI } from '../services/footer-settings';
 
 export interface FooterSettings {
   companyName: string;
@@ -26,36 +27,34 @@ export const useFooterSettings = () => {
     mapEmbedUrl: ''
   });
 
-  // Load configuration from localStorage
-  useEffect(() => {
-    const loadSettings = () => {
-      try {
-        const savedSettings = localStorage.getItem('footerSettings');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-        if (savedSettings) {
-          setFooterSettings(JSON.parse(savedSettings));
+  // Load configuration from API
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await getFooterSettingsAPI();
+        if (response.data) {
+          setFooterSettings(response.data);
         }
       } catch (error) {
         console.error('Error loading footer settings:', error);
+        setError('Failed to load footer settings');
+        // Keep default values on error
+      } finally {
+        setLoading(false);
       }
     };
 
     loadSettings();
   }, []);
 
-  // Save configuration to localStorage
-  const saveFooterSettings = (settings: FooterSettings) => {
-    try {
-      localStorage.setItem('footerSettings', JSON.stringify(settings));
-      setFooterSettings(settings);
-    } catch (error) {
-      console.error('Error saving footer settings:', error);
-      throw error;
-    }
-  };
-
   return {
     footerSettings,
-    saveFooterSettings
+    loading,
+    error
   };
 };

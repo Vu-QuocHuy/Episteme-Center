@@ -19,6 +19,15 @@ export const getTypicalTeachersAPI = () => {
   });
 };
 
+// Public API to get all teachers without authentication
+export const getPublicTeachersAPI = (params?: ApiParams) => {
+  const queryParams = createQueryParams(params || {});
+  return axiosInstance.get(`/teachers/public`, { 
+    params: queryParams,
+    headers: { 'x-lang': 'vi' }
+  });
+};
+
 export const getTeacherByIdAPI = (id: string) =>
   axiosInstance.get(API_CONFIG.ENDPOINTS.TEACHERS.GET_BY_ID(id));
 

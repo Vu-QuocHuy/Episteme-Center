@@ -11,13 +11,14 @@ import {
   Grid,
 } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { getAllTeachersAPI } from '../services/teachers';
+import { getAllTeachersAPI, getPublicTeachersAPI } from '../services/teachers';
 import { getArticlesByMenuIdAPI } from '../services/articles';
 import { useMenuItems } from '../hooks/features/useMenuItems';
 import { Teacher, MenuItem } from '../types';
 import PublicLayout from '../components/layouts/PublicLayout';
 
 const AllTeachersPage = () => {
+  console.log('🎯 AllTeachersPage component rendered');
   const navigate = useNavigate();
   const location = useLocation();
   const { menuItems } = useMenuItems();
@@ -26,10 +27,72 @@ const AllTeachersPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
+  
+  console.log('📊 Current state:', { loading, teachersCount: teachers.length, error, showAll });
 
   const INITIAL_DISPLAY_COUNT = 8; // 2 hàng x 4 cột
 
   const fullSlug = location.pathname.replace(/^\//, '');
+
+  // Always fetch teachers, regardless of menuItems or fullSlug
+  useEffect(() => {
+    const fetchTeachers = async () => {
+      try {
+        console.log('🔄 Fetching teachers...');
+        setLoading(true);
+        setError(null);
+
+        // Try public API first, fallback to authenticated API if needed
+        let response;
+        try {
+          response = await getPublicTeachersAPI({
+            page: 1,
+            limit: 100, // Lấy nhiều để hiển thị tất cả khi cần
+          });
+        } catch (publicError) {
+          console.log('Public API failed, trying authenticated API...', publicError);
+          // Fallback to authenticated API if public API doesn't exist
+          response = await getAllTeachersAPI({
+            page: 1,
+            limit: 100,
+          });
+        }
+
+        console.log('✅ Teachers API response:', response);
+
+        // Handle different response formats
+        let teachersData = [];
+        if (response.data?.data?.result) {
+          teachersData = response.data.data.result;
+        } else if (response.data?.data && Array.isArray(response.data.data)) {
+          teachersData = response.data.data;
+        } else if (response.data && typeof response.data === 'object') {
+          teachersData = (response.data as any).result || (response.data as any).teachers || [];
+        } else if (Array.isArray(response.data)) {
+          teachersData = response.data;
+        }
+
+        console.log('📊 Teachers data extracted:', teachersData);
+
+        // Filter active teachers only
+        const activeTeachers = teachersData.filter((teacher: any) => teacher.isActive !== false);
+
+        console.log('👥 Active teachers:', activeTeachers.length);
+
+        setTeachers(activeTeachers);
+      } catch (teacherError: any) {
+        console.error('❌ Error fetching teachers:', teacherError);
+        console.error('Error details:', teacherError?.response?.data || teacherError?.message);
+        setError(teacherError?.response?.data?.message || 'Không thể tải dữ liệu giáo viên');
+        setTeachers([]);
+      } finally {
+        console.log('🏁 Finished fetching teachers');
+        setLoading(false);
+      }
+    };
+
+    fetchTeachers();
+  }, []); // Only run once on mount
 
   const findMenuItemBySlug = (items: MenuItem[], targetSlug: string): MenuItem | null => {
     for (const item of items) {
@@ -48,75 +111,35 @@ const AllTeachersPage = () => {
     return null;
   };
 
-  // Fetch data from API
+  // Fetch articles if menu items are available (separate from teachers fetch)
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+    const fetchArticles = async () => {
+      if (fullSlug && menuItems.length > 0) {
+        const foundMenuItem = findMenuItemBySlug(menuItems, fullSlug);
 
-        // Fetch articles from layoutBuilder if menu items are available
-        if (fullSlug && menuItems.length > 0) {
-          const foundMenuItem = findMenuItemBySlug(menuItems, fullSlug);
-
-          if (foundMenuItem?.id) {
-            try {
-              const articlesResponse = await getArticlesByMenuIdAPI(foundMenuItem.id);
-              if (articlesResponse.data?.data?.result) {
-                const sortedArticles = articlesResponse.data.data.result
-                  .filter((article: any) => article.isActive !== false)
-                  .sort((a: any, b: any) => {
-                    if (a.order !== b.order) {
-                      return (a.order || 999) - (b.order || 999);
-                    }
-                    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-                  });
-                setArticles(sortedArticles);
-              }
-            } catch (articleError) {
-              console.log('No articles found for this menu');
-              setArticles([]);
+        if (foundMenuItem?.id) {
+          try {
+            const articlesResponse = await getArticlesByMenuIdAPI(foundMenuItem.id);
+            if (articlesResponse.data?.data?.result) {
+              const sortedArticles = articlesResponse.data.data.result
+                .filter((article: any) => article.isActive !== false)
+                .sort((a: any, b: any) => {
+                  if (a.order !== b.order) {
+                    return (a.order || 999) - (b.order || 999);
+                  }
+                  return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+                });
+              setArticles(sortedArticles);
             }
+          } catch (articleError) {
+            console.log('No articles found for this menu');
+            setArticles([]);
           }
         }
-
-        // Always fetch teachers from API
-        try {
-          const response = await getAllTeachersAPI({
-            page: 1,
-            limit: 100, // Lấy nhiều để hiển thị tất cả khi cần
-          });
-
-          // Handle different response formats
-          let teachersData = [];
-          if (response.data?.data?.result) {
-            teachersData = response.data.data.result;
-          } else if (response.data?.data && Array.isArray(response.data.data)) {
-            teachersData = response.data.data;
-          } else if (response.data && typeof response.data === 'object') {
-            teachersData = (response.data as any).result || (response.data as any).teachers || [];
-          } else if (Array.isArray(response.data)) {
-            teachersData = response.data;
-          }
-
-          // Filter active teachers only
-          const activeTeachers = teachersData.filter((teacher: any) => teacher.isActive !== false);
-
-          setTeachers(activeTeachers);
-        } catch (teacherError) {
-          console.error('Error fetching teachers:', teacherError);
-          setError('Không thể tải dữ liệu giáo viên');
-          setTeachers([]);
-        }
-      } catch (err: any) {
-        console.error('Error fetching data:', err);
-        setError(err?.response?.data?.message || 'Không thể tải dữ liệu');
-      } finally {
-        setLoading(false);
       }
     };
 
-    fetchData();
+    fetchArticles();
   }, [fullSlug, menuItems]);
 
   // Function to convert name to URL-friendly slug
@@ -152,11 +175,15 @@ const AllTeachersPage = () => {
   const displayedTeachers = showAll ? teachers : teachers.slice(0, INITIAL_DISPLAY_COUNT);
   const hasMore = teachers.length > INITIAL_DISPLAY_COUNT;
 
+  console.log('🎨 Rendering with:', { loading, teachersCount: teachers.length, displayedCount: displayedTeachers.length, error });
+
   if (loading) {
+    console.log('⏳ Showing loading spinner');
     return (
       <PublicLayout>
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
-          <CircularProgress />
+        <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+          <CircularProgress size={60} />
+          <Typography sx={{ mt: 2 }}>Đang tải danh sách giáo viên...</Typography>
         </Box>
       </PublicLayout>
     );
@@ -193,7 +220,7 @@ const AllTeachersPage = () => {
   return (
     <PublicLayout>
       <Box sx={{ bgcolor: '#fafafa', minHeight: '100vh' }}>
-        {/* Articles from layoutBuilder */}
+        {/* Articles content */}
         {articles.length > 0 && (
           <Box sx={{ width: '100%' }}>
             {articles.map((article, index) => (

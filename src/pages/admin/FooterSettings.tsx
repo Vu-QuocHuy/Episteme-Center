@@ -1,21 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Paper,
   Typography,
   TextField,
   Button,
-  Grid
+  Grid,
+  CircularProgress
 } from '@mui/material';
 import { Save as SaveIcon } from '@mui/icons-material';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
 import { useFooterSettings, FooterSettings as FooterSettingsType } from '../../hooks/useFooterSettings';
 import { commonStyles } from '../../utils/styles';
 import NotificationSnackbar from '../../components/common/NotificationSnackbar';
+import { updateFooterSettingsAPI } from '../../services/footer-settings';
 
 const FooterSettings: React.FC = () => {
-  const { footerSettings, saveFooterSettings } = useFooterSettings();
+  const { footerSettings, loading } = useFooterSettings();
   const [settings, setSettings] = useState<FooterSettingsType>(footerSettings);
+  const [saving, setSaving] = useState(false);
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -26,10 +29,12 @@ const FooterSettings: React.FC = () => {
     severity: 'info'
   });
 
-  // Sync settings with footerSettings when it changes (loaded from localStorage)
-  React.useEffect(() => {
-    setSettings(footerSettings);
-  }, [footerSettings]);
+  // Sync settings with footerSettings when it changes (loaded from API)
+  useEffect(() => {
+    if (!loading && footerSettings) {
+      setSettings(footerSettings);
+    }
+  }, [footerSettings, loading]);
 
   const handleChange = (field: keyof FooterSettingsType) => (
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -55,7 +60,7 @@ const FooterSettings: React.FC = () => {
     }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     try {
       // Validation
       if (!settings.companyName || !settings.email || !settings.phone || !settings.address) {
@@ -77,12 +82,21 @@ const FooterSettings: React.FC = () => {
         return;
       }
 
-      saveFooterSettings(settings);
+      setSaving(true);
+      
+      // Always use PATCH - backend will create if not exists
+      await updateFooterSettingsAPI(settings);
+
       setSnackbar({
         open: true,
         message: 'Cập nhật thành công! Cấu hình sẽ được áp dụng ngay lập tức.',
         severity: 'success'
       });
+      
+      // Reload page after 1 second to refresh data
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (error) {
       console.error('Error saving footer settings:', error);
       setSnackbar({
@@ -90,8 +104,24 @@ const FooterSettings: React.FC = () => {
         message: 'Có lỗi xảy ra khi lưu cài đặt',
         severity: 'error'
       });
+    } finally {
+      setSaving(false);
     }
   };
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <Box sx={commonStyles.pageContainer}>
+          <Box sx={commonStyles.contentContainer}>
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+              <CircularProgress />
+            </Box>
+          </Box>
+        </Box>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -259,12 +289,13 @@ const FooterSettings: React.FC = () => {
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 4, pt: 3, borderTop: '1px solid #e0e0e0' }}>
                 <Button
                   variant="contained"
-                  startIcon={<SaveIcon />}
+                  startIcon={saving ? <CircularProgress size={20} /> : <SaveIcon />}
                   onClick={handleSave}
+                  disabled={saving}
                   sx={commonStyles.primaryButton}
                   size="large"
                 >
-                  Lưu cài đặt
+                  {saving ? 'Đang lưu...' : 'Lưu cài đặt'}
                 </Button>
               </Box>
             </Grid>

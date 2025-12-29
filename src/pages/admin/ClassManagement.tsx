@@ -146,7 +146,7 @@ const ClassManagement: React.FC = () => {
           {/* Search and Filters */}
           <Paper sx={{ p: 3, mb: 3 }}>
             <Grid container spacing={2} alignItems="center">
-              <Grid item xs={12} md={3}>
+              <Grid item xs={12} md={5}>
                 <TextField
                   fullWidth
                   placeholder="Tìm kiếm theo tên lớp học..."
@@ -157,7 +157,7 @@ const ClassManagement: React.FC = () => {
                   }}
                 />
               </Grid>
-              <Grid item xs={12} md={3}>
+              <Grid item xs={12} md={2}>
                 <TextField
                   fullWidth
                   label="Năm học"
@@ -166,7 +166,7 @@ const ClassManagement: React.FC = () => {
                   type="number"
                 />
               </Grid>
-              <Grid item xs={12} md={3}>
+              <Grid item xs={12} md={2}>
                 <TextField
                   fullWidth
                   label="Khối"
@@ -203,7 +203,8 @@ const ClassManagement: React.FC = () => {
                 >
                   <option value="">Tất cả</option>
                   <option value="active">Đang hoạt động</option>
-                  <option value="closed">Đã đóng</option>
+                  <option value="upcoming">Sắp mở</option>
+                  <option value="closed">Đã kết thúc</option>
                 </TextField>
               </Grid>
             </Grid>

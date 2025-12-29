@@ -225,7 +225,7 @@ const TestimonialsPage: React.FC = () => {
 
         const foundMenuItem = findMenuItemBySlug(menuItems, fullSlug);
 
-        // Fetch articles from layoutBuilder
+        // Fetch articles
         if (foundMenuItem?.id) {
           try {
             const articlesResponse = await getArticlesByMenuIdAPI(foundMenuItem.id);
@@ -296,7 +296,7 @@ const TestimonialsPage: React.FC = () => {
   return (
     <PublicLayout>
       <Box sx={{ bgcolor: '#fafafa', minHeight: '100vh' }}>
-        {/* Articles from layoutBuilder */}
+        {/* Articles content */}
         {articles.length > 0 && (
           <Box sx={{ width: '100%' }}>
             {articles.map((article, index) => (

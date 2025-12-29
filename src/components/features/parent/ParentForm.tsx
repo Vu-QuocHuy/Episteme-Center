@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useDebounce } from '../../../hooks/common/useDebounce';
+import { useLazySearch } from '../../../hooks/common/useLazySearch';
 import {
   Dialog,
   DialogTitle,
@@ -18,7 +18,8 @@ import {
   Checkbox,
   Tabs,
   Tab,
-  Paper
+  Paper,
+  Autocomplete
 } from '@mui/material';
 import {
   Save as SaveIcon,
@@ -68,29 +69,50 @@ const ParentForm: React.FC<ParentFormProps> = ({ open, onClose, onSubmit, parent
 
   const [tab, setTab] = useState<number>(0);
   const [childrenList, setChildrenList] = useState<Student[]>([]);
-  const [studentQuery, setStudentQuery] = useState<string>('');
-  const [studentOptions, setStudentOptions] = useState<Student[]>([]);
   const [refreshKey, setRefreshKey] = useState<number>(0);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const busy = loading || externalLoading;
 
-  // Debounce search query
-  const debouncedStudentQuery = useDebounce(studentQuery, 500);
+  // Lazy search hook for student search
+  const {
+    searchQuery: studentQuery,
+    setSearchQuery: setStudentQuery,
+    items: studentOptions,
+    loading: studentSearchLoading,
+    hasMore: hasMoreStudents,
+    loadMore: loadMoreStudents,
+    reset: resetStudentSearch
+  } = useLazySearch<Student>({
+    fetchFn: async (params) => {
+      const res = await getAllStudentsAPI(params);
+      return res.data;
+    },
+    enabled: open && tab === 1, // Only search when dialog is open and on children tab
+    loadOnMount: true, // Load initial suggestions when opening children tab
+    pageSize: 10,
+    debounceDelay: 500
+  });
+
+  // Reset search when switching tabs
+  useEffect(() => {
+    if (tab !== 1) {
+      resetStudentSearch();
+    }
+  }, [tab, resetStudentSearch]);
 
   useEffect(() => {
     if (parent && open) {
       setFormData(parent as any);
       // Không reset tab khi đã mở dialog
     } else if (!open) {
-      resetForm();
-      setChildrenList([]);
+      // Chỉ reset tab, không reset form/children ở đây để tránh conflict với handleClose
       setTab(0); // Reset về tab đầu tiên khi đóng dialog
     } else if (!parent && open) {
       // Khi mở dialog thêm mới
       setTab(0); // Chỉ hiển thị tab thông tin cơ bản
     }
-  }, [parent, open, setFormData, resetForm]);
+  }, [parent, open, setFormData]);
 
   // Helper: refresh children list from API
   const refreshChildrenList = React.useCallback(async () => {
@@ -129,24 +151,7 @@ const ParentForm: React.FC<ParentFormProps> = ({ open, onClose, onSubmit, parent
     }
   }, [open, parent?.id, tab, refreshChildrenList]);
 
-  useEffect(() => {
-    let active = true;
-    const fetch = async () => {
-      if (!debouncedStudentQuery || debouncedStudentQuery.length < 2) {
-        setStudentOptions([]);
-        return;
-      }
-      try {
-        const res = await getAllStudentsAPI({ name: debouncedStudentQuery, limit: 10, page: 1 });
-        const data = (res as any)?.data?.data?.result || (res as any)?.data || [];
-        if (active) setStudentOptions(data);
-      } catch {
-        if (active) setStudentOptions([]);
-      }
-    };
-    fetch();
-    return () => { active = false; };
-  }, [debouncedStudentQuery]);
+  // Student search is now handled by useLazySearch hook
 
   const toDisplayDate = useMemo(() => (val?: string) => {
     if (!val) return '';
@@ -336,8 +341,7 @@ const ParentForm: React.FC<ParentFormProps> = ({ open, onClose, onSubmit, parent
   const handleClose = () => {
     resetForm();
     setChildrenList([]);
-    setStudentOptions([]);
-    setStudentQuery('');
+    resetStudentSearch();
     onClose();
   };
 
@@ -587,102 +591,106 @@ const ParentForm: React.FC<ParentFormProps> = ({ open, onClose, onSubmit, parent
                     Thêm con mới
                   </Typography>
 
-                  {/* Ô tìm kiếm */}
-                  <TextField
-                    fullWidth
-                    placeholder="Tìm kiếm học sinh"
-                    value={studentQuery}
-                    onChange={(e) => setStudentQuery(e.target.value)}
-                    sx={{
-                      mb: 2,
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: 2,
-                        '&:hover .MuiOutlinedInput-notchedOutline': {
-                          borderColor: '#667eea'
-                        },
-                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                          borderColor: '#667eea'
+                  {/* Autocomplete với lazy loading */}
+                  <Autocomplete
+                    loading={studentSearchLoading}
+                    options={studentOptions}
+                    getOptionLabel={(option) => option?.name || ''}
+                    inputValue={studentQuery}
+                    onInputChange={(_, val) => setStudentQuery(val)}
+                    ListboxProps={{
+                      onScroll: (event: React.SyntheticEvent) => {
+                        const listboxNode = event.currentTarget;
+                        if (
+                          listboxNode.scrollTop + listboxNode.clientHeight >=
+                          listboxNode.scrollHeight - 5 &&
+                          hasMoreStudents &&
+                          !studentSearchLoading
+                        ) {
+                          loadMoreStudents();
                         }
                       }
                     }}
-                  />
-
-                  {/* Kết quả tìm kiếm */}
-                  {studentQuery && studentQuery.length >= 2 && (
-                    <Box>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1, color: '#2c3e50' }}>
-                        Kết quả tìm kiếm:
-                      </Typography>
-                      {studentOptions.length > 0 ? (
-                        <Box sx={{ maxHeight: 200, overflowY: 'auto', border: '1px solid #e0e6ed', borderRadius: 2 }}>
-                          {studentOptions.map((student: any) => {
-                            // Kiểm tra xem học sinh đã được thêm chưa
-                            const isAlreadyAdded = childrenList.some((child: any) => child.id === student.id);
-
-                            return (
-                              <Box
-                                key={student.id}
-                                sx={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'space-between',
-                                  p: 2,
-                                  borderBottom: '1px solid #e0e6ed',
-                                  '&:last-child': {
-                                    borderBottom: 'none'
-                                  },
-                                  '&:hover': {
-                                    bgcolor: '#f8f9fa'
-                                  }
-                                }}
-                              >
-                                <Box>
-                                  <Typography variant="body1" sx={{ fontWeight: 500, color: '#2c3e50' }}>
-                                    {student.name}
-                                  </Typography>
-                                  <Typography variant="caption" color="text.secondary">
-                                    {student.email}
-                                  </Typography>
-                                </Box>
-                                <Button
-                                  variant="contained"
-                                  size="small"
-                                  disabled={isAlreadyAdded}
-                                  onClick={() => addChildFromSearch(student)}
-                                  sx={{
-                                    borderRadius: 2,
-                                    px: 2,
-                                    py: 0.5,
-                                    bgcolor: isAlreadyAdded ? '#6c757d' : '#007bff',
-                                    color: 'white',
-                                    '&:hover': {
-                                      bgcolor: isAlreadyAdded ? '#6c757d' : '#0056b3'
-                                    }
-                                  }}
-                                >
-                                  {isAlreadyAdded ? 'Đã thêm' : 'Thêm'}
-                                </Button>
-                              </Box>
-                            );
-                          })}
-                        </Box>
-                      ) : (
-                        <Box
-                          sx={{
-                            p: 2,
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        placeholder="Tìm kiếm học sinh để thêm"
+                        sx={{
+                          mb: 2,
+                          '& .MuiOutlinedInput-root': {
                             borderRadius: 2,
-                            border: '1px dashed #e0e6ed',
-                            bgcolor: '#f8f9fa',
-                            textAlign: 'center'
-                          }}
-                        >
-                          <Typography variant="body2" color="text.secondary">
-                            Không tìm thấy học sinh nào
-                          </Typography>
+                            '&:hover .MuiOutlinedInput-notchedOutline': {
+                              borderColor: '#667eea'
+                            },
+                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                              borderColor: '#667eea'
+                            }
+                          }
+                        }}
+                        InputProps={{
+                          ...params.InputProps,
+                          endAdornment: (
+                            <>
+                              {studentSearchLoading ? <CircularProgress color="inherit" size={16} /> : null}
+                              {params.InputProps.endAdornment}
+                            </>
+                          ),
+                        }}
+                      />
+                    )}
+                    renderOption={(props, option) => {
+                      const isAlreadyAdded = childrenList.some((child: any) => child.id === option.id);
+                      return (
+                        <Box component="li" {...props} key={option.id}>
+                          <Box sx={{ flex: 1 }}>
+                            <Typography variant="body1" sx={{ fontWeight: 500, color: '#2c3e50' }}>
+                              {option.name}
+                            </Typography>
+                            {option.email && (
+                              <Typography variant="caption" color="text.secondary">
+                                {option.email}
+                              </Typography>
+                            )}
+                          </Box>
+                          <Button
+                            variant="contained"
+                            size="small"
+                            disabled={isAlreadyAdded}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              addChildFromSearch(option);
+                              setStudentQuery(''); // Clear search after adding
+                            }}
+                            sx={{
+                              ml: 2,
+                              borderRadius: 2,
+                              px: 2,
+                              py: 0.5,
+                              bgcolor: isAlreadyAdded ? '#6c757d' : '#007bff',
+                              color: 'white',
+                              '&:hover': {
+                                bgcolor: isAlreadyAdded ? '#6c757d' : '#0056b3'
+                              }
+                            }}
+                          >
+                            {isAlreadyAdded ? 'Đã thêm' : 'Thêm'}
+                          </Button>
                         </Box>
-                      )}
-                    </Box>
-                  )}
+                      );
+                    }}
+                    noOptionsText={
+                      studentSearchLoading ? 'Đang tải...' : 
+                      studentQuery ? 'Không tìm thấy học sinh' : 
+                      'Nhập tên học sinh để tìm kiếm'
+                    }
+                    onChange={(_, value) => {
+                      // Clear selection after choosing (we handle adding in renderOption)
+                      if (value) {
+                        addChildFromSearch(value);
+                        setStudentQuery('');
+                      }
+                    }}
+                  />
                 </Box>
               </Box>
             </Paper>

@@ -51,14 +51,33 @@ export const useClassManagement = (): UseClassManagementReturn => {
     setLoading(true);
     setLoadingTable(true);
     try {
-      const params = {
+      const params: any = {
         page: pageNum,
         limit: 10,
       };
 
-      // Handle filters with {} format
+      // Build filters object
+      const filters: any = {};
+      
       if (debouncedSearch) {
-        (params as any).name = debouncedSearch;
+        filters.name = debouncedSearch;
+      }
+
+      if (yearFilter && yearFilter !== '') {
+        filters.year = parseInt(yearFilter, 10);
+      }
+
+      if (gradeFilter && gradeFilter !== '') {
+        filters.grade = parseInt(gradeFilter, 10);
+      }
+
+      if (statusFilter && statusFilter !== '') {
+        filters.status = statusFilter;
+      }
+
+      // Add filters to params if any filter is set
+      if (Object.keys(filters).length > 0) {
+        params.filters = filters;
       }
 
       const response = await getAllClassesAPI(params);
