@@ -88,8 +88,8 @@ interface StatusConfig {
 const STATUS_CONFIG: Record<ClassStatus, StatusConfig> = {
   active: { label: 'Đang dạy', color: 'success' },
   upcoming: { label: 'Sắp diễn ra', color: 'warning' },
-  closed: { label: 'Đã kết thúc', color: 'default' },
-  completed: { label: 'Hoàn thành', color: 'default' },
+  closed: { label: 'Đã kết thúc', color: 'error' },
+  completed: { label: 'Hoàn thành', color: 'error' },
   pending: { label: 'Chờ', color: 'warning' }
 };
 

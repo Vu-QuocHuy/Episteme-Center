@@ -80,9 +80,14 @@ const MyClasses = () => {
           throw new Error('Không tìm thấy thông tin học sinh');
         }
 
-        // Lấy dữ liệu dashboard cho StatCard
-        try {
-          const dashRes = await getStudentDashboardAPI(studentId);
+        // Lấy dữ liệu từ cả 2 API
+        const [dashRes, scheduleRes] = await Promise.all([
+          getStudentDashboardAPI(studentId).catch(() => null),
+          getStudentScheduleAPI(studentId).catch(() => null)
+        ]);
+
+        // Xử lý dữ liệu dashboard cho StatCard
+        if (dashRes) {
           const dashData = dashRes?.data?.data || dashRes?.data || {};
           setDashboardData({
             totalClasses: dashData.totalClasses || 0,
@@ -96,16 +101,11 @@ const MyClasses = () => {
               attendanceRate: 0
             }
           });
-        } catch (e) {
-          // Nếu lỗi vẫn tiếp tục lấy danh sách lớp
         }
 
-        // Lấy danh sách lớp học từ getStudentScheduleAPI
-        console.log('DEBUG - Gọi getStudentScheduleAPI với studentId:', studentId);
-        const res = await getStudentScheduleAPI(studentId);
-        console.log('DEBUG - API response:', res);
-        const scheduleData = res?.data?.data || [];
-        console.log('DEBUG - scheduleData:', scheduleData);
+        // Lấy dữ liệu từ schedule API
+        const scheduleData = scheduleRes?.data?.data || [];
+        const dashboardClassList = dashRes?.data?.data?.classList || [];
 
         if (!Array.isArray(scheduleData)) {
           console.log('DEBUG - Không có hoặc không phải mảng scheduleData:', scheduleData);
@@ -114,10 +114,24 @@ const MyClasses = () => {
           return;
         }
 
-        // Chuyển đổi dữ liệu lớp học từ response mới
+        // Tạo map từ dashboard để tìm nhanh status và teacherName theo className
+        const dashboardClassMap = new Map();
+        dashboardClassList.forEach((dashboardClass: any) => {
+          dashboardClassMap.set(dashboardClass.className, {
+            status: dashboardClass.status,
+            teacherName: dashboardClass.teacherName
+          });
+        });
+
+        // Chuyển đổi dữ liệu lớp học từ schedule API và merge với dashboard API
         const realClasses = scheduleData.map((item) => {
           const classInfo = item.class;
           const schedule = classInfo.schedule;
+
+          // Lấy thông tin từ dashboard API
+          const dashboardInfo = dashboardClassMap.get(classInfo.name) || {};
+          const classStatus = dashboardInfo.status || 'active'; // Mặc định là active nếu không tìm thấy
+          const teacherName = dashboardInfo.teacherName || 'Chưa phân công';
 
           // Format lịch học
           const weekdays = ['CN','T2','T3','T4','T5','T6','T7'];
@@ -138,11 +152,12 @@ const MyClasses = () => {
           return {
             id: classInfo.id,
             name: classInfo.name,
-            teacher: 'Chưa phân công', // API không có thông tin giáo viên
+            teacher: teacherName, // Lấy từ dashboard API
             scheduleDays,
             scheduleTime,
-            status: 'active', // Tất cả lớp trong schedule đều đang hoạt động
-            enrollStatus: 'active',
+            status: classStatus, // Lấy từ dashboard API (closed, upcoming, active)
+            isActive: item.isActive, // Trạng thái học sinh còn học hay nghỉ giữa chừng
+            enrollStatus: item.isActive ? 'active' : 'inactive',
             room: classInfo.room || 'Chưa phân phòng',
             startDate: schedule?.start_date,
             endDate: schedule?.end_date,
@@ -268,16 +283,16 @@ const MyClasses = () => {
     const name = classItem.name || '';
     const matchesSearch = name.toLowerCase().includes(searchQuery.toLowerCase());
 
-    // Lọc theo tab và trạng thái
+    // Lọc theo tab và trạng thái (status từ dashboard API)
     let matchesStatus = true;
     if (selectedTab === 0) {
-      // Tab "Đang học" - hiển thị các lớp active
-      matchesStatus = classItem.status === 'active';
+      // Tab "Đang học" - hiển thị các lớp có status = 'active' và isActive = true
+      matchesStatus = classItem.status === 'active' && classItem.isActive === true;
     } else if (selectedTab === 1) {
-      // Tab "Sắp khai giảng" - hiển thị các lớp upcoming
+      // Tab "Sắp khai giảng" - hiển thị các lớp có status = 'upcoming'
       matchesStatus = classItem.status === 'upcoming';
     } else if (selectedTab === 2) {
-      // Tab "Đã kết thúc" - hiển thị các lớp closed
+      // Tab "Đã kết thúc" - hiển thị các lớp có status = 'closed' hoặc 'completed'
       matchesStatus = classItem.status === 'closed' || classItem.status === 'completed';
     }
 
@@ -286,8 +301,9 @@ const MyClasses = () => {
 
   const getStatusColor = (status: string) => {
     if (status === 'active') return 'success';
-    if (status === 'closed') return 'info';
+    if (status === 'closed') return 'error';
     if (status === 'upcoming') return 'warning';
+    if (status === 'completed') return 'error';
     return 'default';
   };
 
@@ -295,6 +311,7 @@ const MyClasses = () => {
     if (status === 'active') return 'Đang học';
     if (status === 'closed') return 'Đã kết thúc';
     if (status === 'upcoming') return 'Sắp khai giảng';
+    if (status === 'completed') return 'Đã hoàn thành';
     return 'Không xác định';
   };
 

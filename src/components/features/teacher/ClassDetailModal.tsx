@@ -19,12 +19,14 @@ import {
   TableRow,
   TableCell,
   LinearProgress,
+  Switch,
+  Tooltip,
 } from '@mui/material';
 import {
   School as SchoolIcon,
   People as PeopleIcon
 } from '@mui/icons-material';
-import { getClassByIdAPI } from '../../../services/classes';
+import { getClassByIdAPI, updateStudentStatusAPI } from '../../../services/classes';
 import AttendanceModal from './AttendanceModal';
 
 interface Schedule {
@@ -61,6 +63,7 @@ interface Student {
   email?: string;
   phone?: string;
   status?: string;
+  isActive?: boolean;
 }
 
 interface ClassDetailModalProps {
@@ -111,6 +114,7 @@ const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
   const [loadingStudents, setLoadingStudents] = useState<boolean>(false);
   const [detailTabValue, setDetailTabValue] = useState<number>(0);
   const [attendanceModalOpen, setAttendanceModalOpen] = useState<boolean>(false);
+  const [updatingStatus, setUpdatingStatus] = useState<{ [studentId: string]: boolean }>({});
 
   useEffect(() => {
     if (open && classData) {
@@ -164,6 +168,7 @@ const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
             phone: s?.student?.phone,
             // Map trạng thái từ API: isActive (boolean) -> 'active' | 'inactive'
             status: s?.isActive ? 'active' : 'inactive',
+            isActive: s?.isActive ?? true,
           }))
         : [];
       setStudentsDetail(mappedStudents);
@@ -183,6 +188,27 @@ const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
     setAttendanceModalOpen(false);
   };
 
+  const handleToggleStudentStatus = async (studentId: string, currentStatus: boolean): Promise<void> => {
+    if (!selectedClassDetail?.id) return;
+    
+    setUpdatingStatus(prev => ({ ...prev, [studentId]: true }));
+    try {
+      await updateStudentStatusAPI(selectedClassDetail.id, studentId, !currentStatus);
+      
+      // Cập nhật lại danh sách học sinh
+      setStudentsDetail(prev => prev.map(student => 
+        student.id === studentId 
+          ? { ...student, isActive: !currentStatus, status: !currentStatus ? 'active' : 'inactive' }
+          : student
+      ));
+    } catch (error) {
+      console.error('Error updating student status:', error);
+      // Có thể thêm thông báo lỗi ở đây
+    } finally {
+      setUpdatingStatus(prev => ({ ...prev, [studentId]: false }));
+    }
+  };
+
   const formatDate = (iso?: string): string => {
     if (!iso) return '';
     try {
@@ -192,32 +218,24 @@ const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
     }
   };
 
-  const formatSchedule = (schedule: Schedule | undefined): string => {
-    if (!schedule) return '';
-    const parts: string[] = [];
-    const days = (schedule.dayOfWeeks || [])
-      .map(d => ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'][d])
-      .join(', ');
-    if (days) parts.push(days);
-    if (schedule.startTime && schedule.endTime) parts.push(`${schedule.startTime} - ${schedule.endTime}`);
-    if (schedule.startDate || schedule.endDate) parts.push(`${formatDate(schedule.startDate)} - ${formatDate(schedule.endDate)}`);
-    return parts.join(' | ');
-  };
-
-  const getStatusColor = (status: string | undefined): 'success' | 'warning' | 'error' | 'default' => {
+  const getStatusColor = (status: string | undefined): 'success' | 'warning' | 'error' | 'default' | 'primary' => {
     switch (status) {
       case 'active': return 'success';
       case 'inactive': return 'warning';
-      case 'completed': return 'default';
+      case 'upcoming': return 'warning';
+      case 'closed': return 'error';
+      case 'completed': return 'error';
       default: return 'default';
     }
   };
 
   const getStatusLabel = (status: string | undefined): string => {
     switch (status) {
-      case 'active': return 'Đang hoạt động';
+      case 'active': return 'Đang dạy';
       case 'inactive': return 'Tạm dừng';
-      case 'completed': return 'Hoàn thành';
+      case 'upcoming': return 'Sắp diễn ra';
+      case 'closed': return 'Đã kết thúc';
+      case 'completed': return 'Đã hoàn thành';
       default: return 'Không xác định';
     }
   };
@@ -323,9 +341,9 @@ const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
                             />
                           </Box>
                           <Box>
-                            <Typography variant="body2" color="text.secondary">Sức chứa</Typography>
+                            <Typography variant="body2" color="text.secondary">Số lượng học sinh</Typography>
                             <Typography variant="body1" fontWeight="medium">
-                              {selectedClassDetail.currentStudents || 0} / {selectedClassDetail.capacity || 'Không giới hạn'} học sinh
+                              {selectedClassDetail.currentStudents || 0} học sinh
                             </Typography>
                           </Box>
                         </Box>
@@ -361,9 +379,11 @@ const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
                               </Box>
                             )}
                             <Box>
-                              <Typography variant="body2" color="text.secondary">Lịch học đầy đủ</Typography>
+                              <Typography variant="body2" color="text.secondary">Thời gian học</Typography>
                               <Typography variant="body1" fontWeight="medium">
-                                {formatSchedule(selectedClassDetail.schedule)}
+                                {selectedClassDetail.schedule.startDate && selectedClassDetail.schedule.endDate
+                                  ? `${formatDate(selectedClassDetail.schedule.startDate)} - ${formatDate(selectedClassDetail.schedule.endDate)}`
+                                  : 'Chưa có thông tin'}
                               </Typography>
                             </Box>
                           </Box>
@@ -409,7 +429,7 @@ const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
                             <TableCell sx={{ fontWeight: 600, color: '#2c3e50' }}>Họ và tên</TableCell>
                             <TableCell sx={{ fontWeight: 600, color: '#2c3e50' }}>Email</TableCell>
                             <TableCell sx={{ fontWeight: 600, color: '#2c3e50' }}>Số điện thoại</TableCell>
-                            <TableCell sx={{ fontWeight: 600, color: '#2c3e50' }}>Trạng thái</TableCell>
+                            <TableCell sx={{ fontWeight: 600, color: '#2c3e50', width: '200px' }}>Trạng thái học tập</TableCell>
                           </TableRow>
                         </TableHead>
                         <TableBody>
@@ -427,12 +447,24 @@ const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
                               <TableCell>
                                 <Typography variant="body2">{student.phone || 'Không có'}</Typography>
                               </TableCell>
-                              <TableCell>
-                                <Chip
-                                  label={getStatusLabel(student.status)}
-                                  color={getStatusColor(student.status)}
-                                  size="small"
-                                />
+                              <TableCell sx={{ width: '200px' }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'space-between' }}>
+                                  <Chip
+                                    label={student.isActive ? 'Đang học' : 'Nghỉ giữa chừng'}
+                                    color={student.isActive ? 'success' : 'default'}
+                                    size="small"
+                                    sx={{ minWidth: 100 }}
+                                  />
+                                  <Tooltip title={student.isActive ? 'Đang học - Click để đánh dấu nghỉ giữa chừng' : 'Nghỉ giữa chừng - Click để đánh dấu đang học'}>
+                                    <Switch
+                                      checked={student.isActive ?? true}
+                                      onChange={() => handleToggleStudentStatus(student.id, student.isActive ?? true)}
+                                      disabled={updatingStatus[student.id]}
+                                      color="primary"
+                                      size="small"
+                                    />
+                                  </Tooltip>
+                                </Box>
                               </TableCell>
                             </TableRow>
                           ))}

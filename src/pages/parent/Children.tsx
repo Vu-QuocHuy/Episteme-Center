@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Box, Typography, Grid, Card, CardContent, Avatar,
   Chip, LinearProgress, Alert, Button,
-  Dialog, DialogContent, Divider, Collapse, IconButton,
+  Dialog, DialogTitle, DialogContent, DialogActions, Divider, Collapse, IconButton,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
 } from '@mui/material';
 import {
@@ -10,7 +10,7 @@ import {
   TrendingUp as TrendingUpIcon, Class as ClassIcon,
       Schedule as ScheduleIcon, Description as DescriptionIcon,
     Percent as PercentIcon, CheckCircle as CheckCircleIcon, Cancel as CancelIcon,
-    Close as CloseIcon, AttachMoney as AttachMoneyIcon, Event as EventIcon, AssignmentLate as AssignmentLateIcon,
+    AttachMoney as AttachMoneyIcon, Event as EventIcon, AssignmentLate as AssignmentLateIcon,
     ExpandMore as ExpandMoreIcon, ExpandLess as ExpandLessIcon, MeetingRoom as RoomIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
@@ -235,10 +235,10 @@ const Children: React.FC = () => {
         return 'warning';
       case 'closed':
       case 'đã kết thúc':
-        return 'default';
+        return 'error';
       case 'completed':
       case 'hoàn thành':
-        return 'default';
+        return 'error';
       case 'pending':
       case 'chờ':
         return 'warning';
@@ -601,27 +601,42 @@ const Children: React.FC = () => {
           onClose={handleCloseChildDetails}
           maxWidth="md"
           fullWidth
+          PaperProps={{
+            sx: {
+              borderRadius: 3,
+              boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+              overflow: 'hidden'
+            }
+          }}
         >
-          <Box
-            sx={{
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              color: 'white',
-              p: 2,
+          <DialogTitle sx={{
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            color: 'white',
+            py: 3,
+            px: 4,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between'
+          }}>
+            <Box>
+              <Typography variant="h5" sx={{ fontWeight: 600, mb: 0.5 }}>
+                Chi tiết học sinh
+              </Typography>
+              <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                {selectedChild?.name}
+              </Typography>
+            </Box>
+            <Box sx={{
+              bgcolor: 'rgba(255,255,255,0.2)',
+              borderRadius: '50%',
+              p: 1,
               display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center'
-            }}
-          >
-            <Typography variant="h6">
-              Chi tiết học sinh: {selectedChild?.name}
-            </Typography>
-            <IconButton
-              onClick={handleCloseChildDetails}
-              sx={{ color: 'white' }}
-            >
-              <CloseIcon />
-            </IconButton>
-          </Box>
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <PersonIcon sx={{ fontSize: 28, color: 'white' }} />
+            </Box>
+          </DialogTitle>
 
           <DialogContent sx={{ p: 3 }}>
             {detailLoading && (
@@ -868,13 +883,10 @@ const Children: React.FC = () => {
                                      const lateSessions = classSessions.filter((s: any) =>
                                        String(s?.status || '').toLowerCase() === 'late'
                                      ).length;
-                                     const attendanceRate = totalSessions > 0
-                                       ? Math.round(((presentSessions + lateSessions) / totalSessions) * 100)
-                                       : 0;
 
                                      return (
                                        <Grid container spacing={2} sx={{ mb: 3 }}>
-                                         <Grid item xs={12} sm={6} md={3}>
+                                         <Grid item xs={12} sm={6} md={4}>
                                            <StatCard
                                              title="Tổng số buổi"
                                              value={totalSessions}
@@ -882,7 +894,7 @@ const Children: React.FC = () => {
                                              color="primary"
                                            />
                                          </Grid>
-                                         <Grid item xs={12} sm={6} md={3}>
+                                         <Grid item xs={12} sm={6} md={4}>
                                            <StatCard
                                              title="Có mặt"
                                              value={presentSessions}
@@ -890,7 +902,7 @@ const Children: React.FC = () => {
                                              color="success"
                                            />
                                          </Grid>
-                                         <Grid item xs={12} sm={6} md={3}>
+                                         <Grid item xs={12} sm={6} md={4}>
                                            <StatCard
                                              title="Vắng"
                                              value={absentSessions}
@@ -899,7 +911,7 @@ const Children: React.FC = () => {
                                            />
                                          </Grid>
                                          {lateSessions > 0 && (
-                                           <Grid item xs={12} sm={6} md={3}>
+                                           <Grid item xs={12} sm={6} md={4}>
                                              <StatCard
                                                title="Đi muộn"
                                                value={lateSessions}
@@ -908,14 +920,6 @@ const Children: React.FC = () => {
                                              />
                                            </Grid>
                                          )}
-                                         <Grid item xs={12} sm={6} md={3}>
-                                           <StatCard
-                                             title="Tỷ lệ tham gia"
-                                             value={`${attendanceRate}%`}
-                                             icon={<PercentIcon />}
-                                             color="info"
-                                           />
-                                         </Grid>
                                        </Grid>
                                      );
                                    })()}
@@ -1040,6 +1044,21 @@ const Children: React.FC = () => {
               </Box>
             )}
           </DialogContent>
+          <DialogActions sx={{ p: 3, bgcolor: '#f8f9fa' }}>
+            <Button
+              onClick={handleCloseChildDetails}
+              variant="contained"
+              sx={{
+                bgcolor: '#667eea',
+                '&:hover': { bgcolor: '#5a6fd8' },
+                px: 3,
+                py: 1,
+                borderRadius: 2
+              }}
+            >
+              Đóng
+            </Button>
+          </DialogActions>
         </Dialog>
         </Box>
       </Box>

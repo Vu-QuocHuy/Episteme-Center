@@ -18,7 +18,6 @@ import {
 // import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
-import SchoolIcon from '@mui/icons-material/School';
 import PaymentIcon from '@mui/icons-material/Payment';
 import PersonIcon from '@mui/icons-material/Person';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -166,23 +165,15 @@ const Dashboard = () => {
 
           {/* Stat Cards */}
           <Grid container spacing={3} sx={{ mb: 4 }}>
-            <Grid item xs={12} sm={6} md={2.4 as any}>
+            <Grid item xs={12} sm={6} md={3}>
               <StatCard
-                title="Số con đang học"
+                title="Số con"
                 value={stats.totalChildren || 0}
                 icon={<PersonIcon sx={{ fontSize: 40 }} />}
                 color="primary"
               />
             </Grid>
-            <Grid item xs={12} sm={6} md={2.4 as any}>
-              <StatCard
-                title="Tổng số lớp"
-                value={stats.totalClasses || 0}
-                icon={<SchoolIcon sx={{ fontSize: 40 }} />}
-                color="success"
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} md={2.4 as any}>
+            <Grid item xs={12} sm={6} md={3}>
               <StatCard
                 title="Tổng học phí"
                 value={formatCurrency(stats.totalFees || 0)}
@@ -190,7 +181,7 @@ const Dashboard = () => {
                 color="warning"
               />
             </Grid>
-            <Grid item xs={12} sm={6} md={2.4 as any}>
+            <Grid item xs={12} sm={6} md={3}>
               <StatCard
                 title="Đã thanh toán"
                 value={formatCurrency(stats.paidFees || 0)}
@@ -198,7 +189,7 @@ const Dashboard = () => {
                 color="info"
               />
             </Grid>
-            <Grid item xs={12} sm={6} md={2.4 as any}>
+            <Grid item xs={12} sm={6} md={3}>
               <StatCard
                 title="Còn thiếu"
                 value={formatCurrency(stats.pendingPayments || 0)}

@@ -55,6 +55,7 @@ export interface ApiEndpoints {
     GET_AVAILABLE_STUDENTS: (id: string) => string;
     ADD_STUDENTS: (id: string) => string;
     REMOVE_STUDENTS: (id: string) => string;
+    UPDATE_STUDENT_STATUS: (id: string) => string;
     BANNER_INFO: (id: string) => string;
     PUBLIC: string;
   };
@@ -286,6 +287,7 @@ export const API_CONFIG: ApiConfig = {
       GET_AVAILABLE_STUDENTS: (id: string) => `/classes/available-students/${id}`,
       ADD_STUDENTS: (id: string) => `/classes/add-students/${id}`,
       REMOVE_STUDENTS: (id: string) => `/classes/remove-students/${id}`,
+      UPDATE_STUDENT_STATUS: (id: string) => `/classes/student-status/${id}`,
       BANNER_INFO: (id: string) => `/classes/${id}/banner-info`,
       PUBLIC: '/classes/public',
     },

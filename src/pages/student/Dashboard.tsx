@@ -116,6 +116,22 @@ const Dashboard = () => {
     return { days: dayText, time: timeText };
   };
 
+  const getStatusColor = (status: string) => {
+    if (status === 'active') return 'success';
+    if (status === 'closed') return 'error';
+    if (status === 'upcoming') return 'warning';
+    if (status === 'completed') return 'error';
+    return 'default';
+  };
+
+  const getStatusLabel = (status: string) => {
+    if (status === 'active') return 'Đang học';
+    if (status === 'closed') return 'Đã kết thúc';
+    if (status === 'upcoming') return 'Sắp khai giảng';
+    if (status === 'completed') return 'Đã hoàn thành';
+    return 'Không xác định';
+  };
+
   if (loading) {
     return (
       <DashboardLayout role="student">
@@ -272,21 +288,10 @@ const Dashboard = () => {
                           </TableCell>
                           <TableCell>
                             <Chip
-                                    label={
-                                      classItem.status === 'active'
-                                        ? 'Đang học'
-                                        : classItem.status === 'completed'
-                                        ? 'Hoàn thành'
-                                        : classItem.status || 'N/A'
-                                    }
-                                    color={
-                                      classItem.status === 'active'
-                                        ? 'success'
-                                        : classItem.status === 'completed'
-                                        ? 'primary'
-                                        : 'default'
-                                    }
+                              label={getStatusLabel(classItem.status)}
+                              color={getStatusColor(classItem.status)}
                               size="small"
+                              sx={{ fontWeight: 600 }}
                             />
                           </TableCell>
                         </TableRow>
