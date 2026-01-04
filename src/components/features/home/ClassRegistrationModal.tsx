@@ -1,20 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
   Box,
   Grid,
   Typography,
   TextField,
   Button,
-  IconButton,
   Chip,
-  Alert,
   CircularProgress
 } from '@mui/material';
 import {
-  Close as CloseIcon,
   School as SchoolIcon,
   AccessTime as TimeIcon,
   Person as PersonIcon,
@@ -25,6 +19,7 @@ import MenuItem from '@mui/material/MenuItem';
 import { getClassBannerInfoAPI } from '../../../services/classes';
 import { createRegistrationAPI } from '../../../services/registrations';
 import NotificationSnackbar from '../../common/NotificationSnackbar';
+import BaseDialog from '../../common/BaseDialog';
 
 interface ClassRegistrationModalProps {
   open: boolean;
@@ -197,48 +192,21 @@ const ClassRegistrationModal: React.FC<ClassRegistrationModalProps> = ({
 
   return (
     <>
-    <Dialog
+    <BaseDialog
       open={open}
       onClose={onClose}
+      title="Đăng ký tư vấn"
+      icon={<SchoolIcon sx={{ fontSize: 24, color: 'white' }} />}
       maxWidth="md"
-      fullWidth
+      loading={loading}
+      contentPadding={0}
+      error={error}
       PaperProps={{
         sx: {
-          borderRadius: 2,
           maxHeight: '90vh'
         }
       }}
     >
-      <DialogTitle sx={{
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        color: 'white',
-        py: 1.5,
-        px: 2,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between'
-      }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <SchoolIcon sx={{ fontSize: 24 }} />
-          <Box>
-            <Typography variant="h6" sx={{ fontWeight: 600, lineHeight: 1.2 }}>
-              Đăng ký tư vấn
-            </Typography>
-          </Box>
-        </Box>
-        <IconButton
-          onClick={onClose}
-          size="small"
-          sx={{
-            color: 'white',
-            '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
-          }}
-        >
-          <CloseIcon fontSize="small" />
-        </IconButton>
-      </DialogTitle>
-
-      <DialogContent sx={{ p: 0 }}>
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
             <CircularProgress />
@@ -426,11 +394,6 @@ const ClassRegistrationModal: React.FC<ClassRegistrationModalProps> = ({
                 </Typography>
               </Box>
 
-              {error && (
-                <Alert severity="error" sx={{ mb: 1.5, py: 0.5 }}>
-                  {error}
-                </Alert>
-              )}
 
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                 <TextField
@@ -532,8 +495,7 @@ const ClassRegistrationModal: React.FC<ClassRegistrationModalProps> = ({
             </Grid>
           </Grid>
         )}
-      </DialogContent>
-    </Dialog>
+    </BaseDialog>
 
     {/* Notification Snackbar */}
     <NotificationSnackbar

@@ -1,9 +1,10 @@
 import React from 'react';
-import { Box, TextField, MenuItem, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Pagination, IconButton, Tooltip, Dialog, DialogTitle, DialogContent, DialogActions, Button, CircularProgress, Typography, Grid, Paper, Divider } from '@mui/material';
+import { Box, TextField, MenuItem, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Pagination, IconButton, Tooltip, Button, CircularProgress, Grid, Paper, Divider } from '@mui/material';
 import { Download as DownloadIcon, Payment as PaymentIcon, History as HistoryIcon, Cancel as CancelIcon, Save as SaveIcon, AttachMoney as AttachMoneyIcon, Paid as PaidIcon, AccountBalanceWallet as WalletIcon } from '@mui/icons-material';
 import PaymentHistoryModal from '../../../../components/common/PaymentHistoryModal';
 import { getAllPaymentsAPI, payStudentAPI, exportPaymentsReportAPI } from '../../../../services/payments';
 import * as XLSX from 'xlsx';
+import BaseDialog from '../../../../components/common/BaseDialog';
 
 interface PaymentHistory {
   id: string;
@@ -370,39 +371,66 @@ const StudentPaymentsTab: React.FC<Props> = ({ onTotalsChange }) => {
       )}
 
       {/* Student Payment Dialog */}
-      <Dialog
+      <BaseDialog
         open={openPayDialog}
         onClose={onClosePayDialog}
+        title="Thanh toán học phí"
+        subtitle={selectedPayment ? `${selectedPayment.student?.name} - ${selectedPayment.class?.name}` : undefined}
+        icon={<PaymentIcon sx={{ fontSize: 28, color: 'white' }} />}
         maxWidth="sm"
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 3,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-            overflow: 'hidden'
-          }
-        }}
+        contentPadding={0}
+        hideDefaultAction={true}
+        actions={
+          <>
+            <Button
+              onClick={onClosePayDialog}
+              variant="outlined"
+              startIcon={<CancelIcon />}
+              sx={{
+                px: 3,
+                py: 1.5,
+                borderRadius: 2,
+                fontWeight: 600,
+                textTransform: 'none',
+                borderColor: '#667eea',
+                color: '#667eea',
+                '&:hover': {
+                  borderColor: '#5a6fd8',
+                  bgcolor: 'rgba(102, 126, 234, 0.04)'
+                }
+              }}
+            >
+              Hủy
+            </Button>
+            <Button
+              onClick={handleSubmitStudentPayment}
+              variant="contained"
+              startIcon={studentPaymentLoading ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
+              disabled={studentPaymentLoading || !studentPaymentForm.amount}
+              sx={{
+                px: 3,
+                py: 1.5,
+                borderRadius: 2,
+                fontWeight: 600,
+                textTransform: 'none',
+                bgcolor: '#667eea',
+                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+                '&:hover': {
+                  bgcolor: '#5a6fd8',
+                  boxShadow: '0 6px 16px rgba(102, 126, 234, 0.4)',
+                  transform: 'translateY(-1px)'
+                },
+                '&:disabled': {
+                  bgcolor: '#ccc'
+                }
+              }}
+            >
+              {studentPaymentLoading ? 'Đang xử lý...' : 'Xác nhận thanh toán'}
+            </Button>
+          </>
+        }
       >
-        <DialogTitle sx={{
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white',
-          py: 3,
-          px: 4,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 2
-        }}>
-          <PaymentIcon sx={{ fontSize: 28 }} />
-          <Box>
-            <Typography variant="h5" sx={{ fontWeight: 600, mb: 0.5 }}>
-              Thanh toán học phí
-            </Typography>
-            <Typography variant="body2" sx={{ opacity: 0.9 }}>
-              {selectedPayment?.student?.name} - {selectedPayment?.class?.name}
-            </Typography>
-          </Box>
-        </DialogTitle>
-        <DialogContent sx={{ p: 4, pt: 4, bgcolor: '#f9fafb', mt: 2 }}>
+        <Box sx={{ p: 4 }}>
           {/* Summary */}
           {getPaymentSummary() && (
             <>
@@ -505,55 +533,8 @@ const StudentPaymentsTab: React.FC<Props> = ({ onTotalsChange }) => {
               </Grid>
             </Grid>
           </Paper>
-        </DialogContent>
-        <DialogActions sx={{ p: 3, pt: 0, bgcolor: '#f8f9fa', gap: 2 }}>
-          <Button
-            onClick={onClosePayDialog}
-            variant="outlined"
-            startIcon={<CancelIcon />}
-            sx={{
-              px: 3,
-              py: 1.5,
-              borderRadius: 2,
-              fontWeight: 600,
-              textTransform: 'none',
-              borderColor: '#667eea',
-              color: '#667eea',
-              '&:hover': {
-                borderColor: '#5a6fd8',
-                bgcolor: 'rgba(102, 126, 234, 0.04)'
-              }
-            }}
-          >
-            Hủy
-          </Button>
-          <Button
-            onClick={handleSubmitStudentPayment}
-            variant="contained"
-            disabled={!studentPaymentForm.amount || studentPaymentLoading}
-            startIcon={studentPaymentLoading ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
-            sx={{
-              px: 3,
-              py: 1.5,
-              borderRadius: 2,
-              fontWeight: 600,
-              textTransform: 'none',
-              bgcolor: '#667eea',
-              boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
-              '&:hover': {
-                bgcolor: '#5a6fd8',
-                boxShadow: '0 6px 16px rgba(102, 126, 234, 0.4)',
-                transform: 'translateY(-1px)'
-              },
-              '&:disabled': {
-                bgcolor: '#ccc'
-              }
-            }}
-          >
-            {studentPaymentLoading ? 'Đang xử lý...' : 'Thanh toán'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        </Box>
+      </BaseDialog>
     </>
   );
 };

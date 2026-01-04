@@ -56,8 +56,10 @@ const ParentManagement: React.FC = () => {
   }, [getParentById]);
 
   const handleCloseFormDialog = useCallback((): void => {
-    setSelectedParentForEdit(null);
     setOpenFormDialog(false);
+    setTimeout(() => {
+      setSelectedParentForEdit(null);
+    }, 100);
   }, []);
 
 

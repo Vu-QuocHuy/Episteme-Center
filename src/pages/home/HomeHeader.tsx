@@ -27,6 +27,7 @@ import { commonStyles } from '../../utils/styles';
 import { useAuth } from '../../contexts/AuthContext';
 import { useMenuItems } from '../../hooks/features/useMenuItems';
 import { NavigationMenuItem } from '../../types';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
 
 const scrollToSection = (id: string): void => {
   const el = document.getElementById(id);
@@ -49,6 +50,7 @@ const HomeHeader: React.FC = () => {
   const [activeSection, setActiveSection] = useState<string>('hero-section');
   const [mobileMenuAnchor, setMobileMenuAnchor] = useState<HTMLElement | null>(null);
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const [dropdownAnchor, setDropdownAnchor] = useState<{ [key: string]: HTMLElement | null }>({});
   const closeTimeoutRef = React.useRef<{ [key: string]: NodeJS.Timeout }>({});
   const menuRefs = React.useRef<{ [key: string]: HTMLElement | null }>({});
@@ -190,10 +192,15 @@ const HomeHeader: React.FC = () => {
     handleMenuClose();
   };
 
-  const handleLogout = (): void => {
-    logout();
-    navigate('/'); // Stay on home page after logout
+  const handleLogoutClick = (): void => {
+    setLogoutDialogOpen(true);
     handleMenuClose();
+  };
+
+  const handleLogoutConfirm = async (): Promise<void> => {
+    await logout();
+    navigate('/'); // Stay on home page after logout
+    setLogoutDialogOpen(false);
   };
 
   const handleDropdownClose = (menuId: string): void => {
@@ -267,7 +274,7 @@ const HomeHeader: React.FC = () => {
               <AccountCircleIcon fontSize="small" sx={{ mr: 1 }} />
               Trang cá nhân
             </MenuItem>
-            <MenuItem onClick={handleLogout}>
+            <MenuItem onClick={handleLogoutClick}>
               <LogoutIcon fontSize="small" sx={{ mr: 1 }} />
               Đăng xuất
             </MenuItem>
@@ -376,7 +383,7 @@ const HomeHeader: React.FC = () => {
                   <MenuItem onClick={() => { handleProfile(); handleMobileMenuClose(); }}>
                     Trang cá nhân
                   </MenuItem>
-                  <MenuItem onClick={() => { handleLogout(); handleMobileMenuClose(); }}>
+                  <MenuItem onClick={() => { handleLogoutClick(); handleMobileMenuClose(); }}>
                     Đăng xuất
                   </MenuItem>
                 </>
@@ -573,6 +580,16 @@ const HomeHeader: React.FC = () => {
           </>
         )}
       </Toolbar>
+
+      <ConfirmDialog
+        open={logoutDialogOpen}
+        onClose={() => setLogoutDialogOpen(false)}
+        onConfirm={handleLogoutConfirm}
+        title="Xác nhận đăng xuất"
+        message="Bạn có chắc chắn muốn đăng xuất khỏi hệ thống?"
+        confirmText="Đăng xuất"
+        confirmColor="error"
+      />
     </AppBar>
   );
 };

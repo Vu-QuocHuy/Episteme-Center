@@ -1,14 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
   TextField,
   Grid,
   Box,
-  Typography,
   CircularProgress,
   FormControl,
   InputLabel,
@@ -18,8 +13,9 @@ import {
   Switch,
   Paper
 } from '@mui/material';
-import { Save as SaveIcon, Cancel as CancelIcon, Edit as EditIcon } from '@mui/icons-material';
+import { Save as SaveIcon, Cancel as CancelIcon, Edit as EditIcon, Add as AddIcon } from '@mui/icons-material';
 import { Teacher } from '../../../types';
+import BaseDialog from '../../common/BaseDialog';
 
 interface TeacherFormProps {
   open: boolean;
@@ -113,7 +109,9 @@ const TeacherForm: React.FC<TeacherFormProps> = ({
           : (teacher as any)?.specializations || '',
         introduction: (teacher as any)?.introduction || '',
         workExperience: (teacher as any)?.workExperience || '',
-        salaryPerLesson: (teacher as any)?.salaryPerLesson ? String((teacher as any).salaryPerLesson) : '',
+        salaryPerLesson: (teacher as any)?.salaryPerLesson !== undefined && (teacher as any)?.salaryPerLesson !== null 
+          ? String((teacher as any).salaryPerLesson) 
+          : '',
         isActive: (teacher as any)?.isActive ?? true,
         typical: (teacher as any)?.typical ?? false
       });
@@ -202,45 +200,54 @@ const TeacherForm: React.FC<TeacherFormProps> = ({
   };
 
   return (
-    <Dialog
+    <BaseDialog
       open={open}
       onClose={handleClose}
+      title={teacher ? 'Chỉnh sửa thông tin giáo viên' : 'Thêm giáo viên mới'}
+      subtitle="Cập nhật thông tin giáo viên"
+      icon={teacher ? <EditIcon sx={{ fontSize: 28, color: 'white' }} /> : <AddIcon sx={{ fontSize: 28, color: 'white' }} />}
       maxWidth="md"
-      fullWidth
+      contentPadding={0}
+      hideDefaultAction={true}
+      actions={
+        <>
+          <Button
+            onClick={handleClose}
+            variant="outlined"
+            startIcon={<CancelIcon />}
+            disabled={loading}
+            sx={{ px: 4, py: 1.5, borderRadius: 2, fontWeight: 600, textTransform: 'none' }}
+          >
+            Hủy
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            variant="contained"
+            startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
+            disabled={loading}
+            sx={{
+              px: 4,
+              py: 1.5,
+              borderRadius: 2,
+              fontWeight: 600,
+              textTransform: 'none',
+              boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+              '&:hover': {
+                boxShadow: '0 6px 16px rgba(102, 126, 234, 0.4)',
+                transform: 'translateY(-1px)'
+              }
+            }}
+          >
+            {loading ? 'Đang lưu...' : (teacher ? 'Cập nhật' : 'Tạo mới')}
+          </Button>
+        </>
+      }
       PaperProps={{
         sx: {
-          borderRadius: 3,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-          overflow: 'hidden',
           maxHeight: '90vh'
         }
       }}
     >
-      <DialogTitle
-        sx={{
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        color: 'white',
-        py: 3,
-        px: 4,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between'
-        }}
-      >
-        <Box>
-          <Typography variant="h5" sx={{ fontWeight: 600, mb: 0.5 }}>
-            {teacher ? 'Chỉnh sửa thông tin giáo viên' : 'Thêm giáo viên mới'}
-          </Typography>
-          <Typography variant="body2" sx={{ opacity: 0.9 }}>
-            Cập nhật thông tin giáo viên
-          </Typography>
-        </Box>
-        <Box sx={{ bgcolor: 'rgba(255,255,255,0.2)', borderRadius: '50%', p: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <EditIcon sx={{ fontSize: 28, color: 'white' }} />
-        </Box>
-      </DialogTitle>
-
-      <DialogContent sx={{ p: 0 }}>
         <Box sx={{ p: 4 }}>
           <Paper sx={{ p: 3, borderRadius: 2, background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)', border: '1px solid #e0e6ed' }}>
             <Box sx={{ p: 2, bgcolor: 'white', borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
@@ -428,40 +435,7 @@ const TeacherForm: React.FC<TeacherFormProps> = ({
             </Box>
           </Paper>
         </Box>
-      </DialogContent>
-
-      <DialogActions sx={{ p: 3, borderTop: '1px solid #e0e6ed', backgroundColor: '#f8f9fa', gap: 2 }}>
-        <Button
-          onClick={handleClose}
-          variant="outlined"
-          startIcon={<CancelIcon />}
-          disabled={loading}
-          sx={{ px: 4, py: 1.5, borderRadius: 2, fontWeight: 600, textTransform: 'none' }}
-        >
-          Hủy
-        </Button>
-        <Button
-          onClick={handleSubmit}
-          variant="contained"
-          startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
-          disabled={loading}
-          sx={{
-            px: 4,
-            py: 1.5,
-            borderRadius: 2,
-            fontWeight: 600,
-            textTransform: 'none',
-            boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
-            '&:hover': {
-              boxShadow: '0 6px 16px rgba(102, 126, 234, 0.4)',
-              transform: 'translateY(-1px)'
-            }
-          }}
-        >
-          {loading ? 'Đang lưu...' : (teacher ? 'Cập nhật' : 'Tạo mới')}
-        </Button>
-      </DialogActions>
-    </Dialog>
+    </BaseDialog>
   );
 };
 

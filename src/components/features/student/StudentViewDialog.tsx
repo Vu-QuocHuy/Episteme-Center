@@ -1,20 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
   Box,
   Typography,
   Paper,
   Grid,
-  CircularProgress,
-  Alert,
 } from '@mui/material';
 import { Visibility as ViewIcon } from '@mui/icons-material';
 import { getStudentByIdAPI } from '../../../services/students';
 import { Student } from '../../../types';
+import BaseDialog from '../../common/BaseDialog';
 
 
 
@@ -93,66 +87,19 @@ const StudentViewDialog: React.FC<StudentViewDialogProps> = ({
   if (!selectedStudent) return null;
 
   return (
-    <Dialog
+    <BaseDialog
       open={open}
       onClose={handleClose}
+      title="Chi tiết học sinh"
+      subtitle="Thông tin chi tiết về học sinh và lớp học"
+      icon={<ViewIcon sx={{ fontSize: 28, color: 'white' }} />}
       maxWidth="md"
-      fullWidth
-      PaperProps={{
-        sx: {
-          borderRadius: 3,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-          overflow: 'hidden',
-          minHeight: '60vh'
-        }
-      }}
+      loading={loading}
+      error={error}
+      minHeight="60vh"
+      contentPadding={0}
     >
-      <DialogTitle sx={{
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        color: 'white',
-        py: 3,
-        px: 4,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between'
-      }}>
-        <Box>
-          <Typography variant="h5" sx={{ fontWeight: 600, mb: 0.5 }}>
-            Chi tiết học sinh
-          </Typography>
-          <Typography variant="body2" sx={{ opacity: 0.9 }}>
-            Thông tin chi tiết về học sinh và lớp học
-          </Typography>
-        </Box>
-        <Box sx={{
-          bgcolor: 'rgba(255,255,255,0.2)',
-          borderRadius: '50%',
-          p: 1,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
-          <ViewIcon sx={{ fontSize: 28, color: 'white' }} />
-        </Box>
-      </DialogTitle>
-      <DialogContent sx={{ p: 0 }}>
-        {loading ? (
-          <Box sx={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            minHeight: '300px',
-            p: 4
-          }}>
-            <CircularProgress size={60} />
-          </Box>
-        ) : error ? (
-          <Box sx={{ p: 4 }}>
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          </Box>
-        ) : studentData ? (
+      {studentData && (
         <Box sx={{ p: 4 }}>
           {/* Main Information Grid */}
           <Grid container spacing={3}>
@@ -418,26 +365,8 @@ const StudentViewDialog: React.FC<StudentViewDialogProps> = ({
             )}
           </Grid>
         </Box>
-        ) : null}
-      </DialogContent>
-      <DialogActions sx={{ p: 3, bgcolor: '#f8f9fa' }}>
-        <Button
-          onClick={handleClose}
-          sx={{
-            px: 3,
-            py: 1,
-            borderRadius: 2,
-            textTransform: 'none',
-            fontWeight: 600,
-            bgcolor: '#667eea',
-            color: 'white',
-            '&:hover': { bgcolor: '#5a6fd8' }
-          }}
-        >
-          Đóng
-        </Button>
-      </DialogActions>
-    </Dialog>
+      )}
+    </BaseDialog>
   );
 };
 

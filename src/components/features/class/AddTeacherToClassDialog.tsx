@@ -1,10 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useDebounce } from '../../../hooks/common/useDebounce';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
   TextField,
   Box,
@@ -19,9 +15,11 @@ import {
 } from '@mui/material';
 import {
   Search as SearchIcon,
-  Add as AddIcon
+  Add as AddIcon,
+  School as SchoolIcon
 } from '@mui/icons-material';
 import { getAllTeachersAPI } from '../../../services/teachers';
+import BaseDialog from '../../common/BaseDialog';
 
 interface AddTeacherToClassDialogProps {
   open: boolean;
@@ -103,11 +101,39 @@ const AddTeacherToClassDialog: React.FC<AddTeacherToClassDialogProps> = ({
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-      <DialogTitle>
-        <Typography variant="h6">Thêm giáo viên vào lớp</Typography>
-      </DialogTitle>
-      <DialogContent>
+    <BaseDialog
+      open={open}
+      onClose={handleClose}
+      title="Thêm giáo viên vào lớp"
+      icon={<SchoolIcon sx={{ fontSize: 28, color: 'white' }} />}
+      maxWidth="md"
+      loading={loadingTeachers}
+      hideDefaultAction={true}
+      actions={
+        <>
+          <Button onClick={handleClose} sx={{ px: 3, py: 1, borderRadius: 2, textTransform: 'none', fontWeight: 600 }}>
+            Hủy
+          </Button>
+          <Button
+            onClick={handleAddTeacher}
+            variant="contained"
+            disabled={loading || !selectedTeacher}
+            startIcon={loading ? <CircularProgress size={20} /> : <AddIcon />}
+            sx={{
+              px: 3,
+              py: 1,
+              borderRadius: 2,
+              textTransform: 'none',
+              fontWeight: 600,
+              bgcolor: '#667eea',
+              '&:hover': { bgcolor: '#5a6fd8' },
+            }}
+          >
+            {loading ? 'Đang thêm...' : 'Thêm giáo viên'}
+          </Button>
+        </>
+      }
+    >
         <Box sx={{ mb: 2 }}>
           <TextField
             fullWidth
@@ -170,19 +196,7 @@ const AddTeacherToClassDialog: React.FC<AddTeacherToClassDialogProps> = ({
             </Paper>
           )}
         </Box>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={handleClose}>Hủy</Button>
-        <Button
-          onClick={handleAddTeacher}
-          variant="contained"
-          disabled={loading || !selectedTeacher}
-          startIcon={loading ? <CircularProgress size={20} /> : <AddIcon />}
-        >
-          {loading ? 'Đang thêm...' : 'Thêm giáo viên'}
-        </Button>
-      </DialogActions>
-    </Dialog>
+    </BaseDialog>
   );
 };
 

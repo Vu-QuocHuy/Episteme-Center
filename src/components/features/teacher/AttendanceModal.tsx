@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
   TableContainer,
   Table,
@@ -23,6 +19,7 @@ import {
 } from '@mui/icons-material';
 import { getTodaySessionAPI as getTodayAttendanceAPI, updateSessionAttendanceAPI } from '../../../services/sessions';
 import NotificationSnackbar from '../../../components/common/NotificationSnackbar';
+import BaseDialog from '../../common/BaseDialog';
 
 const ATTENDANCE_STATUS = {
   PRESENT: 'present',
@@ -231,49 +228,54 @@ const AttendanceModal: React.FC<AttendanceModalProps> = ({
 
   return (
     <>
-      <Dialog
+      <BaseDialog
         open={open}
         onClose={onClose}
+        title="Điểm danh lớp học"
+        subtitle={classData?.name}
+        icon={<AssignmentIcon sx={{ fontSize: 28, color: 'white' }} />}
         maxWidth="md"
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 3,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
-            overflow: 'hidden'
-          }
-        }}
+        loading={loading}
+        contentPadding={0}
+        hideDefaultAction={true}
+        actions={
+          <>
+            <Button
+              onClick={onClose}
+              variant="outlined"
+              sx={{
+                borderColor: '#667eea',
+                color: '#667eea',
+                '&:hover': {
+                  borderColor: '#5a6fd8',
+                  bgcolor: 'rgba(102, 126, 234, 0.04)'
+                },
+                px: 3,
+                py: 1,
+                borderRadius: 2
+              }}
+            >
+              Hủy
+            </Button>
+            <Button
+              onClick={handleSaveAttendance}
+              disabled={!isChanged || loading}
+              variant="contained"
+              startIcon={<SaveIcon />}
+              sx={{
+                bgcolor: '#667eea',
+                '&:hover': { bgcolor: '#5a6fd8' },
+                '&:disabled': { bgcolor: '#ccc' },
+                px: 3,
+                py: 1,
+                borderRadius: 2
+              }}
+            >
+              Lưu điểm danh
+            </Button>
+          </>
+        }
       >
-        <DialogTitle sx={{
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white',
-          py: 3,
-          px: 4,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between'
-        }}>
-          <Box>
-            <Typography variant="h5" sx={{ fontWeight: 600, mb: 0.5 }}>
-              Điểm danh lớp học
-            </Typography>
-            <Typography variant="body2" sx={{ opacity: 0.9 }}>
-              {classData?.name}
-            </Typography>
-          </Box>
-          <Box sx={{
-            bgcolor: 'rgba(255,255,255,0.2)',
-            borderRadius: '50%',
-            p: 1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
-            <AssignmentIcon sx={{ fontSize: 28, color: 'white' }} />
-          </Box>
-        </DialogTitle>
-
-        <DialogContent sx={{ p: 0 }}>
           {loading ? (
             <Box sx={{ py: 4, px: 4 }}>
               <LinearProgress />
@@ -405,44 +407,7 @@ const AttendanceModal: React.FC<AttendanceModalProps> = ({
               </TableContainer>
             </Box>
           )}
-        </DialogContent>
-
-        <DialogActions sx={{ p: 3, bgcolor: '#f8f9fa' }}>
-          <Button
-            onClick={onClose}
-            variant="outlined"
-            sx={{
-              borderColor: '#667eea',
-              color: '#667eea',
-              '&:hover': {
-                borderColor: '#5a6fd8',
-                bgcolor: 'rgba(102, 126, 234, 0.04)'
-              },
-              px: 3,
-              py: 1,
-              borderRadius: 2
-            }}
-          >
-            Hủy
-          </Button>
-          <Button
-            onClick={handleSaveAttendance}
-            disabled={!isChanged || loading}
-            variant="contained"
-            startIcon={<SaveIcon />}
-            sx={{
-              bgcolor: '#667eea',
-              '&:hover': { bgcolor: '#5a6fd8' },
-              '&:disabled': { bgcolor: '#ccc' },
-              px: 3,
-              py: 1,
-              borderRadius: 2
-            }}
-          >
-            Lưu điểm danh
-          </Button>
-        </DialogActions>
-      </Dialog>
+      </BaseDialog>
 
       {/* Notification Snackbar */}
       <NotificationSnackbar

@@ -12,12 +12,7 @@ import {
   IconButton,
   TextField,
   InputAdornment,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Grid,
-  Button,
   Chip,
   Card,
   CardContent,
@@ -41,6 +36,7 @@ import { getStudentScheduleAPI, getStudentDashboardAPI } from '../../services/st
 import { getClassByIdAPI } from '../../services/classes';
 import { getSessionsByStudentAPI } from '../../services/sessions';
 import StatCard from '../../components/common/StatCard';
+import BaseDialog from '../../components/common/BaseDialog';
 
 const MyClasses = () => {
   const { user } = useAuth();
@@ -520,56 +516,16 @@ const MyClasses = () => {
           </Grid>
 
           {/* Dialog xem chi tiết lớp học */}
-          <Dialog
+          <BaseDialog
             open={openDialog}
             onClose={handleCloseDialog}
+            title="Chi tiết lớp học"
+            subtitle={selectedClass?.name}
+            icon={<SchoolIcon sx={{ fontSize: 28, color: 'white' }} />}
             maxWidth="md"
-            fullWidth
-            PaperProps={{
-              sx: {
-                borderRadius: 3,
-                boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
-                overflow: 'hidden'
-              }
-            }}
+            loading={classDetailLoading}
+            contentPadding={0}
           >
-            {classDetailLoading && (
-              <Box sx={{ width: '100%', p: 4, textAlign: 'center' }}>
-                <LinearProgress />
-                <Typography variant="body1" sx={{ mt: 2 }}>
-                  Đang tải chi tiết lớp học...
-                </Typography>
-              </Box>
-            )}
-            <DialogTitle sx={{
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              color: 'white',
-              py: 3,
-              px: 4,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between'
-            }}>
-              <Box>
-                <Typography variant="h5" sx={{ fontWeight: 600, mb: 0.5 }}>
-                  Chi tiết lớp học
-                </Typography>
-                <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                  {selectedClass?.name}
-                </Typography>
-              </Box>
-              <Box sx={{
-                bgcolor: 'rgba(255,255,255,0.2)',
-                borderRadius: '50%',
-                p: 1,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <SchoolIcon sx={{ fontSize: 28, color: 'white' }} />
-              </Box>
-            </DialogTitle>
-            <DialogContent sx={{ p: 0 }}>
               {selectedClass && !classDetailLoading && (
                 <Box sx={{ p: 4 }}>
                   <Grid container spacing={3}>
@@ -842,23 +798,7 @@ const MyClasses = () => {
                   </Grid>
                 </Box>
               )}
-            </DialogContent>
-            <DialogActions sx={{ p: 3, bgcolor: '#f8f9fa' }}>
-              <Button
-                onClick={handleCloseDialog}
-                variant="contained"
-                sx={{
-                  bgcolor: '#667eea',
-                  '&:hover': { bgcolor: '#5a6fd8' },
-                  px: 3,
-                  py: 1,
-                  borderRadius: 2
-                }}
-              >
-                Đóng
-              </Button>
-            </DialogActions>
-          </Dialog>
+          </BaseDialog>
         </Box>
       </Box>
     </DashboardLayout>

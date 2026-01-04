@@ -27,8 +27,6 @@ interface StudentTableProps {
   loading?: boolean;
 }
 
-
-
 const StudentTable: React.FC<StudentTableProps> = ({
   students,
   onEdit,

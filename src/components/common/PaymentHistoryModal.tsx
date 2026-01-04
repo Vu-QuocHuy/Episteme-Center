@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
   Typography,
   Box,
@@ -15,18 +11,16 @@ import {
   TableHead,
   TableRow,
   Chip,
-  CircularProgress,
   Grid,
-  Alert,
   Accordion,
   AccordionSummary,
   AccordionDetails
 } from '@mui/material';
+import BaseDialog from './BaseDialog';
 import {
   ExpandMore as ExpandMoreIcon
 } from '@mui/icons-material';
 import {
-  Receipt as ReceiptIcon,
   Payment as PaymentIcon,
   Schedule as ScheduleIcon,
   CheckCircle as CheckCircleIcon,
@@ -357,66 +351,23 @@ const PaymentHistoryModal: React.FC<PaymentHistoryModalProps> = ({
   };
 
   return (
-    <Dialog
+    <BaseDialog
       open={open}
       onClose={handleClose}
+      title={title}
+      subtitle="Chi tiết lịch sử thanh toán"
       maxWidth="md"
-      fullWidth
+      loading={loading}
+      error={error || null}
+      contentPadding={4}
       PaperProps={{
         sx: {
-          borderRadius: 3,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
-          overflow: 'hidden',
           minHeight: '60vh'
         }
       }}
     >
-      <DialogTitle sx={{
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        color: 'white',
-        py: 3,
-        px: 4,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between'
-      }}>
+      {!loading && !error && (
         <Box>
-          <Typography variant="h5" sx={{ fontWeight: 600, mb: 0.5 }}>
-            {title}
-          </Typography>
-          <Typography variant="body2" sx={{ opacity: 0.9 }}>
-            Chi tiết lịch sử thanh toán
-          </Typography>
-        </Box>
-        <Box sx={{
-          bgcolor: 'rgba(255,255,255,0.2)',
-          borderRadius: '50%',
-          p: 1,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
-          <ReceiptIcon sx={{ fontSize: 28, color: 'white' }} />
-        </Box>
-      </DialogTitle>
-
-      <DialogContent sx={{ p: 0 }}>
-        {error && (
-          <Box sx={{ p: 4, pb: 0 }}>
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          </Box>
-        )}
-
-        {loading ? (
-          <Box sx={{ py: 4, px: 4 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 200 }}>
-              <CircularProgress />
-            </Box>
-          </Box>
-        ) : (
-          <Box sx={{ p: 4 }}>
             {/* Payment Details Section */}
             {showPaymentDetails && paymentDetails && (
               <Accordion sx={{ mb: 3, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
@@ -900,26 +851,9 @@ const PaymentHistoryModal: React.FC<PaymentHistoryModalProps> = ({
                 </Box>
               </Paper>
             )}
-          </Box>
-        )}
-      </DialogContent>
-
-      <DialogActions sx={{ p: 3, bgcolor: '#f8f9fa' }}>
-        <Button
-          onClick={handleClose}
-          variant="contained"
-          sx={{
-            bgcolor: '#667eea',
-            '&:hover': { bgcolor: '#5a6fd8' },
-            px: 3,
-            py: 1,
-            borderRadius: 2
-          }}
-        >
-          Đóng
-        </Button>
-      </DialogActions>
-    </Dialog>
+        </Box>
+      )}
+    </BaseDialog>
   );
 };
 

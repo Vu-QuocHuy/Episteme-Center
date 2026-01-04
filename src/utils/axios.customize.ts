@@ -127,15 +127,10 @@ instance.interceptors.response.use(
                 // Backend sẽ xử lý cookie tự động
 
                 try {
-                    const refreshUrl = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.AUTH.REFRESH_TOKEN}`;
-
-                    const response = await axios.get<RefreshTokenResponse>(
-                        refreshUrl,
+                    // ✅ Sử dụng instance thay vì axios để đảm bảo baseURL và withCredentials được cấu hình đúng
+                    const response = await instance.get<RefreshTokenResponse>(
+                        API_CONFIG.ENDPOINTS.AUTH.REFRESH_TOKEN,
                         {
-                            withCredentials: true,
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
                             timeout: 10000
                         }
                     );

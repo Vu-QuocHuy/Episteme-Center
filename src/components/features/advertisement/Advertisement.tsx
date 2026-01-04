@@ -2,18 +2,15 @@ import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
-  IconButton,
   Button,
-  Dialog,
   Paper,
-  Slide,
   Card,
   CardMedia,
   CardContent,
   CardActions
 } from '@mui/material';
-import type { TransitionProps } from '@mui/material/transitions';
-import { Close as CloseIcon, ArrowForward } from '@mui/icons-material';
+import { ArrowForward } from '@mui/icons-material';
+import BaseDialog from '../../common/BaseDialog';
 
 type AdvertisementMode = 'slider' | 'popup' | 'banner';
 
@@ -33,13 +30,6 @@ interface AdvertisementProps {
   autoShowDelay?: number;
   onAdClick?: (ad: AdvertisementItem) => void;
 }
-
-const Transition = React.forwardRef(function Transition(
-  props: TransitionProps & { children: React.ReactElement<any, any> },
-  ref: React.Ref<unknown>
-) {
-  return <Slide direction="down" ref={ref} {...props} />;
-});
 
 const Advertisement: React.FC<AdvertisementProps> = ({
   mode = 'slider',
@@ -143,12 +133,12 @@ const Advertisement: React.FC<AdvertisementProps> = ({
 
   if (mode === 'popup') {
     return (
-      <Dialog
+      <BaseDialog
         open={open}
         onClose={handleClose}
-        TransitionComponent={Transition}
+        title=""
         maxWidth="md"
-        fullWidth
+        hideDefaultAction={true}
         PaperProps={{
           sx: {
             borderRadius: 3,
@@ -157,20 +147,6 @@ const Advertisement: React.FC<AdvertisementProps> = ({
         }}
       >
         <Box sx={{ position: 'relative' }}>
-          <IconButton
-            onClick={handleClose}
-            sx={{
-              position: 'absolute',
-              right: 8,
-              top: 8,
-              zIndex: 1,
-              bgcolor: 'rgba(255,255,255,0.9)',
-              '&:hover': { bgcolor: 'rgba(255,255,255,1)' }
-            }}
-          >
-            <CloseIcon />
-          </IconButton>
-
           {advertisements[0] && (
             <Card sx={{ boxShadow: 'none' }}>
               <CardMedia
@@ -207,7 +183,7 @@ const Advertisement: React.FC<AdvertisementProps> = ({
             </Card>
           )}
         </Box>
-      </Dialog>
+      </BaseDialog>
     );
   }
 

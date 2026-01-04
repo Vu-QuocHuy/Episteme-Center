@@ -7,15 +7,14 @@ import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
 import HistoryIcon from '@mui/icons-material/History';
 import SchoolIcon from '@mui/icons-material/School';
 import ClassIcon from '@mui/icons-material/Class';
-import CampaignIcon from '@mui/icons-material/Campaign';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ListAltIcon from '@mui/icons-material/ListAlt';
 import PaymentIcon from '@mui/icons-material/Payment';
 import PeopleIcon from '@mui/icons-material/People';
-import MenuIcon from '@mui/icons-material/Menu';
 import SecurityIcon from '@mui/icons-material/Security';
+import ArticleIcon from '@mui/icons-material/Article';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSidebar } from '../../contexts/SidebarContext';
@@ -37,12 +36,10 @@ const getMenuItemsByRole = (role: string): MenuItem[] => {
         { text: 'Dashboard', icon: <HomeIcon />, path: '/admin/dashboard' },
         { text: 'Quản lý người dùng', icon: <PeopleIcon />, path: '/admin/users' },
         { text: 'Quản lý lớp học', icon: <ClassIcon />, path: '/admin/classes' },
-        { text: 'Quản lý quảng cáo', icon: <CampaignIcon />, path: '/admin/advertisements' },
+        { text: 'Quản lý nội dung', icon: <ArticleIcon />, path: '/admin/content' },
         { text: 'Đăng ký tư vấn', icon: <ListAltIcon />, path: '/admin/registrations' },
-        { text: 'Quản lý Menu', icon: <MenuIcon />, path: '/admin/menu-management' },
         { text: 'Quản lý vai trò', icon: <SecurityIcon />, path: '/admin/roles-management' },
         { text: 'Thống kê', icon: <AssessmentIcon />, path: '/admin/statistics' },
-        { text: 'Cảm nhận học viên', icon: <SchoolIcon />, path: '/admin/testimonials' },
         { text: 'Audit Logs', icon: <ListAltIcon />, path: '/admin/audit-log' },
 
       ];
@@ -89,12 +86,19 @@ const Sidebar: React.FC<SidebarProps> = ({ open }) => {
   const menuItems = getMenuItemsByRole(role);
   const [statsOpen, setStatsOpen] = useState<boolean>(location.pathname.startsWith('/admin/statistics'));
   const [usersOpen, setUsersOpen] = useState<boolean>(location.pathname.startsWith('/admin/users'));
+  const [contentOpen, setContentOpen] = useState<boolean>(
+    location.pathname.startsWith('/admin/advertisements') ||
+    location.pathname.startsWith('/admin/menu-management') ||
+    location.pathname.startsWith('/admin/testimonials') ||
+    location.pathname.startsWith('/admin/articles')
+  );
 
   // Đóng sub-menu khi sidebar đóng
   React.useEffect(() => {
     if (!open) {
       setStatsOpen(false);
       setUsersOpen(false);
+      setContentOpen(false);
     }
   }, [open]);
 
@@ -122,8 +126,9 @@ const Sidebar: React.FC<SidebarProps> = ({ open }) => {
           {menuItems.map((item) => {
             const isStatistics = item.path === '/admin/statistics';
             const isUsers = item.path === '/admin/users';
+            const isContent = item.path === '/admin/content';
 
-            if (!isStatistics && !isUsers) {
+            if (!isStatistics && !isUsers && !isContent) {
               return (
                 <Tooltip key={item.text} title={!open ? item.text : ''} placement="right" arrow>
                   <ListItem disablePadding sx={{ display: 'block' }}>
@@ -262,6 +267,142 @@ const Sidebar: React.FC<SidebarProps> = ({ open }) => {
                         }}
                       >
                         {open && <ListItemText primary="Phụ huynh" />}
+                      </ListItemButton>
+                    </List>
+                  )}
+                </Box>
+              );
+            }
+
+            // Content management item with expandable sub-menu
+            if (isContent) {
+              return (
+                <Box key={item.text}>
+                  <ListItem disablePadding sx={{ display: 'block' }}>
+                    <ListItemButton
+                      selected={
+                        location.pathname.startsWith('/admin/advertisements') ||
+                        location.pathname.startsWith('/admin/menu-management') ||
+                        location.pathname.startsWith('/admin/testimonials') ||
+                        location.pathname.startsWith('/admin/articles')
+                      }
+                      onClick={() => {
+                        if (!open) {
+                          openSidebar();
+                        }
+                        setContentOpen((v) => !v);
+                      }}
+                      sx={{
+                        minHeight: 48,
+                        justifyContent: open ? 'initial' : 'center',
+                        px: 2.5,
+                        borderRadius: 2,
+                        my: 0.5,
+                        transition: 'background 0.2s',
+                        '&.Mui-selected': {
+                          bgcolor: '#f5f5f5',
+                          color: COLORS.primary.main,
+                          '&:hover': { bgcolor: '#eeeeee' }
+                        },
+                        '&:hover': { bgcolor: '#f9f9f9' }
+                      }}
+                    >
+                      <ListItemIcon
+                        sx={{
+                          minWidth: 0,
+                          mr: open ? 2 : 'auto',
+                          justifyContent: 'center',
+                          color: (
+                            location.pathname.startsWith('/admin/advertisements') ||
+                            location.pathname.startsWith('/admin/menu-management') ||
+                            location.pathname.startsWith('/admin/testimonials') ||
+                            location.pathname.startsWith('/admin/articles')
+                          ) ? COLORS.primary.main : 'inherit',
+                        }}
+                      >
+                        <ArticleIcon />
+                      </ListItemIcon>
+                      {open && <ListItemText primary={item.text} sx={{ opacity: open ? 1 : 0, mr: 2 }} />}
+                      {open && (contentOpen ? <ExpandLessIcon /> : <ExpandMoreIcon />)}
+                    </ListItemButton>
+                  </ListItem>
+                  {contentOpen && (
+                    <List component="div" disablePadding sx={{ pl: open ? 4 : 0 }}>
+                      <ListItemButton
+                        selected={location.pathname === '/admin/advertisements'}
+                        onClick={() => {
+                          if (!open) {
+                            openSidebar();
+                          }
+                          navigate('/admin/advertisements');
+                        }}
+                        sx={{
+                          minHeight: 40,
+                          justifyContent: open ? 'initial' : 'center',
+                          px: 2.5,
+                          borderRadius: 2,
+                          ml: open ? 2 : 0,
+                          my: 0.25
+                        }}
+                      >
+                        {open && <ListItemText primary="Quản lý quảng cáo" />}
+                      </ListItemButton>
+                      <ListItemButton
+                        selected={location.pathname === '/admin/menu-management'}
+                        onClick={() => {
+                          if (!open) {
+                            openSidebar();
+                          }
+                          navigate('/admin/menu-management');
+                        }}
+                        sx={{
+                          minHeight: 40,
+                          justifyContent: open ? 'initial' : 'center',
+                          px: 2.5,
+                          borderRadius: 2,
+                          ml: open ? 2 : 0,
+                          my: 0.25
+                        }}
+                      >
+                        {open && <ListItemText primary="Quản lý Menu" />}
+                      </ListItemButton>
+                      <ListItemButton
+                        selected={location.pathname === '/admin/testimonials'}
+                        onClick={() => {
+                          if (!open) {
+                            openSidebar();
+                          }
+                          navigate('/admin/testimonials');
+                        }}
+                        sx={{
+                          minHeight: 40,
+                          justifyContent: open ? 'initial' : 'center',
+                          px: 2.5,
+                          borderRadius: 2,
+                          ml: open ? 2 : 0,
+                          my: 0.25
+                        }}
+                      >
+                        {open && <ListItemText primary="Cảm nhận học viên" />}
+                      </ListItemButton>
+                      <ListItemButton
+                        selected={location.pathname === '/admin/articles'}
+                        onClick={() => {
+                          if (!open) {
+                            openSidebar();
+                          }
+                          navigate('/admin/articles');
+                        }}
+                        sx={{
+                          minHeight: 40,
+                          justifyContent: open ? 'initial' : 'center',
+                          px: 2.5,
+                          borderRadius: 2,
+                          ml: open ? 2 : 0,
+                          my: 0.25
+                        }}
+                      >
+                        {open && <ListItemText primary="Quản lý bài viết" />}
                       </ListItemButton>
                     </List>
                   )}

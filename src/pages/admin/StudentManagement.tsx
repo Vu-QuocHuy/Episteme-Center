@@ -55,21 +55,24 @@ const StudentManagement: React.FC = () => {
 
   // Dialog handlers
   const handleOpenDialog = async (student: Student | null = null): Promise<void> => {
-    setOpenDialog(true);
     if (student?.id) {
+      // Set selectedStudent trước khi mở dialog để header hiển thị đúng ngay từ đầu
+      setSelectedStudent(student);
+      setFormData(student || undefined);
+      setOpenDialog(true);
+      // Sau đó fetch dữ liệu mới nhất từ API
       try {
         const res = await getStudentByIdAPI(student.id);
         const payload: any = (res as any)?.data?.data ?? (res as any)?.data ?? res;
         setSelectedStudent(payload);
         setFormData(payload || undefined);
       } catch (e) {
-        // Fallback to existing row data if API fails
-        setSelectedStudent(student);
-        setFormData(student || undefined);
+        // Giữ nguyên dữ liệu fallback nếu API fail
       }
     } else {
       setSelectedStudent(null);
       setFormData(undefined);
+      setOpenDialog(true);
     }
   };
 
@@ -201,7 +204,7 @@ const StudentManagement: React.FC = () => {
         onClose={handleCloseDeleteDialog}
         onConfirm={handleDeleteStudent}
         title="Xác nhận xóa học sinh"
-        message={studentToDelete ? `Bạn có chắc chắn muốn xóa học sinh "${studentToDelete.userId?.name}"? Hành động này không thể hoàn tác.` : ''}
+        message={studentToDelete ? `Bạn có chắc chắn muốn xóa học sinh "${studentToDelete.name}"? Hành động này không thể hoàn tác.` : ''}
         loading={loading}
       />
 

@@ -1,14 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
   TextField,
   Typography,
   Box,
-  Alert,
   CircularProgress,
   InputAdornment,
 } from '@mui/material';
@@ -20,6 +15,7 @@ import {
 import { sendVerifyEmailAPI, verifyEmailAPI } from '../../services/auth';
 import { validateOtpCode } from '../../validations/forgotPasswordValidation';
 import NotificationSnackbar from './NotificationSnackbar';
+import BaseDialog from './BaseDialog';
 
 interface VerifyEmailDialogProps {
   open: boolean;
@@ -170,68 +166,65 @@ const VerifyEmailDialog: React.FC<VerifyEmailDialogProps> = ({
 
   return (
     <>
-      <Dialog
+      <BaseDialog
         open={open}
         onClose={handleClose}
+        title={currentStep === 'confirm' ? 'Xác thực email' : 'Nhập mã xác thực'}
+        subtitle={currentStep === 'confirm'
+          ? 'Gửi mã xác thực đến email của bạn'
+          : 'Nhập mã 6 chữ số đã được gửi đến email'}
+        icon={<VerifiedUserIcon sx={{ fontSize: 24, color: 'white' }} />}
         maxWidth="sm"
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 3,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-          }
-        }}
+        error={error || null}
+        loading={sendingCode && currentStep === 'confirm'}
+        hideDefaultAction={true}
+        actions={
+          <>
+            <Button
+              onClick={currentStep === 'verify' ? () => setCurrentStep('confirm') : handleClose}
+              disabled={loading || sendingCode}
+              variant="outlined"
+              sx={{
+                borderRadius: 2,
+                px: 3,
+                py: 1,
+              }}
+            >
+              {currentStep === 'verify' ? 'Quay lại' : 'Hủy'}
+            </Button>
+            {currentStep === 'confirm' ? (
+              <Button
+                onClick={handleSendCode}
+                disabled={sendingCode}
+                variant="contained"
+                startIcon={sendingCode ? <CircularProgress size={20} /> : <EmailIcon />}
+                sx={{
+                  borderRadius: 2,
+                  px: 3,
+                  py: 1,
+                }}
+              >
+                {sendingCode ? 'Đang gửi...' : 'Gửi mã xác thực'}
+              </Button>
+            ) : (
+              <Button
+                onClick={handleVerify}
+                disabled={loading || verificationCode.length !== 6}
+                variant="contained"
+                startIcon={loading ? <CircularProgress size={20} /> : <VerifiedUserIcon />}
+                sx={{
+                  borderRadius: 2,
+                  px: 3,
+                  py: 1,
+                }}
+              >
+                {loading ? 'Đang xác thực...' : 'Xác thực'}
+              </Button>
+            )}
+          </>
+        }
       >
-        <DialogTitle
-          sx={{
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            color: 'white',
-            py: 3,
-            px: 4,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 2,
-          }}
-        >
-          <Box
-            sx={{
-              bgcolor: 'rgba(255,255,255,0.2)',
-              borderRadius: '50%',
-              p: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-          >
-            <VerifiedUserIcon sx={{ fontSize: 24, color: 'white' }} />
-          </Box>
-          <Box>
-            <Typography variant="h5" sx={{ fontWeight: 600, mb: 0.5 }}>
-              {currentStep === 'confirm' ? 'Xác thực email' : 'Nhập mã xác thực'}
-            </Typography>
-            <Typography variant="body2" sx={{ opacity: 0.9 }}>
-              {currentStep === 'confirm'
-                ? 'Gửi mã xác thực đến email của bạn'
-                : 'Nhập mã 6 chữ số đã được gửi đến email'}
-            </Typography>
-          </Box>
-        </DialogTitle>
-
-        <DialogContent
-          sx={{
-            px: 4,
-            pt: 3,
-            pb: 4,
-            bgcolor: '#f9fafb',
-          }}
-        >
-          {error && (
-            <Alert severity="error" sx={{ mb: 3 }}>
-              {error}
-            </Alert>
-          )}
-
-          {currentStep === 'confirm' ? (
+        {currentStep === 'confirm' ? (
             <Box
               sx={{
                 display: 'flex',
@@ -344,65 +337,7 @@ const VerifyEmailDialog: React.FC<VerifyEmailDialogProps> = ({
               </Box>
             </Box>
           )}
-        </DialogContent>
-
-        <DialogActions sx={{ p: 3, bgcolor: '#f8f9fa', gap: 2 }}>
-          <Button
-            onClick={currentStep === 'verify' ? () => setCurrentStep('confirm') : handleClose}
-            disabled={loading || sendingCode}
-            sx={{
-              borderRadius: 2,
-              px: 3,
-              py: 1,
-              borderColor: '#64748b',
-              color: '#64748b',
-              '&:hover': {
-                borderColor: '#475569',
-                bgcolor: '#f1f5f9'
-              }
-            }}
-          >
-            {currentStep === 'verify' ? 'Quay lại' : 'Hủy'}
-          </Button>
-          {currentStep === 'confirm' ? (
-            <Button
-              onClick={handleSendCode}
-              disabled={sendingCode}
-              variant="contained"
-              startIcon={sendingCode ? <CircularProgress size={20} /> : <EmailIcon />}
-              sx={{
-                borderRadius: 2,
-                px: 3,
-                py: 1,
-                bgcolor: '#3b82f6',
-                '&:hover': {
-                  bgcolor: '#2563eb'
-                }
-              }}
-            >
-              {sendingCode ? 'Đang gửi...' : 'Gửi mã xác thực'}
-            </Button>
-          ) : (
-            <Button
-              onClick={handleVerify}
-              disabled={loading || verificationCode.length !== 6}
-              variant="contained"
-              startIcon={loading ? <CircularProgress size={20} /> : <VerifiedUserIcon />}
-              sx={{
-                borderRadius: 2,
-                px: 3,
-                py: 1,
-                bgcolor: '#3b82f6',
-                '&:hover': {
-                  bgcolor: '#2563eb'
-                }
-              }}
-            >
-              {loading ? 'Đang xác thực...' : 'Xác thực'}
-            </Button>
-          )}
-        </DialogActions>
-      </Dialog>
+      </BaseDialog>
 
       <NotificationSnackbar
         open={snackbar.open}

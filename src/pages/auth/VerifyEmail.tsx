@@ -54,14 +54,14 @@ const VerifyEmail: React.FC = () => {
     setCountdown(5);
     try {
       const urlParams = new URLSearchParams(window.location.search);
-      const token = urlParams.get('token') || localStorage.getItem('verify_email_token');
-      if (!token) {
+      const code = urlParams.get('code');
+      if (!code) {
         setError('Không tìm thấy mã xác thực email.');
         setSnackbar({ open: true, message: 'Không tìm thấy mã xác thực email.', severity: 'error' });
         setLoading(false);
         return;
       }
-      await verifyEmailAPI(token);
+      await verifyEmailAPI(code);
       setSuccess(true);
       setSnackbar({ open: true, message: 'Xác thực email thành công! Đang chuyển về trang cá nhân...', severity: 'success' });
     } catch (err: any) {

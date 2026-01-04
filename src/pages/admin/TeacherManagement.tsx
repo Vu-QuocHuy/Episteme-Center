@@ -104,7 +104,10 @@ const TeacherManagement: React.FC = () => {
           qualifications: detailData.qualifications,
           specializations: detailData.specializations,
           salary: detailData.salary,
+          salaryPerLesson: (detailData as any).salaryPerLesson || detailData.salary,
           workExperience: detailData.workExperience,
+          introduction: (detailData as any).introduction || '',
+          typical: (detailData as any).typical || false,
         } as Teacher;
         setFormData(formData);
       } else {
@@ -140,7 +143,10 @@ const TeacherManagement: React.FC = () => {
     setOpenDeleteDialog(false);
   };
 
-
+  const handleOpenDeleteDialog = (teacher: Teacher): void => {
+    setTeacherToDelete(teacher);
+    setOpenDeleteDialog(true);
+  };
 
   // Action handlers
   const handleFormSubmit = async (): Promise<void> => {
@@ -250,7 +256,7 @@ const TeacherManagement: React.FC = () => {
               teachers={teachers}
               loading={loading}
               onEdit={handleOpenDialog}
-              onDelete={handleDeleteTeacher}
+              onDelete={handleOpenDeleteDialog}
               onViewDetails={handleOpenViewDialog}
             />            {/* Dialogs */}
             <TeacherForm
@@ -273,7 +279,7 @@ const TeacherManagement: React.FC = () => {
               onClose={handleCloseDeleteDialog}
               onConfirm={handleDeleteTeacher}
               title="Xác nhận xóa giáo viên"
-              message={teacherToDelete ? `Bạn có chắc chắn muốn xóa giáo viên "${teacherToDelete.userId?.name}"? Hành động này không thể hoàn tác.` : ''}
+              message={teacherToDelete ? `Bạn có chắc chắn muốn xóa giáo viên "${teacherToDelete.name}"? Hành động này không thể hoàn tác.` : ''}
               loading={loading}
             />
 

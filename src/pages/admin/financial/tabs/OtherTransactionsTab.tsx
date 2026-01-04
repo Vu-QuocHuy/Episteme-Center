@@ -1,6 +1,7 @@
 import React from 'react';
-import { Box, Button, TextField, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Paper, Pagination, Typography, IconButton, Tooltip, Dialog, DialogTitle, DialogContent, DialogActions, Grid, MenuItem, Card, CardContent } from '@mui/material';
-import FormDialog from '../../../../components/common/forms/FormDialog';
+import { Box, Button, TextField, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Paper, Pagination, Typography, IconButton, Tooltip, Grid, MenuItem, Card, CardContent } from '@mui/material';
+import BaseDialog from '../../../../components/common/BaseDialog';
+import ConfirmDialog from '../../../../components/common/ConfirmDialog';
 import { getAllTransactionsAPI, createTransactionAPI, updateTransactionAPI, deleteTransactionAPI, getAllTransactionCategoriesAPI, createTransactionCategoryAPI, getTransactionCategoryByIdAPI, updateTransactionCategoryAPI, deleteTransactionCategoryAPI, exportTransactionsReportAPI } from '../../../../services/transactions';
 import { Edit as EditIcon, Delete as DeleteIcon, Download as DownloadIcon } from '@mui/icons-material';
 import * as XLSX from 'xlsx';
@@ -427,16 +428,27 @@ const OtherTransactionsTab: React.FC<Props> = () => {
       </Box>
 
       {/* Dialog tạo thu chi khác */}
-      <FormDialog
+      <BaseDialog
         open={openTransactionDialog}
         onClose={handleCloseTransactionDialog}
         title="Tạo thu/chi khác"
         subtitle="Nhập thông tin khoản thu/chi (tiền điện, nước, dịch vụ,...)"
-        onSubmit={handleSubmitTransaction}
-        loading={transactionLoading}
-        submitText="Lưu"
-        cancelText="Hủy"
         maxWidth="sm"
+        fullWidth
+        actions={
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Button onClick={handleCloseTransactionDialog} variant="outlined">
+              Hủy
+            </Button>
+            <Button
+              onClick={handleSubmitTransaction}
+              variant="contained"
+              disabled={transactionLoading}
+            >
+              {transactionLoading ? 'Đang xử lý...' : 'Lưu'}
+            </Button>
+          </Box>
+        }
       >
         <Grid container spacing={2}>
           <Grid item xs={12} sm={6}>
@@ -455,19 +467,30 @@ const OtherTransactionsTab: React.FC<Props> = () => {
             <TextField label="Mô tả" fullWidth multiline minRows={2} value={transactionForm.description} onChange={(e) => handleChangeTransactionField('description', e.target.value)} />
           </Grid>
         </Grid>
-      </FormDialog>
+      </BaseDialog>
 
       {/* Dialog chỉnh sửa thu chi khác */}
-      <FormDialog
+      <BaseDialog
         open={openEditTransactionDialog}
         onClose={handleCloseEditTransactionDialog}
         title="Chỉnh sửa thu/chi khác"
         subtitle="Cập nhật thông tin khoản thu/chi"
-        onSubmit={handleSubmitEditTransaction}
-        loading={editTransactionLoading}
-        submitText="Cập nhật"
-        cancelText="Hủy"
         maxWidth="sm"
+        fullWidth
+        actions={
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Button onClick={handleCloseEditTransactionDialog} variant="outlined">
+              Hủy
+            </Button>
+            <Button
+              onClick={handleSubmitEditTransaction}
+              variant="contained"
+              disabled={editTransactionLoading}
+            >
+              {editTransactionLoading ? 'Đang xử lý...' : 'Cập nhật'}
+            </Button>
+          </Box>
+        }
       >
         <Grid container spacing={2}>
           <Grid item xs={12} sm={6}>
@@ -486,19 +509,30 @@ const OtherTransactionsTab: React.FC<Props> = () => {
             <TextField label="Mô tả" fullWidth multiline minRows={2} value={editTransactionForm.description} onChange={(e) => handleChangeEditTransactionField('description', e.target.value)} />
           </Grid>
         </Grid>
-      </FormDialog>
+      </BaseDialog>
 
       {/* Dialog tạo danh mục */}
-      <FormDialog
+      <BaseDialog
         open={openCategoryDialog}
         onClose={handleCloseCategoryDialog}
         title="Tạo danh mục"
         subtitle="Nhập thông tin danh mục thu/chi"
-        onSubmit={handleSubmitCategory}
-        loading={categoryLoading}
-        submitText="Lưu"
-        cancelText="Hủy"
         maxWidth="sm"
+        fullWidth
+        actions={
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Button onClick={handleCloseCategoryDialog} variant="outlined">
+              Hủy
+            </Button>
+            <Button
+              onClick={handleSubmitCategory}
+              variant="contained"
+              disabled={categoryLoading}
+            >
+              {categoryLoading ? 'Đang xử lý...' : 'Lưu'}
+            </Button>
+          </Box>
+        }
       >
         <Grid container spacing={2}>
           <Grid item xs={12} sm={6}>
@@ -511,19 +545,23 @@ const OtherTransactionsTab: React.FC<Props> = () => {
             <TextField label="Tên danh mục" fullWidth value={categoryForm.name} onChange={(e) => handleChangeCategoryField('name', e.target.value)} required />
           </Grid>
         </Grid>
-      </FormDialog>
+      </BaseDialog>
 
-      {/* Dialog quản lý danh mục - beautiful UI */}
-      <Dialog open={openCategoryManagementDialog} onClose={handleCloseCategoryManagementDialog} maxWidth="md" fullWidth
-        PaperProps={{ sx: { borderRadius: 4, boxShadow: '0 20px 60px rgba(0,0,0,0.15)', overflow: 'hidden' } }}>
-        <DialogTitle sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', py: 4, px: 4 }}>
-          <Box>
-            <Typography variant="h4" fontWeight={700} sx={{ mb: 1 }}>Quản lý danh mục</Typography>
-            <Typography variant="body1" sx={{ opacity: 0.9, fontWeight: 300 }}>Quản lý các danh mục thu chi của hệ thống</Typography>
-          </Box>
-        </DialogTitle>
-        <DialogContent sx={{ p: 0 }}>
-          <Box sx={{ p: 4 }}>
+      {/* Dialog quản lý danh mục */}
+      <BaseDialog
+        open={openCategoryManagementDialog}
+        onClose={handleCloseCategoryManagementDialog}
+        title="Quản lý danh mục"
+        subtitle="Quản lý các danh mục thu chi của hệ thống"
+        maxWidth="md"
+        fullWidth
+        actions={
+          <Button onClick={handleCloseCategoryManagementDialog} variant="outlined">
+            Đóng
+          </Button>
+        }
+      >
+        <Box>
             <Grid container spacing={3} sx={{ mb: 4 }}>
               <Grid item xs={12} sm={6} md={4}>
                 <Card sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', borderRadius: 3, boxShadow: '0 8px 25px rgba(102, 126, 234, 0.3)' }}>
@@ -618,35 +656,42 @@ const OtherTransactionsTab: React.FC<Props> = () => {
                 </Table>
               </TableContainer>
             </Paper>
-          </Box>
-        </DialogContent>
-        <DialogActions sx={{ p: 4, bgcolor: '#f8fafc', borderTop: '1px solid #e2e8f0', justifyContent: 'flex-end' }}>
-          <Button onClick={handleCloseCategoryManagementDialog} sx={{ borderRadius: 3, px: 4, py: 1.5, bgcolor: '#64748b', color: 'white', fontWeight: 600, '&:hover': { bgcolor: '#475569' } }}>Đóng</Button>
-        </DialogActions>
-      </Dialog>
+        </Box>
+      </BaseDialog>
 
       {/* Dialog chỉnh sửa danh mục */}
-      <FormDialog
+      <BaseDialog
         open={openEditCategoryDialog}
         onClose={() => setOpenEditCategoryDialog(false)}
         title="Chỉnh sửa danh mục"
         subtitle="Cập nhật thông tin danh mục"
-        onSubmit={async () => {
-          if (!categoryToEdit) return;
-          setEditCategoryLoading(true);
-          try {
-            await updateTransactionCategoryAPI(String(categoryToEdit.id), { type: editCategoryForm.type, name: editCategoryForm.name });
-            setOpenEditCategoryDialog(false);
-            setCategoryToEdit(null);
-            await fetchCategories();
-          } finally {
-            setEditCategoryLoading(false);
-          }
-        }}
-        loading={editCategoryLoading}
-        submitText="Cập nhật"
-        cancelText="Hủy"
         maxWidth="sm"
+        fullWidth
+        actions={
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Button onClick={() => setOpenEditCategoryDialog(false)} variant="outlined">
+              Hủy
+            </Button>
+            <Button
+              onClick={async () => {
+                if (!categoryToEdit) return;
+                setEditCategoryLoading(true);
+                try {
+                  await updateTransactionCategoryAPI(String(categoryToEdit.id), { type: editCategoryForm.type, name: editCategoryForm.name });
+                  setOpenEditCategoryDialog(false);
+                  setCategoryToEdit(null);
+                  await fetchCategories();
+                } finally {
+                  setEditCategoryLoading(false);
+                }
+              }}
+              variant="contained"
+              disabled={editCategoryLoading}
+            >
+              {editCategoryLoading ? 'Đang xử lý...' : 'Cập nhật'}
+            </Button>
+          </Box>
+        }
       >
         <Grid container spacing={2}>
           <Grid item xs={12} sm={6}>
@@ -659,35 +704,31 @@ const OtherTransactionsTab: React.FC<Props> = () => {
             <TextField label="Tên danh mục" fullWidth value={editCategoryForm.name} onChange={(e) => setEditCategoryForm(prev => ({ ...prev, name: e.target.value }))} required />
           </Grid>
         </Grid>
-      </FormDialog>
+      </BaseDialog>
 
       {/* Dialog xác nhận xóa hóa đơn */}
-      <Dialog open={openDeleteTransactionDialog} onClose={handleCloseDeleteTransactionDialog} maxWidth="xs" fullWidth>
-        <DialogTitle>Xác nhận xóa</DialogTitle>
-        <DialogContent>
-          <Typography>Bạn có chắc chắn muốn xóa hóa đơn "{transactionToDelete?.description || 'Không có mô tả'}" với số tiền {transactionToDelete?.amount ? transactionToDelete.amount.toLocaleString() : '0'} ₫?</Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDeleteTransactionDialog} disabled={deleteTransactionLoading}>Hủy</Button>
-          <Button onClick={handleConfirmDeleteTransaction} color="error" variant="contained" disabled={deleteTransactionLoading}>
-            {deleteTransactionLoading ? 'Đang xóa...' : 'Xóa'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <ConfirmDialog
+        open={openDeleteTransactionDialog}
+        onClose={handleCloseDeleteTransactionDialog}
+        onConfirm={handleConfirmDeleteTransaction}
+        title="Xác nhận xóa"
+        message={`Bạn có chắc chắn muốn xóa hóa đơn "${transactionToDelete?.description || 'Không có mô tả'}" với số tiền ${transactionToDelete?.amount ? transactionToDelete.amount.toLocaleString() : '0'} ₫? Hành động này không thể hoàn tác.`}
+        confirmText="Xóa"
+        confirmColor="error"
+        loading={deleteTransactionLoading}
+      />
 
       {/* Dialog xác nhận xóa danh mục */}
-      <Dialog open={openDeleteCategoryDialog} onClose={handleCloseDeleteCategoryDialog} maxWidth="xs" fullWidth>
-        <DialogTitle>Xác nhận xóa danh mục</DialogTitle>
-        <DialogContent>
-          <Typography>Bạn có chắc chắn muốn xóa danh mục "{categoryToDelete?.name || ''}"?</Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDeleteCategoryDialog} disabled={deleteCategoryLoading}>Hủy</Button>
-          <Button onClick={handleConfirmDeleteCategory} color="error" variant="contained" disabled={deleteCategoryLoading}>
-            {deleteCategoryLoading ? 'Đang xóa...' : 'Xóa'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <ConfirmDialog
+        open={openDeleteCategoryDialog}
+        onClose={handleCloseDeleteCategoryDialog}
+        onConfirm={handleConfirmDeleteCategory}
+        title="Xác nhận xóa danh mục"
+        message={`Bạn có chắc chắn muốn xóa danh mục "${categoryToDelete?.name || ''}"? Hành động này không thể hoàn tác.`}
+        confirmText="Xóa"
+        confirmColor="error"
+        loading={deleteCategoryLoading}
+      />
     </>
   );
 };

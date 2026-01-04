@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Box, Typography, Paper, Grid, TextField, MenuItem, Card, CardContent, CircularProgress } from '@mui/material';
 import { commonStyles } from '../../utils/styles';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, LineChart, Line } from 'recharts';
-import { getMonthlyStudentChangeAPI } from '../../services/students';
+import { getStudentStatisticsAPI } from '../../services/students';
 
 interface MonthlyData {
   year: number;
@@ -21,18 +21,14 @@ interface SummaryData {
   period: { startDate: string; endDate: string; };
 }
 
-interface ApiResponse {
-  data?: {
-    increase?: Array<{ year: number; month: number; count: number; }>;
-    decrease?: Array<{ year: number; month: number; count: number; }>;
-    summary?: {
-      totalIncrease: number;
-      totalDecrease: number;
-      netChange: number;
-      period: { startDate: string; endDate: string; };
-    };
-  };
+interface MonthlyStat {
+  month: number;
+  year: number;
+  increaseStudents: number;
+  decreaseStudents: number;
+  netChange: number;
 }
+
 
 const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
 const StudentStatisticsPanel: React.FC = () => {
@@ -52,74 +48,68 @@ const StudentStatisticsPanel: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      const params = { year: selectedYear };
-      const res: ApiResponse = await getMonthlyStudentChangeAPI(params);
-      console.log('API response:', res.data);
-      const apiData = res.data || {};
-      console.log('apiData.increase:', apiData.increase);
-
-      const months: MonthlyData[] = [];
-
-      (apiData.increase || []).forEach(item => {
-        console.log('Increase item:', item);
-        months.push({
-          year: item.year, month: item.month, monthName: `Th${item.month}`,
-          newStudents: item.count, leftStudents: 0, netChange: item.count, students: item.count
-        });
-      });
-
-      console.log('apiData.decrease:', apiData.decrease);
-      (apiData.decrease || []).forEach(item => {
-        console.log('Decrease item:', item);
-        const idx = months.findIndex(m => m.year === item.year && m.month === item.month);
-        if (idx !== -1) {
-          months[idx].leftStudents = item.count;
-          months[idx].netChange = (months[idx].newStudents || 0) - item.count;
-        } else {
-          months.push({
-            year: item.year, month: item.month, monthName: `Th${item.month}`,
-            newStudents: 0, leftStudents: item.count, netChange: -item.count, students: 0
-          });
-        }
-      });
-
-      months.sort((a, b) => a.year !== b.year ? a.year - b.year : a.month - b.month);
-      console.log('Processed months:', months);
-
+      const res: any = await getStudentStatisticsAPI(selectedYear);
+      console.log('API response:', res);
+      // Backend trả về { statusCode, message, data }
+      const apiData = res?.data?.data || res?.data || {};
+      
+      // Map dữ liệu từ API response sang format của component
+      const monthlyStats = apiData.monthlyStats || [];
+      
       const now = new Date();
       const isCurrentYear = selectedYear === now.getFullYear();
       const currentMonth = isCurrentYear ? now.getMonth() + 1 : 12;
+      
+      // Tạo mảng 12 tháng với dữ liệu từ API
       const fullMonths: MonthlyData[] = Array.from({ length: 12 }, (_, i) => {
         const monthNum = i + 1;
-        const found = months.find(m => m.month === monthNum && m.year === selectedYear);
+        const stat = monthlyStats.find((s: MonthlyStat) => s.month === monthNum);
+        
         if (monthNum > currentMonth) {
           return {
-            year: selectedYear, month: monthNum, monthName: `Th${monthNum}`,
-            newStudents: 0, leftStudents: 0, netChange: 0, students: 0
+            year: selectedYear,
+            month: monthNum,
+            monthName: `Th${monthNum}`,
+            newStudents: 0,
+            leftStudents: 0,
+            netChange: 0,
+            students: 0
           };
         }
-        return found || {
-          year: selectedYear, month: monthNum, monthName: `Th${monthNum}`,
-          newStudents: 0, leftStudents: 0, netChange: 0, students: 0
+        
+        return {
+          year: selectedYear,
+          month: monthNum,
+          monthName: `Th${monthNum}`,
+          newStudents: stat?.increaseStudents || 0,
+          leftStudents: stat?.decreaseStudents || 0,
+          netChange: stat?.netChange || 0,
+          students: 0 // Sẽ tính sau
         };
       });
 
+      // Tính số học sinh đầu năm = số học sinh cuối năm - biến động trong năm
+      const totalStudentsAtEndOfYear = apiData.totalStudentsAtEndOfYear || 0;
+      const netChangeForYear = apiData.summary?.netChange || 0;
+      const studentsAtStartOfYear = totalStudentsAtEndOfYear - netChangeForYear;
+      
+      // Tính tổng số học sinh tích lũy theo tháng (bắt đầu từ số học sinh đầu năm)
+      let cumulativeStudents = studentsAtStartOfYear;
       for (let i = 0; i < 12; i++) {
-        if (i === 0) {
-          fullMonths[i].students = fullMonths[i].newStudents;
-        } else {
-          fullMonths[i].students = fullMonths[i - 1].students + fullMonths[i].newStudents - fullMonths[i].leftStudents;
-        }
         if (i + 1 > currentMonth) {
           fullMonths[i].students = 0;
           fullMonths[i].newStudents = 0;
           fullMonths[i].leftStudents = 0;
           fullMonths[i].netChange = 0;
+        } else {
+          cumulativeStudents += fullMonths[i].newStudents - fullMonths[i].leftStudents;
+          fullMonths[i].students = cumulativeStudents;
         }
       }
 
       setMonthlyData(fullMonths);
 
+      // Set summary data từ API response
       setSummaryData({
         totalNewEnrollments: apiData.summary?.totalIncrease || 0,
         totalCompletions: apiData.summary?.totalDecrease || 0,
@@ -127,9 +117,7 @@ const StudentStatisticsPanel: React.FC = () => {
         period: apiData.summary?.period || { startDate: '', endDate: '' }
       });
 
-      setTimeout(() => {
-        console.log('monthlyData state:', fullMonths);
-      }, 1000);
+      console.log('Processed monthly data:', fullMonths);
     } catch (err) {
       console.error('Error fetching monthly data:', err);
       setError('Không thể tải dữ liệu thống kê');
@@ -145,19 +133,50 @@ const StudentStatisticsPanel: React.FC = () => {
 
   const now = new Date();
   const currentMonth = now.getMonth() + 1;
-  const currentMonthData = monthlyData.find(m => m.month === currentMonth && m.year === selectedYear);
-  const prevMonthData = monthlyData.find(m => m.month === currentMonth - 1 && m.year === selectedYear);
+  const isCurrentYear = selectedYear === now.getFullYear();
+  
+  // Chỉ tính tăng trưởng cho năm hiện tại và tháng hiện tại
   let growthPercent: number | null = null;
-
-  if (currentMonth > 1 && currentMonthData && prevMonthData) {
-    const prev = prevMonthData.students || 0;
-    const curr = currentMonthData.students || 0;
-    if (prev > 0) {
-      growthPercent = ((curr - prev) / prev) * 100;
-    } else if (curr > 0) {
-      growthPercent = 100;
-    } else {
-      growthPercent = 0;
+  
+  if (isCurrentYear) {
+    const currentMonthData = monthlyData.find(m => m.month === currentMonth && m.year === selectedYear);
+    const prevMonthData = monthlyData.find(m => m.month === currentMonth - 1 && m.year === selectedYear);
+    
+    if (currentMonthData) {
+      if (currentMonth > 1 && prevMonthData) {
+        // Có tháng trước trong cùng năm
+        const prev = prevMonthData.students || 0;
+        const curr = currentMonthData.students || 0;
+        if (prev > 0) {
+          growthPercent = ((curr - prev) / prev) * 100;
+        } else if (curr > 0) {
+          growthPercent = 100;
+        } else {
+          growthPercent = 0;
+        }
+      } else if (currentMonth === 1) {
+        // Tháng 1: tính dựa trên netChange (vì không có tháng trước trong cùng năm)
+        const netChange = currentMonthData.netChange || 0;
+        const studentsAtStart = (currentMonthData.students || 0) - netChange;
+        if (studentsAtStart > 0) {
+          growthPercent = (netChange / studentsAtStart) * 100;
+        } else if (netChange > 0) {
+          growthPercent = 100;
+        } else {
+          growthPercent = 0;
+        }
+      } else {
+        // Các trường hợp khác: tính dựa trên netChange
+        const netChange = currentMonthData.netChange || 0;
+        const studentsAtStart = (currentMonthData.students || 0) - netChange;
+        if (studentsAtStart > 0) {
+          growthPercent = (netChange / studentsAtStart) * 100;
+        } else if (netChange > 0) {
+          growthPercent = 100;
+        } else {
+          growthPercent = 0;
+        }
+      }
     }
   }
 

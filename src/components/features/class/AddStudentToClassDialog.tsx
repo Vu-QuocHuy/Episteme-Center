@@ -1,14 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useDebounce } from '../../../hooks/common/useDebounce';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
   TextField,
   Box,
-  Typography,
   CircularProgress,
   List,
   ListItem,
@@ -19,9 +14,11 @@ import {
 } from '@mui/material';
 import {
   Search as SearchIcon,
-  Add as AddIcon
+  Add as AddIcon,
+  People as PeopleIcon
 } from '@mui/icons-material';
 import { getAllStudentsAPI } from '../../../services/students';
+import BaseDialog from '../../common/BaseDialog';
 
 interface AddStudentToClassDialogProps {
   open: boolean;
@@ -135,11 +132,39 @@ const AddStudentToClassDialog: React.FC<AddStudentToClassDialogProps> = ({
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-      <DialogTitle>
-        <Typography variant="h6">Thêm học sinh vào lớp</Typography>
-      </DialogTitle>
-      <DialogContent>
+    <BaseDialog
+      open={open}
+      onClose={handleClose}
+      title="Thêm học sinh vào lớp"
+      icon={<PeopleIcon sx={{ fontSize: 28, color: 'white' }} />}
+      maxWidth="md"
+      loading={loadingStudents}
+      hideDefaultAction={true}
+      actions={
+        <>
+          <Button onClick={handleClose} sx={{ px: 3, py: 1, borderRadius: 2, textTransform: 'none', fontWeight: 600 }}>
+            Hủy
+          </Button>
+          <Button
+            onClick={handleAddStudents}
+            variant="contained"
+            disabled={loading || selectedStudents.length === 0}
+            startIcon={loading ? <CircularProgress size={20} /> : <AddIcon />}
+            sx={{
+              px: 3,
+              py: 1,
+              borderRadius: 2,
+              textTransform: 'none',
+              fontWeight: 600,
+              bgcolor: '#667eea',
+              '&:hover': { bgcolor: '#5a6fd8' },
+            }}
+          >
+            {loading ? 'Đang thêm...' : `Thêm ${selectedStudents.length} học sinh`}
+          </Button>
+        </>
+      }
+    >
         <Box sx={{ mb: 2 }}>
           <TextField
             fullWidth
@@ -199,19 +224,7 @@ const AddStudentToClassDialog: React.FC<AddStudentToClassDialogProps> = ({
             </Paper>
           )}
         </Box>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={handleClose}>Hủy</Button>
-        <Button
-          onClick={handleAddStudents}
-          variant="contained"
-          disabled={loading || selectedStudents.length === 0}
-          startIcon={loading ? <CircularProgress size={20} /> : <AddIcon />}
-        >
-          {loading ? 'Đang thêm...' : `Thêm ${selectedStudents.length} học sinh`}
-        </Button>
-      </DialogActions>
-    </Dialog>
+    </BaseDialog>
   );
 };
 

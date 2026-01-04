@@ -1,6 +1,6 @@
 import React from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, IconButton, Box, Paper, ButtonProps } from '@mui/material';
-import { Close, Warning } from '@mui/icons-material';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, IconButton, ButtonProps, Divider } from '@mui/material';
+import { Close as CloseIcon } from '@mui/icons-material';
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -30,101 +30,50 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
       open={open}
       onClose={onClose}
       maxWidth="sm"
-      fullWidth
+      fullWidth={false}
       PaperProps={{
         sx: {
-          borderRadius: 3,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-          overflow: 'hidden'
+          borderRadius: 1,
+          minWidth: 300,
+          maxWidth: '90vw',
         }
       }}
     >
-      <DialogTitle sx={{
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      <DialogTitle sx={{ 
+        background: '#0277bd',
         color: 'white',
-        py: 3,
-        px: 4,
-        display: 'flex',
-        alignItems: 'center',
+        py: 2,
+        px: 3,
+        display: 'flex', 
+        alignItems: 'center', 
         justifyContent: 'space-between'
       }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Box sx={{
-            bgcolor: 'rgba(255,255,255,0.2)',
-            borderRadius: '50%',
-            p: 1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
-            <Warning sx={{ fontSize: 24, color: 'white' }} />
-          </Box>
-          <Box>
-            <Typography variant="h5" sx={{ fontWeight: 600, mb: 0.5 }}>
-              {title}
-            </Typography>
-            <Typography variant="body2" sx={{ opacity: 0.9 }}>
-              Xác nhận hành động
-            </Typography>
-          </Box>
-        </Box>
+        <Typography variant="h6" sx={{ fontWeight: 600, color: 'white' }}>
+          {title}
+        </Typography>
         <IconButton
           onClick={onClose}
           size="small"
-          sx={{
+          sx={{ 
+            ml: 2,
             color: 'white',
             '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
           }}
         >
-          <Close />
+          <CloseIcon />
         </IconButton>
       </DialogTitle>
-      <DialogContent sx={{ p: 0 }}>
-        <Box sx={{ p: 4 }}>
-          <Paper sx={{
-            p: 3,
-            borderRadius: 2,
-            background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
-            border: '1px solid #e0e6ed'
-          }}>
-            <Box sx={{
-              p: 2,
-              bgcolor: 'white',
-              borderRadius: 2,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
-            }}>
-              <Typography variant="body1" sx={{
-                fontWeight: 500,
-                color: '#2c3e50',
-                lineHeight: 1.6
-              }}>
-                {message}
-              </Typography>
-            </Box>
-          </Paper>
-        </Box>
+      <Divider />
+      <DialogContent sx={{ pb: 2, pt: 3 }}>
+        <Typography variant="body1">
+          {message}
+        </Typography>
       </DialogContent>
-      <DialogActions sx={{ p: 3, bgcolor: '#f8f9fa' }}>
+      <DialogActions sx={{ px: 3, pb: 3 }}>
         <Button
           onClick={onClose}
           disabled={loading}
-          sx={{
-            px: 3,
-            py: 1,
-            borderRadius: 2,
-            textTransform: 'none',
-            fontWeight: 600,
-            border: '2px solid #667eea',
-            color: '#667eea',
-            '&:hover': {
-              background: '#667eea',
-              color: 'white',
-            },
-            '&:disabled': {
-              borderColor: '#ccc',
-              color: '#ccc'
-            }
-          }}
+          variant="outlined"
         >
           {cancelText}
         </Button>
@@ -133,18 +82,6 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
           color={confirmColor}
           variant="contained"
           disabled={loading}
-          sx={{
-            px: 3,
-            py: 1,
-            borderRadius: 2,
-            textTransform: 'none',
-            fontWeight: 600,
-            bgcolor: '#667eea',
-            '&:hover': { bgcolor: '#5a6fd8' },
-            '&:disabled': {
-              background: '#ccc',
-            }
-          }}
         >
           {loading ? 'Đang xử lý...' : confirmText}
         </Button>

@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
   TextField,
   Box,
@@ -12,13 +8,14 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  CircularProgress,
-  Alert
+  CircularProgress
 } from '@mui/material';
 import { Editor } from '@tinymce/tinymce-react';
 import { createArticleAPI, updateArticleAPI, ArticleData } from '../../services/articles';
 import { uploadFileAPI } from '../../services/files';
 import { MenuItem as MenuItemType } from '../../types';
+import BaseDialog from '../common/BaseDialog';
+import { Edit as EditIcon, Add as AddIcon } from '@mui/icons-material';
 
 interface ArticleFormProps {
   open: boolean;
@@ -147,18 +144,41 @@ const ArticleForm: React.FC<ArticleFormProps> = ({
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>
-        {article ? 'Chỉnh sửa Bài viết' : 'Tạo Bài viết Mới'}
-      </DialogTitle>
-      <DialogContent>
-        <Box sx={{ pt: 2 }}>
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-              {error}
-            </Alert>
-          )}
-
+    <BaseDialog
+      open={open}
+      onClose={onClose}
+      title={article ? 'Chỉnh sửa Bài viết' : 'Tạo Bài viết Mới'}
+      icon={article ? <EditIcon sx={{ fontSize: 28, color: 'white' }} /> : <AddIcon sx={{ fontSize: 28, color: 'white' }} />}
+      maxWidth="md"
+      error={error}
+      contentPadding={0}
+      hideDefaultAction={true}
+      actions={
+        <>
+          <Button onClick={onClose} disabled={loading}>
+            Hủy
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            variant="contained"
+            disabled={loading || uploading}
+            sx={{
+              px: 3,
+              py: 1,
+              borderRadius: 2,
+              textTransform: 'none',
+              fontWeight: 600,
+              bgcolor: '#667eea',
+              '&:hover': { bgcolor: '#5a6fd8' },
+              '&:disabled': { bgcolor: '#ccc' }
+            }}
+          >
+            {loading ? <CircularProgress size={20} /> : article ? 'Cập nhật' : 'Tạo'}
+          </Button>
+        </>
+      }
+    >
+        <Box sx={{ p: 4 }}>
           <TextField
             fullWidth
             label="Tiêu đề"
@@ -247,20 +267,7 @@ const ArticleForm: React.FC<ArticleFormProps> = ({
             )}
           </Box>
         </Box>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} disabled={loading}>
-          Hủy
-        </Button>
-        <Button
-          onClick={handleSubmit}
-          variant="contained"
-          disabled={loading || uploading}
-        >
-          {loading ? <CircularProgress size={20} /> : article ? 'Cập nhật' : 'Tạo'}
-        </Button>
-      </DialogActions>
-    </Dialog>
+    </BaseDialog>
   );
 };
 

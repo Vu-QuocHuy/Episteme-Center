@@ -7,6 +7,7 @@ import SchoolIcon from '@mui/icons-material/School';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { COLORS } from '../../utils/colors';
+import ConfirmDialog from '../common/ConfirmDialog';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -16,6 +17,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
 
   const handleLogoClick = (): void => {
     navigate('/');
@@ -50,10 +52,15 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
     handleMenuClose();
   };
 
-  const handleLogout = (): void => {
-    logout();
-    navigate('/');
+  const handleLogoutClick = (): void => {
+    setLogoutDialogOpen(true);
     handleMenuClose();
+  };
+
+  const handleLogoutConfirm = async (): Promise<void> => {
+    await logout();
+    navigate('/');
+    setLogoutDialogOpen(false);
   };
 
   return (
@@ -104,13 +111,23 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
               <AccountCircleIcon fontSize="small" sx={{ mr: 1 }} />
               Trang cá nhân
           </MenuItem>
-            <MenuItem onClick={handleLogout}>
+            <MenuItem onClick={handleLogoutClick}>
               <LogoutIcon fontSize="small" sx={{ mr: 1 }} />
               Đăng xuất
           </MenuItem>
         </Menu>
         </Box>
       </Toolbar>
+
+      <ConfirmDialog
+        open={logoutDialogOpen}
+        onClose={() => setLogoutDialogOpen(false)}
+        onConfirm={handleLogoutConfirm}
+        title="Xác nhận đăng xuất"
+        message="Bạn có chắc chắn muốn đăng xuất khỏi hệ thống?"
+        confirmText="Đăng xuất"
+        confirmColor="error"
+      />
     </AppBar>
   );
 };

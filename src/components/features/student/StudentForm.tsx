@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
   TextField,
   FormControl,
@@ -28,6 +24,7 @@ import {
   validatePassword
 } from '../../../validations/commonValidation';
 import { createStudentAPI, updateStudentAPI } from '../../../services/students';
+import BaseDialog from '../../common/BaseDialog';
 
 interface StudentFormProps {
   open: boolean;
@@ -283,49 +280,60 @@ const StudentForm: React.FC<StudentFormProps> = ({
   );
 
   return (
-    <Dialog
+    <BaseDialog
       open={open}
       onClose={handleClose}
+      title={student ? 'Chỉnh sửa thông tin học sinh' : 'Thêm học sinh mới'}
+      subtitle={student ? 'Cập nhật thông tin học sinh' : 'Nhập thông tin học sinh mới'}
+      icon={student ? <EditIcon sx={{ fontSize: 28, color: 'white' }} /> : <AddIcon sx={{ fontSize: 28, color: 'white' }} />}
       maxWidth="md"
-      fullWidth
-      PaperProps={{
-        sx: {
-          borderRadius: 3,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-          overflow: 'hidden'
-        }
-      }}
+      contentPadding={0}
+      hideDefaultAction={true}
+      actions={
+        <>
+          <Button
+            onClick={handleClose}
+            startIcon={<CancelIcon />}
+            variant="outlined"
+            disabled={loading || externalLoading}
+            sx={{
+              px: 3,
+              py: 1,
+              borderRadius: 2,
+              textTransform: 'none',
+              fontWeight: 600,
+              borderColor: '#667eea',
+              color: '#667eea',
+              '&:hover': {
+                bgcolor: '#667eea',
+                color: 'white'
+              }
+            }}
+          >
+            Hủy
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            startIcon={(loading || externalLoading) ? <CircularProgress size={20} /> : <SaveIcon />}
+            variant="contained"
+            disabled={loading || externalLoading}
+            sx={{
+              px: 3,
+              py: 1,
+              borderRadius: 2,
+              textTransform: 'none',
+              fontWeight: 600,
+              bgcolor: '#667eea',
+              '&:hover': {
+                bgcolor: '#5a6fd8'
+              }
+            }}
+          >
+            {(loading || externalLoading) ? 'Đang lưu...' : (student ? 'Cập nhật' : 'Thêm mới')}
+          </Button>
+        </>
+      }
     >
-      <DialogTitle sx={{
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        color: 'white',
-        py: 3,
-        px: 4,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between'
-      }}>
-        <Box>
-          <Typography variant="h5" sx={{ fontWeight: 600, mb: 0.5 }}>
-            {student ? 'Chỉnh sửa thông tin học sinh' : 'Thêm học sinh mới'}
-          </Typography>
-          <Typography variant="body2" sx={{ opacity: 0.9 }}>
-            {student ? 'Cập nhật thông tin học sinh' : 'Nhập thông tin học sinh mới'}
-          </Typography>
-        </Box>
-        <Box sx={{
-          bgcolor: 'rgba(255,255,255,0.2)',
-          borderRadius: '50%',
-          p: 1,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
-          {student ? <EditIcon sx={{ fontSize: 28, color: 'white' }} /> : <AddIcon sx={{ fontSize: 28, color: 'white' }} />}
-        </Box>
-      </DialogTitle>
-
-      <DialogContent sx={{ p: 0 }}>
         <Box sx={{ p: 4 }}>
           <Paper sx={{ p: 3, borderRadius: 2, background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)', border: '1px solid #e0e6ed' }}>
             {sectionTitle('Thông tin học sinh')}
@@ -493,27 +501,7 @@ const StudentForm: React.FC<StudentFormProps> = ({
           </Box>
           )}
         </Box>
-      </DialogContent>
-
-      <DialogActions sx={{ p: 3, pt: 0 }}>
-        <Button
-          onClick={handleClose}
-          startIcon={<CancelIcon />}
-          variant="outlined"
-          disabled={loading || externalLoading}
-        >
-          Hủy
-        </Button>
-        <Button
-          onClick={handleSubmit}
-          startIcon={(loading || externalLoading) ? <CircularProgress size={20} /> : <SaveIcon />}
-          variant="contained"
-          disabled={loading || externalLoading}
-        >
-          {(loading || externalLoading) ? 'Đang lưu...' : (student ? 'Cập nhật' : 'Thêm mới')}
-        </Button>
-      </DialogActions>
-    </Dialog>
+    </BaseDialog>
   );
 };
 

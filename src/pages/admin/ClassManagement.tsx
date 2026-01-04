@@ -6,7 +6,7 @@ import DashboardLayout from '../../components/layouts/DashboardLayout';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import NotificationSnackbar from '../../components/common/NotificationSnackbar';
 import ClassTable from '../../components/features/class/ClassTable';
-import ClassForm from '../../components/features/class/ClassFormUpdated';
+import ClassForm from '../../components/features/class/ClassForm';
 import { useClassManagement } from '../../hooks/features/useClassManagement';
 import { Class } from '../../types';
 import { createClassAPI, updateClassAPI, deleteClassAPI } from '../../services/classes';

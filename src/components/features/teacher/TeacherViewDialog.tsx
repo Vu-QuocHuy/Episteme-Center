@@ -5,12 +5,6 @@ import {
   Typography,
   Grid,
   Chip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  CircularProgress,
   List,
   ListItem,
   ListItemText,
@@ -22,9 +16,9 @@ import {
   Work as WorkIcon,
   AttachMoney as SalaryIcon,
   Description as DescriptionIcon,
-  Close as CloseIcon,
 } from '@mui/icons-material';
 import { Teacher } from '../../../types';
+import BaseDialog from '../../common/BaseDialog';
 
 interface TeacherViewDialogProps {
   open: boolean;
@@ -41,67 +35,20 @@ const TeacherViewDialog: React.FC<TeacherViewDialogProps> = ({
   loading = false,
   formatDateDDMMYYYY
 }) => {
-  if (loading) {
-    return (
-      <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-        <DialogContent sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: '200px'
-        }}>
-          <CircularProgress />
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
   if (!teacher) return null;
 
   return (
-    <Dialog
+    <BaseDialog
       open={open}
       onClose={onClose}
+      title="Chi tiết giáo viên"
+      subtitle="Thông tin chi tiết về giáo viên và chuyên môn"
+      icon={<ViewIcon sx={{ fontSize: 28, color: 'white' }} />}
       maxWidth="md"
-      fullWidth
-      PaperProps={{
-        sx: {
-          borderRadius: 3,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-          overflow: 'hidden',
-          minHeight: '60vh'
-        }
-      }}
+      loading={loading}
+      minHeight="60vh"
+      contentPadding={0}
     >
-      <DialogTitle sx={{
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        color: 'white',
-        py: 3,
-        px: 4,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between'
-      }}>
-        <Box>
-          <Typography variant="h5" sx={{ fontWeight: 600, mb: 0.5 }}>
-            Chi tiết giáo viên
-          </Typography>
-          <Typography variant="body2" sx={{ opacity: 0.9 }}>
-            Thông tin chi tiết về giáo viên và chuyên môn
-          </Typography>
-        </Box>
-        <Box sx={{
-          bgcolor: 'rgba(255,255,255,0.2)',
-          borderRadius: '50%',
-          p: 1,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
-          <ViewIcon sx={{ fontSize: 28, color: 'white' }} />
-        </Box>
-      </DialogTitle>
-      <DialogContent sx={{ p: 0 }}>
         <Box sx={{ p: 4 }}>
           <Box>
             {/* Main Information Grid */}
@@ -428,35 +375,7 @@ const TeacherViewDialog: React.FC<TeacherViewDialogProps> = ({
             </Grid>
           </Box>
         </Box>
-      </DialogContent>
-      <DialogActions sx={{
-        p: 3,
-        borderTop: '1px solid #e0e6ed',
-        backgroundColor: '#f8f9fa'
-      }}>
-        <Button
-          onClick={onClose}
-          variant="contained"
-          color="primary"
-          startIcon={<CloseIcon />}
-          sx={{
-            px: 4,
-            py: 1.5,
-            borderRadius: 2,
-            fontWeight: 600,
-            textTransform: 'none',
-            fontSize: '1rem',
-            boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
-            '&:hover': {
-              boxShadow: '0 6px 16px rgba(102, 126, 234, 0.4)',
-              transform: 'translateY(-1px)'
-            }
-          }}
-        >
-          Đóng
-        </Button>
-      </DialogActions>
-    </Dialog>
+    </BaseDialog>
   );
 };
 

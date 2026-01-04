@@ -12,10 +12,6 @@ import {
   Chip,
   IconButton,
   Tooltip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
   Grid,
   Pagination,
@@ -26,7 +22,6 @@ import {
   CheckCircle as CheckIcon,
   Visibility as ViewIcon,
   Delete as DeleteIcon,
-  Close as CloseIcon,
   Person as PersonIcon,
   Email as EmailIcon,
   Phone as PhoneIcon,
@@ -46,6 +41,8 @@ import {
 } from '../../services/registrations';
 import NotificationSnackbar from '../../components/common/NotificationSnackbar';
 import RegistrationFilters from '../../components/features/registration/RegistrationFilters';
+import BaseDialog from '../../components/common/BaseDialog';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
 
 interface RegistrationItem {
   id: string;
@@ -308,43 +305,65 @@ const RegistrationManagement: React.FC = () => {
       </Box>
 
       {/* View Detail Dialog */}
-      <Dialog
+      <BaseDialog
         open={viewDialog.open}
         onClose={() => setViewDialog({ open: false, data: null })}
+        title="Chi tiết đăng ký tư vấn"
+        subtitle="Thông tin chi tiết về đăng ký tư vấn"
+        icon={<ViewIcon sx={{ fontSize: 28, color: 'white' }} />}
         maxWidth="md"
         fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 2,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.12)'
-          }
-        }}
-      >
-        <DialogTitle
-          sx={{
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            color: 'white',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            py: 2.5
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <ViewIcon sx={{ fontSize: 28 }} />
-            <Typography variant="h6" fontWeight={700}>Chi tiết đăng ký tư vấn</Typography>
+        contentPadding={0}
+        actions={
+          <Box sx={{ display: 'flex', gap: 1.5, flex: 1, justifyContent: 'flex-end' }}>
+            {viewDialog.data && !viewDialog.data.processed && (
+              <Button
+                variant="contained"
+                color="success"
+                size="large"
+                startIcon={<CheckIcon />}
+                onClick={() => {
+                  handleMarkAsProcessed(viewDialog.data!.id);
+                  setViewDialog({ open: false, data: null });
+                }}
+                sx={{
+                  fontWeight: 700,
+                  px: 3,
+                  py: 1.5,
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  boxShadow: '0 4px 12px rgba(76, 175, 80, 0.3)',
+                  '&:hover': {
+                    boxShadow: '0 6px 16px rgba(76, 175, 80, 0.4)'
+                  }
+                }}
+              >
+                ✓ Đánh dấu đã xử lý
+              </Button>
+            )}
+            <Button
+              variant="outlined"
+              size="large"
+              onClick={() => setViewDialog({ open: false, data: null })}
+              sx={{
+                fontWeight: 600,
+                px: 3,
+                py: 1.5,
+                borderRadius: 2,
+                textTransform: 'none',
+                borderWidth: 2,
+                '&:hover': {
+                  borderWidth: 2
+                }
+              }}
+            >
+              Đóng
+            </Button>
           </Box>
-          <IconButton
-            size="small"
-            onClick={() => setViewDialog({ open: false, data: null })}
-            sx={{ color: 'white', '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}
-          >
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent sx={{ p: 0 }}>
-          {viewDialog.data && (
-            <Box>
+        }
+      >
+        {viewDialog.data && (
+          <Box>
               {/* Header Section with Avatar */}
               <Box sx={{
                 background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -613,83 +632,20 @@ const RegistrationManagement: React.FC = () => {
                   </Paper>
                 </Box>
               </Box>
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions sx={{
-          px: 3,
-          py: 2.5,
-          bgcolor: 'white',
-          borderTop: '2px solid #e0e0e0',
-          gap: 1.5,
-          justifyContent: 'space-between'
-        }}>
-          <Box sx={{ display: 'flex', gap: 1.5, flex: 1, justifyContent: 'flex-end' }}>
-            {viewDialog.data && !viewDialog.data.processed && (
-              <Button
-                variant="contained"
-                color="success"
-                size="large"
-                startIcon={<CheckIcon />}
-                onClick={() => {
-                  handleMarkAsProcessed(viewDialog.data!.id);
-                  setViewDialog({ open: false, data: null });
-                }}
-                sx={{
-                  fontWeight: 700,
-                  px: 3,
-                  py: 1.5,
-                  borderRadius: 2,
-                  textTransform: 'none',
-                  boxShadow: '0 4px 12px rgba(76, 175, 80, 0.3)',
-                  '&:hover': {
-                    boxShadow: '0 6px 16px rgba(76, 175, 80, 0.4)'
-                  }
-                }}
-              >
-                ✓ Đánh dấu đã xử lý
-              </Button>
-            )}
-            <Button
-              variant="outlined"
-              size="large"
-              onClick={() => setViewDialog({ open: false, data: null })}
-              sx={{
-                fontWeight: 600,
-                px: 3,
-                py: 1.5,
-                borderRadius: 2,
-                textTransform: 'none',
-                borderWidth: 2,
-                '&:hover': {
-                  borderWidth: 2
-                }
-              }}
-            >
-              Đóng
-            </Button>
           </Box>
-        </DialogActions>
-      </Dialog>
+        )}
+      </BaseDialog>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog
+      <ConfirmDialog
         open={deleteDialog.open}
         onClose={() => setDeleteDialog({ open: false, id: null })}
-        maxWidth="xs"
-        fullWidth
-      >
-        <DialogTitle>
-          <Typography variant="h6" fontWeight={700}>Xác nhận xóa</Typography>
-        </DialogTitle>
-        <DialogContent>
-          <Typography>Bạn có chắc chắn muốn xóa đăng ký này? Hành động này không thể hoàn tác.</Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialog({ open: false, id: null })}>Hủy</Button>
-          <Button variant="contained" color="error" onClick={handleDelete}>Xóa</Button>
-        </DialogActions>
-      </Dialog>
+        onConfirm={handleDelete}
+        title="Xác nhận xóa đăng ký"
+        message="Bạn có chắc chắn muốn xóa đăng ký này? Hành động này không thể hoàn tác."
+        confirmText="Xóa"
+        confirmColor="error"
+      />
 
       {/* Notification */}
       <NotificationSnackbar

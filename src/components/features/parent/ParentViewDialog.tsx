@@ -1,20 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
   Box,
   Typography,
   Paper,
   Grid,
-  CircularProgress,
-  Alert,
 } from '@mui/material';
 import { Visibility as ViewIcon } from '@mui/icons-material';
 import { getParentByIdAPI } from '../../../services/parents';
 import { Parent } from '../../../types';
+import BaseDialog from '../../common/BaseDialog';
 
 const formatGender = (gender?: string) => {
   return gender === 'male' ? 'Nam' : gender === 'female' ? 'Nữ' : 'Không xác định';
@@ -90,60 +84,19 @@ const ParentViewDialog: React.FC<ParentViewDialogProps> = ({ open, onClose, sele
   if (!selectedParent) return null;
 
   return (
-    <Dialog
+    <BaseDialog
       open={open}
       onClose={handleClose}
+      title="Chi tiết phụ huynh"
+      subtitle="Thông tin chi tiết phụ huynh và danh sách con"
+      icon={<ViewIcon sx={{ fontSize: 28, color: 'white' }} />}
       maxWidth="md"
-      fullWidth
-      PaperProps={{
-        sx: {
-          borderRadius: 3,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-          overflow: 'hidden',
-          minHeight: '50vh'
-        }
-      }}
+      loading={loading}
+      error={error}
+      minHeight="50vh"
+      contentPadding={0}
     >
-      <DialogTitle sx={{
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        color: 'white',
-        py: 3,
-        px: 4,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between'
-      }}>
-        <Box>
-          <Typography variant="h5" sx={{ fontWeight: 600, mb: 0.5 }}>
-            Chi tiết phụ huynh
-          </Typography>
-          <Typography variant="body2" sx={{ opacity: 0.9 }}>
-            Thông tin chi tiết phụ huynh và danh sách con
-          </Typography>
-        </Box>
-        <Box sx={{
-          bgcolor: 'rgba(255,255,255,0.2)',
-          borderRadius: '50%',
-          p: 1,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
-          <ViewIcon sx={{ fontSize: 28, color: 'white' }} />
-        </Box>
-      </DialogTitle>
-      <DialogContent sx={{ p: 0 }}>
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '300px', p: 4 }}>
-            <CircularProgress size={60} />
-          </Box>
-        ) : error ? (
-          <Box sx={{ p: 4 }}>
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          </Box>
-        ) : parentData ? (
+      {parentData && (
           <Box sx={{ p: 4 }}>
             <Grid container spacing={3}>
               <Grid item xs={12} md={6}>
@@ -238,17 +191,8 @@ const ParentViewDialog: React.FC<ParentViewDialogProps> = ({ open, onClose, sele
               </Grid>
             </Grid>
           </Box>
-        ) : null}
-      </DialogContent>
-      <DialogActions sx={{ p: 3, bgcolor: '#f8f9fa' }}>
-        <Button
-          onClick={handleClose}
-          sx={{ px: 3, py: 1, borderRadius: 2, textTransform: 'none', fontWeight: 600, bgcolor: '#667eea', color: 'white', '&:hover': { bgcolor: '#5a6fd8' } }}
-        >
-          Đóng
-        </Button>
-      </DialogActions>
-    </Dialog>
+      )}
+    </BaseDialog>
   );
 };
 

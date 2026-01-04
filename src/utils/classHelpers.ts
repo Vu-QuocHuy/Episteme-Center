@@ -1,94 +1,50 @@
-interface ScheduleItem {
-  day?: string;
-  time?: string;
-}
+// Helper functions for Class components
 
-interface Teacher {
-  id: string;
-  userId?: {
-    name?: string;
+export const formatClassDate = (dateString?: string): string => {
+  if (!dateString) return 'Không xác định';
+  return new Date(dateString).toLocaleDateString('vi-VN');
+};
+
+export const formatClassCurrency = (num?: number): string => {
+  return (num ?? 0).toLocaleString('vi-VN') + ' VND';
+};
+
+export const getClassStatusText = (status?: string): string => {
+  const statusMap: { [key: string]: string } = {
+    'active': 'Đang hoạt động',
+    'inactive': 'Không hoạt động',
+    'upcoming': 'Sắp mở',
+    'pending': 'Chờ khai giảng',
+    'completed': 'Đã kết thúc',
+    'closed': 'Đã đóng',
+    'cancelled': 'Đã hủy',
   };
-  name?: string;
-}
-
-interface Student {
-  id: string;
-  name?: string;
-}
-
-// Helper function to format schedule display
-export const formatSchedule = (schedule: ScheduleItem[]): string => {
-  if (!schedule || schedule.length === 0) return 'Chưa có lịch học';
-
-  return schedule.map(item => {
-    const day = item.day || 'Chưa xác định';
-    const time = item.time || 'Chưa xác định';
-    return `${day}: ${time}`;
-  }).join('\n');
+  return status ? (statusMap[status] || status) : 'Không xác định';
 };
 
-// Helper function to get status label
-export const getStatusLabel = (status: string): string => {
-  switch (status) {
-    case 'active':
-      return 'Đang hoạt động';
-    case 'inactive':
-      return 'Không hoạt động';
-    case 'completed':
-      return 'Đã hoàn thành';
-    case 'cancelled':
-      return 'Đã hủy';
-    default:
-      return 'Không xác định';
-  }
+export const getClassStatusColor = (status: string): string => {
+  const statusColors: { [key: string]: string } = {
+    'active': '#2e7d32',      // green
+    'upcoming': '#f9a825',    // yellow
+    'closed': '#c62828',      // red
+    'completed': '#c62828',    // red
+  };
+  return statusColors[status] || 'inherit';
 };
 
-// Helper function to get status color
-export const getStatusColor = (status: string): 'success' | 'error' | 'info' | 'warning' | 'default' => {
-  switch (status) {
-    case 'active':
-      return 'success';
-    case 'inactive':
-      return 'error';
-    case 'completed':
-      return 'info';
-    case 'cancelled':
-      return 'warning';
-    default:
-      return 'default';
-  }
+export const getDayLabel = (d: string): string => {
+  const map: Record<string, string> = {
+    '0': 'CN',
+    '1': 'T2',
+    '2': 'T3',
+    '3': 'T4',
+    '4': 'T5',
+    '5': 'T6',
+    '6': 'T7'
+  };
+  return map[d] || d;
 };
 
-// Helper function to get teacher object
-export const getTeacherObj = (teacherId: string, teachers: Teacher[]): Teacher | null => {
-  if (!teacherId || !teachers) return null;
-  return teachers.find(teacher => teacher.id === teacherId) || null;
+export const getDaysOfWeekText = (days: string[]): string => {
+  return days.map(day => getDayLabel(day)).join(', ');
 };
-
-// Helper function to format class name
-export const formatClassName = (grade: string | number, section: string | number, year: string | number): string => {
-  return `Lớp ${grade}.${section} (${year})`;
-};
-
-// Helper function to safely render text content
-export const renderText = (text: any): string => {
-  if (text === null || text === undefined) return '-';
-  if (typeof text === 'object') return '-';
-  return String(text);
-};
-
-// Helper function to format student count
-export const formatStudentCount = (students: Student[]): string => {
-  if (!students || students.length === 0) return '0 học sinh';
-  return `${students.length} học sinh`;
-};
-
-// Helper function to format teacher name
-export const formatTeacherName = (teacher: Teacher | null | undefined): string => {
-  if (!teacher) return 'Chưa phân công';
-  return teacher.userId?.name || teacher.name || 'Không xác định';
-};
-
-
-
-

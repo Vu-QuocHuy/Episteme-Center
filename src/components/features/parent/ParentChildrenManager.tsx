@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
   Box,
   Typography,
@@ -26,6 +22,7 @@ import {
 } from '@mui/icons-material';
 import { Parent, Student } from '../../../types';
 import { addChildToParentAPI, removeChildFromParentAPI } from '../../../services/parents';
+import BaseDialog from '../../common/BaseDialog';
 
 interface ParentChildrenManagerProps {
   parent: Parent | null;
@@ -135,17 +132,13 @@ const ParentChildrenManager: React.FC<ParentChildrenManagerProps> = ({
   const children = parent.students || parent.children || [];
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-      <DialogTitle>
-        <Box display="flex" alignItems="center" gap={2}>
-          <PersonIcon />
-          <Typography variant="h6">
-            Quản lý con cái của {parent.name}
-          </Typography>
-        </Box>
-      </DialogTitle>
-
-      <DialogContent>
+    <BaseDialog
+      open={open}
+      onClose={handleClose}
+      title={`Quản lý con cái của ${parent.name}`}
+      icon={<PersonIcon sx={{ fontSize: 28, color: 'white' }} />}
+      maxWidth="md"
+    >
         {alert.open && (
           <Alert severity={alert.severity} sx={{ mb: 2 }} onClose={() => setAlert({ ...alert, open: false })}>
             {alert.message}
@@ -277,14 +270,7 @@ const ParentChildrenManager: React.FC<ParentChildrenManagerProps> = ({
             </List>
           )}
         </Box>
-      </DialogContent>
-
-      <DialogActions>
-        <Button onClick={handleClose}>
-          Đóng
-        </Button>
-      </DialogActions>
-    </Dialog>
+    </BaseDialog>
   );
 };
 

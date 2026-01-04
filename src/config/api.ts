@@ -9,6 +9,7 @@ export interface ApiEndpoints {
     VERIFY_CODE: string;
     RESET_PASSWORD: string;
     VERIFY_EMAIL: string;
+    SEND_VERIFY_EMAIL: string;
     SEND_VERIFICATION_EMAIL: string;
     SEND_REQUEST_PASSWORD: string;
   };
@@ -236,7 +237,8 @@ export const API_CONFIG: ApiConfig = {
       VERIFY_CODE: '/auth/verify-code',
       RESET_PASSWORD: '/auth/reset-password',
       VERIFY_EMAIL: '/auth/verify-email',
-      SEND_VERIFICATION_EMAIL: '/auth/send-verification-email',
+      SEND_VERIFY_EMAIL: '/auth/send-verify-email',
+      SEND_VERIFICATION_EMAIL: '/auth/send-verify-email', // Alias for backward compatibility
       SEND_REQUEST_PASSWORD: '/auth/send-request-password',
     },
     // Admin endpoints

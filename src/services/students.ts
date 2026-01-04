@@ -25,10 +25,11 @@ export const getMonthlyStudentChangeAPI = (params?: ApiParams) =>
 export const getStudentDashboardAPI = (id: string) => axiosInstance.get(API_CONFIG.ENDPOINTS.DASHBOARD.STUDENT(id));
 
 // API mới: Lấy thống kê học sinh (cần auth admin)
-export const getStudentStatisticsAPI = () => {
+export const getStudentStatisticsAPI = (year?: number) => {
+  const params = year ? { year } : {};
   return axiosInstance.get(API_CONFIG.ENDPOINTS.STUDENTS.STATISTICS, {
+    params,
     headers: {
-      'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
       'x-lang': 'vi'
     }
   });

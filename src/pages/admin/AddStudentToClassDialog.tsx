@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
   TextField,
   InputAdornment,
@@ -19,6 +15,7 @@ import { Search as SearchIcon } from '@mui/icons-material';
 import { getAllStudentsAPI } from '../../services/students';
 import { enrollStudentAPI, getStudentsInClassAPI } from '../../services/classes';
 import NotificationSnackbar from '../../components/common/NotificationSnackbar';
+import BaseDialog from '../../components/common/BaseDialog';
 
 interface Student {
   id: string;
@@ -196,11 +193,36 @@ const AddStudentToClassDialog: React.FC<AddStudentToClassDialogProps> = ({ open,
 
   return (
     <>
-      <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-        <DialogTitle>
-          Thêm học sinh vào lớp: {classData?.name}
-        </DialogTitle>
-        <DialogContent>
+      <BaseDialog
+        open={open}
+        onClose={onClose}
+        title={`Thêm học sinh vào lớp: ${classData?.name}`}
+        icon={<SearchIcon sx={{ fontSize: 28, color: 'white' }} />}
+        maxWidth="md"
+        loading={loadingList}
+        hideDefaultAction={true}
+        actions={
+          <>
+            <Button onClick={onClose}>Hủy</Button>
+            <Button
+              onClick={handleAddStudents}
+              variant="contained"
+              disabled={loading || selectedStudents.length === 0}
+              sx={{
+                px: 3,
+                py: 1,
+                borderRadius: 2,
+                textTransform: 'none',
+                fontWeight: 600,
+                bgcolor: '#667eea',
+                '&:hover': { bgcolor: '#5a6fd8' },
+              }}
+            >
+              {loading ? <CircularProgress size={20} /> : `Thêm ${selectedStudents.length} học sinh`}
+            </Button>
+          </>
+        }
+      >
           <Box sx={{ mb: 2 }}>
             <TextField
               fullWidth
@@ -257,18 +279,7 @@ const AddStudentToClassDialog: React.FC<AddStudentToClassDialogProps> = ({ open,
               )}
             </List>
           )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={onClose}>Hủy</Button>
-          <Button
-            onClick={handleAddStudents}
-            variant="contained"
-            disabled={loading || selectedStudents.length === 0}
-          >
-            {loading ? <CircularProgress size={20} /> : `Thêm ${selectedStudents.length} học sinh`}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      </BaseDialog>
 
       <NotificationSnackbar
         open={notification.open}

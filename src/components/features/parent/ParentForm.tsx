@@ -1,10 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLazySearch } from '../../../hooks/common/useLazySearch';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
   TextField,
   FormControl,
@@ -30,6 +26,7 @@ import { Parent, Student } from '../../../types';
 import { useParentForm } from '../../../hooks/features/useParentForm';
 import { getParentByIdAPI, getParentChildrenAPI, createParentAPI, updateParentAPI } from '../../../services/parents';
 import { getAllStudentsAPI } from '../../../services/students';
+import BaseDialog from '../../common/BaseDialog';
 import {
   validateName,
   validateEmail,
@@ -346,42 +343,55 @@ const ParentForm: React.FC<ParentFormProps> = ({ open, onClose, onSubmit, parent
   };
 
   return (
-    <Dialog
+    <BaseDialog
       open={open}
       onClose={handleClose}
+      title={parent ? 'Chỉnh sửa thông tin phụ huynh' : 'Thêm phụ huynh mới'}
+      subtitle={parent ? 'Cập nhật thông tin phụ huynh và quản lý con cái' : 'Nhập thông tin cơ bản của phụ huynh mới'}
+      icon={parent ? <EditIcon sx={{ fontSize: 28, color: 'white' }} /> : <AddIcon sx={{ fontSize: 28, color: 'white' }} />}
       maxWidth="md"
-      fullWidth
-      PaperProps={{
-        sx: {
-          borderRadius: 3,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-          overflow: 'hidden'
-        }
-      }}
+      contentPadding={0}
+      hideDefaultAction={true}
+      actions={
+        <>
+          <Button
+            onClick={handleClose}
+            variant="outlined"
+            sx={{
+              borderRadius: 2,
+              px: 3,
+              py: 1,
+              borderColor: '#667eea',
+              color: '#667eea',
+              '&:hover': {
+                bgcolor: '#667eea',
+                color: 'white'
+              }
+            }}
+            disabled={busy}
+          >
+            Hủy
+          </Button>
+          <Button
+            onClick={parent && tab === 1 ? handleClose : submit}
+            variant="contained"
+            startIcon={busy ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
+            disabled={busy}
+            sx={{
+              borderRadius: 2,
+              px: 3,
+              py: 1,
+              bgcolor: '#667eea',
+              '&:hover': {
+                bgcolor: '#5a6fd8'
+              }
+            }}
+          >
+            {parent && tab === 1 ? 'Đóng' : (busy ? 'Đang lưu...' : (parent ? 'Cập nhật' : 'Thêm mới'))}
+          </Button>
+        </>
+      }
     >
-      <DialogTitle sx={{
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        color: 'white',
-        py: 3,
-        px: 4,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between'
-      }}>
-        <Box>
-          <Typography variant="h5" sx={{ fontWeight: 600, mb: 0.5 }}>
-            {parent ? 'Chỉnh sửa thông tin phụ huynh' : 'Thêm phụ huynh mới'}
-          </Typography>
-          <Typography variant="body2" sx={{ opacity: 0.9 }}>
-            {parent ? 'Cập nhật thông tin phụ huynh và quản lý con cái' : 'Nhập thông tin cơ bản của phụ huynh mới'}
-          </Typography>
-        </Box>
-        <Box sx={{ bgcolor: 'rgba(255,255,255,0.2)', borderRadius: '50%', p: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {parent ? <EditIcon sx={{ fontSize: 28, color: 'white' }} /> : <AddIcon sx={{ fontSize: 28, color: 'white' }} />}
-        </Box>
-      </DialogTitle>
-
-      <DialogContent sx={{ p: 0 }}>
         {parent && (
           <Box sx={{ px: 4, pt: 2 }}>
             <Tabs value={tab} onChange={(_e, v) => {
@@ -696,46 +706,7 @@ const ParentForm: React.FC<ParentFormProps> = ({ open, onClose, onSubmit, parent
             </Paper>
           </Box>
         )}
-      </DialogContent>
-
-      <DialogActions sx={{ p: 3, bgcolor: '#f8f9fa', gap: 2 }}>
-        <Button
-          onClick={handleClose}
-          variant="outlined"
-          sx={{
-            borderRadius: 2,
-            px: 3,
-            py: 1,
-            borderColor: '#667eea',
-            color: '#667eea',
-            '&:hover': {
-              bgcolor: '#667eea',
-              color: 'white'
-            }
-          }}
-          disabled={busy}
-        >
-          Hủy
-        </Button>
-        <Button
-          onClick={parent && tab === 1 ? handleClose : submit}
-          variant="contained"
-          startIcon={busy ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
-          disabled={busy}
-          sx={{
-            borderRadius: 2,
-            px: 3,
-            py: 1,
-            bgcolor: '#667eea',
-            '&:hover': {
-              bgcolor: '#5a6fd8'
-            }
-          }}
-        >
-          {parent && tab === 1 ? 'Đóng' : (busy ? 'Đang lưu...' : (parent ? 'Cập nhật' : 'Thêm mới'))}
-        </Button>
-      </DialogActions>
-    </Dialog>
+    </BaseDialog>
   );
 };
 

@@ -9,14 +9,9 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Typography,
   Pagination,
   Button,
   IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Grid,
   Paper,
   Divider,
@@ -30,6 +25,7 @@ import { History as HistoryIcon, Payment as PaymentIcon, AttachMoney as AttachMo
 // @ts-ignore: Allow using xlsx without local type resolution
 import * as XLSX from 'xlsx';
 import PaymentHistoryModal from '../../../../components/common/PaymentHistoryModal';
+import BaseDialog from '../../../../components/common/BaseDialog';
 import {
   getAllTeacherPaymentsAPI,
   updateTeacherPaymentAPI,
@@ -437,29 +433,64 @@ const TeacherPaymentsTab: React.FC<Props> = () => {
       )}
 
       {/* Payment Dialog */}
-      <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white',
-          py: 3,
-          px: 4,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 2
-        }}>
-          <PaymentIcon sx={{ fontSize: 28 }} />
-          <Box>
-            <Typography variant="h5" sx={{ fontWeight: 600, mb: 0.5 }}>
-              Thanh toán lương giáo viên
-            </Typography>
-            {editingPayment && (
-              <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                {editingPayment.teacher?.name || editingPayment.teacherId?.userId?.name || editingPayment.teacherId?.name || ''}
-              </Typography>
-            )}
-          </Box>
-        </DialogTitle>
-        <DialogContent sx={{ p: 4, pt: 4, bgcolor: '#f9fafb', mt: 2 }}>
+      <BaseDialog
+        open={dialogOpen}
+        onClose={handleCloseDialog}
+        title="Thanh toán lương giáo viên"
+        subtitle={editingPayment ? (editingPayment.teacher?.name || editingPayment.teacherId?.userId?.name || editingPayment.teacherId?.name || '') : undefined}
+        icon={<PaymentIcon sx={{ fontSize: 28, color: 'white' }} />}
+        maxWidth="sm"
+        contentPadding={0}
+        hideDefaultAction={true}
+        actions={
+          <>
+            <Button
+              onClick={handleCloseDialog}
+              variant="outlined"
+              sx={{
+                px: 3,
+                py: 1.5,
+                borderRadius: 2,
+                fontWeight: 600,
+                textTransform: 'none',
+                borderColor: '#667eea',
+                color: '#667eea',
+                '&:hover': {
+                  borderColor: '#5a6fd8',
+                  bgcolor: 'rgba(102, 126, 234, 0.04)'
+                }
+              }}
+            >
+              Hủy
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              variant="contained"
+              disabled={loading}
+              sx={{
+                px: 3,
+                py: 1.5,
+                borderRadius: 2,
+                fontWeight: 600,
+                textTransform: 'none',
+                bgcolor: '#667eea',
+                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+                '&:hover': {
+                  bgcolor: '#5a6fd8',
+                  boxShadow: '0 6px 16px rgba(102, 126, 234, 0.4)',
+                  transform: 'translateY(-1px)'
+                },
+                '&:disabled': {
+                  bgcolor: '#ccc'
+                }
+              }}
+            >
+              {loading ? 'Đang xử lý...' : 'Xác nhận thanh toán'}
+            </Button>
+          </>
+        }
+      >
+        <Box sx={{ p: 4 }}>
           {/* Summary */}
           {dialogSummary && (
             <>
@@ -563,53 +594,8 @@ const TeacherPaymentsTab: React.FC<Props> = () => {
             </Grid>
           </Grid>
           </Paper>
-        </DialogContent>
-        <DialogActions sx={{ justifyContent: 'flex-end', p: 3, borderTop: '1px solid #e0e6ed', backgroundColor: '#f8f9fa', gap: 2 }}>
-          <Button
-            onClick={handleCloseDialog}
-            variant="outlined"
-            sx={{
-              px: 3,
-              py: 1.5,
-              borderRadius: 2,
-              fontWeight: 600,
-              textTransform: 'none',
-              borderColor: '#667eea',
-              color: '#667eea',
-              '&:hover': {
-                borderColor: '#5a6fd8',
-                bgcolor: 'rgba(102, 126, 234, 0.04)'
-              }
-            }}
-          >
-            Hủy
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            variant="contained"
-            disabled={loading}
-            sx={{
-              px: 3,
-              py: 1.5,
-              borderRadius: 2,
-              fontWeight: 600,
-              textTransform: 'none',
-              bgcolor: '#667eea',
-              boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
-              '&:hover': {
-                bgcolor: '#5a6fd8',
-                boxShadow: '0 6px 16px rgba(102, 126, 234, 0.4)',
-                transform: 'translateY(-1px)'
-              },
-              '&:disabled': {
-                bgcolor: '#ccc'
-              }
-            }}
-          >
-            {loading ? 'Đang xử lý...' : 'Xác nhận thanh toán'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        </Box>
+      </BaseDialog>
     </>
   );
 };

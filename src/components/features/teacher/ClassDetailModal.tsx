@@ -1,10 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
   Tabs,
   Tab,
   Box,
@@ -28,6 +23,7 @@ import {
 } from '@mui/icons-material';
 import { getClassByIdAPI, updateStudentStatusAPI } from '../../../services/classes';
 import AttendanceModal from './AttendanceModal';
+import BaseDialog from '../../common/BaseDialog';
 
 interface Schedule {
   dayOfWeeks: number[];
@@ -242,49 +238,18 @@ const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
 
   return (
     <>
-      <Dialog
+      <BaseDialog
         open={open}
         onClose={onClose}
+        title="Chi tiết lớp học"
+        subtitle={selectedClassDetail?.name || classData?.name}
+        icon={<SchoolIcon sx={{ fontSize: 28, color: 'white' }} />}
         maxWidth="md"
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 3,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
-            overflow: 'hidden'
-          }
-        }}
+        loading={loadingDetail}
+        contentPadding={0}
+        hideDefaultAction={false}
+        defaultActionText="Đóng"
       >
-        <DialogTitle sx={{
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white',
-          py: 3,
-          px: 4,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between'
-        }}>
-          <Box>
-            <Typography variant="h5" sx={{ fontWeight: 600, mb: 0.5 }}>
-              Chi tiết lớp học
-            </Typography>
-            <Typography variant="body2" sx={{ opacity: 0.9 }}>
-              {selectedClassDetail?.name || classData?.name}
-            </Typography>
-          </Box>
-          <Box sx={{
-            bgcolor: 'rgba(255,255,255,0.2)',
-            borderRadius: '50%',
-            p: 1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
-            <SchoolIcon sx={{ fontSize: 28, color: 'white' }} />
-          </Box>
-        </DialogTitle>
-
-        <DialogContent sx={{ p: 0 }}>
           {loadingDetail ? (
             <Box sx={{ py: 4, px: 4 }}>
               <LinearProgress />
@@ -449,7 +414,7 @@ const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
                               </TableCell>
                               <TableCell sx={{ width: '200px' }}>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'space-between' }}>
-                                  <Chip
+                                <Chip
                                     label={student.isActive ? 'Đang học' : 'Nghỉ giữa chừng'}
                                     color={student.isActive ? 'success' : 'default'}
                                     size="small"
@@ -461,8 +426,8 @@ const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
                                       onChange={() => handleToggleStudentStatus(student.id, student.isActive ?? true)}
                                       disabled={updatingStatus[student.id]}
                                       color="primary"
-                                      size="small"
-                                    />
+                                  size="small"
+                                />
                                   </Tooltip>
                                 </Box>
                               </TableCell>
@@ -488,24 +453,7 @@ const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
               {/* Removed Lịch học tab; schedule moved into Thông tin chung */}
             </Box>
           )}
-        </DialogContent>
-
-        <DialogActions sx={{ p: 3, bgcolor: '#f8f9fa' }}>
-          <Button
-            onClick={onClose}
-            variant="contained"
-            sx={{
-              bgcolor: '#667eea',
-              '&:hover': { bgcolor: '#5a6fd8' },
-              px: 3,
-              py: 1,
-              borderRadius: 2
-            }}
-          >
-            Đóng
-          </Button>
-        </DialogActions>
-      </Dialog>
+      </BaseDialog>
 
       {/* Attendance Modal */}
       <AttendanceModal

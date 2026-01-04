@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Box, Typography, Grid, Card, CardContent, Avatar,
   Chip, LinearProgress, Alert, Button,
-  Dialog, DialogTitle, DialogContent, DialogActions, Divider, Collapse, IconButton,
+  Divider, Collapse, IconButton,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
 } from '@mui/material';
 import {
@@ -18,6 +18,7 @@ import DashboardLayout from '../../components/layouts/DashboardLayout';
 import { getParentByIdAPI } from '../../services/parents';
 import { getClassByIdAPI } from '../../services/classes';
 import { getStudentByIdAPI } from '../../services/students';
+import BaseDialog from '../../components/common/BaseDialog';
 import { getSessionsByStudentAPI } from '../../services/sessions';
 import { commonStyles } from '../../utils/styles';
 import StatCard from '../../components/common/StatCard';
@@ -596,49 +597,16 @@ const Children: React.FC = () => {
         )}
 
         {/* Child Details Dialog */}
-        <Dialog
+        <BaseDialog
           open={childDetailsOpen}
           onClose={handleCloseChildDetails}
+          title="Chi tiết học sinh"
+          subtitle={selectedChild?.name}
+          icon={<PersonIcon sx={{ fontSize: 28, color: 'white' }} />}
           maxWidth="md"
-          fullWidth
-          PaperProps={{
-            sx: {
-              borderRadius: 3,
-              boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
-              overflow: 'hidden'
-            }
-          }}
+          loading={detailLoading}
+          contentPadding={3}
         >
-          <DialogTitle sx={{
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            color: 'white',
-            py: 3,
-            px: 4,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between'
-          }}>
-            <Box>
-              <Typography variant="h5" sx={{ fontWeight: 600, mb: 0.5 }}>
-                Chi tiết học sinh
-              </Typography>
-              <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                {selectedChild?.name}
-              </Typography>
-            </Box>
-            <Box sx={{
-              bgcolor: 'rgba(255,255,255,0.2)',
-              borderRadius: '50%',
-              p: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <PersonIcon sx={{ fontSize: 28, color: 'white' }} />
-            </Box>
-          </DialogTitle>
-
-          <DialogContent sx={{ p: 3 }}>
             {detailLoading && (
               <Box sx={{ py: 2 }}>
                 <LinearProgress />
@@ -1043,23 +1011,7 @@ const Children: React.FC = () => {
                  </Grid>
               </Box>
             )}
-          </DialogContent>
-          <DialogActions sx={{ p: 3, bgcolor: '#f8f9fa' }}>
-            <Button
-              onClick={handleCloseChildDetails}
-              variant="contained"
-              sx={{
-                bgcolor: '#667eea',
-                '&:hover': { bgcolor: '#5a6fd8' },
-                px: 3,
-                py: 1,
-                borderRadius: 2
-              }}
-            >
-              Đóng
-            </Button>
-          </DialogActions>
-        </Dialog>
+        </BaseDialog>
         </Box>
       </Box>
     </DashboardLayout>

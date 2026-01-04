@@ -10,10 +10,6 @@ import {
     TableHead,
     TableRow,
     Paper,
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
     TextField,
     IconButton,
     Chip,
@@ -54,6 +50,8 @@ import {
 } from '@mui/icons-material';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
 import { commonStyles } from '../../utils/styles';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
+import BaseDialog from '../../components/common/BaseDialog';
 import {
     getAllRolesAPI,
     createRoleAPI,
@@ -116,6 +114,14 @@ const RoleManagement: React.FC = () => {
 
     // Module filtering
     const [selectedModuleFilter, setSelectedModuleFilter] = useState<string>('all');
+
+    // Delete confirmation dialogs
+    const [deleteRoleDialogOpen, setDeleteRoleDialogOpen] = useState<boolean>(false);
+    const [roleToDelete, setRoleToDelete] = useState<number | null>(null);
+    const [deleteRoleLoading, setDeleteRoleLoading] = useState<boolean>(false);
+    const [deletePermissionDialogOpen, setDeletePermissionDialogOpen] = useState<boolean>(false);
+    const [permissionToDelete, setPermissionToDelete] = useState<number | null>(null);
+    const [deletePermissionLoading, setDeletePermissionLoading] = useState<boolean>(false);
 
     const httpMethods = ['GET', 'POST', 'PATCH', 'DELETE', 'PUT'];
 
@@ -199,17 +205,32 @@ const RoleManagement: React.FC = () => {
         }
     };
 
-    const handleDeleteRole = async (roleId: number) => {
-        if (!window.confirm('Bạn có chắc chắn muốn xóa vai trò này?')) return;
+    const handleDeleteRole = (roleId: number) => {
+        setRoleToDelete(roleId);
+        setDeleteRoleDialogOpen(true);
+    };
 
+    const handleDeleteRoleConfirm = async () => {
+        if (!roleToDelete) return;
+
+        setDeleteRoleLoading(true);
         try {
-            await deleteRoleAPI(roleId);
+            await deleteRoleAPI(roleToDelete);
             await fetchRoles();
             setError('');
+            setDeleteRoleDialogOpen(false);
+            setRoleToDelete(null);
         } catch (error) {
             console.error('Error deleting role:', error);
             setError('Không thể xóa vai trò. Vui lòng thử lại.');
+        } finally {
+            setDeleteRoleLoading(false);
         }
+    };
+
+    const handleDeleteRoleCancel = () => {
+        setDeleteRoleDialogOpen(false);
+        setRoleToDelete(null);
     };
 
     // ============ PERMISSION MANAGEMENT FUNCTIONS ============
@@ -293,19 +314,34 @@ const RoleManagement: React.FC = () => {
         }
     };
 
-    const handleDeletePermission = async (permissionId: number) => {
-        if (!window.confirm('Bạn có chắc chắn muốn xóa quyền này?')) return;
+    const handleDeletePermission = (permissionId: number) => {
+        setPermissionToDelete(permissionId);
+        setDeletePermissionDialogOpen(true);
+    };
 
+    const handleDeletePermissionConfirm = async () => {
+        if (!permissionToDelete) return;
+
+        setDeletePermissionLoading(true);
         try {
-            await deletePermissionAPI(permissionId);
+            await deletePermissionAPI(permissionToDelete);
             // Refresh permissions list for both tabs
             await fetchPermissions(); // For role management (available permissions)
             await fetchPermissionsForManagement(); // For permission management tab
             setPermissionError('');
+            setDeletePermissionDialogOpen(false);
+            setPermissionToDelete(null);
         } catch (error: any) {
             console.error('Error deleting permission:', error);
             setPermissionError(error?.response?.data?.message || 'Không thể xóa quyền. Vui lòng thử lại.');
+        } finally {
+            setDeletePermissionLoading(false);
         }
+    };
+
+    const handleDeletePermissionCancel = () => {
+        setDeletePermissionDialogOpen(false);
+        setPermissionToDelete(null);
     };
 
     // ============ EVENT HANDLERS ============
@@ -329,11 +365,13 @@ const RoleManagement: React.FC = () => {
 
     const handleCloseDialog = () => {
         setOpenDialog(false);
-        setRoleName('');
-        setRoleDescription('');
-        setRoleIsActive(true);
-        setSelectedPermissions([]);
-        setEditingRole(null);
+        setTimeout(() => {
+            setRoleName('');
+            setRoleDescription('');
+            setRoleIsActive(true);
+            setSelectedPermissions([]);
+            setEditingRole(null);
+        }, 100);
     };
 
     const handlePageChange = (_: React.ChangeEvent<unknown>, value: number) => {
@@ -374,12 +412,14 @@ const RoleManagement: React.FC = () => {
 
     const handleClosePermissionDialog = () => {
         setOpenPermissionDialog(false);
-        setPermissionDescription('');
-        setPermissionModule('');
-        setPermissionMethod('GET');
-        setPermissionPath('');
-        setPermissionVersion(1);
-        setEditingPermission(null);
+        setTimeout(() => {
+            setPermissionDescription('');
+            setPermissionModule('');
+            setPermissionMethod('GET');
+            setPermissionPath('');
+            setPermissionVersion(1);
+            setEditingPermission(null);
+        }, 100);
     };
 
     const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
@@ -636,17 +676,61 @@ const RoleManagement: React.FC = () => {
                             </Typography>
 
                             {/* Create/Edit Dialog */}
-                            <Dialog
+                            <BaseDialog
                                 open={openDialog}
                                 onClose={handleCloseDialog}
-                                maxWidth="lg"
+                                title={editingRole ? 'Chỉnh sửa vai trò' : 'Thêm vai trò mới'}
+                                subtitle={editingRole ? 'Cập nhật thông tin vai trò và quyền hạn' : 'Tạo vai trò mới và phân quyền'}
+                                icon={editingRole ? <EditIcon sx={{ fontSize: 28, color: 'white' }} /> : <AddIcon sx={{ fontSize: 28, color: 'white' }} />}
+                                maxWidth="md"
                                 fullWidth
+                                contentPadding={0}
+                                hideDefaultAction={true}
+                                actions={
+                                    <>
+                                        <Button
+                                            onClick={handleCloseDialog}
+                                            variant="outlined"
+                                            disabled={formLoading}
+                                            sx={{
+                                                borderRadius: 2,
+                                                px: 3,
+                                                py: 1,
+                                                borderColor: '#667eea',
+                                                color: '#667eea',
+                                                '&:hover': {
+                                                    bgcolor: '#667eea',
+                                                    color: 'white'
+                                                }
+                                            }}
+                                        >
+                                            Hủy
+                                        </Button>
+                                        <Button
+                                            onClick={handleSaveRole}
+                                            variant="contained"
+                                            disabled={formLoading || !roleName.trim()}
+                                            sx={{
+                                                borderRadius: 2,
+                                                px: 3,
+                                                py: 1,
+                                                bgcolor: '#667eea',
+                                                '&:hover': {
+                                                    bgcolor: '#5a6fd8'
+                                                }
+                                            }}
+                                        >
+                                            {formLoading ? (
+                                                <CircularProgress size={24} />
+                                            ) : (
+                                                editingRole ? 'Cập nhật' : 'Tạo'
+                                            )}
+                                        </Button>
+                                    </>
+                                }
                             >
-                                <DialogTitle>
-                                    {editingRole ? 'Chỉnh sửa vai trò' : 'Thêm vai trò mới'}
-                                </DialogTitle>
-                                <DialogContent>
-                                    <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mt: 2 }}>
+                                <Box sx={{ p: 4 }}>
+                                    <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
                                         <TextField
                                             autoFocus
                                             margin="dense"
@@ -740,7 +824,7 @@ const RoleManagement: React.FC = () => {
                                                 </Button>
                                             </Box>
                                         </Box>
-                                        <Box sx={{ mt: 1, maxHeight: 400, overflow: 'auto', pb: 4 }}>
+                                        <Box sx={{ mt: 1, maxHeight: 'calc(70vh - 200px)', overflow: 'auto' }}>
                                             {availablePermissions.length === 0 ? (
                                                 <Typography variant="body2" color="text.secondary">
                                                     Đang tải danh sách quyền...
@@ -900,24 +984,8 @@ const RoleManagement: React.FC = () => {
                                             )}
                                         </Box>
                                     </FormControl>
-                                </DialogContent>
-                                <DialogActions>
-                                    <Button onClick={handleCloseDialog} disabled={formLoading}>
-                                        Hủy
-                                    </Button>
-                                    <Button
-                                        onClick={handleSaveRole}
-                                        variant="contained"
-                                        disabled={formLoading || !roleName.trim()}
-                                    >
-                                        {formLoading ? (
-                                            <CircularProgress size={24} />
-                                        ) : (
-                                            editingRole ? 'Cập nhật' : 'Tạo'
-                                        )}
-                                    </Button>
-                                </DialogActions>
-                            </Dialog>
+                                </Box>
+                            </BaseDialog>
                         </>
                     ) : (
                         <>
@@ -1129,16 +1197,60 @@ const RoleManagement: React.FC = () => {
                             </Typography>
 
                             {/* Permission Create/Edit Dialog */}
-                            <Dialog
+                            <BaseDialog
                                 open={openPermissionDialog}
                                 onClose={handleClosePermissionDialog}
+                                title={editingPermission ? 'Chỉnh sửa quyền' : 'Thêm quyền mới'}
+                                subtitle={editingPermission ? 'Cập nhật thông tin quyền' : 'Tạo quyền mới cho hệ thống'}
+                                icon={editingPermission ? <EditIcon sx={{ fontSize: 28, color: 'white' }} /> : <AddIcon sx={{ fontSize: 28, color: 'white' }} />}
                                 maxWidth="md"
                                 fullWidth
+                                contentPadding={0}
+                                hideDefaultAction={true}
+                                actions={
+                                    <>
+                                        <Button
+                                            onClick={handleClosePermissionDialog}
+                                            variant="outlined"
+                                            disabled={permissionFormLoading}
+                                            sx={{
+                                                borderRadius: 2,
+                                                px: 3,
+                                                py: 1,
+                                                borderColor: '#667eea',
+                                                color: '#667eea',
+                                                '&:hover': {
+                                                    bgcolor: '#667eea',
+                                                    color: 'white'
+                                                }
+                                            }}
+                                        >
+                                            Hủy
+                                        </Button>
+                                        <Button
+                                            onClick={handleSavePermission}
+                                            variant="contained"
+                                            disabled={permissionFormLoading || !permissionDescription.trim() || !permissionPath.trim()}
+                                            sx={{
+                                                borderRadius: 2,
+                                                px: 3,
+                                                py: 1,
+                                                bgcolor: '#667eea',
+                                                '&:hover': {
+                                                    bgcolor: '#5a6fd8'
+                                                }
+                                            }}
+                                        >
+                                            {permissionFormLoading ? (
+                                                <CircularProgress size={24} />
+                                            ) : (
+                                                editingPermission ? 'Cập nhật' : 'Tạo'
+                                            )}
+                                        </Button>
+                                    </>
+                                }
                             >
-                                <DialogTitle>
-                                    {editingPermission ? 'Chỉnh sửa quyền' : 'Thêm quyền mới'}
-                                </DialogTitle>
-                                <DialogContent>
+                                <Box sx={{ p: 4 }}>
                                     <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mt: 2 }}>
                                         <FormControl size="small">
                                             <InputLabel>Module</InputLabel>
@@ -1208,28 +1320,36 @@ const RoleManagement: React.FC = () => {
                                             required
                                         />
                                     </Box>
-                                </DialogContent>
-                                <DialogActions>
-                                    <Button onClick={handleClosePermissionDialog} disabled={permissionFormLoading}>
-                                        Hủy
-                                    </Button>
-                                    <Button
-                                        onClick={handleSavePermission}
-                                        variant="contained"
-                                        disabled={permissionFormLoading || !permissionDescription.trim() || !permissionPath.trim()}
-                                    >
-                                        {permissionFormLoading ? (
-                                            <CircularProgress size={24} />
-                                        ) : (
-                                            editingPermission ? 'Cập nhật' : 'Tạo'
-                                        )}
-                                    </Button>
-                                </DialogActions>
-                            </Dialog>
+                                </Box>
+                            </BaseDialog>
                         </>
                     )}
                 </Box>
             </Box>
+
+            {/* Delete Role Confirmation Dialog */}
+            <ConfirmDialog
+                open={deleteRoleDialogOpen}
+                onClose={handleDeleteRoleCancel}
+                onConfirm={handleDeleteRoleConfirm}
+                title="Xác nhận xóa vai trò"
+                message="Bạn có chắc chắn muốn xóa vai trò này? Hành động này không thể hoàn tác."
+                confirmText="Xóa"
+                confirmColor="error"
+                loading={deleteRoleLoading}
+            />
+
+            {/* Delete Permission Confirmation Dialog */}
+            <ConfirmDialog
+                open={deletePermissionDialogOpen}
+                onClose={handleDeletePermissionCancel}
+                onConfirm={handleDeletePermissionConfirm}
+                title="Xác nhận xóa quyền"
+                message="Bạn có chắc chắn muốn xóa quyền này? Hành động này không thể hoàn tác."
+                confirmText="Xóa"
+                confirmColor="error"
+                loading={deletePermissionLoading}
+            />
         </DashboardLayout>
     );
 };

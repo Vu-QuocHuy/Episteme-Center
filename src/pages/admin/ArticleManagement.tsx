@@ -3,10 +3,6 @@ import {
   Box,
   Typography,
   Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Paper,
   FormControl,
   InputLabel,
@@ -28,6 +24,10 @@ import {
 } from '@mui/icons-material';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { getAllMenusAPI } from '../../services/menus';
+import BaseDialog from '../../components/common/BaseDialog';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
+import DashboardLayout from '../../components/layouts/DashboardLayout';
+import { commonStyles } from '../../utils/styles';
 import { getAllArticlesAPI, updateArticleAPI, deleteArticleAPI } from '../../services/articles';
 import { MenuItem as MenuItemType } from '../../types';
 import ArticleForm from '../../components/articles/ArticleForm';
@@ -242,7 +242,9 @@ const ArticleManagement: React.FC = () => {
   const selectedMenuTitle = menuItems.find(menu => menu.id === selectedMenu)?.title || '';
 
   return (
-    <Box>
+    <DashboardLayout role="admin">
+      <Box sx={commonStyles.pageContainer}>
+        <Box sx={commonStyles.contentContainer}>
           {/* Header */}
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
             <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
@@ -426,44 +428,31 @@ const ArticleManagement: React.FC = () => {
           )}
 
           {/* Preview Dialog */}
-          <Dialog
+          <BaseDialog
             open={previewOpen}
             onClose={() => setPreviewOpen(false)}
+            title={`Xem trước: ${selectedArticle?.title}`}
+            icon={<ViewIcon sx={{ fontSize: 28, color: 'white' }} />}
             maxWidth="md"
-            fullWidth
+            contentPadding={0}
           >
-            <DialogTitle>
-              Xem trước: {selectedArticle?.title}
-            </DialogTitle>
-            <DialogContent>
-              {selectedArticle && (
+            {selectedArticle && (
+              <Box sx={{ p: 4 }}>
                 <div dangerouslySetInnerHTML={{ __html: selectedArticle.content }} />
-              )}
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={() => setPreviewOpen(false)}>Đóng</Button>
-            </DialogActions>
-          </Dialog>
+              </Box>
+            )}
+          </BaseDialog>
 
           {/* Delete Confirmation Dialog */}
-          <Dialog
+          <ConfirmDialog
             open={deleteDialogOpen}
             onClose={() => setDeleteDialogOpen(false)}
-          >
-            <DialogTitle>Xác nhận xóa</DialogTitle>
-            <DialogContent>
-              <Typography>
-                Bạn có chắc chắn muốn xóa bài viết "{articleToDelete?.title}"?
-                Hành động này không thể hoàn tác.
-              </Typography>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={() => setDeleteDialogOpen(false)}>Hủy</Button>
-              <Button onClick={handleDelete} color="error" variant="contained">
-                Xóa
-              </Button>
-            </DialogActions>
-          </Dialog>
+            onConfirm={handleDelete}
+            title="Xác nhận xóa"
+            message={`Bạn có chắc chắn muốn xóa bài viết "${articleToDelete?.title}"? Hành động này không thể hoàn tác.`}
+            confirmText="Xóa"
+            confirmColor="error"
+          />
 
           {/* Notification Snackbar */}
           <Snackbar
@@ -496,7 +485,9 @@ const ArticleManagement: React.FC = () => {
             menuItems={menuItems}
             defaultMenuId={selectedMenu}
           />
-    </Box>
+        </Box>
+      </Box>
+    </DashboardLayout>
   );
 };
 

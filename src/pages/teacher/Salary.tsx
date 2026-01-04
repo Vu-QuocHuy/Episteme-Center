@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
-  Box, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, CircularProgress, Grid, Button, IconButton, Tooltip, Dialog, DialogTitle, DialogContent, DialogActions
+  Box, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, CircularProgress, Grid, IconButton, Tooltip
 } from '@mui/material';
 import { getTeacherPaymentsAPI, getTeacherPaymentByIdAPI } from '../../services/payments';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
@@ -13,6 +13,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import HistoryIcon from '@mui/icons-material/History';
 import { useAuth } from '../../contexts/AuthContext';
 import PaymentHistoryModal from '../../components/common/PaymentHistoryModal';
+import BaseDialog from '../../components/common/BaseDialog';
 
 const Salary = () => {
   const { user } = useAuth();
@@ -241,48 +242,14 @@ const Salary = () => {
 
         {/* Detail Modal */}
         {selectedPayment && (
-          <Dialog
+          <BaseDialog
             open={detailModalOpen}
             onClose={handleCloseDetailModal}
+            title={`Chi tiết lương tháng ${selectedPayment.month}/${selectedPayment.year}`}
+            subtitle="Thông tin chi tiết về lương và các lớp đã dạy"
             maxWidth="md"
-            fullWidth
-            PaperProps={{
-              sx: {
-                borderRadius: 3,
-                boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
-                overflow: 'hidden'
-              }
-            }}
+            contentPadding={0}
           >
-            <DialogTitle sx={{
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              color: 'white',
-              py: 3,
-              px: 4,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between'
-            }}>
-              <Box>
-                <Typography variant="h5" sx={{ fontWeight: 600, mb: 0.5 }}>
-                  Chi tiết lương tháng {selectedPayment.month}/{selectedPayment.year}
-                </Typography>
-                <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                  Thông tin chi tiết về lương và các lớp đã dạy
-                </Typography>
-              </Box>
-              <Box sx={{
-                bgcolor: 'rgba(255,255,255,0.2)',
-                borderRadius: '50%',
-                p: 1,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <PaymentIcon sx={{ fontSize: 28, color: 'white' }} />
-                        </Box>
-            </DialogTitle>
-            <DialogContent sx={{ p: 0 }}>
               <Box sx={{ p: 4 }}>
                 {/* Thông tin chung */}
                 <Paper sx={{
@@ -445,23 +412,7 @@ const Salary = () => {
                   </Paper>
                 )}
               </Box>
-            </DialogContent>
-            <DialogActions sx={{ p: 3, bgcolor: '#f8f9fa' }}>
-              <Button
-                onClick={handleCloseDetailModal}
-                variant="contained"
-                sx={{
-                  bgcolor: '#667eea',
-                  '&:hover': { bgcolor: '#5a6fd8' },
-                  px: 3,
-                  py: 1,
-                  borderRadius: 2
-                }}
-              >
-                Đóng
-              </Button>
-            </DialogActions>
-          </Dialog>
+          </BaseDialog>
         )}
 
         {/* Payment History Modal */}

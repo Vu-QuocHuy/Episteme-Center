@@ -13,18 +13,13 @@ import {
   TableContainer,
   Typography,
   Chip,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
   Divider,
   Grid,
   TextField,
 } from '@mui/material';
-import { Close as CloseIcon } from '@mui/icons-material';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
+import BaseDialog from '../../components/common/BaseDialog';
 import { getAuditLogsAPI } from '../../services/audit';
 import type { AuditLogItem } from '../../services/audit';
 import { commonStyles } from '../../utils/styles';
@@ -288,8 +283,21 @@ const AuditLog: React.FC = () => {
 
   return (
     <DashboardLayout role="admin">
-      <Box sx={commonStyles.pageContainer}>
-        <Box sx={commonStyles.contentContainer}>
+      <Box sx={{ 
+        ...commonStyles.pageContainer, 
+        paddingLeft: { xs: 2, sm: 3 },
+        paddingRight: { xs: 2, sm: 3 },
+        overflowX: 'hidden',
+        width: '100%',
+        boxSizing: 'border-box'
+      }}>
+        <Box sx={{ 
+          ...commonStyles.contentContainer, 
+          width: '100%',
+          maxWidth: '100%',
+          overflowX: 'hidden',
+          boxSizing: 'border-box'
+        }}>
           <Box sx={commonStyles.pageHeader}>
             <Box>
               <Typography sx={commonStyles.pageTitle}>
@@ -302,7 +310,7 @@ const AuditLog: React.FC = () => {
           </Box>
 
           {/* Filter Section */}
-          <Paper variant="outlined" sx={{ mb: 3, p: 3 }}>
+          <Paper variant="outlined" sx={{ mb: 3, p: 3, width: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
           <Grid container spacing={2}>
             <Grid item xs={12} sm={6} md={4}>
               <TextField
@@ -392,15 +400,36 @@ const AuditLog: React.FC = () => {
           </Box>
         ) : (
           <Stack spacing={2}>
-            <TableContainer component={Paper} variant="outlined" sx={commonStyles.tableContainer}>
-                <Table>
+            <TableContainer 
+              component={Paper} 
+              variant="outlined" 
+              sx={{
+                ...commonStyles.tableContainer,
+                overflowX: 'auto',
+                overflowY: 'hidden',
+                maxWidth: '100%',
+                width: '100%',
+                boxSizing: 'border-box',
+                '&::-webkit-scrollbar': {
+                  height: 8,
+                },
+                '&::-webkit-scrollbar-track': {
+                  backgroundColor: '#f1f1f1',
+                },
+                '&::-webkit-scrollbar-thumb': {
+                  backgroundColor: '#888',
+                  borderRadius: 4,
+                },
+              }}
+            >
+                <Table sx={{ minWidth: 800, tableLayout: 'auto', width: '100%' }}>
                   <TableHead>
                     <TableRow>
-                      <TableCell width="18%">Thời gian</TableCell>
-                      <TableCell width="20%">Người thực hiện</TableCell>
-                      <TableCell width="19%">Tài nguyên ảnh hưởng</TableCell>
-                      <TableCell width="12%">Hành động</TableCell>
-                      <TableCell width="31%">Mô tả</TableCell>
+                      <TableCell sx={{ minWidth: 150, maxWidth: 200, whiteSpace: 'nowrap' }}>Thời gian</TableCell>
+                      <TableCell sx={{ minWidth: 180, maxWidth: 250 }}>Người thực hiện</TableCell>
+                      <TableCell sx={{ minWidth: 170, maxWidth: 220 }}>Tài nguyên ảnh hưởng</TableCell>
+                      <TableCell sx={{ minWidth: 120, maxWidth: 150 }}>Hành động</TableCell>
+                      <TableCell>Mô tả</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -448,7 +477,11 @@ const AuditLog: React.FC = () => {
                             sx={{
                               '& strong': { fontWeight: 600 },
                               '& ul': { pl: 2, my: 0.5 },
-                              '& li': { mb: 0.25, fontSize: '0.875rem' }
+                              '& li': { mb: 0.25, fontSize: '0.875rem' },
+                              maxWidth: { xs: 200, sm: 300, md: 400 },
+                              overflow: 'hidden',
+                              wordBreak: 'break-word',
+                              '& *': { maxWidth: '100%' }
                             }}
                             dangerouslySetInnerHTML={{
                               __html: log.description || 'N/A'
@@ -475,31 +508,17 @@ const AuditLog: React.FC = () => {
         )}
 
           {/* Detail Dialog */}
-          <Dialog
+          <BaseDialog
             open={detailDialogOpen}
             onClose={handleCloseDetail}
-            maxWidth="lg"
-            fullWidth
+            title="Chi tiết Log"
+            maxWidth="md"
+            contentPadding={0}
           >
-            <DialogTitle>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Typography variant="h6" component="div">
-                  Chi tiết Log
-                </Typography>
-                <IconButton edge="end" onClick={handleCloseDetail} size="small">
-                  <CloseIcon />
-                </IconButton>
-              </Box>
-            </DialogTitle>
-            <DialogContent dividers>
+            <Box sx={{ p: 4 }}>
               {renderDetailContent()}
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={handleCloseDetail} variant="outlined">
-                Đóng
-              </Button>
-            </DialogActions>
-          </Dialog>
+            </Box>
+          </BaseDialog>
         </Box>
       </Box>
     </DashboardLayout>

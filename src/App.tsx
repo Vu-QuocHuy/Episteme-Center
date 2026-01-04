@@ -33,6 +33,7 @@ import RegistrationManagement from './pages/admin/RegistrationManagement';
 
 
 import MenuManagement from './pages/admin/MenuManagement';
+import ArticleManagement from './pages/admin/ArticleManagement';
 import TestimonialsManagement from './pages/admin/TestimonialsManagement';
 import AdminProfile from './pages/profile/AdminProfile';
 import AuditLog from './pages/admin/AuditLog';
@@ -159,6 +160,9 @@ const AppContent: React.FC = () => {
                   {/* Menu Management Routes */}
                       <Route path="menu" element={<MenuManagement />} />
                      <Route path="menu-management" element={<MenuManagement />} />
+
+                  {/* Article Management Route */}
+                    <Route path="articles" element={<ArticleManagement />} />
                      <Route path="profile" element={<AdminProfile />} />
                     <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
                     </Routes>

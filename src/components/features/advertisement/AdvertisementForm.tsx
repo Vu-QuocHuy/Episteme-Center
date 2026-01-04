@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
   TextField,
   FormControl,
@@ -21,7 +17,6 @@ import {
 
 } from '@mui/material';
 import {
-  Close as CloseIcon,
   PhotoCamera as PhotoCameraIcon,
   Save as SaveIcon,
   Cancel as CancelIcon,
@@ -29,6 +24,8 @@ import {
 
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
+import BaseDialog from '../../common/BaseDialog';
+import { Add as AddIcon, Edit as EditIcon } from '@mui/icons-material';
 import { Advertisement } from '../../../types';
 import { validateAdvertisement } from '../../../validations/advertisementValidation';
 
@@ -231,11 +228,56 @@ const AdvertisementForm: React.FC<AdvertisementFormProps> = ({
   };
 
   return (
-    <Dialog
+    <BaseDialog
       open={open}
       onClose={handleClose}
+      title={advertisement ? 'Chỉnh sửa quảng cáo' : 'Thêm quảng cáo mới'}
+      icon={advertisement ? <EditIcon sx={{ fontSize: 28, color: 'white' }} /> : <AddIcon sx={{ fontSize: 28, color: 'white' }} />}
       maxWidth="md"
-      fullWidth
+      hideDefaultAction={true}
+      actions={
+        <>
+          <Button
+            onClick={handleClose}
+            startIcon={<CancelIcon />}
+            variant="outlined"
+            disabled={loading}
+            sx={{
+              px: 3,
+              py: 1,
+              borderRadius: 2,
+              textTransform: 'none',
+              fontWeight: 600,
+              borderColor: '#667eea',
+              color: '#667eea',
+              '&:hover': {
+                borderColor: '#5a6fd8',
+                bgcolor: 'rgba(102, 126, 234, 0.04)'
+              }
+            }}
+          >
+            Hủy
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            startIcon={loading ? <CircularProgress size={20} /> : <SaveIcon />}
+            variant="contained"
+            disabled={loading}
+            sx={{
+              px: 3,
+              py: 1,
+              borderRadius: 2,
+              textTransform: 'none',
+              fontWeight: 600,
+              bgcolor: '#667eea',
+              '&:hover': { bgcolor: '#5a6fd8' },
+              '&:disabled': { bgcolor: '#ccc' }
+            }}
+          >
+            {loading ? 'Đang lưu...' : (advertisement ? 'Cập nhật' : 'Thêm mới')}
+          </Button>
+        </>
+      }
       PaperProps={{
         sx: {
           borderRadius: 2,
@@ -243,18 +285,6 @@ const AdvertisementForm: React.FC<AdvertisementFormProps> = ({
         }
       }}
     >
-      <DialogTitle>
-        <Box display="flex" alignItems="center" justifyContent="space-between">
-          <Typography variant="h6" fontWeight="bold">
-            {advertisement ? 'Chỉnh sửa quảng cáo' : 'Thêm quảng cáo mới'}
-          </Typography>
-          <IconButton onClick={handleClose} size="small">
-            <CloseIcon />
-          </IconButton>
-        </Box>
-      </DialogTitle>
-
-      <DialogContent>
         <Box mt={2}>
           <Grid container spacing={3}>
             {/* Basic Information */}
@@ -487,27 +517,7 @@ const AdvertisementForm: React.FC<AdvertisementFormProps> = ({
             </Grid>
           </Grid>
         </Box>
-      </DialogContent>
-
-      <DialogActions sx={{ p: 3, pt: 0 }}>
-        <Button
-          onClick={handleClose}
-          startIcon={<CancelIcon />}
-          variant="outlined"
-          disabled={loading}
-        >
-          Hủy
-        </Button>
-        <Button
-          onClick={handleSubmit}
-          startIcon={loading ? <CircularProgress size={20} /> : <SaveIcon />}
-          variant="contained"
-          disabled={loading}
-        >
-          {loading ? 'Đang lưu...' : (advertisement ? 'Cập nhật' : 'Thêm mới')}
-        </Button>
-      </DialogActions>
-    </Dialog>
+    </BaseDialog>
   );
 };
 

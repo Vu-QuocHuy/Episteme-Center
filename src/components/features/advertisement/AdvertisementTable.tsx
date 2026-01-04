@@ -17,16 +17,9 @@ import {
   MenuItem,
   ListItemIcon,
   ListItemText,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
   Alert,
   Snackbar,
-  Card,
   CardMedia,
-
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -34,14 +27,21 @@ import {
   MoreVert as MoreVertIcon,
   Visibility as VisibilityIcon,
   Image as ImageIcon,
-  Campaign as CampaignIcon,
-
   Public as PublicIcon,
   VisibilityOff as VisibilityOffIcon,
-
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { Advertisement } from '../../../types';
+import ConfirmDialog from '../../common/ConfirmDialog';
+import AdvertisementDetailsModal from './AdvertisementDetailsModal';
+import {
+  formatAdvertisementDate,
+  getTypeText,
+  getTypeColor,
+  getPositionText,
+  getStatusColor,
+  getStatusText,
+} from '../../../utils/advertisementHelpers';
 
 interface AdvertisementTableProps {
   advertisements: Advertisement[];
@@ -50,12 +50,6 @@ interface AdvertisementTableProps {
   onViewDetails: (advertisement: Advertisement) => void;
   onToggleStatus: (advertisementId: string, isActive: boolean) => void;
   loading?: boolean;
-}
-
-interface AdvertisementDetailsModalProps {
-  advertisement: Advertisement | null;
-  open: boolean;
-  onClose: () => void;
 }
 
 const AdvertisementTable: React.FC<AdvertisementTableProps> = ({
@@ -155,53 +149,6 @@ const AdvertisementTable: React.FC<AdvertisementTableProps> = ({
     setAdvertisementToDelete(null);
   };
 
-  const getStatusColor = (isActive: boolean) => {
-    return isActive ? 'success' : 'error';
-  };
-
-  const getStatusText = (isActive: boolean) => {
-    return isActive ? 'Đang hiển thị' : 'Đã ẩn';
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('vi-VN');
-  };
-
-  const getTypeColor = (type: string) => {
-    const typeColors: { [key: string]: 'primary' | 'secondary' | 'success' | 'warning' | 'error' } = {
-      'banner': 'primary',
-      'popup': 'secondary',
-      'slider': 'success',
-      'sidebar': 'warning',
-      'notification': 'error'
-    };
-    return typeColors[type] || 'default';
-  };
-
-  const getTypeText = (type: string) => {
-    const typeMap: { [key: string]: string } = {
-      'banner': 'Banner',
-      'popup': 'Popup',
-      'slider': 'Slider',
-      'sidebar': 'Sidebar',
-      'notification': 'Thông báo'
-    };
-    return typeMap[type] || type;
-  };
-
-  const getPositionText = (position: string) => {
-    const positionMap: { [key: string]: string } = {
-      'top': 'Đầu trang',
-      'bottom': 'Cuối trang',
-      'left': 'Bên trái',
-      'right': 'Bên phải',
-      'center': 'Giữa trang',
-      'homepage': 'Trang chủ',
-      'sidebar': 'Thanh bên'
-    };
-    return positionMap[position] || position;
-  };
-
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight={200}>
@@ -292,10 +239,10 @@ const AdvertisementTable: React.FC<AdvertisementTableProps> = ({
                 <TableCell>
                   <Box>
                     <Typography variant="body2" fontWeight="medium">
-                      {formatDate(advertisement.startDate || '')}
+                      {formatAdvertisementDate(advertisement.startDate || '')}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      {advertisement.endDate ? `Đến ${formatDate(advertisement.endDate)}` : 'Không giới hạn'}
+                      {advertisement.endDate ? `Đến ${formatAdvertisementDate(advertisement.endDate)}` : 'Không giới hạn'}
                     </Typography>
                   </Box>
                 </TableCell>
@@ -377,21 +324,15 @@ const AdvertisementTable: React.FC<AdvertisementTableProps> = ({
       />
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onClose={handleDeleteCancel}>
-        <DialogTitle>Xác nhận xóa</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Bạn có chắc chắn muốn xóa quảng cáo "{advertisementToDelete?.title}"?
-            Hành động này không thể hoàn tác.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleDeleteCancel}>Hủy</Button>
-          <Button onClick={handleDeleteConfirm} color="error" variant="contained">
-            Xóa
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onClose={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        title="Xác nhận xóa"
+        message={`Bạn có chắc chắn muốn xóa quảng cáo "${advertisementToDelete?.title}"? Hành động này không thể hoàn tác.`}
+        confirmText="Xóa"
+        confirmColor="error"
+      />
 
       {/* Snackbar */}
       <Snackbar
@@ -408,125 +349,6 @@ const AdvertisementTable: React.FC<AdvertisementTableProps> = ({
         </Alert>
       </Snackbar>
     </>
-  );
-};
-
-// Advertisement Details Modal Component
-const AdvertisementDetailsModal: React.FC<AdvertisementDetailsModalProps> = ({
-  advertisement,
-  open,
-  onClose
-}) => {
-  if (!advertisement) return null;
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('vi-VN');
-  };
-
-  const getTypeText = (type: string) => {
-    const typeMap: { [key: string]: string } = {
-      'banner': 'Banner',
-      'popup': 'Popup',
-      'slider': 'Slider',
-      'sidebar': 'Sidebar',
-      'notification': 'Thông báo'
-    };
-    return typeMap[type] || type;
-  };
-
-  const getPositionText = (position: string) => {
-    const positionMap: { [key: string]: string } = {
-      'top': 'Đầu trang',
-      'bottom': 'Cuối trang',
-      'left': 'Bên trái',
-      'right': 'Bên phải',
-      'center': 'Giữa trang',
-      'homepage': 'Trang chủ',
-      'sidebar': 'Thanh bên'
-    };
-    return positionMap[position] || position;
-  };
-
-  return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>
-        <Box display="flex" alignItems="center" gap={2}>
-          <CampaignIcon />
-          <Typography variant="h6">Chi tiết quảng cáo</Typography>
-        </Box>
-      </DialogTitle>
-      <DialogContent>
-        <Box display="grid" gridTemplateColumns="1fr 1fr" gap={3} mt={2}>
-          <Box>
-            <Typography variant="h6" gutterBottom>Thông tin cơ bản</Typography>
-            <Box display="flex" flexDirection="column" gap={2}>
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">Tiêu đề</Typography>
-                <Typography variant="body1">{advertisement.title}</Typography>
-              </Box>
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">Mô tả</Typography>
-                <Typography variant="body1">{advertisement.description}</Typography>
-              </Box>
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">Link</Typography>
-                <Typography variant="body1">
-                  {advertisement.linkUrl || 'Không có link'}
-                </Typography>
-              </Box>
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">Trạng thái</Typography>
-                <Chip
-                  label={advertisement.isActive ? 'Đang hiển thị' : 'Đã ẩn'}
-                  color={advertisement.isActive ? 'success' : 'error'}
-                  size="small"
-                />
-              </Box>
-            </Box>
-          </Box>
-          <Box>
-            <Typography variant="h6" gutterBottom>Thông tin hiển thị</Typography>
-            <Box display="flex" flexDirection="column" gap={2}>
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">Loại</Typography>
-                <Typography variant="body1">{getTypeText(advertisement.type || '')}</Typography>
-              </Box>
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">Vị trí</Typography>
-                <Typography variant="body1">{getPositionText(advertisement.position || '')}</Typography>
-              </Box>
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">Ngày bắt đầu</Typography>
-                <Typography variant="body1">{formatDate(advertisement.startDate || '')}</Typography>
-              </Box>
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">Ngày kết thúc</Typography>
-                <Typography variant="body1">
-                  {advertisement.endDate ? formatDate(advertisement.endDate) : 'Không giới hạn'}
-                </Typography>
-              </Box>
-            </Box>
-          </Box>
-        </Box>
-
-        {advertisement.imageUrl && (
-          <Box mt={3}>
-            <Typography variant="h6" gutterBottom>Hình ảnh</Typography>
-            <Card sx={{ maxWidth: 400 }}>
-              <CardMedia
-                component="img"
-                image={advertisement.imageUrl}
-                alt={advertisement.title}
-                sx={{ height: 200, objectFit: 'cover' }}
-              />
-            </Card>
-          </Box>
-        )}
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Đóng</Button>
-      </DialogActions>
-    </Dialog>
   );
 };
 

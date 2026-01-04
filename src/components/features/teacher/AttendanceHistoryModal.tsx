@@ -1,10 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
   TableContainer,
   Table,
   TableHead,
@@ -26,6 +21,7 @@ import {
   ExpandLess as ExpandLessIcon,
 } from '@mui/icons-material';
 import { getAttendanceListAPI } from '../../../services/sessions';
+import BaseDialog from '../../common/BaseDialog';
 
 interface StudentAttendance {
   name: string;
@@ -147,49 +143,16 @@ const AttendanceHistoryModal: React.FC<AttendanceHistoryModalProps> = ({
   };
 
   return (
-    <Dialog
+    <BaseDialog
       open={open}
       onClose={onClose}
+      title="Lịch sử điểm danh"
+      subtitle={`${classData?.name} - Khối ${classData?.grade} - Phần ${classData?.section}`}
+      icon={<HistoryIcon sx={{ fontSize: 28, color: 'white' }} />}
       maxWidth="md"
-      fullWidth
-      PaperProps={{
-        sx: {
-          borderRadius: 3,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
-          overflow: 'hidden'
-        }
-      }}
+      loading={loading}
+      contentPadding={0}
     >
-      <DialogTitle sx={{
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        color: 'white',
-        py: 3,
-        px: 4,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between'
-      }}>
-        <Box>
-          <Typography variant="h5" sx={{ fontWeight: 600, mb: 0.5 }}>
-            Lịch sử điểm danh
-          </Typography>
-          <Typography variant="body2" sx={{ opacity: 0.9 }}>
-            {classData?.name} - Khối {classData?.grade} - Phần {classData?.section}
-          </Typography>
-        </Box>
-        <Box sx={{
-          bgcolor: 'rgba(255,255,255,0.2)',
-          borderRadius: '50%',
-          p: 1,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
-          <HistoryIcon sx={{ fontSize: 28, color: 'white' }} />
-        </Box>
-      </DialogTitle>
-
-      <DialogContent sx={{ p: 0 }}>
         {loading ? (
           <Box sx={{ py: 4, px: 4 }}>
             <LinearProgress />
@@ -350,24 +313,7 @@ const AttendanceHistoryModal: React.FC<AttendanceHistoryModalProps> = ({
             </Typography>
           </Box>
         )}
-      </DialogContent>
-
-      <DialogActions sx={{ p: 3, bgcolor: '#f8f9fa' }}>
-        <Button
-          onClick={onClose}
-          variant="contained"
-          sx={{
-            bgcolor: '#667eea',
-            '&:hover': { bgcolor: '#5a6fd8' },
-            px: 3,
-            py: 1,
-            borderRadius: 2
-          }}
-        >
-          Đóng
-        </Button>
-      </DialogActions>
-    </Dialog>
+    </BaseDialog>
   );
 };
 

@@ -3,7 +3,7 @@ import {
   Box, Typography, Grid, Card, CardContent, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Chip, LinearProgress, Alert, Button,
   TextField,
-  Paper, Tabs, Tab, InputAdornment, Dialog, DialogTitle, DialogContent, DialogActions, IconButton,
+  Paper, Tabs, Tab, InputAdornment, IconButton,
   CircularProgress, Tooltip,
 } from '@mui/material';
 import {
@@ -23,6 +23,7 @@ import { getPaymentsByStudentAPI, getQRCodeAPI } from '../../services/payments';
 import { commonStyles } from '../../utils/styles';
 import PaymentHistoryModal from '../../components/common/PaymentHistoryModal';
 import NotificationSnackbar from '../../components/common/NotificationSnackbar';
+import BaseDialog from '../../components/common/BaseDialog';
 
 interface PaymentTransaction {
   id: string;
@@ -559,39 +560,66 @@ const Payments: React.FC = () => {
       </Box>
 
       {/* Payment Dialog */}
-      <Dialog
+      <BaseDialog
         open={paymentDialogOpen}
         onClose={handleClosePaymentDialog}
+        title="Thanh toán học phí"
+        subtitle={`${selectedInvoice?.childName} - ${selectedInvoice?.className} - Tháng ${selectedInvoice?.month}`}
+        icon={<QrCodeIcon sx={{ fontSize: 28, color: 'white' }} />}
         maxWidth="sm"
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 3,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-            overflow: 'hidden'
-          }
-        }}
+        contentPadding={0}
+        hideDefaultAction={true}
+        actions={
+          <>
+            <Button
+              onClick={handleClosePaymentDialog}
+              variant="outlined"
+              startIcon={<CancelIcon />}
+              sx={{
+                px: 3,
+                py: 1.5,
+                borderRadius: 2,
+                fontWeight: 600,
+                textTransform: 'none',
+                borderColor: '#667eea',
+                color: '#667eea',
+                '&:hover': {
+                  borderColor: '#5a6fd8',
+                  bgcolor: 'rgba(102, 126, 234, 0.04)'
+                }
+              }}
+            >
+              Hủy
+            </Button>
+            <Button
+              onClick={handleRegenerateQRCode}
+              variant="contained"
+              disabled={qrCodeLoading || !paymentAmount || parseFloat(paymentAmount) <= 0}
+              startIcon={qrCodeLoading ? <CircularProgress size={20} color="inherit" /> : <QrCodeIcon />}
+              sx={{
+                px: 3,
+                py: 1.5,
+                borderRadius: 2,
+                fontWeight: 600,
+                textTransform: 'none',
+                bgcolor: '#667eea',
+                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+                '&:hover': {
+                  bgcolor: '#5a6fd8',
+                  boxShadow: '0 6px 16px rgba(102, 126, 234, 0.4)',
+                  transform: 'translateY(-1px)'
+                },
+                '&:disabled': {
+                  bgcolor: '#ccc'
+                }
+              }}
+            >
+              {qrCodeLoading ? 'Đang xử lý...' : 'Tạo mã QR thanh toán'}
+            </Button>
+          </>
+        }
       >
-        <DialogTitle sx={{
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white',
-          py: 3,
-          px: 4,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 2
-        }}>
-          <QrCodeIcon sx={{ fontSize: 28 }} />
-          <Box>
-            <Typography variant="h5" sx={{ fontWeight: 600, mb: 0.5 }}>
-              Thanh toán học phí
-            </Typography>
-            <Typography variant="body2" sx={{ opacity: 0.9 }}>
-              {selectedInvoice?.childName} - {selectedInvoice?.className} - Tháng {selectedInvoice?.month}
-            </Typography>
-          </Box>
-        </DialogTitle>
-        <DialogContent sx={{ p: 4, pt: 4, bgcolor: '#f9fafb', mt: 2 }}>
+        <Box sx={{ p: 4, pt: 4, bgcolor: '#f9fafb', mt: 2 }}>
           {/* Summary Cards */}
           {selectedInvoice && (
             <>
@@ -664,92 +692,25 @@ const Payments: React.FC = () => {
               )}
             </Grid>
           </Paper>
-        </DialogContent>
-        <DialogActions sx={{ p: 3, pt: 0, bgcolor: '#f8f9fa', gap: 2 }}>
-          <Button
-            onClick={handleClosePaymentDialog}
-            variant="outlined"
-            startIcon={<CancelIcon />}
-            sx={{
-              px: 3,
-              py: 1.5,
-              borderRadius: 2,
-              fontWeight: 600,
-              textTransform: 'none',
-              borderColor: '#667eea',
-              color: '#667eea',
-              '&:hover': {
-                borderColor: '#5a6fd8',
-                bgcolor: 'rgba(102, 126, 234, 0.04)'
-              }
-            }}
-          >
-            Hủy
-          </Button>
-          <Button
-            onClick={handleRegenerateQRCode}
-            variant="contained"
-            disabled={qrCodeLoading || !paymentAmount || parseFloat(paymentAmount) <= 0}
-            startIcon={qrCodeLoading ? <CircularProgress size={20} color="inherit" /> : <QrCodeIcon />}
-            sx={{
-              px: 3,
-              py: 1.5,
-              borderRadius: 2,
-              fontWeight: 600,
-              textTransform: 'none',
-              bgcolor: '#667eea',
-              boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
-              '&:hover': {
-                bgcolor: '#5a6fd8',
-                boxShadow: '0 6px 16px rgba(102, 126, 234, 0.4)',
-                transform: 'translateY(-1px)'
-              },
-              '&:disabled': {
-                bgcolor: '#ccc'
-              }
-            }}
-          >
-            {qrCodeLoading ? 'Đang xử lý...' : 'Tạo mã QR thanh toán'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        </Box>
+      </BaseDialog>
 
       {/* QR Code Dialog */}
-      <Dialog
+      <BaseDialog
         open={qrDialogOpen}
         onClose={handleCloseQRDialog}
+        title="Quét mã QR để thanh toán"
+        subtitle="Mở app ngân hàng và quét mã dưới đây"
+        icon={<QrCodeIcon sx={{ fontSize: 48, color: 'white' }} />}
         maxWidth="sm"
-        fullWidth
+        contentPadding={4}
         PaperProps={{
           sx: {
-            borderRadius: 4,
-            overflow: 'hidden',
+            borderRadius: 2,
             boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
           }
         }}
       >
-        <Box
-          sx={{
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            p: 3,
-            color: 'white',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 2
-          }}
-        >
-          <QrCodeIcon sx={{ fontSize: 48 }} />
-          <Box sx={{ flex: 1 }}>
-            <Typography variant="h5" fontWeight={700} gutterBottom>
-              Quét mã QR để thanh toán
-            </Typography>
-            <Typography variant="body2" sx={{ opacity: 0.9 }}>
-              Mở app ngân hàng và quét mã dưới đây
-            </Typography>
-          </Box>
-        </Box>
-
-        <DialogContent sx={{ p: 4, textAlign: 'center', bgcolor: '#f8fafc' }}>
           {qrCodeUrl ? (
             <Box
               sx={{
@@ -789,27 +750,7 @@ const Payments: React.FC = () => {
           ) : (
             <CircularProgress size={60} />
           )}
-        </DialogContent>
-
-        <DialogActions sx={{ p: 3, bgcolor: 'white', borderTop: '1px solid #e0e0e0', justifyContent: 'flex-end' }}>
-          <Button
-            onClick={handleCloseQRDialog}
-            variant="contained"
-            sx={{
-              borderRadius: 2,
-              px: 4,
-              py: 1.2,
-              fontWeight: 600,
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              '&:hover': {
-                background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
-              }
-            }}
-          >
-            Đóng
-          </Button>
-        </DialogActions>
-      </Dialog>
+      </BaseDialog>
 
       {/* Payment History Modal */}
       {selectedPaymentForHistory && (

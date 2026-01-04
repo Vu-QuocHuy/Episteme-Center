@@ -4,10 +4,6 @@ import {
   Typography,
   Button,
   TextField,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   IconButton,
   Accordion,
   AccordionSummary,
@@ -15,8 +11,6 @@ import {
   CircularProgress,
   Grid,
   Paper,
-  Tabs,
-  Tab,
   Checkbox,
   FormControlLabel
 } from '@mui/material';
@@ -25,7 +19,6 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   ExpandMore as ExpandMoreIcon,
-
   SubdirectoryArrowRight as SubMenuIcon,
 } from '@mui/icons-material';
 import {
@@ -37,13 +30,13 @@ import {
 import type { MenuData } from '../../services/menus';
 import { MenuItem } from '../../types';
 import NotificationSnackbar from '../../components/common/NotificationSnackbar';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
+import BaseDialog from '../../components/common/BaseDialog';
 import { commonStyles } from '../../utils/styles';
-import ArticleManagement from '../admin/ArticleManagement';
 
 const MenuManagement: React.FC = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState(0);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [currentItem, setCurrentItem] = useState<MenuItem | null>(null);
   const [formData, setFormData] = useState<{
@@ -69,6 +62,9 @@ const MenuManagement: React.FC = () => {
     message: '',
     severity: 'info',
   });
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false);
+  const [menuToDelete, setMenuToDelete] = useState<string | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState<boolean>(false);
 
   // Generate slug from title
   const generateSlug = (title: string) => {
@@ -162,15 +158,25 @@ const MenuManagement: React.FC = () => {
   };
 
   // Delete menu item
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
+    setMenuToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!menuToDelete) return;
+
+    setDeleteLoading(true);
     try {
-      await deleteMenuAPI(id);
+      await deleteMenuAPI(menuToDelete);
       setNotification({
         open: true,
         message: 'Xóa menu thành công',
         severity: 'success',
       });
       fetchMenuItems();
+      setDeleteDialogOpen(false);
+      setMenuToDelete(null);
     } catch (error) {
       console.error('Error deleting menu item:', error);
       setNotification({
@@ -178,7 +184,14 @@ const MenuManagement: React.FC = () => {
         message: 'Lỗi khi xóa menu',
         severity: 'error',
       });
+    } finally {
+      setDeleteLoading(false);
     }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+    setMenuToDelete(null);
   };
 
   // Toggle visibility
@@ -215,15 +228,17 @@ const MenuManagement: React.FC = () => {
   // Close dialog
   const handleCloseDialog = () => {
     setDialogOpen(false);
-    setCurrentItem(null);
-    setSelectedParentMenu(null);
-    setFormData({
-      title: '',
-      slug: '',
-      parentId: undefined,
-      order: 1,
-      isActive: true,
-    });
+    setTimeout(() => {
+      setCurrentItem(null);
+      setSelectedParentMenu(null);
+      setFormData({
+        title: '',
+        slug: '',
+        parentId: undefined,
+        order: 1,
+        isActive: true,
+      });
+    }, 100);
   };
 
   // Handle notification close
@@ -293,9 +308,7 @@ const MenuManagement: React.FC = () => {
                 color="error"
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (window.confirm('Bạn có chắc chắn muốn xóa menu này?')) {
-                    handleDelete(item.id);
-                  }
+                  handleDelete(item.id);
                 }}
                 title="Xóa menu"
               >
@@ -336,33 +349,15 @@ const MenuManagement: React.FC = () => {
     <Box>
       <Box sx={commonStyles.pageHeader}>
         <Typography sx={commonStyles.pageTitle}>Quản lý Menu</Typography>
-        {activeTab === 0 && (
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => handleOpenDialog()}
-            sx={commonStyles.primaryButton}
-          >
-            Thêm Menu
-          </Button>
-        )}
-      </Box>
-
-      {/* Tabs */}
-      <Paper sx={{ mb: 3 }}>
-        <Tabs
-          value={activeTab}
-          onChange={(_, newValue) => setActiveTab(newValue)}
-          sx={{ borderBottom: 1, borderColor: 'divider' }}
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => handleOpenDialog()}
+          sx={commonStyles.primaryButton}
         >
-          <Tab label="Danh sách Menu" />
-          <Tab label="Quản lý Bài viết" />
-        </Tabs>
-      </Paper>
-
-      {/* Tab Content */}
-      {activeTab === 0 && (
-        <Box>
+          Thêm Menu
+        </Button>
+      </Box>
 
       <Paper sx={{ p: 3, mb: 3 }}>
         {menuItems.length === 0 ? (
@@ -377,113 +372,156 @@ const MenuManagement: React.FC = () => {
       </Paper>
 
       {/* Create/Edit Dialog */}
-      <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          {currentItem
+      <BaseDialog
+        open={dialogOpen}
+        onClose={handleCloseDialog}
+        title={
+          currentItem
             ? 'Sửa Menu'
             : selectedParentMenu
               ? `Thêm Submenu cho "${selectedParentMenu.title}"`
               : 'Thêm Menu Mới'
-          }
-        </DialogTitle>
-        <DialogContent>
-          <Box sx={{ pt: 2 }}>
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Tiêu đề"
-                  value={formData.title}
-                  onChange={(e) => handleInputChange('title', e.target.value)}
-                  required
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Slug"
-                  value={formData.slug}
-                  onChange={(e) => handleInputChange('slug', e.target.value)}
-                  helperText={
-                    selectedParentMenu
-                      ? `Slug sẽ có dạng: ${selectedParentMenu.slug}/tên-submenu`
-                      : "URL-friendly version của tiêu đề (tự động tạo từ tiêu đề)"
-                  }
-                />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="Thứ tự hiển thị"
-                  type="number"
-                  value={formData.order}
-                  onChange={(e) => handleInputChange('order', Number(e.target.value))}
-                  helperText="Số nhỏ hơn sẽ hiển thị trước"
-                  inputProps={{ min: 1 }}
-                />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={formData.isActive}
-                      onChange={(e) => handleInputChange('isActive', e.target.checked)}
-                    />
-                  }
-                  label="Trạng thái hoạt động"
-                />
-              </Grid>
-              {selectedParentMenu && (
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="Menu cha"
-                    value={selectedParentMenu.title}
-                    InputProps={{
-                      readOnly: true,
-                    }}
-                    helperText="Menu cha (chỉ đọc)"
-                  />
-                </Grid>
-              )}
-              <Grid item xs={12}>
-                <Typography variant="body2" color="text.secondary">
-                  {currentItem
-                    ? 'URL sẽ được tự động tạo từ tiêu đề. Bạn có thể chỉnh sửa nếu cần.'
-                    : selectedParentMenu
-                      ? `Tạo submenu cho "${selectedParentMenu.title}". URL sẽ được tự động tạo từ tiêu đề.`
-                      : 'Tạo menu chính mới. Để tạo submenu, hãy sử dụng nút "Tạo submenu" từ menu cha.'
-                  }
-                </Typography>
-              </Grid>
+        }
+        subtitle={
+          currentItem
+            ? 'Cập nhật thông tin menu'
+            : selectedParentMenu
+              ? `Tạo submenu cho "${selectedParentMenu.title}"`
+              : 'Tạo menu chính mới'
+        }
+        icon={currentItem ? <EditIcon sx={{ fontSize: 28, color: 'white' }} /> : <AddIcon sx={{ fontSize: 28, color: 'white' }} />}
+        maxWidth="sm"
+        fullWidth
+        contentPadding={0}
+        hideDefaultAction={true}
+        actions={
+          <>
+            <Button
+              onClick={handleCloseDialog}
+              variant="outlined"
+              sx={{
+                borderRadius: 2,
+                px: 3,
+                py: 1,
+                borderColor: '#667eea',
+                color: '#667eea',
+                '&:hover': {
+                  bgcolor: '#667eea',
+                  color: 'white'
+                }
+              }}
+            >
+              Hủy
+            </Button>
+            <Button
+              onClick={currentItem ? handleUpdate : handleCreate}
+              variant="contained"
+              disabled={!formData.title}
+              sx={{
+                borderRadius: 2,
+                px: 3,
+                py: 1,
+                bgcolor: '#667eea',
+                '&:hover': {
+                  bgcolor: '#5a6fd8'
+                }
+              }}
+            >
+              {currentItem ? 'Cập nhật' : 'Tạo'}
+            </Button>
+          </>
+        }
+      >
+        <Box sx={{ p: 4 }}>
+          <Grid container spacing={2}>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Tiêu đề"
+                value={formData.title}
+                onChange={(e) => handleInputChange('title', e.target.value)}
+                required
+              />
             </Grid>
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog}>Hủy</Button>
-          <Button
-            onClick={currentItem ? handleUpdate : handleCreate}
-            variant="contained"
-            disabled={!formData.title}
-          >
-            {currentItem ? 'Cập nhật' : 'Tạo'}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Notification Snackbar */}
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Slug"
+                value={formData.slug}
+                onChange={(e) => handleInputChange('slug', e.target.value)}
+                helperText={
+                  selectedParentMenu
+                    ? `Slug sẽ có dạng: ${selectedParentMenu.slug}/tên-submenu`
+                    : "URL-friendly version của tiêu đề (tự động tạo từ tiêu đề)"
+                }
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Thứ tự hiển thị"
+                type="number"
+                value={formData.order}
+                onChange={(e) => handleInputChange('order', Number(e.target.value))}
+                helperText="Số nhỏ hơn sẽ hiển thị trước"
+                inputProps={{ min: 1 }}
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={formData.isActive}
+                    onChange={(e) => handleInputChange('isActive', e.target.checked)}
+                  />
+                }
+                label="Trạng thái hoạt động"
+              />
+            </Grid>
+            {selectedParentMenu && (
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Menu cha"
+                  value={selectedParentMenu.title}
+                  InputProps={{
+                    readOnly: true,
+                  }}
+                  helperText="Menu cha (chỉ đọc)"
+                />
+              </Grid>
+            )}
+            <Grid item xs={12}>
+              <Typography variant="body2" color="text.secondary">
+                {currentItem
+                  ? 'URL sẽ được tự động tạo từ tiêu đề. Bạn có thể chỉnh sửa nếu cần.'
+                  : selectedParentMenu
+                    ? `Tạo submenu cho "${selectedParentMenu.title}". URL sẽ được tự động tạo từ tiêu đề.`
+                    : 'Tạo menu chính mới. Để tạo submenu, hãy sử dụng nút "Tạo submenu" từ menu cha.'
+                }
+              </Typography>
+            </Grid>
+          </Grid>
         </Box>
-      )}
-
-      {activeTab === 1 && (
-        <ArticleManagement />
-      )}
+      </BaseDialog>
 
       <NotificationSnackbar
         open={notification.open}
         onClose={handleNotificationClose}
         message={notification.message}
         severity={notification.severity}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onClose={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        title="Xác nhận xóa menu"
+        message="Bạn có chắc chắn muốn xóa menu này? Hành động này không thể hoàn tác."
+        confirmText="Xóa"
+        confirmColor="error"
+        loading={deleteLoading}
       />
     </Box>
   );

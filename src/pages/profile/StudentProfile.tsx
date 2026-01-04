@@ -372,12 +372,21 @@ const StudentProfile: React.FC = () => {
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
                           Email
                         </Typography>
-                        <TextField
-                          fullWidth
-                          value={user.email}
-                          size="small"
-                          InputProps={{ readOnly: true }}
-                        />
+                        {isEditing ? (
+                          <TextField
+                            fullWidth
+                            value={userFormData.email}
+                            onChange={(e) => handleUserInputChange('email', e.target.value)}
+                            error={!!userErrors.email}
+                            helperText={userErrors.email}
+                            size="small"
+                            type="email"
+                          />
+                        ) : (
+                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                            {user.email}
+                          </Typography>
+                        )}
                       </Box>
 
                       <Box sx={{ mb: 3 }}>
