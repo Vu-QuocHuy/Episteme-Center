@@ -25,9 +25,10 @@ import ClassManagement from './pages/admin/ClassManagement';
 import StudentManagement from './pages/admin/StudentManagement';
 import TeacherManagement from './pages/admin/TeacherManagement';
 import ParentManagement from './pages/admin/ParentManagement';
-import Statistics from './pages/admin/Statistics';
-import FinancialStatistics from './pages/admin/FinancialStatistics';
 import StudentStatistics from './pages/admin/StudentStatistics';
+import TeacherPayments from './pages/admin/financial/TeacherPayments';
+import StudentPayments from './pages/admin/financial/StudentPayments';
+import OtherTransactions from './pages/admin/financial/OtherTransactions';
 import RoleManagement from './pages/admin/RoleManagement';
 import RegistrationManagement from './pages/admin/RegistrationManagement';
 
@@ -35,6 +36,7 @@ import RegistrationManagement from './pages/admin/RegistrationManagement';
 import MenuManagement from './pages/admin/MenuManagement';
 import ArticleManagement from './pages/admin/ArticleManagement';
 import TestimonialsManagement from './pages/admin/TestimonialsManagement';
+import FooterSettings from './pages/admin/FooterSettings';
 import AdminProfile from './pages/profile/AdminProfile';
 import AuditLog from './pages/admin/AuditLog';
 
@@ -147,9 +149,17 @@ const AppContent: React.FC = () => {
                     <Route path="teachers" element={<Navigate to="/admin/users/teachers" replace />} />
                     <Route path="parents" element={<Navigate to="/admin/users/parents" replace />} />
 
-                    <Route path="statistics" element={<Statistics />} />
-                    <Route path="statistics/financial" element={<FinancialStatistics />} />
-                    <Route path="statistics/students" element={<StudentStatistics />} />
+                    <Route path="student-statistics" element={<StudentStatistics />} />
+                    {/* Financial management routes */}
+                    <Route path="financial" element={<Navigate to="/admin/financial/teachers" replace />} />
+                    <Route path="financial/teachers" element={<TeacherPayments />} />
+                    <Route path="financial/students" element={<StudentPayments />} />
+                    <Route path="financial/transactions" element={<OtherTransactions />} />
+                    {/* Legacy routes - redirect to new paths */}
+                    <Route path="statistics" element={<Navigate to="/admin/financial/teachers" replace />} />
+                    <Route path="statistics/financial" element={<Navigate to="/admin/financial/teachers" replace />} />
+                    <Route path="statistics/students" element={<Navigate to="/admin/student-statistics" replace />} />
+                    <Route path="financial-statistics" element={<Navigate to="/admin/financial/teachers" replace />} />
                   <Route path="roles-management" element={<RoleManagement />} />
                   <Route path="registrations" element={<RegistrationManagement />} />
                   <Route path="audit-log" element={<AuditLog />} />
@@ -163,6 +173,10 @@ const AppContent: React.FC = () => {
 
                   {/* Article Management Route */}
                     <Route path="articles" element={<ArticleManagement />} />
+                    
+                  {/* Footer Settings Route */}
+                    <Route path="footer-settings" element={<FooterSettings />} />
+                    
                      <Route path="profile" element={<AdminProfile />} />
                     <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
                     </Routes>

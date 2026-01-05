@@ -4,7 +4,12 @@ import { FooterSettings } from '../hooks/useFooterSettings';
 
 export const getFooterSettingsAPI = () =>
   axiosInstance.get<FooterSettings>(API_CONFIG.ENDPOINTS.FOOTER_SETTINGS.GET, {
-    headers: { 'x-lang': 'vi' }
+    headers: { 
+      'x-lang': 'vi',
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    }
   });
 
 export const createFooterSettingsAPI = (data: FooterSettings) =>

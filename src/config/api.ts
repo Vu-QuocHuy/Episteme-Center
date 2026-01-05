@@ -317,7 +317,7 @@ export const API_CONFIG: ApiConfig = {
       GET_TEACHER_PAYMENTS: '/teacher-payments/all',
       EXPORT_REPORT: '/payments/report',
       TEACHER_EXPORT_REPORT: '/teacher-payments/report',
-      GET_QR_CODE: '/payments/qr-code',
+      GET_QR_CODE: '/payments/qrcode',
     },
     SCHEDULES: {
       GET_STUDENT_SCHEDULE: '/schedules/student/me',

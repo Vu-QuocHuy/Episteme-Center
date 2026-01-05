@@ -29,6 +29,7 @@ export const useFooterSettings = () => {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasData, setHasData] = useState(false);
 
   // Load configuration from API
   useEffect(() => {
@@ -37,12 +38,19 @@ export const useFooterSettings = () => {
         setLoading(true);
         setError(null);
         const response = await getFooterSettingsAPI();
-        if (response.data) {
-          setFooterSettings(response.data);
+        // Backend wrap response trong { statusCode, message, data }
+        const settingsData = response.data?.data || response.data;
+        if (settingsData) {
+          setFooterSettings(settingsData);
+          setHasData(true); // Có dữ liệu từ API
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error loading footer settings:', error);
+        // Nếu lỗi 404 thì chưa có data, giữ default values
+        if (error?.response?.status !== 404) {
         setError('Failed to load footer settings');
+        }
+        setHasData(false);
         // Keep default values on error
       } finally {
         setLoading(false);
@@ -55,6 +63,7 @@ export const useFooterSettings = () => {
   return {
     footerSettings,
     loading,
-    error
+    error,
+    hasData
   };
 };

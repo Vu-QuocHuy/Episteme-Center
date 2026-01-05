@@ -54,10 +54,19 @@ export const useTeacherManagement = (): UseTeacherManagementReturn => {
       const params: Record<string, any> = {
         page: pageNum,
         limit: 10,
-        // Note: New API doesn't seem to support name or isActive filters based on Postman
-        // ...(debouncedSearch && { name: debouncedSearch }),
-        // ...(isActiveFilter && { isActive: isActiveFilter })
       };
+
+      // Add name filter if search query exists
+      if (debouncedSearch) {
+        params.name = debouncedSearch;
+      }
+
+      // Add isActive filter if selected
+      if (isActiveFilter === 'active') {
+        params.isActive = true;
+      } else if (isActiveFilter === 'inactive') {
+        params.isActive = false;
+      }
 
       const response = await getAllTeachersAPI(params);
       console.log('📊 Teachers API Response:', response);

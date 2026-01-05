@@ -19,12 +19,10 @@ import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  Visibility as ViewIcon,
   DragIndicator as DragIcon
 } from '@mui/icons-material';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { getAllMenusAPI } from '../../services/menus';
-import BaseDialog from '../../components/common/BaseDialog';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
 import { commonStyles } from '../../utils/styles';
@@ -50,8 +48,6 @@ const ArticleManagement: React.FC = () => {
   const [articles, setArticles] = useState<Article[]>([]);
   const [selectedMenu, setSelectedMenu] = useState<string>('');
   const [loading, setLoading] = useState(false);
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [articleToDelete, setArticleToDelete] = useState<Article | null>(null);
   const [formOpen, setFormOpen] = useState(false);
@@ -246,8 +242,8 @@ const ArticleManagement: React.FC = () => {
       <Box sx={commonStyles.pageContainer}>
         <Box sx={commonStyles.contentContainer}>
           {/* Header */}
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-            <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+          <Box sx={commonStyles.pageHeader}>
+            <Typography sx={commonStyles.pageTitle}>
               Quản lý Bài viết
             </Typography>
             <Button
@@ -257,6 +253,7 @@ const ArticleManagement: React.FC = () => {
                 setEditingArticle(null);
                 setFormOpen(true);
               }}
+              sx={commonStyles.primaryButton}
             >
               Tạo Bài viết Mới
             </Button>
@@ -351,16 +348,6 @@ const ArticleManagement: React.FC = () => {
                                     <CardActions>
                                       <Button
                                         size="small"
-                                        startIcon={<ViewIcon />}
-                                        onClick={() => {
-                                          setSelectedArticle(article);
-                                          setPreviewOpen(true);
-                                        }}
-                                      >
-                                        Xem trước
-                                      </Button>
-                                      <Button
-                                        size="small"
                                         startIcon={<EditIcon />}
                                         onClick={() => {
                                           setEditingArticle(article);
@@ -399,49 +386,8 @@ const ArticleManagement: React.FC = () => {
                     </DragDropContext>
                 )}
               </Paper>
-
-              {/* Preview Panel - Below Article List */}
-              <Paper sx={{ p: 3 }}>
-                <Typography variant="h6" gutterBottom>
-                  Xem trước Trang
-                </Typography>
-                <Box sx={{
-                  border: '1px solid #ddd',
-                  borderRadius: 1,
-                  p: 2,
-                  minHeight: '400px',
-                  maxHeight: '600px',
-                  overflow: 'auto'
-                }}>
-                  {articles.length > 0 ? (
-                    <div dangerouslySetInnerHTML={{
-                      __html: articles.find(a => a.isActive)?.content || articles[0].content
-                    }} />
-                  ) : (
-                    <Typography color="text.secondary" sx={{ textAlign: 'center', mt: 4 }}>
-                      Chưa có bài viết nào
-                    </Typography>
-                  )}
-                </Box>
-              </Paper>
             </>
           )}
-
-          {/* Preview Dialog */}
-          <BaseDialog
-            open={previewOpen}
-            onClose={() => setPreviewOpen(false)}
-            title={`Xem trước: ${selectedArticle?.title}`}
-            icon={<ViewIcon sx={{ fontSize: 28, color: 'white' }} />}
-            maxWidth="md"
-            contentPadding={0}
-          >
-            {selectedArticle && (
-              <Box sx={{ p: 4 }}>
-                <div dangerouslySetInnerHTML={{ __html: selectedArticle.content }} />
-              </Box>
-            )}
-          </BaseDialog>
 
           {/* Delete Confirmation Dialog */}
           <ConfirmDialog

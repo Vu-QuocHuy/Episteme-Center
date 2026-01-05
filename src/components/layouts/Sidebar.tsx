@@ -7,7 +7,6 @@ import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
 import HistoryIcon from '@mui/icons-material/History';
 import SchoolIcon from '@mui/icons-material/School';
 import ClassIcon from '@mui/icons-material/Class';
-import AssessmentIcon from '@mui/icons-material/Assessment';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ListAltIcon from '@mui/icons-material/ListAlt';
@@ -39,7 +38,8 @@ const getMenuItemsByRole = (role: string): MenuItem[] => {
         { text: 'Quản lý nội dung', icon: <ArticleIcon />, path: '/admin/content' },
         { text: 'Đăng ký tư vấn', icon: <ListAltIcon />, path: '/admin/registrations' },
         { text: 'Quản lý vai trò', icon: <SecurityIcon />, path: '/admin/roles-management' },
-        { text: 'Thống kê', icon: <AssessmentIcon />, path: '/admin/statistics' },
+        { text: 'Quản lý tài chính', icon: <PaymentIcon />, path: '/admin/financial' },
+        { text: 'Thống kê học sinh', icon: <SchoolIcon />, path: '/admin/student-statistics' },
         { text: 'Audit Logs', icon: <ListAltIcon />, path: '/admin/audit-log' },
 
       ];
@@ -84,8 +84,8 @@ const Sidebar: React.FC<SidebarProps> = ({ open }) => {
   const { openSidebar } = useSidebar();
   const role = user?.role || 'student';
   const menuItems = getMenuItemsByRole(role);
-  const [statsOpen, setStatsOpen] = useState<boolean>(location.pathname.startsWith('/admin/statistics'));
   const [usersOpen, setUsersOpen] = useState<boolean>(location.pathname.startsWith('/admin/users'));
+  const [financialOpen, setFinancialOpen] = useState<boolean>(location.pathname.startsWith('/admin/financial'));
   const [contentOpen, setContentOpen] = useState<boolean>(
     location.pathname.startsWith('/admin/advertisements') ||
     location.pathname.startsWith('/admin/menu-management') ||
@@ -96,8 +96,8 @@ const Sidebar: React.FC<SidebarProps> = ({ open }) => {
   // Đóng sub-menu khi sidebar đóng
   React.useEffect(() => {
     if (!open) {
-      setStatsOpen(false);
       setUsersOpen(false);
+      setFinancialOpen(false);
       setContentOpen(false);
     }
   }, [open]);
@@ -124,11 +124,11 @@ const Sidebar: React.FC<SidebarProps> = ({ open }) => {
       <Box sx={{ mt: 8 }}>
         <List>
           {menuItems.map((item) => {
-            const isStatistics = item.path === '/admin/statistics';
             const isUsers = item.path === '/admin/users';
+            const isFinancial = item.path === '/admin/financial';
             const isContent = item.path === '/admin/content';
 
-            if (!isStatistics && !isUsers && !isContent) {
+            if (!isUsers && !isFinancial && !isContent) {
               return (
                 <Tooltip key={item.text} title={!open ? item.text : ''} placement="right" arrow>
                   <ListItem disablePadding sx={{ display: 'block' }}>
@@ -274,6 +274,113 @@ const Sidebar: React.FC<SidebarProps> = ({ open }) => {
               );
             }
 
+            // Financial management item with expandable sub-menu
+            if (isFinancial) {
+              return (
+                <Box key={item.text}>
+                  <ListItem disablePadding sx={{ display: 'block' }}>
+                    <ListItemButton
+                      selected={location.pathname.startsWith('/admin/financial')}
+                      onClick={() => {
+                        if (!open) {
+                          openSidebar();
+                        }
+                        setFinancialOpen((v) => !v);
+                      }}
+                      sx={{
+                        minHeight: 48,
+                        justifyContent: open ? 'initial' : 'center',
+                        px: 2.5,
+                        borderRadius: 2,
+                        my: 0.5,
+                        transition: 'background 0.2s',
+                        '&.Mui-selected': {
+                          bgcolor: '#f5f5f5',
+                          color: COLORS.primary.main,
+                          '&:hover': { bgcolor: '#eeeeee' }
+                        },
+                        '&:hover': { bgcolor: '#f9f9f9' }
+                      }}
+                    >
+                      <ListItemIcon
+                        sx={{
+                          minWidth: 0,
+                          mr: open ? 2 : 'auto',
+                          justifyContent: 'center',
+                          color: location.pathname.startsWith('/admin/financial') ? COLORS.primary.main : 'inherit',
+                        }}
+                      >
+                        <PaymentIcon />
+                      </ListItemIcon>
+                      {open && <ListItemText primary={item.text} sx={{ opacity: open ? 1 : 0, mr: 2 }} />}
+                      {open && (financialOpen ? <ExpandLessIcon /> : <ExpandMoreIcon />)}
+                    </ListItemButton>
+                  </ListItem>
+                  {financialOpen && (
+                    <List component="div" disablePadding sx={{ pl: open ? 4 : 0 }}>
+                      <ListItemButton
+                        selected={location.pathname === '/admin/financial/teachers'}
+                        onClick={() => {
+                          if (!open) {
+                            openSidebar();
+                          }
+                          navigate('/admin/financial/teachers');
+                        }}
+                        sx={{
+                          minHeight: 40,
+                          justifyContent: open ? 'initial' : 'center',
+                          px: 2.5,
+                          borderRadius: 2,
+                          ml: open ? 2 : 0,
+                          my: 0.25
+                        }}
+                      >
+                        {open && <ListItemText primary="Thanh toán giáo viên" />}
+                      </ListItemButton>
+                      <ListItemButton
+                        selected={location.pathname === '/admin/financial/students'}
+                        onClick={() => {
+                          if (!open) {
+                            openSidebar();
+                          }
+                          navigate('/admin/financial/students');
+                        }}
+                        sx={{
+                          minHeight: 40,
+                          justifyContent: open ? 'initial' : 'center',
+                          px: 2.5,
+                          borderRadius: 2,
+                          ml: open ? 2 : 0,
+                          my: 0.25
+                        }}
+                      >
+                        {open && <ListItemText primary="Thanh toán học sinh" />}
+                      </ListItemButton>
+                      <ListItemButton
+                        selected={location.pathname === '/admin/financial/transactions'}
+                        onClick={() => {
+                          if (!open) {
+                            openSidebar();
+                          }
+                          navigate('/admin/financial/transactions');
+                        }}
+                        sx={{
+                          minHeight: 40,
+                          justifyContent: open ? 'initial' : 'center',
+                          px: 2.5,
+                          borderRadius: 2,
+                          ml: open ? 2 : 0,
+                          my: 0.25
+                        }}
+                      >
+                        {open && <ListItemText primary="Thu chi khác" />}
+                      </ListItemButton>
+                    </List>
+                  )}
+                </Box>
+              );
+            }
+
             // Content management item with expandable sub-menu
             if (isContent) {
               return (
@@ -284,7 +391,8 @@ const Sidebar: React.FC<SidebarProps> = ({ open }) => {
                         location.pathname.startsWith('/admin/advertisements') ||
                         location.pathname.startsWith('/admin/menu-management') ||
                         location.pathname.startsWith('/admin/testimonials') ||
-                        location.pathname.startsWith('/admin/articles')
+                        location.pathname.startsWith('/admin/articles') ||
+                        location.pathname.startsWith('/admin/footer-settings')
                       }
                       onClick={() => {
                         if (!open) {
@@ -316,7 +424,8 @@ const Sidebar: React.FC<SidebarProps> = ({ open }) => {
                             location.pathname.startsWith('/admin/advertisements') ||
                             location.pathname.startsWith('/admin/menu-management') ||
                             location.pathname.startsWith('/admin/testimonials') ||
-                            location.pathname.startsWith('/admin/articles')
+                            location.pathname.startsWith('/admin/articles') ||
+                            location.pathname.startsWith('/admin/footer-settings')
                           ) ? COLORS.primary.main : 'inherit',
                         }}
                       >
@@ -404,62 +513,13 @@ const Sidebar: React.FC<SidebarProps> = ({ open }) => {
                       >
                         {open && <ListItemText primary="Quản lý bài viết" />}
                       </ListItemButton>
-                    </List>
-                  )}
-                </Box>
-              );
-            }
-
-            // Statistics item with expandable sub-menu
-            return (
-              <Box key={item.text}>
-                <ListItem disablePadding sx={{ display: 'block' }}>
                   <ListItemButton
-                    selected={location.pathname.startsWith('/admin/statistics')}
+                        selected={location.pathname === '/admin/footer-settings'}
                     onClick={() => {
                       if (!open) {
                         openSidebar();
                       }
-                      setStatsOpen((v) => !v);
-                    }}
-                    sx={{
-                      minHeight: 48,
-                      justifyContent: open ? 'initial' : 'center',
-                      px: 2.5,
-                      borderRadius: 2,
-                      my: 0.5,
-                      transition: 'background 0.2s',
-                      '&.Mui-selected': {
-                        bgcolor: '#f5f5f5',
-                        color: COLORS.primary.main,
-                        '&:hover': { bgcolor: '#eeeeee' }
-                      },
-                      '&:hover': { bgcolor: '#f9f9f9' }
-                    }}
-                  >
-                    <ListItemIcon
-                      sx={{
-                        minWidth: 0,
-                        mr: open ? 2 : 'auto',
-                        justifyContent: 'center',
-                        color: location.pathname.startsWith('/admin/statistics') ? COLORS.primary.main : 'inherit',
-                      }}
-                    >
-                      <AssessmentIcon />
-                    </ListItemIcon>
-                    {open && <ListItemText primary={item.text} sx={{ opacity: open ? 1 : 0, mr: 2 }} />}
-                    {open && (statsOpen ? <ExpandLessIcon /> : <ExpandMoreIcon />)}
-                  </ListItemButton>
-                </ListItem>
-                {statsOpen && (
-                  <List component="div" disablePadding sx={{ pl: open ? 4 : 0 }}>
-                    <ListItemButton
-                      selected={location.pathname === '/admin/statistics/financial'}
-                      onClick={() => {
-                        if (!open) {
-                          openSidebar();
-                        }
-                        navigate('/admin/statistics/financial');
+                          navigate('/admin/footer-settings');
                       }}
                       sx={{
                         minHeight: 40,
@@ -470,31 +530,14 @@ const Sidebar: React.FC<SidebarProps> = ({ open }) => {
                         my: 0.25
                       }}
                     >
-                      {open && <ListItemText primary="Thống kê tài chính" />}
-                    </ListItemButton>
-                    <ListItemButton
-                      selected={location.pathname === '/admin/statistics/students'}
-                      onClick={() => {
-                        if (!open) {
-                          openSidebar();
-                        }
-                        navigate('/admin/statistics/students');
-                      }}
-                      sx={{
-                        minHeight: 40,
-                        justifyContent: open ? 'initial' : 'center',
-                        px: 2.5,
-                        borderRadius: 2,
-                        ml: open ? 2 : 0,
-                        my: 0.25
-                      }}
-                    >
-                      {open && <ListItemText primary="Thống kê học sinh" />}
+                        {open && <ListItemText primary="Cài đặt Footer" />}
                     </ListItemButton>
                   </List>
                 )}
               </Box>
             );
+            }
+
           })}
         </List>
       </Box>

@@ -99,7 +99,8 @@ export const getQRCodeAPI = (amount: number, paymentId: string) => {
   return axiosInstance.get(API_CONFIG.ENDPOINTS.PAYMENTS.GET_QR_CODE, {
     params: {
       amount: amountInt,
-      paymentId: paymentId
+      paymentId: paymentId,
+      download: false // Mặc định không download, chỉ hiển thị QR
     },
     headers: {
       'x-lang': 'vi'

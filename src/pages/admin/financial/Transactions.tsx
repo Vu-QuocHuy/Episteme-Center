@@ -1,12 +1,12 @@
 import React from 'react';
-import { Box, Button, TextField, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Paper, Pagination, Typography, IconButton, Tooltip, Grid, MenuItem, Card, CardContent } from '@mui/material';
-import BaseDialog from '../../../../components/common/BaseDialog';
-import ConfirmDialog from '../../../../components/common/ConfirmDialog';
-import { getAllTransactionsAPI, createTransactionAPI, updateTransactionAPI, deleteTransactionAPI, getAllTransactionCategoriesAPI, createTransactionCategoryAPI, getTransactionCategoryByIdAPI, updateTransactionCategoryAPI, deleteTransactionCategoryAPI, exportTransactionsReportAPI } from '../../../../services/transactions';
+import { Box, Button, TextField, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Pagination, Typography, IconButton, Tooltip, Grid, MenuItem } from '@mui/material';
+import BaseDialog from '../../../components/common/BaseDialog';
+import ConfirmDialog from '../../../components/common/ConfirmDialog';
+import { getAllTransactionsAPI, createTransactionAPI, updateTransactionAPI, deleteTransactionAPI, getAllTransactionCategoriesAPI, exportTransactionsReportAPI } from '../../../services/transactions';
 import { Edit as EditIcon, Delete as DeleteIcon, Download as DownloadIcon } from '@mui/icons-material';
 import * as XLSX from 'xlsx';
 
-interface Transaction {
+export interface Transaction {
   id: string;
   amount: number;
   description: string;
@@ -15,9 +15,7 @@ interface Transaction {
   transactionAt?: string;
 }
 
-interface Props {}
-
-const OtherTransactionsTab: React.FC<Props> = () => {
+const Transactions: React.FC = () => {
   const [transactions, setTransactions] = React.useState<Transaction[]>([]);
   const [pagination, setPagination] = React.useState<{ page: number; totalPages: number }>({ page: 1, totalPages: 1 });
   const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
@@ -43,26 +41,11 @@ const OtherTransactionsTab: React.FC<Props> = () => {
   const [deleteTransactionLoading, setDeleteTransactionLoading] = React.useState<boolean>(false);
 
   const [categories, setCategories] = React.useState<any[]>([]);
-  const [categoriesLoading, setCategoriesLoading] = React.useState<boolean>(false);
-  void categoriesLoading; // silence unused variable until used
-  const [openCategoryManagementDialog, setOpenCategoryManagementDialog] = React.useState<boolean>(false);
-  const [openCategoryDialog, setOpenCategoryDialog] = React.useState<boolean>(false);
-  const [categoryForm, setCategoryForm] = React.useState<{ type: 'revenue' | 'expense'; name: string }>({ type: 'expense', name: '' });
-  const [openEditCategoryDialog, setOpenEditCategoryDialog] = React.useState<boolean>(false);
-  const [categoryToEdit, setCategoryToEdit] = React.useState<any | null>(null);
-  const [editCategoryForm, setEditCategoryForm] = React.useState<{ type: 'revenue' | 'expense'; name: string }>({ type: 'expense', name: '' });
-  const [editCategoryLoading, setEditCategoryLoading] = React.useState<boolean>(false);
-  const [openDeleteCategoryDialog, setOpenDeleteCategoryDialog] = React.useState<boolean>(false);
-  const [categoryToDelete, setCategoryToDelete] = React.useState<any | null>(null);
-  const [deleteCategoryLoading, setDeleteCategoryLoading] = React.useState<boolean>(false);
-  const [categoryLoading, setCategoryLoading] = React.useState<boolean>(false);
 
   const fetchOtherTransactions = React.useCallback(async (pageNum = 1) => {
-    // Build date range based on selected period
     let startDate: string | undefined;
     let endDate: string | undefined;
 
-    // Helper: format to MM/DD/YYYY
     const toMDY = (y: number, m: number, d: number) => {
       const mm = m < 10 ? `0${m}` : `${m}`;
       const dd = d < 10 ? `0${d}` : `${d}`;
@@ -87,7 +70,6 @@ const OtherTransactionsTab: React.FC<Props> = () => {
       startDate = toMDY(year, startMonth, 1);
       endDate = toMDY(year, endMonth, lastDay);
     } else if (periodType === 'custom') {
-      // customStart/customEnd are YYYY-MM-DD → convert to MM/DD/YYYY
       if (customStart) {
         const [y, m, d] = customStart.split('-').map(Number);
         startDate = toMDY(y, m, d);
@@ -116,7 +98,6 @@ const OtherTransactionsTab: React.FC<Props> = () => {
   }, [periodType, selectedYear, selectedMonth, selectedQuarter, customStart, customEnd, typeFilter]);
 
   const fetchCategories = React.useCallback(async () => {
-    setCategoriesLoading(true);
     try {
       const res = await getAllTransactionCategoriesAPI({ page: 1, limit: 1000 });
       let data: any[] = [];
@@ -125,15 +106,21 @@ const OtherTransactionsTab: React.FC<Props> = () => {
       else if ((res as any)?.data?.data?.result && Array.isArray((res as any).data.data.result)) data = (res as any).data.data.result;
       else if ((res as any)?.data?.result && Array.isArray((res as any).data.result)) data = (res as any).data.result;
       setCategories(Array.isArray(data) ? data : []);
-    } finally {
-      setCategoriesLoading(false);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
     }
   }, []);
 
-  React.useEffect(() => { fetchOtherTransactions(1); /* fetchCategories(); */ }, [fetchOtherTransactions, fetchCategories]);
-  React.useEffect(() => { fetchOtherTransactions(1); }, [periodType, selectedYear, selectedMonth, selectedQuarter, customStart, customEnd, typeFilter, fetchOtherTransactions]);
+  React.useEffect(() => {
+    fetchOtherTransactions(1);
+    fetchCategories();
+  }, [fetchOtherTransactions, fetchCategories]);
+
+  React.useEffect(() => {
+    fetchOtherTransactions(1);
+  }, [periodType, selectedYear, selectedMonth, selectedQuarter, customStart, customEnd, typeFilter, fetchOtherTransactions]);
+
   const exportToExcel = async () => {
-    // Reuse current date range logic to pass as query for export
     let startDate: string | undefined;
     let endDate: string | undefined;
     const toMDY = (y: number, m: number, d: number) => {
@@ -265,48 +252,6 @@ const OtherTransactionsTab: React.FC<Props> = () => {
     }
   };
 
-  const handleOpenCategoryManagementDialog = async () => {
-    if (!categories || categories.length === 0) {
-      await fetchCategories();
-    }
-    setOpenCategoryManagementDialog(true);
-  };
-  const handleCloseCategoryManagementDialog = () => setOpenCategoryManagementDialog(false);
-  const handleOpenCreateCategoryFromManagement = () => { setOpenCategoryManagementDialog(false); setOpenCategoryDialog(true); };
-  const handleChangeCategoryField = (key: 'type' | 'name', value: string) => setCategoryForm(prev => ({ ...prev, [key]: value }));
-  const handleCloseCategoryDialog = () => setOpenCategoryDialog(false);
-  const handleSubmitCategory = async () => {
-    if (!categoryForm.name || !categoryForm.type) return;
-    setCategoryLoading(true);
-    try {
-      await createTransactionCategoryAPI({ type: categoryForm.type, name: categoryForm.name });
-      setOpenCategoryDialog(false);
-      setCategoryForm({ type: 'expense', name: '' });
-      await fetchCategories();
-      setOpenCategoryManagementDialog(true);
-    } finally {
-      setCategoryLoading(false);
-    }
-  };
-  const handleCloseDeleteCategoryDialog = () => { setOpenDeleteCategoryDialog(false); setCategoryToDelete(null); };
-  const handleConfirmDeleteCategory = async () => {
-    if (!categoryToDelete) return;
-    setDeleteCategoryLoading(true);
-    try {
-      await deleteTransactionCategoryAPI(categoryToDelete.id);
-      setOpenDeleteCategoryDialog(false);
-      setCategoryToDelete(null);
-      await fetchCategories();
-    } finally {
-      setDeleteCategoryLoading(false);
-    }
-  };
-
-  const handleAskDeleteCategory = (id: number | string, name: string) => {
-    setCategoryToDelete({ id, name });
-    setOpenDeleteCategoryDialog(true);
-  };
-
   return (
     <>
       <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
@@ -360,10 +305,7 @@ const OtherTransactionsTab: React.FC<Props> = () => {
       </Box>
 
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 2 }}>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button variant="outlined" onClick={handleOpenCategoryManagementDialog} sx={{ borderRadius: 2 }}>Quản lý danh mục</Button>
-          <Button variant="outlined" onClick={handleOpenTransactionDialog} sx={{ borderRadius: 2 }}>Tạo hóa đơn</Button>
-        </Box>
+        <Button variant="outlined" onClick={handleOpenTransactionDialog} sx={{ borderRadius: 2 }}>Tạo hóa đơn</Button>
       </Box>
 
       <TableContainer component={Paper} elevation={1}>
@@ -511,201 +453,6 @@ const OtherTransactionsTab: React.FC<Props> = () => {
         </Grid>
       </BaseDialog>
 
-      {/* Dialog tạo danh mục */}
-      <BaseDialog
-        open={openCategoryDialog}
-        onClose={handleCloseCategoryDialog}
-        title="Tạo danh mục"
-        subtitle="Nhập thông tin danh mục thu/chi"
-        maxWidth="sm"
-        fullWidth
-        actions={
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <Button onClick={handleCloseCategoryDialog} variant="outlined">
-              Hủy
-            </Button>
-            <Button
-              onClick={handleSubmitCategory}
-              variant="contained"
-              disabled={categoryLoading}
-            >
-              {categoryLoading ? 'Đang xử lý...' : 'Lưu'}
-            </Button>
-          </Box>
-        }
-      >
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6}>
-            <TextField select fullWidth label="Loại" value={categoryForm.type} onChange={(e) => handleChangeCategoryField('type', e.target.value)} required>
-              <MenuItem value="revenue">Thu</MenuItem>
-              <MenuItem value="expense">Chi</MenuItem>
-            </TextField>
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField label="Tên danh mục" fullWidth value={categoryForm.name} onChange={(e) => handleChangeCategoryField('name', e.target.value)} required />
-          </Grid>
-        </Grid>
-      </BaseDialog>
-
-      {/* Dialog quản lý danh mục */}
-      <BaseDialog
-        open={openCategoryManagementDialog}
-        onClose={handleCloseCategoryManagementDialog}
-        title="Quản lý danh mục"
-        subtitle="Quản lý các danh mục thu chi của hệ thống"
-        maxWidth="md"
-        fullWidth
-        actions={
-          <Button onClick={handleCloseCategoryManagementDialog} variant="outlined">
-            Đóng
-          </Button>
-        }
-      >
-        <Box>
-            <Grid container spacing={3} sx={{ mb: 4 }}>
-              <Grid item xs={12} sm={6} md={4}>
-                <Card sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', borderRadius: 3, boxShadow: '0 8px 25px rgba(102, 126, 234, 0.3)' }}>
-                  <CardContent sx={{ p: 3 }}>
-                    <Typography variant="h3" fontWeight={700} sx={{ mb: 1 }}>{Array.isArray(categories) ? categories.length : 0}</Typography>
-                    <Typography variant="body2" sx={{ opacity: 0.9 }}>Tổng số danh mục</Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-              <Grid item xs={12} sm={6} md={4}>
-                <Card sx={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: 'white', borderRadius: 3, boxShadow: '0 8px 25px rgba(16, 185, 129, 0.3)' }}>
-                  <CardContent sx={{ p: 3 }}>
-                    <Typography variant="h3" fontWeight={700} sx={{ mb: 1 }}>{Array.isArray(categories) ? categories.filter(c => c.type === 'revenue').length : 0}</Typography>
-                    <Typography variant="body2" sx={{ opacity: 0.9 }}>Danh mục thu</Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-              <Grid item xs={12} sm={6} md={4}>
-                <Card sx={{ background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)', color: 'white', borderRadius: 3, boxShadow: '0 8px 25px rgba(239, 68, 68, 0.3)' }}>
-                  <CardContent sx={{ p: 3 }}>
-                    <Typography variant="h3" fontWeight={700} sx={{ mb: 1 }}>{Array.isArray(categories) ? categories.filter(c => c.type === 'expense').length : 0}</Typography>
-                    <Typography variant="body2" sx={{ opacity: 0.9 }}>Danh mục chi</Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-            </Grid>
-
-            <Paper sx={{ borderRadius: 3, boxShadow: '0 4px 20px rgba(0,0,0,0.08)', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
-              <Box sx={{ p: 3, background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Box>
-                  <Typography variant="h6" fontWeight={600} color="#1e293b">Danh sách danh mục</Typography>
-                  <Typography variant="body2" color="text.secondary">Quản lý và chỉnh sửa các danh mục thu chi</Typography>
-                </Box>
-                <Button variant="contained" onClick={handleOpenCreateCategoryFromManagement}
-                  sx={{ borderRadius: 3, bgcolor: '#667eea', px: 3, py: 1, fontWeight: 600, '&:hover': { bgcolor: '#5a6fd8', transform: 'translateY(-2px)', boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)' }, transition: 'all 0.2s ease' }}>
-                  Tạo danh mục
-                </Button>
-              </Box>
-              <TableContainer>
-                <Table>
-                  <TableHead>
-                    <TableRow sx={{ bgcolor: '#f8fafc' }}>
-                      <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '0.875rem' }}>STT</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '0.875rem' }}>Tên danh mục</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '0.875rem' }}>Loại</TableCell>
-                      <TableCell align="center" sx={{ fontWeight: 700, color: '#475569', fontSize: '0.875rem' }}>Thao tác</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {Array.isArray(categories) && categories.length > 0 ? categories.map((category, idx) => (
-                      <TableRow key={category.id} hover>
-                        <TableCell sx={{ fontWeight: 600, color: '#64748b' }}>{idx + 1}</TableCell>
-                        <TableCell>
-                          <Typography variant="body1" fontWeight={600} color="#1e293b">{category.name}</Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Chip label={category.type === 'revenue' ? 'Thu' : 'Chi'} color={category.type === 'revenue' ? 'success' : 'error'} size="small" />
-                        </TableCell>
-                        <TableCell align="center">
-                          <Box sx={{ display: 'flex', gap: 1.5, justifyContent: 'center' }}>
-                            <Tooltip title="Chỉnh sửa danh mục">
-                              <IconButton size="small" color="primary" onClick={async () => {
-                                setCategoryToEdit(category);
-                                try {
-                                  const res = await getTransactionCategoryByIdAPI(String(category.id));
-                                  const data = (res as any)?.data?.data || (res as any)?.data || {};
-                                  setEditCategoryForm({ type: data.type || category.type, name: data.name || category.name });
-                                } catch (_) {
-                                  setEditCategoryForm({ type: category.type, name: category.name });
-                                }
-                                setOpenEditCategoryDialog(true);
-                              }}>
-                                <EditIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Xóa danh mục">
-                              <IconButton size="small" color="error" onClick={() => handleAskDeleteCategory(category.id, category.name)}>
-                                <DeleteIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          </Box>
-                        </TableCell>
-                      </TableRow>
-                    )) : (
-                      <TableRow>
-                        <TableCell colSpan={4} align="center">
-                          <Typography variant="body2" color="text.secondary">Chưa có danh mục nào</Typography>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </Paper>
-        </Box>
-      </BaseDialog>
-
-      {/* Dialog chỉnh sửa danh mục */}
-      <BaseDialog
-        open={openEditCategoryDialog}
-        onClose={() => setOpenEditCategoryDialog(false)}
-        title="Chỉnh sửa danh mục"
-        subtitle="Cập nhật thông tin danh mục"
-        maxWidth="sm"
-        fullWidth
-        actions={
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <Button onClick={() => setOpenEditCategoryDialog(false)} variant="outlined">
-              Hủy
-            </Button>
-            <Button
-              onClick={async () => {
-                if (!categoryToEdit) return;
-                setEditCategoryLoading(true);
-                try {
-                  await updateTransactionCategoryAPI(String(categoryToEdit.id), { type: editCategoryForm.type, name: editCategoryForm.name });
-                  setOpenEditCategoryDialog(false);
-                  setCategoryToEdit(null);
-                  await fetchCategories();
-                } finally {
-                  setEditCategoryLoading(false);
-                }
-              }}
-              variant="contained"
-              disabled={editCategoryLoading}
-            >
-              {editCategoryLoading ? 'Đang xử lý...' : 'Cập nhật'}
-            </Button>
-          </Box>
-        }
-      >
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6}>
-            <TextField select fullWidth label="Loại" value={editCategoryForm.type} onChange={(e) => setEditCategoryForm(prev => ({ ...prev, type: e.target.value as 'revenue' | 'expense' }))} required>
-              <MenuItem value="revenue">Thu</MenuItem>
-              <MenuItem value="expense">Chi</MenuItem>
-            </TextField>
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField label="Tên danh mục" fullWidth value={editCategoryForm.name} onChange={(e) => setEditCategoryForm(prev => ({ ...prev, name: e.target.value }))} required />
-          </Grid>
-        </Grid>
-      </BaseDialog>
-
       {/* Dialog xác nhận xóa hóa đơn */}
       <ConfirmDialog
         open={openDeleteTransactionDialog}
@@ -717,20 +464,9 @@ const OtherTransactionsTab: React.FC<Props> = () => {
         confirmColor="error"
         loading={deleteTransactionLoading}
       />
-
-      {/* Dialog xác nhận xóa danh mục */}
-      <ConfirmDialog
-        open={openDeleteCategoryDialog}
-        onClose={handleCloseDeleteCategoryDialog}
-        onConfirm={handleConfirmDeleteCategory}
-        title="Xác nhận xóa danh mục"
-        message={`Bạn có chắc chắn muốn xóa danh mục "${categoryToDelete?.name || ''}"? Hành động này không thể hoàn tác.`}
-        confirmText="Xóa"
-        confirmColor="error"
-        loading={deleteCategoryLoading}
-      />
     </>
   );
 };
 
-export default OtherTransactionsTab;
+export default Transactions;
+

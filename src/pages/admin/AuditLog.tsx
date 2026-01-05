@@ -283,21 +283,8 @@ const AuditLog: React.FC = () => {
 
   return (
     <DashboardLayout role="admin">
-      <Box sx={{ 
-        ...commonStyles.pageContainer, 
-        paddingLeft: { xs: 2, sm: 3 },
-        paddingRight: { xs: 2, sm: 3 },
-        overflowX: 'hidden',
-        width: '100%',
-        boxSizing: 'border-box'
-      }}>
-        <Box sx={{ 
-          ...commonStyles.contentContainer, 
-          width: '100%',
-          maxWidth: '100%',
-          overflowX: 'hidden',
-          boxSizing: 'border-box'
-        }}>
+      <Box sx={commonStyles.pageContainer}>
+        <Box sx={commonStyles.contentContainer}>
           <Box sx={commonStyles.pageHeader}>
             <Box>
               <Typography sx={commonStyles.pageTitle}>

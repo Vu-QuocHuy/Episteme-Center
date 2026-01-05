@@ -13,10 +13,10 @@ import DashboardLayout from '../../components/layouts/DashboardLayout';
 import { useFooterSettings, FooterSettings as FooterSettingsType } from '../../hooks/useFooterSettings';
 import { commonStyles } from '../../utils/styles';
 import NotificationSnackbar from '../../components/common/NotificationSnackbar';
-import { updateFooterSettingsAPI } from '../../services/footer-settings';
+import { updateFooterSettingsAPI, createFooterSettingsAPI } from '../../services/footer-settings';
 
 const FooterSettings: React.FC = () => {
-  const { footerSettings, loading } = useFooterSettings();
+  const { footerSettings, loading, hasData } = useFooterSettings();
   const [settings, setSettings] = useState<FooterSettingsType>(footerSettings);
   const [saving, setSaving] = useState(false);
   const [snackbar, setSnackbar] = useState<{
@@ -84,8 +84,21 @@ const FooterSettings: React.FC = () => {
 
       setSaving(true);
       
-      // Always use PATCH - backend will create if not exists
+      // Sử dụng POST nếu chưa có data, PATCH nếu đã có
+      try {
+        if (hasData) {
       await updateFooterSettingsAPI(settings);
+        } else {
+          await createFooterSettingsAPI(settings);
+        }
+      } catch (error: any) {
+        // Nếu update fail vì chưa có data, thử create
+        if (hasData && (error?.response?.status === 400 || error?.response?.status === 404)) {
+          await createFooterSettingsAPI(settings);
+        } else {
+          throw error;
+        }
+      }
 
       setSnackbar({
         open: true,
