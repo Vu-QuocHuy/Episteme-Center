@@ -33,13 +33,14 @@ const WelcomeAdPopup: React.FC<WelcomeAdPopupProps> = ({ open, onClose, ads, wid
       maxWidth={false}
       PaperProps={{
         sx: {
-          borderRadius: 2,
-          bgcolor: 'transparent',
-          boxShadow: 'none',
-          overflow: 'visible',
-          width: { xs: '90%', sm: width },
-          maxWidth: width,
-          ...(height ? { height } : { aspectRatio: '4/3' }), // Keep 4:3 ratio if height not provided
+            borderRadius: 1,
+            bgcolor: 'transparent',
+            boxShadow: 'none',
+            overflow: 'visible',
+            width: { xs: '90%', sm: width },
+            maxWidth: width,
+            border: 'none',
+            ...(height ? { height } : { aspectRatio: '4/3' }),
         },
       }}
       sx={{
@@ -70,20 +71,20 @@ const WelcomeAdPopup: React.FC<WelcomeAdPopupProps> = ({ open, onClose, ads, wid
         <IconButton
           onClick={onClose}
           sx={{
-            position: 'absolute',
-            right: -12,
-            top: -12,
-            zIndex: 10,
-            bgcolor: 'white',
-            color: 'text.primary',
-            width: 36,
-            height: 36,
-            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-            '&:hover': {
-              bgcolor: 'grey.100',
-              transform: 'rotate(90deg)',
-            },
-            transition: 'all 0.3s ease',
+              position: 'absolute',
+              right: 8,
+              top: 8,
+              zIndex: 10,
+              bgcolor: 'rgba(0,0,0,0.5)',
+              color: 'white',
+              width: 32,
+              height: 32,
+              boxShadow: 'none',
+              border: 'none',
+              '&:hover': {
+                bgcolor: 'rgba(0,0,0,0.7)',
+              },
+              transition: 'background 0.2s',
           }}
         >
           <CloseIcon fontSize="small" />
@@ -91,12 +92,13 @@ const WelcomeAdPopup: React.FC<WelcomeAdPopupProps> = ({ open, onClose, ads, wid
 
         <Card
           sx={{
-            borderRadius: 2,
-            overflow: 'hidden',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
-            position: 'relative',
-            width: '100%',
-            ...(height ? { height } : { aspectRatio: '4/3' }), // Respect custom height when provided
+              borderRadius: 1,
+              overflow: 'hidden',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+              position: 'relative',
+              width: '100%',
+              border: 'none',
+              ...(height ? { height } : { aspectRatio: '4/3' }),
           }}
         >
           <CardMedia

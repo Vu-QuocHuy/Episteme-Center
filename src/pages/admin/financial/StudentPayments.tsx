@@ -67,13 +67,6 @@ const StudentPayments: React.FC = () => {
     totalRemainingAmount: 0
   });
 
-  const computeAndEmitTotals = React.useCallback((list: StudentPayment[]) => {
-    const totalStudentFees = list.reduce((t, p) => t + (p.totalAmount ?? 0), 0);
-    const totalPaidAmount = list.reduce((t, p) => t + (p.paidAmount ?? 0), 0);
-    const totalRemainingAmount = list.reduce((t, p) => t + ((p.totalAmount ?? 0) - (p.discountAmount ?? 0) - (p.paidAmount ?? 0)), 0);
-    setTotalStatistics({ totalStudentFees, totalPaidAmount, totalRemainingAmount });
-  }, []);
-
   const fetchPayments = React.useCallback(async (page: number = 1) => {
     let params: any = { page, limit: 10 };
     const filters: any = {};
@@ -105,13 +98,23 @@ const StudentPayments: React.FC = () => {
       setPayments(data.result);
       const meta = data.meta;
       setPagination({ page: meta?.page || page, totalPages: meta?.totalPages || 1 });
-      computeAndEmitTotals(data.result);
+      // Use statistics from backend
+      if (data.statistics) {
+        setTotalStatistics({
+          totalStudentFees: data.statistics.totalStudentFees || 0,
+          totalPaidAmount: data.statistics.totalPaidAmount || 0,
+          totalRemainingAmount: data.statistics.totalRemainingAmount || 0,
+        });
+      } else {
+        // Default to 0 if statistics not available
+        setTotalStatistics({ totalStudentFees: 0, totalPaidAmount: 0, totalRemainingAmount: 0 });
+      }
     } else {
       setPayments([]);
       setPagination({ page, totalPages: 1 });
-      computeAndEmitTotals([]);
+      setTotalStatistics({ totalStudentFees: 0, totalPaidAmount: 0, totalRemainingAmount: 0 });
     }
-  }, [paymentStatus, periodType, selectedMonth, selectedYear, selectedQuarter, customStart, customEnd, computeAndEmitTotals]);
+  }, [paymentStatus, periodType, selectedMonth, selectedYear, selectedQuarter, customStart, customEnd]);
 
   React.useEffect(() => { fetchPayments(1); }, [fetchPayments]);
 

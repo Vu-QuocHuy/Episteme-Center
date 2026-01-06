@@ -619,7 +619,7 @@ const Payments: React.FC = () => {
           </>
         }
       >
-        <Box sx={{ p: 4, pt: 4, bgcolor: '#f9fafb', mt: 2 }}>
+        <Box sx={{ p: 4 }}>
           {/* Summary Cards */}
           {selectedInvoice && (
             <>
@@ -703,7 +703,7 @@ const Payments: React.FC = () => {
         subtitle="Mở app ngân hàng và quét mã dưới đây"
         icon={<QrCodeIcon sx={{ fontSize: 48, color: 'white' }} />}
         maxWidth="sm"
-        contentPadding={4}
+        contentPadding={0}
         PaperProps={{
           sx: {
             borderRadius: 2,
@@ -711,6 +711,7 @@ const Payments: React.FC = () => {
           }
         }}
       >
+        <Box sx={{ p: 4 }}>
           {qrCodeUrl ? (
             <Box
               sx={{
@@ -748,8 +749,11 @@ const Payments: React.FC = () => {
               </Box>
             </Box>
           ) : (
-            <CircularProgress size={60} />
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+              <CircularProgress size={60} />
+            </Box>
           )}
+        </Box>
       </BaseDialog>
 
       {/* Payment History Modal */}

@@ -174,6 +174,12 @@ instance.interceptors.response.use(
                     }
                 } catch (refreshError: any) {
                     processQueue(refreshError, null);
+                    // Clear credentials and redirect to login on refresh failure
+                    localStorage.removeItem('access_token');
+                    localStorage.removeItem('userData');
+                    if (typeof window !== 'undefined') {
+                        window.location.href = '/login';
+                    }
                     return Promise.reject(refreshError);
                 } finally {
                     isRefreshing = false;

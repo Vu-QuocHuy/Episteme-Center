@@ -127,7 +127,8 @@ const MyClasses = () => {
           // Lấy thông tin từ dashboard API
           const dashboardInfo = dashboardClassMap.get(classInfo.name) || {};
           const classStatus = dashboardInfo.status || 'active'; // Mặc định là active nếu không tìm thấy
-          const teacherName = dashboardInfo.teacherName || 'Chưa phân công';
+          // Ưu tiên lấy teacher từ schedule API; fallback dashboard; cuối cùng là placeholder
+          const teacherName = classInfo?.teacher?.name || dashboardInfo.teacherName || 'Chưa phân công';
 
           // Format lịch học
           const weekdays = ['CN','T2','T3','T4','T5','T6','T7'];
@@ -148,7 +149,7 @@ const MyClasses = () => {
           return {
             id: classInfo.id,
             name: classInfo.name,
-            teacher: teacherName, // Lấy từ dashboard API
+            teacher: teacherName,
             scheduleDays,
             scheduleTime,
             status: classStatus, // Lấy từ dashboard API (closed, upcoming, active)
@@ -205,7 +206,8 @@ const MyClasses = () => {
         max_student: detail.max_student || 0,
         room: detail.room || classData.room,
         schedule: detail.schedule || classData.schedule,
-        teacher: detail.teacher || { name: 'Chưa phân công' }
+        // Giữ giáo viên từ dữ liệu list nếu API detail không trả về
+        teacher: detail.teacher || classData.teacher || { name: 'Chưa phân công' }
       };
 
       setSelectedClass(updatedClassData);
@@ -318,7 +320,7 @@ const MyClasses = () => {
       <Box sx={commonStyles.pageContainer}>
         <Box sx={commonStyles.contentContainer}>
           <Typography variant="h4" gutterBottom sx={{ mb: 3, color: `${COLORS.primary}`, fontWeight: 600 }}>
-            Lớp học của tôi
+            Thông tin học tập
           </Typography>
 
           <Grid container spacing={3}>
@@ -562,61 +564,72 @@ const MyClasses = () => {
                         }}>
                           <Grid container spacing={2}>
                             <Grid item xs={12} sm={6}>
-                              <Typography variant="subtitle2" color="textSecondary" gutterBottom sx={{ fontWeight: 600 }}>
-                                Tên lớp:
-                              </Typography>
-                              <Typography variant="body1" sx={{ fontWeight: 500, color: '#2c3e50' }}>
-                                {selectedClass.name}
-                              </Typography>
-                            </Grid>
-                                                         <Grid item xs={12} sm={6}>
-                               <Typography variant="subtitle2" color="textSecondary" gutterBottom sx={{ fontWeight: 600 }}>
-                                 Giáo viên:
-                               </Typography>
-                               <Typography variant="body1" sx={{ fontWeight: 500, color: '#2c3e50' }}>
-                                 {selectedClass.teacher?.name || selectedClass.teacher || 'Chưa phân công'}
-                               </Typography>
-                             </Grid>
-                            <Grid item xs={12} sm={6}>
-                              <Typography variant="subtitle2" color="textSecondary" gutterBottom sx={{ fontWeight: 600 }}>
-                                Phòng học:
-                              </Typography>
-                              <Typography variant="body1" sx={{ fontWeight: 500, color: '#2c3e50' }}>
-                                {selectedClass.room}
-                              </Typography>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Typography variant="subtitle2" color="textSecondary" sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
+                                  Tên lớp:
+                                </Typography>
+                                <Typography variant="body1" sx={{ fontWeight: 500, color: '#2c3e50' }}>
+                                  {selectedClass.name}
+                                </Typography>
+                              </Box>
                             </Grid>
                             <Grid item xs={12} sm={6}>
-                              <Typography variant="subtitle2" color="textSecondary" gutterBottom sx={{ fontWeight: 600 }}>
-                                Lịch học:
-                              </Typography>
-                              <Typography variant="body1" sx={{ fontWeight: 500, color: '#2c3e50' }}>
-                                {selectedClass.scheduleDays || 'Chưa có lịch'}
-                              </Typography>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Typography variant="subtitle2" color="textSecondary" sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
+                                  Giáo viên:
+                                </Typography>
+                                <Typography variant="body1" sx={{ fontWeight: 500, color: '#2c3e50' }}>
+                                  {selectedClass.teacher?.name || selectedClass.teacher || 'Chưa phân công'}
+                                </Typography>
+                              </Box>
                             </Grid>
                             <Grid item xs={12} sm={6}>
-                              <Typography variant="subtitle2" color="textSecondary" gutterBottom sx={{ fontWeight: 600 }}>
-                                Giờ học:
-                              </Typography>
-                              <Typography variant="body1" sx={{ fontWeight: 500, color: '#2c3e50' }}>
-                                {selectedClass.scheduleTime || 'Chưa có giờ'}
-                              </Typography>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Typography variant="subtitle2" color="textSecondary" sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
+                                  Phòng học:
+                                </Typography>
+                                <Typography variant="body1" sx={{ fontWeight: 500, color: '#2c3e50' }}>
+                                  {selectedClass.room}
+                                </Typography>
+                              </Box>
                             </Grid>
                             <Grid item xs={12} sm={6}>
-                              <Typography variant="subtitle2" color="textSecondary" gutterBottom sx={{ fontWeight: 600 }}>
-                                Trạng thái:
-                              </Typography>
-                              <Chip
-                                label={getStatusLabel(selectedClass.status)}
-                                color={getStatusColor(selectedClass.status)}
-                                size="small"
-                                sx={{
-                                  fontWeight: 600,
-                                  mt: 0.5,
-                                  '& .MuiChip-icon': {
-                                    fontSize: '16px'
-                                  }
-                                }}
-                              />
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Typography variant="subtitle2" color="textSecondary" sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
+                                  Lịch học:
+                                </Typography>
+                                <Typography variant="body1" sx={{ fontWeight: 500, color: '#2c3e50' }}>
+                                  {selectedClass.scheduleDays || 'Chưa có lịch'}
+                                </Typography>
+                              </Box>
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Typography variant="subtitle2" color="textSecondary" sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
+                                  Giờ học:
+                                </Typography>
+                                <Typography variant="body1" sx={{ fontWeight: 500, color: '#2c3e50' }}>
+                                  {selectedClass.scheduleTime || 'Chưa có giờ'}
+                                </Typography>
+                              </Box>
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Typography variant="subtitle2" color="textSecondary" sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
+                                  Trạng thái:
+                                </Typography>
+                                <Chip
+                                  label={getStatusLabel(selectedClass.status)}
+                                  color={getStatusColor(selectedClass.status)}
+                                  size="small"
+                                  sx={{
+                                    fontWeight: 600,
+                                    '& .MuiChip-icon': {
+                                      fontSize: '16px'
+                                    }
+                                  }}
+                                />
+                              </Box>
                             </Grid>
                           </Grid>
                         </Box>

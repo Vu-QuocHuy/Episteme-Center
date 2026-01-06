@@ -54,12 +54,12 @@ const getMenuItemsByRole = (role: string): MenuItem[] => {
       return [
         { text: 'Dashboard', icon: <HomeIcon />, path: '/student/dashboard' },
         { text: 'Lịch học', icon: <ClassIcon />, path: '/student/schedule' },
-        { text: 'Lớp học của tôi', icon: <SchoolIcon />, path: '/student/classes' },
+        { text: 'Thông tin học tập', icon: <SchoolIcon />, path: '/student/classes' },
       ];
     case 'parent':
       return [
         { text: 'Dashboard', icon: <HomeIcon />, path: '/parent/dashboard' },
-        { text: 'Con em', icon: <SchoolIcon />, path: '/parent/children' },
+        { text: 'Thông tin con', icon: <PeopleIcon />, path: '/parent/children' },
         { text: 'Thanh toán', icon: <PaymentIcon />, path: '/parent/payments' },
       ];
     default:

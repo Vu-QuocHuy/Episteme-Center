@@ -392,7 +392,7 @@ const Children: React.FC = () => {
         <Box sx={commonStyles.contentContainer}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
           <Typography variant="h4">
-            Quản lý con cái
+            Thông tin con
           </Typography>
         </Box>
 
@@ -482,9 +482,19 @@ const Children: React.FC = () => {
                     <Grid item xs={4}>
                       <Box>
                         <Typography variant="body2" color="textSecondary">
-                          Lớp đang học
+                          Tổng lớp học
                         </Typography>
                         <Typography variant="h6" color="primary">
+                          {child.totalClasses}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={4}>
+                      <Box>
+                        <Typography variant="body2" color="textSecondary">
+                          Lớp đang học
+                        </Typography>
+                        <Typography variant="h6" color="success.main">
                           {child.activeClasses}
                         </Typography>
                       </Box>
@@ -492,30 +502,14 @@ const Children: React.FC = () => {
                     <Grid item xs={4}>
                       <Box>
                         <Typography variant="body2" color="textSecondary">
-                          Tỷ lệ tham gia
+                          Lớp đã kết thúc
                         </Typography>
-                        <Typography variant="h6" color="success.main">
-                          {child.attendanceRate}%
-                        </Typography>
-                      </Box>
-                    </Grid>
-                    <Grid item xs={4}>
-                      <Box>
-                        <Typography variant="body2" color="textSecondary">
-                          Tổng lớp học
-                        </Typography>
-                        <Typography variant="h6" color="default">
-                          {child.totalClasses}
+                        <Typography variant="h6" color="text.secondary">
+                          {child.completedClasses}
                         </Typography>
                       </Box>
                     </Grid>
                   </Grid>
-
-                  <LinearProgress
-                    variant="determinate"
-                    value={child.attendanceRate}
-                    sx={{ mb: 2, height: 8, borderRadius: 4 }}
-                  />
 
                   {child.attendanceStats && child.attendanceStats.totalSessions > 0 && (
                     <Box sx={{
@@ -605,8 +599,9 @@ const Children: React.FC = () => {
           icon={<PersonIcon sx={{ fontSize: 28, color: 'white' }} />}
           maxWidth="md"
           loading={detailLoading}
-          contentPadding={3}
+          contentPadding={0}
         >
+          <Box sx={{ p: 4 }}>
             {detailLoading && (
               <Box sx={{ py: 2 }}>
                 <LinearProgress />
@@ -1011,6 +1006,7 @@ const Children: React.FC = () => {
                  </Grid>
               </Box>
             )}
+          </Box>
         </BaseDialog>
         </Box>
       </Box>

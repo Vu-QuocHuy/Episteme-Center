@@ -1,4 +1,5 @@
 import React from 'react';
+import { useFooterSettings } from '../../hooks/useFooterSettings';
 import { Box, Container, Grid, Typography, Link, IconButton, Divider } from '@mui/material';
 import { Facebook as FacebookIcon, Twitter as TwitterIcon, Instagram as InstagramIcon, YouTube as YouTubeIcon,
     Phone as PhoneIcon, Email as EmailIcon, LocationOn as LocationIcon } from '@mui/icons-material';
@@ -17,6 +18,7 @@ interface FooterLinks {
 
 const Footer: React.FC = () => {
   const currentYear: number = new Date().getFullYear();
+  const { footerSettings, loading } = useFooterSettings();
 
   const footerLinks: FooterLinks = {
     about: [
@@ -39,6 +41,8 @@ const Footer: React.FC = () => {
     ],
   };
 
+  if (loading) return null;
+
   return (
     <Box
       component="footer"
@@ -54,26 +58,32 @@ const Footer: React.FC = () => {
           {/* Logo và thông tin liên hệ */}
           <Grid item xs={12} md={4}>
             <Typography variant="h6" gutterBottom>
-              English Center
+              {footerSettings.companyName || 'Episteme'}
             </Typography>
-            <Typography variant="body2" color="grey.400" paragraph>
-              Trung tâm đào tạo tiếng Anh hàng đầu với đội ngũ giảng viên chuyên nghiệp và phương pháp giảng dạy hiện đại.
-            </Typography>
+            {footerSettings.description && (
+              <Typography variant="body2" color="grey.400" paragraph>
+                {footerSettings.description}
+              </Typography>
+            )}
             <Box sx={{ mt: 2 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <PhoneIcon sx={{ mr: 1, color: COLORS.primary.main }} />
-                <Typography variant="body2">(84) 123-456-789</Typography>
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <EmailIcon sx={{ mr: 1, color: COLORS.primary.main }} />
-                <Typography variant="body2">info@englishcenter.com</Typography>
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <LocationIcon sx={{ mr: 1, color: COLORS.primary.main }} />
-                <Typography variant="body2">
-                  123 Đường ABC, Quận XYZ, TP. Hồ Chí Minh
-                </Typography>
-              </Box>
+              {footerSettings.phone && (
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <PhoneIcon sx={{ mr: 1, color: COLORS.primary.main }} />
+                  <Typography variant="body2">{footerSettings.phone}</Typography>
+                </Box>
+              )}
+              {footerSettings.email && (
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <EmailIcon sx={{ mr: 1, color: COLORS.primary.main }} />
+                  <Typography variant="body2">{footerSettings.email}</Typography>
+                </Box>
+              )}
+              {footerSettings.address && (
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <LocationIcon sx={{ mr: 1, color: COLORS.primary.main }} />
+                  <Typography variant="body2">{footerSettings.address}</Typography>
+                </Box>
+              )}
             </Box>
           </Grid>
 
@@ -144,21 +154,24 @@ const Footer: React.FC = () => {
           }}
         >
           <Typography variant="body2" color="grey.400">
-            © {currentYear} English Center. All rights reserved.
+            © {currentYear} {footerSettings.companyName || 'Episteme'}. All rights reserved.
           </Typography>
           <Box sx={{ mt: { xs: 2, sm: 0 } }}>
-            <IconButton color="inherit" aria-label="Facebook">
-              <FacebookIcon />
-            </IconButton>
-            <IconButton color="inherit" aria-label="Twitter">
-              <TwitterIcon />
-            </IconButton>
-            <IconButton color="inherit" aria-label="Instagram">
-              <InstagramIcon />
-            </IconButton>
-            <IconButton color="inherit" aria-label="YouTube">
-              <YouTubeIcon />
-            </IconButton>
+            {footerSettings.facebookUrl && (
+              <IconButton color="inherit" aria-label="Facebook" href={footerSettings.facebookUrl} target="_blank" rel="noopener">
+                <FacebookIcon />
+              </IconButton>
+            )}
+            {footerSettings.youtubeUrl && (
+              <IconButton color="inherit" aria-label="YouTube" href={footerSettings.youtubeUrl} target="_blank" rel="noopener">
+                <YouTubeIcon />
+              </IconButton>
+            )}
+            {footerSettings.zaloUrl && (
+              <IconButton color="inherit" aria-label="Zalo" href={footerSettings.zaloUrl} target="_blank" rel="noopener">
+                <img src="/images/zalo-icon.svg" alt="Zalo" style={{ width: 24, height: 24 }} />
+              </IconButton>
+            )}
           </Box>
         </Box>
       </Container>

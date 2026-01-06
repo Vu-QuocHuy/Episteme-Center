@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Button, TextField, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Pagination, Typography, IconButton, Tooltip, Grid, MenuItem } from '@mui/material';
+import { Box, Button, TextField, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Pagination, Typography, IconButton, Tooltip, Grid, MenuItem, Card, CardContent } from '@mui/material';
 import BaseDialog from '../../../components/common/BaseDialog';
 import ConfirmDialog from '../../../components/common/ConfirmDialog';
 import { getAllTransactionsAPI, createTransactionAPI, updateTransactionAPI, deleteTransactionAPI, getAllTransactionCategoriesAPI, exportTransactionsReportAPI } from '../../../services/transactions';
@@ -18,6 +18,12 @@ export interface Transaction {
 const Transactions: React.FC = () => {
   const [transactions, setTransactions] = React.useState<Transaction[]>([]);
   const [pagination, setPagination] = React.useState<{ page: number; totalPages: number }>({ page: 1, totalPages: 1 });
+  const [statistics, setStatistics] = React.useState<{ totalRevenue: number; totalExpense: number; netProfit: number; totalTransactions: number }>({
+    totalRevenue: 0,
+    totalExpense: 0,
+    netProfit: 0,
+    totalTransactions: 0
+  });
   const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
   const quarters = [1, 2, 3, 4];
@@ -86,14 +92,26 @@ const Transactions: React.FC = () => {
     if (typeFilter !== 'all') params.type = typeFilter;
 
     const res = await getAllTransactionsAPI(params);
-    const data = (res as any)?.data;
-    if (data?.data?.result && Array.isArray(data.data.result)) {
-      setTransactions(data.data.result);
-      const meta = data.data.meta;
+    const data = (res as any)?.data?.data || (res as any)?.data || {};
+    if (data?.result && Array.isArray(data.result)) {
+      setTransactions(data.result);
+      const meta = data.meta || {};
       setPagination({ page: meta?.page || pageNum, totalPages: meta?.totalPages || 1 });
+      // Set statistics from backend
+      if (data.statistics) {
+        setStatistics({
+          totalRevenue: data.statistics.totalRevenue || 0,
+          totalExpense: data.statistics.totalExpense || 0,
+          netProfit: data.statistics.netProfit || 0,
+          totalTransactions: data.statistics.totalTransactions || 0,
+        });
+      } else {
+        setStatistics({ totalRevenue: 0, totalExpense: 0, netProfit: 0, totalTransactions: 0 });
+      }
     } else {
       setTransactions([]);
       setPagination({ page: 1, totalPages: 1 });
+      setStatistics({ totalRevenue: 0, totalExpense: 0, netProfit: 0, totalTransactions: 0 });
     }
   }, [periodType, selectedYear, selectedMonth, selectedQuarter, customStart, customEnd, typeFilter]);
 
@@ -254,6 +272,44 @@ const Transactions: React.FC = () => {
 
   return (
     <>
+      {/* Statistics Cards */}
+      <Paper sx={{ p: 3, mb: 3 }}>
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={3}>
+            <Card>
+              <CardContent>
+                <Typography color="textSecondary" gutterBottom>Tổng thu</Typography>
+                <Typography variant="h5" color="success.main" fontWeight="bold">{statistics.totalRevenue.toLocaleString()} ₫</Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} md={3}>
+            <Card>
+              <CardContent>
+                <Typography color="textSecondary" gutterBottom>Tổng chi</Typography>
+                <Typography variant="h5" color="error.main" fontWeight="bold">{statistics.totalExpense.toLocaleString()} ₫</Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} md={3}>
+            <Card>
+              <CardContent>
+                <Typography color="textSecondary" gutterBottom>Lợi nhuận ròng</Typography>
+                <Typography variant="h5" color={statistics.netProfit >= 0 ? "success.main" : "error.main"} fontWeight="bold">{statistics.netProfit.toLocaleString()} ₫</Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} md={3}>
+            <Card>
+              <CardContent>
+                <Typography color="textSecondary" gutterBottom>Số lượng giao dịch</Typography>
+                <Typography variant="h5" color="info.main" fontWeight="bold">{statistics.totalTransactions}</Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+      </Paper>
+
       <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
           <TextField select label="Loại" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value as any)} sx={{ minWidth: 150 }}>

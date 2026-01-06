@@ -73,7 +73,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
           <Box sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }} onClick={handleLogoClick}>
             <SchoolIcon sx={{ fontSize: 32, color: COLORS.primary.text, mr: 1 }} />
             <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#111', fontSize: '1.25rem' }}>
-              English Center
+              Episteme
             </Typography>
           </Box>
         </Box>

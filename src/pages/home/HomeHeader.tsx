@@ -324,7 +324,7 @@ const HomeHeader: React.FC = () => {
         <Box sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }} onClick={() => navigate('/')}>
           <SchoolIcon sx={{ fontSize: 32, color: COLORS.primary.text, mr: 1 }} />
           <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#111', fontSize: { xs: '1.1rem', md: '1.25rem' } }}>
-            English Center
+            Episteme
           </Typography>
         </Box>
 

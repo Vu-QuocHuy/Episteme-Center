@@ -20,7 +20,9 @@ import {
   Select,
   Alert,
   InputAdornment,
-  Typography
+  Typography,
+  Card,
+  CardContent
 } from '@mui/material';
 import { History as HistoryIcon, Payment as PaymentIcon, AttachMoney as AttachMoneyIcon, Paid as PaidIcon, AccountBalanceWallet as WalletIcon, Download as DownloadIcon } from '@mui/icons-material';
 // @ts-ignore: Allow using xlsx without local type resolution
@@ -62,6 +64,11 @@ const TeacherPayments: React.FC = () => {
 
   const [payments, setPayments] = React.useState<TeacherPayment[]>([]);
   const [pagination, setPagination] = React.useState<{ page: number; totalPages: number }>({ page: 1, totalPages: 1 });
+  const [statistics, setStatistics] = React.useState<{ totalAmount: number; paidAmount: number; remainingAmount: number }>({
+    totalAmount: 0,
+    paidAmount: 0,
+    remainingAmount: 0
+  });
   const [periodType, setPeriodType] = React.useState<string>('year');
   const [selectedYear, setSelectedYear] = React.useState<number>(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = React.useState<number>(new Date().getMonth() + 1);
@@ -103,10 +110,14 @@ const TeacherPayments: React.FC = () => {
       params = { ...params, year, startMonth, endMonth };
     }
     const res = await getAllTeacherPaymentsAPI(params);
-    const data = (res as any)?.data?.data?.result || (res as any)?.data?.result || (res as any)?.data || [];
-    const meta = (res as any)?.data?.data?.meta || (res as any)?.data?.meta || { page, totalPages: 1 };
+    const responseData = (res as any)?.data?.data || (res as any)?.data || {};
+    const data = responseData.result || responseData || [];
+    const meta = responseData.meta || { page, totalPages: 1 };
+    const stats = responseData.statistics || { totalAmount: 0, paidAmount: 0, remainingAmount: 0 };
+    
     setPayments(Array.isArray(data) ? data : []);
     setPagination({ page: meta.page || page, totalPages: meta.totalPages || 1 });
+    setStatistics(stats);
   }, [paymentStatus, periodType, selectedYear, selectedMonth, selectedQuarter, customStart, customEnd]);
 
   React.useEffect(() => {
@@ -307,6 +318,36 @@ const TeacherPayments: React.FC = () => {
           <Box sx={commonStyles.pageHeader}>
             <Typography sx={commonStyles.pageTitle}>Thanh toán giáo viên</Typography>
           </Box>
+
+          {/* Statistics Cards */}
+          <Paper sx={{ p: 3, mb: 3 }}>
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={4}>
+                <Card>
+                  <CardContent>
+                    <Typography color="textSecondary" gutterBottom>Tổng lương phải trả</Typography>
+                    <Typography variant="h5" color="info.main" fontWeight="bold">{statistics.totalAmount.toLocaleString()} ₫</Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <Card>
+                  <CardContent>
+                    <Typography color="textSecondary" gutterBottom>Đã trả</Typography>
+                    <Typography variant="h5" color="success.main" fontWeight="bold">{statistics.paidAmount.toLocaleString()} ₫</Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <Card>
+                  <CardContent>
+                    <Typography color="textSecondary" gutterBottom>Còn thiếu</Typography>
+                    <Typography variant="h5" color="warning.main" fontWeight="bold">{statistics.remainingAmount.toLocaleString()} ₫</Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+            </Grid>
+          </Paper>
 
           <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>

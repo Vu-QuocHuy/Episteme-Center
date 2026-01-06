@@ -15,17 +15,19 @@ export interface FooterSettings {
 
 export const useFooterSettings = () => {
   // Default configuration
-  const [footerSettings, setFooterSettings] = useState<FooterSettings>({
-    companyName: 'English Center',
-    email: 'contact@englishcenter.com',
-    phone: '0123 456 789',
-    address: 'Hà Nội, Việt Nam',
-    description: 'Trung tâm Anh ngữ chất lượng cao',
+  const emptySettings: FooterSettings = {
+    companyName: '',
+    email: '',
+    phone: '',
+    address: '',
+    description: '',
     facebookUrl: '',
     youtubeUrl: '',
     zaloUrl: '',
     mapEmbedUrl: ''
-  });
+  };
+
+  const [footerSettings, setFooterSettings] = useState<FooterSettings>(emptySettings);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -43,15 +45,19 @@ export const useFooterSettings = () => {
         if (settingsData) {
           setFooterSettings(settingsData);
           setHasData(true); // Có dữ liệu từ API
+        } else {
+          setFooterSettings(emptySettings);
+          setHasData(false);
         }
       } catch (error: any) {
         console.error('Error loading footer settings:', error);
         // Nếu lỗi 404 thì chưa có data, giữ default values
         if (error?.response?.status !== 404) {
-        setError('Failed to load footer settings');
+          setError('Failed to load footer settings');
         }
+        setFooterSettings(emptySettings);
         setHasData(false);
-        // Keep default values on error
+        // Clear data on error to avoid showing stale defaults
       } finally {
         setLoading(false);
       }

@@ -25,7 +25,7 @@ const AboutSection: React.FC = () => {
             fontWeight: 300
           }}
         >
-          Tìm hiểu thêm về English Center
+          Tìm hiểu thêm về Episteme
         </Typography>
       </Box>
 
