@@ -241,9 +241,9 @@ const Children: React.FC = () => {
     setDetailLoading(true);
     try {
       // Luôn gọi API thống kê điểm danh khi mở dialog chi tiết
-      try {
-        const att = await getSessionsByStudentAPI(String((child as any).studentId || child.id));
-        const payload: any = (att as any)?.data?.data || (att as any)?.data || att || {};
+        try {
+          const att = await getSessionsByStudentAPI(String((child as any).studentId || child.id));
+          const payload: any = (att as any)?.data?.data || (att as any)?.data || att || {};
         const sessionsList: any[] = Array.isArray(payload?.detailedAttendance)
           ? payload.detailedAttendance
           : Array.isArray(payload?.result)
@@ -252,35 +252,35 @@ const Children: React.FC = () => {
               ? payload
               : Array.isArray(payload?.sessions)
                 ? payload.sessions
-                : [];
+            : [];
 
-        const stats = payload.attendanceStats || {
-          totalSessions: sessionsList.length,
-          presentSessions: sessionsList.filter((s: any) => String(s?.status || '').toLowerCase() === 'present').length,
-          absentSessions: sessionsList.filter((s: any) => String(s?.status || '').toLowerCase() === 'absent').length,
-          lateSessions: sessionsList.filter((s: any) => String(s?.status || '').toLowerCase() === 'late').length,
-        };
+          const stats = payload.attendanceStats || {
+            totalSessions: sessionsList.length,
+            presentSessions: sessionsList.filter((s: any) => String(s?.status || '').toLowerCase() === 'present').length,
+            absentSessions: sessionsList.filter((s: any) => String(s?.status || '').toLowerCase() === 'absent').length,
+            lateSessions: sessionsList.filter((s: any) => String(s?.status || '').toLowerCase() === 'late').length,
+          };
 
-        const attendanceRate = stats.totalSessions > 0
-          ? Math.round(((stats.presentSessions + stats.lateSessions) / stats.totalSessions) * 100)
-          : 0;
+          const attendanceRate = stats.totalSessions > 0
+            ? Math.round(((stats.presentSessions + stats.lateSessions) / stats.totalSessions) * 100)
+            : 0;
 
-        setAttendanceData({
-          ...stats,
-          attendanceRate,
-          sessions: sessionsList
-        });
-      } catch (e) {
-        // eslint-disable-next-line no-console
-        console.warn('getSessionsByStudentAPI failed or returned no sessions', e);
-        setAttendanceData({
-          totalSessions: 0,
-          presentSessions: 0,
-          absentSessions: 0,
-          lateSessions: 0,
-          attendanceRate: 0,
-          sessions: []
-        });
+          setAttendanceData({
+            ...stats,
+            attendanceRate,
+            sessions: sessionsList
+          });
+        } catch (e) {
+          // eslint-disable-next-line no-console
+          console.warn('getSessionsByStudentAPI failed or returned no sessions', e);
+          setAttendanceData({
+            totalSessions: 0,
+            presentSessions: 0,
+            absentSessions: 0,
+            lateSessions: 0,
+            attendanceRate: 0,
+            sessions: []
+          });
       }
 
       // 2) Use class IDs from student detail

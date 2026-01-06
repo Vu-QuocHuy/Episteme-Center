@@ -6,8 +6,6 @@ import { SearchInput } from '../../common';
 interface TeacherFiltersProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
-  emailFilter?: string;
-  setEmailFilter?: (email: string) => void;
   isActiveFilter: string;
   setIsActiveFilter: (filter: string) => void;
 }
@@ -15,26 +13,17 @@ interface TeacherFiltersProps {
 const TeacherFilters: React.FC<TeacherFiltersProps> = ({
   searchQuery,
   setSearchQuery,
-  emailFilter = '',
-  setEmailFilter,
   isActiveFilter,
   setIsActiveFilter,
 }) => {
   return (
     <Paper sx={{ p: 2, mb: 3 }}>
       <Grid container spacing={2} alignItems="center">
-        <Grid item xs={12} md={4}>
+        <Grid item xs={12} md={8}>
           <SearchInput
             value={searchQuery}
             onChange={setSearchQuery}
             placeholder="Tìm theo tên giáo viên..."
-          />
-        </Grid>
-        <Grid item xs={12} md={4}>
-          <SearchInput
-            value={emailFilter}
-            onChange={setEmailFilter || (() => {})}
-            placeholder="Tìm theo email..."
           />
         </Grid>
         <Grid item xs={12} md={4}>

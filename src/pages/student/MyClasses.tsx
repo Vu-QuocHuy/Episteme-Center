@@ -566,69 +566,69 @@ const MyClasses = () => {
                             <Grid item xs={12} sm={6}>
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                 <Typography variant="subtitle2" color="textSecondary" sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
-                                  Tên lớp:
-                                </Typography>
-                                <Typography variant="body1" sx={{ fontWeight: 500, color: '#2c3e50' }}>
-                                  {selectedClass.name}
-                                </Typography>
+                                Tên lớp:
+                              </Typography>
+                              <Typography variant="body1" sx={{ fontWeight: 500, color: '#2c3e50' }}>
+                                {selectedClass.name}
+                              </Typography>
+                              </Box>
+                            </Grid>
+                                                         <Grid item xs={12} sm={6}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Typography variant="subtitle2" color="textSecondary" sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
+                                 Giáo viên:
+                               </Typography>
+                               <Typography variant="body1" sx={{ fontWeight: 500, color: '#2c3e50' }}>
+                                 {selectedClass.teacher?.name || selectedClass.teacher || 'Chưa phân công'}
+                               </Typography>
+                              </Box>
+                             </Grid>
+                            <Grid item xs={12} sm={6}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Typography variant="subtitle2" color="textSecondary" sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
+                                Phòng học:
+                              </Typography>
+                              <Typography variant="body1" sx={{ fontWeight: 500, color: '#2c3e50' }}>
+                                {selectedClass.room}
+                              </Typography>
                               </Box>
                             </Grid>
                             <Grid item xs={12} sm={6}>
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                 <Typography variant="subtitle2" color="textSecondary" sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
-                                  Giáo viên:
-                                </Typography>
-                                <Typography variant="body1" sx={{ fontWeight: 500, color: '#2c3e50' }}>
-                                  {selectedClass.teacher?.name || selectedClass.teacher || 'Chưa phân công'}
-                                </Typography>
+                                Lịch học:
+                              </Typography>
+                              <Typography variant="body1" sx={{ fontWeight: 500, color: '#2c3e50' }}>
+                                {selectedClass.scheduleDays || 'Chưa có lịch'}
+                              </Typography>
                               </Box>
                             </Grid>
                             <Grid item xs={12} sm={6}>
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                 <Typography variant="subtitle2" color="textSecondary" sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
-                                  Phòng học:
-                                </Typography>
-                                <Typography variant="body1" sx={{ fontWeight: 500, color: '#2c3e50' }}>
-                                  {selectedClass.room}
-                                </Typography>
+                                Giờ học:
+                              </Typography>
+                              <Typography variant="body1" sx={{ fontWeight: 500, color: '#2c3e50' }}>
+                                {selectedClass.scheduleTime || 'Chưa có giờ'}
+                              </Typography>
                               </Box>
                             </Grid>
                             <Grid item xs={12} sm={6}>
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                 <Typography variant="subtitle2" color="textSecondary" sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
-                                  Lịch học:
-                                </Typography>
-                                <Typography variant="body1" sx={{ fontWeight: 500, color: '#2c3e50' }}>
-                                  {selectedClass.scheduleDays || 'Chưa có lịch'}
-                                </Typography>
-                              </Box>
-                            </Grid>
-                            <Grid item xs={12} sm={6}>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Typography variant="subtitle2" color="textSecondary" sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
-                                  Giờ học:
-                                </Typography>
-                                <Typography variant="body1" sx={{ fontWeight: 500, color: '#2c3e50' }}>
-                                  {selectedClass.scheduleTime || 'Chưa có giờ'}
-                                </Typography>
-                              </Box>
-                            </Grid>
-                            <Grid item xs={12} sm={6}>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Typography variant="subtitle2" color="textSecondary" sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
-                                  Trạng thái:
-                                </Typography>
-                                <Chip
-                                  label={getStatusLabel(selectedClass.status)}
-                                  color={getStatusColor(selectedClass.status)}
-                                  size="small"
-                                  sx={{
-                                    fontWeight: 600,
-                                    '& .MuiChip-icon': {
-                                      fontSize: '16px'
-                                    }
-                                  }}
-                                />
+                                Trạng thái:
+                              </Typography>
+                              <Chip
+                                label={getStatusLabel(selectedClass.status)}
+                                color={getStatusColor(selectedClass.status)}
+                                size="small"
+                                sx={{
+                                  fontWeight: 600,
+                                  '& .MuiChip-icon': {
+                                    fontSize: '16px'
+                                  }
+                                }}
+                              />
                               </Box>
                             </Grid>
                           </Grid>

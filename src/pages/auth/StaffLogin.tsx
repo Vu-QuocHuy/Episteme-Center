@@ -183,7 +183,7 @@ const StaffLogin: React.FC = () => {
             width: '100%',
             maxWidth: 450,
             mx: 'auto',
-            borderRadius: 4,
+            borderRadius: 3,
             boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
             backdropFilter: 'blur(20px)',
             background: 'rgba(255, 255, 255, 0.95)'
@@ -206,9 +206,6 @@ const StaffLogin: React.FC = () => {
                 <Typography component="h1" variant="h3" fontWeight="bold" gutterBottom>
                   Đăng nhập Nhân sự
                 </Typography>
-                <Typography variant="body1" color="textSecondary" align="center" sx={{ maxWidth: 300 }}>
-                  Dành cho quản trị viên và giáo viên
-                </Typography>
               </Box>
 
               {(authError || loginError) && (
@@ -216,48 +213,6 @@ const StaffLogin: React.FC = () => {
                   {authError || loginError}
                 </Alert>
               )}
-
-              {/* Demo Credentials */}
-              <Box sx={{
-                mb: 3,
-                p: 2,
-                borderRadius: 2,
-                bgcolor: 'rgba(103, 58, 183, 0.08)',
-                border: '1px solid rgba(103, 58, 183, 0.2)'
-              }}>
-                <Typography variant="subtitle2" fontWeight="600" color="primary" gutterBottom>
-                  🔑 Thông tin đăng nhập Demo
-                </Typography>
-                <Box sx={{ mt: 1.5 }}>
-                  <Box sx={{
-                    display: 'flex',
-                    gap: 1,
-                    flexWrap: 'wrap',
-                    mb: 1.5
-                  }}>
-                    <Box sx={{
-                      bgcolor: 'white',
-                      px: 1.5,
-                      py: 0.5,
-                      borderRadius: 1,
-                      fontFamily: 'monospace',
-                      fontSize: '0.875rem'
-                    }}>
-                      admin@gmail.com
-                    </Box>
-                    <Box sx={{
-                      bgcolor: 'white',
-                      px: 1.5,
-                      py: 0.5,
-                      borderRadius: 1,
-                      fontFamily: 'monospace',
-                      fontSize: '0.875rem'
-                    }}>
-                      password123
-                    </Box>
-                  </Box>
-                </Box>
-              </Box>
 
               <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
                 <TextField
@@ -284,7 +239,7 @@ const StaffLogin: React.FC = () => {
                   }}
                   sx={{
                     '& .MuiOutlinedInput-root': {
-                      borderRadius: 2,
+                      borderRadius: 1,
                       backgroundColor: 'white',
                       '&.Mui-focused fieldset': {
                         borderColor: '#764ba2',
@@ -351,7 +306,7 @@ const StaffLogin: React.FC = () => {
                   }}
                   sx={{
                     '& .MuiOutlinedInput-root': {
-                      borderRadius: 2,
+                      borderRadius: 1,
                       backgroundColor: 'white',
                       '&.Mui-focused fieldset': {
                         borderColor: '#764ba2',

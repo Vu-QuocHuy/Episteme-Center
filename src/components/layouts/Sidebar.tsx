@@ -492,7 +492,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open }) => {
                           my: 0.25
                         }}
                       >
-                        {open && <ListItemText primary="Cảm nhận học viên" />}
+                        {open && <ListItemText primary="Đánh giá học viên" />}
                       </ListItemButton>
                       <ListItemButton
                         selected={location.pathname === '/admin/articles'}

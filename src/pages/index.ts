@@ -2,7 +2,6 @@
 export { default as Login } from './auth/Login';
 export { default as StaffLogin } from './auth/StaffLogin';
 export { default as ForgotPassword } from './auth/ForgotPassword';
-export { default as VerifyEmail } from './auth/VerifyEmail';
 export { default as UnauthorizedAccess } from './auth/UnauthorizedAccess';
 
 // Common Pages

@@ -1,21 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Box, Typography, Grid, Card,
-  Button, TextField,
-  IconButton, Chip, Avatar,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow
+  Box, Typography, Grid,
+  Button, TextField
 } from '@mui/material';
 import {
   Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Star as StarIcon,
   CloudUpload as CloudUploadIcon
 } from '@mui/icons-material';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
 import NotificationSnackbar from '../../components/common/NotificationSnackbar';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import BaseDialog from '../../components/common/BaseDialog';
+import TestimonialTable from '../../components/features/feedback/TestimonialTable';
 import { commonStyles } from '../../utils/styles';
 import { createFeedbackAPI, getFeedbacksAPI, updateFeedbackAPI, deleteFeedbackAPI } from '../../services/feedback';
 import { uploadFileAPI, deleteFileAPI } from '../../services/files';
@@ -299,149 +295,29 @@ const TestimonialsManagement: React.FC = () => {
       <Box sx={commonStyles.pageContainer}>
         <Box sx={commonStyles.contentContainer}>
           {/* Header */}
-          <Box sx={commonStyles.pageHeader}>
+          <Box sx={{ ...commonStyles.pageHeader, display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
             <Typography sx={commonStyles.pageTitle}>
               Quản lý Đánh giá học viên
             </Typography>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => handleOpenDialog()}
+            >
+              Thêm đánh giá mới
+            </Button>
           </Box>
           <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
             Quản lý feedback và đánh giá từ học viên
           </Typography>
 
-          {/* Add Feedback Button */}
-          <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => handleOpenDialog()}
-              sx={{ mb: 2 }}
-            >
-              Thêm đánh giá mới
-            </Button>
-          </Box>
-
           {/* Feedbacks List */}
-              {loading ? (
-                <Box sx={{ textAlign: 'center', py: 4 }}>
-                  <Typography>Đang tải danh sách đánh giá...</Typography>
-                </Box>
-              ) : (
-                <Card>
-                  <TableContainer>
-                    <Table>
-                      <TableHead>
-                        <TableRow>
-                          <TableCell sx={{ fontWeight: 'bold' }}>Hình ảnh</TableCell>
-                          <TableCell sx={{ fontWeight: 'bold' }}>Họ tên</TableCell>
-                          <TableCell sx={{ fontWeight: 'bold' }}>Nội dung</TableCell>
-                          <TableCell sx={{ fontWeight: 'bold' }}>Ngày tạo</TableCell>
-                          <TableCell sx={{ fontWeight: 'bold' }}>Thao tác</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {feedbacks.map((feedback) => (
-                          <TableRow key={feedback.id} hover>
-                            <TableCell>
-                              <Avatar
-                                src={feedback.imageUrl}
-                                sx={{ width: 50, height: 50 }}
-                              >
-                                {feedback.name?.charAt(0)?.toUpperCase()}
-                              </Avatar>
-                            </TableCell>
-                            <TableCell>
-                              <Typography variant="subtitle2" fontWeight="bold">
-                                {feedback.name}
-                              </Typography>
-                              {feedback.socialUrl && (
-                                <Chip
-                                  label="Có link mạng xã hội"
-                                  size="small"
-                                  color="primary"
-                                  variant="outlined"
-                                  sx={{ mt: 0.5 }}
-                                />
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              <Typography
-                                variant="body2"
-                                color="text.secondary"
-                                sx={{
-                                  maxWidth: 300,
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  display: '-webkit-box',
-                                  WebkitLineClamp: 3,
-                                  WebkitBoxOrient: 'vertical',
-                                }}
-                              >
-                                {feedback.description}
-                              </Typography>
-                            </TableCell>
-                            <TableCell>
-                              <Typography variant="body2" color="text.secondary">
-                                {feedback.createdAt
-                                  ? new Date(feedback.createdAt).toLocaleDateString('vi-VN', {
-                                      year: 'numeric',
-                                      month: '2-digit',
-                                      day: '2-digit',
-                                      hour: '2-digit',
-                                      minute: '2-digit'
-                                    })
-                                  : 'N/A'
-                                }
-                              </Typography>
-                            </TableCell>
-                            <TableCell>
-                              <Box sx={{ display: 'flex', gap: 1 }}>
-                                <IconButton
-                                  onClick={() => handleOpenDialog(feedback)}
-                                  color="primary"
-                                  size="small"
-                                  title="Chỉnh sửa"
-                                >
-                                  <EditIcon />
-                                </IconButton>
-                                <IconButton
-                                  onClick={() => handleDeleteFeedback(feedback.id)}
-                                  color="error"
-                                  size="small"
-                                  title="Xóa"
-                                >
-                                  <DeleteIcon />
-                                </IconButton>
-                              </Box>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                </Card>
-              )}
-
-              {/* Empty State */}
-              {!loading && feedbacks.length === 0 && (
-                <Card>
-                  <Box sx={{ textAlign: 'center', py: 8 }}>
-                    <StarIcon sx={{ fontSize: 80, color: 'warning.main', mb: 2 }} />
-                    <Typography variant="h5" gutterBottom fontWeight="bold">
-                      Chưa có đánh giá nào
-                    </Typography>
-                    <Typography variant="body1" color="text.secondary" paragraph>
-                      Hãy thêm đánh giá đầu tiên từ học viên
-                    </Typography>
-                    <Button
-                      variant="contained"
-                      onClick={() => handleOpenDialog()}
-                      startIcon={<AddIcon />}
-                    >
-                      Thêm đánh giá đầu tiên
-                    </Button>
-                  </Box>
-                </Card>
-              )}
+          <TestimonialTable
+            feedbacks={feedbacks}
+            onEdit={handleOpenDialog}
+            onDelete={handleDeleteFeedback}
+            loading={loading}
+          />
 
           {/* Dialog for adding/editing feedback */}
           <BaseDialog
@@ -594,3 +470,4 @@ const TestimonialsManagement: React.FC = () => {
 };
 
 export default TestimonialsManagement;
+ 

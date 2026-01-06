@@ -183,7 +183,7 @@ const Login: React.FC = () => {
           width: '100%',
           maxWidth: 450,
           mx: 'auto',
-          borderRadius: 4,
+          borderRadius: 3,
           boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
           backdropFilter: 'blur(20px)',
           background: 'rgba(255, 255, 255, 0.95)'
@@ -205,9 +205,6 @@ const Login: React.FC = () => {
               }} />
               <Typography component="h1" variant="h3" fontWeight="bold" gutterBottom>
                 Đăng nhập
-              </Typography>
-              <Typography variant="body1" color="textSecondary" align="center" sx={{ maxWidth: 300 }}>
-                Dành cho học sinh và phụ huynh
               </Typography>
             </Box>
 
@@ -242,7 +239,7 @@ const Login: React.FC = () => {
                 }}
                 sx={{
                   '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
+                    borderRadius: 1,
                     backgroundColor: 'white',
                     '&.Mui-focused fieldset': {
                       borderColor: '#764ba2',
@@ -309,7 +306,7 @@ const Login: React.FC = () => {
                 }}
                 sx={{
                   '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
+                    borderRadius: 1,
                     backgroundColor: 'white',
                     '&.Mui-focused fieldset': {
                       borderColor: '#764ba2',

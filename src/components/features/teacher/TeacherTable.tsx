@@ -97,9 +97,9 @@ const TeacherTable: React.FC<TeacherTableProps> = ({
                   </Typography>
                 </TableCell>
                 <TableCell>
-                  <Typography variant="body2">
+                    <Typography variant="body2">
                     {teacher.gender === 'male' ? 'Nam' : teacher.gender === 'female' ? 'Nữ' : 'Không xác định'}
-                  </Typography>
+                    </Typography>
                 </TableCell>
                 <TableCell>
                   <Box

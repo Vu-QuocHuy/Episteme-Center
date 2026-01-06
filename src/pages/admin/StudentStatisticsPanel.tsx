@@ -182,19 +182,18 @@ const StudentStatisticsPanel: React.FC = () => {
 
   return (
     <Box>
-      <Box sx={commonStyles.pageHeader}>
+      <Box sx={{ ...commonStyles.pageHeader, display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography sx={commonStyles.pageTitle}>Thống kê học sinh</Typography>
+        <TextField 
+          select 
+          label="Năm" 
+          value={selectedYear} 
+          onChange={e => setSelectedYear(Number(e.target.value))}
+          sx={{ minWidth: 150 }}
+        >
+          {years.map(year => <MenuItem key={year} value={year}>{year}</MenuItem>)}
+        </TextField>
       </Box>
-
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} sm={3}>
-            <TextField select fullWidth label="Năm" value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))}>
-              {years.map(year => <MenuItem key={year} value={year}>{year}</MenuItem>)}
-            </TextField>
-          </Grid>
-        </Grid>
-      </Paper>
 
       {error && (
         <Typography color="error" sx={{ mb: 2 }}>

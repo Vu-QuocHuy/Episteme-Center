@@ -29,4 +29,3 @@ export type { StatItem } from './StatSection';
 export { default as LoadingErrorWrapper } from './LoadingErrorWrapper';
 export { default as AvatarUpload } from './AvatarUpload';
 export { default as ChangePasswordDialog } from './ChangePasswordDialog';
-export { default as VerifyEmailDialog } from './VerifyEmailDialog';

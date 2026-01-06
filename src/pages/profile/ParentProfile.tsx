@@ -11,15 +11,13 @@ import {
   CircularProgress,
   FormControl,
   Select,
-  MenuItem,
-  Chip,
+  MenuItem
 } from '@mui/material';
 import {
   Edit as EditIcon,
   Save as SaveIcon,
   Cancel as CancelIcon,
   Lock as LockIcon,
-  VerifiedUser as VerifiedUserIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import { updateUserAPI } from '../../services/users';
@@ -28,7 +26,7 @@ import { validateUserUpdate } from '../../validations/commonValidation';
 import { validateParentUpdate } from '../../validations/parentValidation';
 import { commonStyles } from '../../utils/styles';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
-import { AvatarUpload, ChangePasswordDialog, VerifyEmailDialog } from '../../components/common';
+import { AvatarUpload, ChangePasswordDialog } from '../../components/common';
 
 interface UserUpdateData {
   name: string;
@@ -63,7 +61,6 @@ const ParentProfile: React.FC = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
-  const [verifyEmailOpen, setVerifyEmailOpen] = useState(false);
 
   const [userFormData, setUserFormData] = useState<UserUpdateData>({
     name: user?.name || '',
@@ -324,17 +321,6 @@ const ParentProfile: React.FC = () => {
                         )}
                       </Box>
 
-                      <Box sx={{ mb: 3 }}>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
-                          Trạng thái xác thực email
-                        </Typography>
-                        <Chip
-                          label="Chưa xác thực"
-                          color="warning"
-                          size="small"
-                          icon={<VerifiedUserIcon />}
-                        />
-                      </Box>
                     </Grid>
 
                     {/* Right Column */}
@@ -427,25 +413,6 @@ const ParentProfile: React.FC = () => {
                       Đổi mật khẩu
                     </Button>
 
-                    <Button
-                      variant="outlined"
-                      startIcon={<VerifiedUserIcon />}
-                      onClick={() => setVerifyEmailOpen(true)}
-                      sx={{
-                        borderRadius: 2,
-                        px: 3,
-                        py: 1,
-                        borderColor: '#3b82f6',
-                        color: '#3b82f6',
-                        '&:hover': {
-                          borderColor: '#2563eb',
-                          bgcolor: '#eff6ff'
-                        }
-                      }}
-                    >
-                      Xác thực email
-                    </Button>
-
                     {!isEditing ? (
                       <Button
                         variant="contained"
@@ -514,15 +481,6 @@ const ParentProfile: React.FC = () => {
       <ChangePasswordDialog
         open={changePasswordOpen}
         onClose={() => setChangePasswordOpen(false)}
-      />
-
-      <VerifyEmailDialog
-        open={verifyEmailOpen}
-        onClose={() => setVerifyEmailOpen(false)}
-        userEmail={user?.email || ''}
-        onSuccess={() => {
-          console.log('Email verified successfully');
-        }}
       />
     </DashboardLayout>
   );

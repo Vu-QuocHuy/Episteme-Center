@@ -15,7 +15,6 @@ import Home from './pages/home/InteractiveHome';
 import Login from './pages/auth/Login';
 import StaffLogin from './pages/auth/StaffLogin';
 import ForgotPassword from './pages/auth/ForgotPassword';
-import VerifyEmail from './pages/auth/VerifyEmail';
 import UnauthorizedAccess from './pages/auth/UnauthorizedAccess';
 
 // Admin Pages
@@ -83,7 +82,6 @@ const AppContent: React.FC = () => {
           <Route path="/staff/login" element={<StaffLogin />} />
           <Route path="/admin/login" element={<Navigate to="/staff/login" replace />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/auth/verify-email" element={<VerifyEmail />} />
           <Route path="/unauthorized" element={<UnauthorizedAccess />} />
 
           {/* All Teachers Page - Must be before dynamic routes */}
