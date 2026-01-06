@@ -135,5 +135,19 @@ export function validateUserUpdate(data: UserUpdateData): UserUpdateErrors {
     errors.address = 'Địa chỉ quá ngắn';
   }
 
+  if (data.dayOfBirth) {
+    // Validate dayOfBirth format (YYYY-MM-DD from date input)
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(data.dayOfBirth)) {
+      errors.dayOfBirth = 'Ngày sinh không hợp lệ';
+    } else {
+      const date = new Date(data.dayOfBirth);
+      const today = new Date();
+      if (date >= today) {
+        errors.dayOfBirth = 'Ngày sinh phải nhỏ hơn ngày hiện tại';
+      }
+    }
+  }
+
   return errors;
 }

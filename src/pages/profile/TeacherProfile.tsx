@@ -24,7 +24,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import { updateUserAPI } from '../../services/users';
 import { updateTeacherAPI } from '../../services/teachers';
 import { validateUserUpdate } from '../../validations/commonValidation';
-import { validateTeacherUpdate } from '../../validations/teacherValidation';
 import { commonStyles } from '../../utils/styles';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
 import { AvatarUpload, ChangePasswordDialog } from '../../components/common';
@@ -40,7 +39,9 @@ interface UserUpdateData {
 
 interface TeacherUpdateData {
   description: string;
-  isActive: boolean;
+  qualifications: string[];
+  specializations: string[];
+  workExperience?: number | string;
 }
 
 interface UserUpdateErrors {
@@ -54,6 +55,9 @@ interface UserUpdateErrors {
 
 interface TeacherUpdateErrors {
   description?: string;
+  qualifications?: string;
+  specializations?: string;
+  workExperience?: string;
 }
 
 const TeacherProfile: React.FC = () => {
@@ -75,7 +79,9 @@ const TeacherProfile: React.FC = () => {
 
   const [teacherFormData, setTeacherFormData] = useState<TeacherUpdateData>({
     description: user?.teacher?.description || '',
-    isActive: user?.teacher?.isActive ?? true,
+    qualifications: user?.teacher?.qualifications || [],
+    specializations: user?.teacher?.specializations || [],
+    workExperience: user?.teacher?.workExperience || undefined,
   });
 
   const [userErrors, setUserErrors] = useState<UserUpdateErrors>({});
@@ -94,7 +100,9 @@ const TeacherProfile: React.FC = () => {
 
       setTeacherFormData({
         description: user.teacher?.description || '',
-        isActive: user.teacher?.isActive ?? true,
+        qualifications: user.teacher?.qualifications || [],
+        specializations: user.teacher?.specializations || [],
+        workExperience: user.teacher?.workExperience || undefined,
       });
     }
   }, [user]);
@@ -113,10 +121,12 @@ const TeacherProfile: React.FC = () => {
     }
   };
 
-  const handleTeacherInputChange = (field: keyof TeacherUpdateData, value: string | boolean) => {
+  const handleTeacherInputChange = (field: keyof TeacherUpdateData, value: string | boolean | string[] | number | undefined | null) => {
+    // Convert null to undefined
+    const normalizedValue = value === null ? undefined : value;
     setTeacherFormData(prev => ({
       ...prev,
-      [field]: value,
+      [field]: normalizedValue as any,
     }));
 
     if (teacherErrors[field as keyof TeacherUpdateErrors]) {
@@ -125,6 +135,12 @@ const TeacherProfile: React.FC = () => {
         [field]: undefined,
       }));
     }
+  };
+
+  const handleArrayInputChange = (field: 'qualifications' | 'specializations', value: string) => {
+    // Split by comma or newline and filter empty strings
+    const items = value.split(/[,\n]/).map(item => item.trim()).filter(item => item.length > 0);
+    handleTeacherInputChange(field, items);
   };
 
   const handleSave = async () => {
@@ -140,8 +156,11 @@ const TeacherProfile: React.FC = () => {
         return;
       }
 
-      // Validate teacher data
-      const teacherValidationErrors = validateTeacherUpdate(teacherFormData);
+      // Validate teacher data (only description is required in validation, but we allow all fields)
+      const teacherValidationErrors: TeacherUpdateErrors = {};
+      if (!teacherFormData.description || teacherFormData.description.trim() === '') {
+        teacherValidationErrors.description = 'Mô tả không được để trống';
+      }
       if (Object.keys(teacherValidationErrors).length > 0) {
         setTeacherErrors(teacherValidationErrors);
         return;
@@ -159,7 +178,13 @@ const TeacherProfile: React.FC = () => {
       if (userResponse.data && user.teacher?.id) {
         await updateTeacherAPI(user.teacher.id, {
           description: teacherFormData.description,
-          isActive: teacherFormData.isActive,
+          qualifications: teacherFormData.qualifications,
+          specializations: teacherFormData.specializations,
+          workExperience: teacherFormData.workExperience 
+            ? (typeof teacherFormData.workExperience === 'number' 
+                ? String(teacherFormData.workExperience) 
+                : teacherFormData.workExperience)
+            : undefined,
         });
       }
 
@@ -172,7 +197,9 @@ const TeacherProfile: React.FC = () => {
         teacher: {
           ...user.teacher,
           description: teacherFormData.description,
-          isActive: teacherFormData.isActive,
+          qualifications: teacherFormData.qualifications,
+          specializations: teacherFormData.specializations,
+          workExperience: teacherFormData.workExperience,
         } as any,
       });
 
@@ -197,7 +224,9 @@ const TeacherProfile: React.FC = () => {
 
     setTeacherFormData({
       description: user?.teacher?.description || '',
-      isActive: user?.teacher?.isActive ?? true,
+      qualifications: user?.teacher?.qualifications || [],
+      specializations: user?.teacher?.specializations || [],
+      workExperience: user?.teacher?.workExperience || undefined,
     });
 
     setUserErrors({});
@@ -244,7 +273,7 @@ const TeacherProfile: React.FC = () => {
             <Grid item xs={12} md={4}>
               <Card sx={{
                 height: 'fit-content',
-                borderRadius: 3,
+                borderRadius: 2,
                 boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
                 overflow: 'visible'
               }}>
@@ -274,7 +303,7 @@ const TeacherProfile: React.FC = () => {
             {/* Right Panel - Profile Details */}
             <Grid item xs={12} md={8}>
               <Card sx={{
-                borderRadius: 3,
+                borderRadius: 2,
                 boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
               }}>
                 <CardContent sx={{ p: 4 }}>
@@ -295,7 +324,15 @@ const TeacherProfile: React.FC = () => {
                             size="small"
                           />
                         ) : (
-                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                          <Typography 
+                            variant="body1" 
+                            sx={{ 
+                              fontWeight: 500,
+                              minHeight: '40px',
+                              display: 'flex',
+                              alignItems: 'center'
+                            }}
+                          >
                             {user.name}
                           </Typography>
                         )}
@@ -315,7 +352,15 @@ const TeacherProfile: React.FC = () => {
                             size="small"
                           />
                         ) : (
-                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                          <Typography 
+                            variant="body1" 
+                            sx={{ 
+                              fontWeight: 500,
+                              minHeight: '40px',
+                              display: 'flex',
+                              alignItems: 'center'
+                            }}
+                          >
                             {user.phone || 'Chưa cập nhật'}
                           </Typography>
                         )}
@@ -338,7 +383,15 @@ const TeacherProfile: React.FC = () => {
                             </Select>
                           </FormControl>
                         ) : (
-                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                          <Typography 
+                            variant="body1" 
+                            sx={{ 
+                              fontWeight: 500,
+                              minHeight: '40px',
+                              display: 'flex',
+                              alignItems: 'center'
+                            }}
+                          >
                             {userFormData.gender === 'male'
                               ? 'Nam'
                               : userFormData.gender === 'female'
@@ -348,28 +401,6 @@ const TeacherProfile: React.FC = () => {
                         )}
                       </Box>
 
-                      <Box sx={{ mb: 3 }}>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
-                          Trạng thái hoạt động
-                        </Typography>
-                        {isEditing ? (
-                          <FormControl fullWidth size="small">
-                            <Select
-                              value={teacherFormData.isActive}
-                              onChange={(e) => handleTeacherInputChange('isActive', e.target.value === 'true')}
-                            >
-                              <MenuItem value="true">Đang hoạt động</MenuItem>
-                              <MenuItem value="false">Tạm ngưng</MenuItem>
-                            </Select>
-                          </FormControl>
-                        ) : (
-                          <Chip
-                            label={teacherFormData.isActive ? 'Đang hoạt động' : 'Tạm ngưng'}
-                            color={teacherFormData.isActive ? 'success' : 'default'}
-                            size="small"
-                          />
-                        )}
-                      </Box>
                     </Grid>
 
                     {/* Right Column */}
@@ -389,7 +420,15 @@ const TeacherProfile: React.FC = () => {
                             type="email"
                           />
                         ) : (
-                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                          <Typography 
+                            variant="body1" 
+                            sx={{ 
+                              fontWeight: 500,
+                              minHeight: '40px',
+                              display: 'flex',
+                              alignItems: 'center'
+                            }}
+                          >
                             {user.email}
                           </Typography>
                         )}
@@ -411,7 +450,15 @@ const TeacherProfile: React.FC = () => {
                             InputLabelProps={{ shrink: true }}
                           />
                         ) : (
-                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                          <Typography 
+                            variant="body1" 
+                            sx={{ 
+                              fontWeight: 500,
+                              minHeight: '40px',
+                              display: 'flex',
+                              alignItems: 'center'
+                            }}
+                          >
                             {userFormData.dayOfBirth
                               ? new Date(userFormData.dayOfBirth).toLocaleDateString('vi-VN')
                               : 'Chưa cập nhật'}
@@ -433,7 +480,15 @@ const TeacherProfile: React.FC = () => {
                             size="small"
                           />
                         ) : (
-                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                          <Typography 
+                            variant="body1" 
+                            sx={{ 
+                              fontWeight: 500,
+                              minHeight: '40px',
+                              display: 'flex',
+                              alignItems: 'center'
+                            }}
+                          >
                             {user.address || 'Chưa cập nhật'}
                           </Typography>
                         )}
@@ -441,8 +496,9 @@ const TeacherProfile: React.FC = () => {
 
                     </Grid>
 
-                    {/* Teacher Specific Fields - Full Width */}
-                    <Grid item xs={12}>
+                    {/* Teacher Specific Fields - 2 Columns */}
+                    <Grid item xs={12} sm={6}>
+                      {/* Mô tả */}
                       <Box sx={{ mb: 3 }}>
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
                           Mô tả
@@ -457,15 +513,138 @@ const TeacherProfile: React.FC = () => {
                             error={!!teacherErrors.description}
                             helperText={teacherErrors.description}
                             size="small"
-                            placeholder="Mô tả về kinh nghiệm giảng dạy, chuyên môn..."
                           />
                         ) : (
-                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                          <Typography 
+                            variant="body1" 
+                            sx={{ 
+                              fontWeight: 500,
+                              minHeight: '40px',
+                              display: 'flex',
+                              alignItems: 'center'
+                            }}
+                          >
                             {user.teacher?.description || 'Chưa cập nhật'}
                           </Typography>
                         )}
                       </Box>
+
+                      {/* Bằng cấp */}
+                      <Box sx={{ mb: 3 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
+                          Bằng cấp
+                        </Typography>
+                        {isEditing ? (
+                          <TextField
+                            fullWidth
+                            multiline
+                            rows={3}
+                            value={teacherFormData.qualifications.join(', ')}
+                            onChange={(e) => handleArrayInputChange('qualifications', e.target.value)}
+                            error={!!teacherErrors.qualifications}
+                            helperText={teacherErrors.qualifications}
+                            size="small"
+                          />
+                        ) : (
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                            {teacherFormData.qualifications && teacherFormData.qualifications.length > 0 ? (
+                              teacherFormData.qualifications.map((qual, index) => (
+                                <Chip key={index} label={qual} size="small" variant="outlined" />
+                              ))
+                            ) : (
+                              <Typography 
+                                variant="body2" 
+                                color="text.secondary"
+                                sx={{ 
+                                  minHeight: '40px',
+                                  display: 'flex',
+                                  alignItems: 'center'
+                                }}
+                              >
+                                Chưa cập nhật
+                              </Typography>
+                            )}
+                          </Box>
+                        )}
+                      </Box>
                     </Grid>
+
+                    <Grid item xs={12} sm={6}>
+                      {/* Chuyên môn */}
+                      <Box sx={{ mb: 3 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
+                          Chuyên môn
+                        </Typography>
+                        {isEditing ? (
+                          <TextField
+                            fullWidth
+                            multiline
+                            rows={3}
+                            value={teacherFormData.specializations.join(', ')}
+                            onChange={(e) => handleArrayInputChange('specializations', e.target.value)}
+                            error={!!teacherErrors.specializations}
+                            helperText={teacherErrors.specializations}
+                            size="small"
+                          />
+                        ) : (
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                            {teacherFormData.specializations && teacherFormData.specializations.length > 0 ? (
+                              teacherFormData.specializations.map((spec, index) => (
+                                <Chip key={index} label={spec} size="small" color="primary" variant="outlined" />
+                              ))
+                            ) : (
+                              <Typography 
+                                variant="body2" 
+                                color="text.secondary"
+                                sx={{ 
+                                  minHeight: '40px',
+                                  display: 'flex',
+                                  alignItems: 'center'
+                                }}
+                              >
+                                Chưa cập nhật
+                              </Typography>
+                            )}
+                          </Box>
+                        )}
+                      </Box>
+
+                      {/* Kinh nghiệm làm việc */}
+                      <Box sx={{ mb: 3 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
+                          Kinh nghiệm làm việc
+                        </Typography>
+                        {isEditing ? (
+                          <TextField
+                            fullWidth
+                            multiline
+                            rows={4}
+                            value={teacherFormData.workExperience || ''}
+                            onChange={(e) => handleTeacherInputChange('workExperience', e.target.value)}
+                            error={!!teacherErrors.workExperience}
+                            helperText={teacherErrors.workExperience}
+                            size="small"
+                          />
+                        ) : (
+                          <Typography 
+                            variant="body1" 
+                            sx={{ 
+                              fontWeight: 500,
+                              minHeight: '40px',
+                              display: 'flex',
+                              alignItems: 'center'
+                            }}
+                          >
+                            {teacherFormData.workExperience 
+                              ? typeof teacherFormData.workExperience === 'number' 
+                                ? `${teacherFormData.workExperience} năm`
+                                : teacherFormData.workExperience
+                              : 'Chưa cập nhật'}
+                          </Typography>
+                        )}
+                      </Box>
+                    </Grid>
+
                   </Grid>
 
                   {/* Action Buttons */}

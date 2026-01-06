@@ -33,6 +33,7 @@ interface UserUpdateData {
   phone: string;
   gender: string;
   address: string;
+  dayOfBirth: string;
 }
 
 interface UserUpdateErrors {
@@ -41,7 +42,24 @@ interface UserUpdateErrors {
   phone?: string;
   gender?: string;
   address?: string;
+  dayOfBirth?: string;
 }
+
+// Convert date to YYYY-MM-DD format for date input
+const formatDateForInput = (dateString: string): string => {
+  if (!dateString) return '';
+  try {
+    const date = new Date(dateString);
+    // Check if date is valid
+    if (isNaN(date.getTime())) return '';
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  } catch {
+    return '';
+  }
+};
 
 const AdminProfile: React.FC = () => {
   const { user, updateUser } = useAuth();
@@ -57,6 +75,7 @@ const AdminProfile: React.FC = () => {
     phone: user?.phone || '',
     gender: user?.gender || '',
     address: user?.address || '',
+    dayOfBirth: user?.dayOfBirth ? formatDateForInput(user.dayOfBirth) : '',
   });
 
   const [errors, setErrors] = useState<UserUpdateErrors>({});
@@ -69,6 +88,7 @@ const AdminProfile: React.FC = () => {
         phone: user.phone || '',
         gender: user.gender || '',
         address: user.address || '',
+        dayOfBirth: user.dayOfBirth ? formatDateForInput(user.dayOfBirth) : '',
       });
     }
   }, [user]);
@@ -135,6 +155,7 @@ const AdminProfile: React.FC = () => {
       phone: user?.phone || '',
       gender: user?.gender || '',
       address: user?.address || '',
+      dayOfBirth: user?.dayOfBirth ? formatDateForInput(user.dayOfBirth) : '',
     });
     setErrors({});
     setIsEditing(false);
@@ -185,7 +206,7 @@ const AdminProfile: React.FC = () => {
             <Grid item xs={12} md={4}>
               <Card sx={{
                 height: 'fit-content',
-                borderRadius: 3,
+                borderRadius: 2,
                 boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
                 overflow: 'visible'
               }}>
@@ -214,7 +235,7 @@ const AdminProfile: React.FC = () => {
             {/* Right Panel - Profile Details */}
             <Grid item xs={12} md={8}>
               <Card sx={{
-                borderRadius: 3,
+                borderRadius: 2,
                 boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
               }}>
                 <CardContent sx={{ p: 4 }}>
@@ -225,30 +246,98 @@ const AdminProfile: React.FC = () => {
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
                           Email
                         </Typography>
-                        <TextField
-                          fullWidth
-                          value={user.email}
-                          size="small"
-                          InputProps={{ readOnly: true }}
-                        />
+                        {isEditing ? (
+                          <TextField
+                            fullWidth
+                            value={formData.email}
+                            onChange={(e) => handleInputChange('email', e.target.value)}
+                            error={!!errors.email}
+                            helperText={errors.email}
+                            size="small"
+                            type="email"
+                          />
+                        ) : (
+                          <Typography 
+                            variant="body1" 
+                            sx={{ 
+                              fontWeight: 500,
+                              minHeight: '40px',
+                              display: 'flex',
+                              alignItems: 'center'
+                            }}
+                          >
+                            {user.email}
+                          </Typography>
+                        )}
                       </Box>
 
                       <Box sx={{ mb: 3 }}>
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
                           Ngày sinh
                         </Typography>
-                        <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                          {formatDate(user.dayOfBirth || '')}
-                        </Typography>
+                        {isEditing ? (
+                          <TextField
+                            fullWidth
+                            type="date"
+                            value={formData.dayOfBirth}
+                            onChange={(e) => handleInputChange('dayOfBirth', e.target.value)}
+                            error={!!errors.dayOfBirth}
+                            helperText={errors.dayOfBirth}
+                            size="small"
+                            InputLabelProps={{ shrink: true }}
+                          />
+                        ) : (
+                          <Typography 
+                            variant="body1" 
+                            sx={{ 
+                              fontWeight: 500,
+                              minHeight: '40px',
+                              display: 'flex',
+                              alignItems: 'center'
+                            }}
+                          >
+                            {formatDate(user.dayOfBirth || '')}
+                          </Typography>
+                        )}
                       </Box>
 
                       <Box sx={{ mb: 3 }}>
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
                           Địa chỉ
                         </Typography>
-                        <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                          {user.address || 'Chưa cập nhật'}
+                        {isEditing ? (
+                          <TextField
+                            fullWidth
+                            value={formData.address}
+                            onChange={(e) => handleInputChange('address', e.target.value)}
+                            error={!!errors.address}
+                            helperText={errors.address}
+                            size="small"
+                          />
+                        ) : (
+                          <Typography 
+                            variant="body1" 
+                            sx={{ 
+                              fontWeight: 500,
+                              minHeight: '40px',
+                              display: 'flex',
+                              alignItems: 'center'
+                            }}
+                          >
+                            {user.address || 'Chưa cập nhật'}
+                          </Typography>
+                        )}
+                      </Box>
+
+                      <Box sx={{ mb: 3 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
+                          Vai trò
                         </Typography>
+                        <Chip
+                          label="Quản trị viên"
+                          color="primary"
+                          size="small"
+                        />
                       </Box>
 
                     </Grid>
@@ -269,7 +358,15 @@ const AdminProfile: React.FC = () => {
                             size="small"
                           />
                         ) : (
-                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                          <Typography 
+                            variant="body1" 
+                            sx={{ 
+                              fontWeight: 500,
+                              minHeight: '40px',
+                              display: 'flex',
+                              alignItems: 'center'
+                            }}
+                          >
                             {user.name}
                           </Typography>
                         )}
@@ -289,7 +386,15 @@ const AdminProfile: React.FC = () => {
                             size="small"
                           />
                         ) : (
-                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                          <Typography 
+                            variant="body1" 
+                            sx={{ 
+                              fontWeight: 500,
+                              minHeight: '40px',
+                              display: 'flex',
+                              alignItems: 'center'
+                            }}
+                          >
                             {user.phone || 'Chưa cập nhật'}
                           </Typography>
                         )}
@@ -312,42 +417,20 @@ const AdminProfile: React.FC = () => {
                             </Select>
                           </FormControl>
                         ) : (
-                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                          <Typography 
+                            variant="body1" 
+                            sx={{ 
+                              fontWeight: 500,
+                              minHeight: '40px',
+                              display: 'flex',
+                              alignItems: 'center'
+                            }}
+                          >
                             {user.gender === 'male' ? 'Nam' : user.gender === 'female' ? 'Nữ' : 'Khác'}
                           </Typography>
                         )}
                       </Box>
-
-                      <Box sx={{ mb: 3 }}>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
-                          Vai trò
-                        </Typography>
-                        <Chip
-                          label="Quản trị viên"
-                          color="primary"
-                          size="small"
-                        />
-                      </Box>
                     </Grid>
-
-                    {/* Address Field - Full Width */}
-                    {isEditing && (
-                      <Grid item xs={12}>
-                        <Box sx={{ mb: 3 }}>
-                          <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
-                            Địa chỉ
-                          </Typography>
-                          <TextField
-                            fullWidth
-                            value={formData.address}
-                            onChange={(e) => handleInputChange('address', e.target.value)}
-                            error={!!errors.address}
-                            helperText={errors.address}
-                            size="small"
-                          />
-                        </Box>
-                      </Grid>
-                    )}
                   </Grid>
 
                   {/* Action Buttons */}

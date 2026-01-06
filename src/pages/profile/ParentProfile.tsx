@@ -222,7 +222,7 @@ const ParentProfile: React.FC = () => {
             <Grid item xs={12} md={4}>
               <Card sx={{
                 height: 'fit-content',
-                borderRadius: 3,
+                borderRadius: 2,
                 boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
                 overflow: 'visible'
               }}>
@@ -252,7 +252,7 @@ const ParentProfile: React.FC = () => {
             {/* Right Panel - Profile Details */}
             <Grid item xs={12} md={8}>
               <Card sx={{
-                borderRadius: 3,
+                borderRadius: 2,
                 boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
               }}>
                 <CardContent sx={{ p: 4 }}>
@@ -273,7 +273,15 @@ const ParentProfile: React.FC = () => {
                             size="small"
                           />
                         ) : (
-                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                          <Typography 
+                            variant="body1" 
+                            sx={{ 
+                              fontWeight: 500,
+                              minHeight: '40px',
+                              display: 'flex',
+                              alignItems: 'center'
+                            }}
+                          >
                             {user.name}
                           </Typography>
                         )}
@@ -295,7 +303,15 @@ const ParentProfile: React.FC = () => {
                             InputLabelProps={{ shrink: true }}
                           />
                         ) : (
-                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                          <Typography 
+                            variant="body1" 
+                            sx={{ 
+                              fontWeight: 500,
+                              minHeight: '40px',
+                              display: 'flex',
+                              alignItems: 'center'
+                            }}
+                          >
                             {user?.dayOfBirth ? new Date(user.dayOfBirth).toLocaleDateString('vi-VN') : 'Chưa cập nhật'}
                           </Typography>
                         )}
@@ -315,7 +331,15 @@ const ParentProfile: React.FC = () => {
                             size="small"
                           />
                         ) : (
-                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                          <Typography 
+                            variant="body1" 
+                            sx={{ 
+                              fontWeight: 500,
+                              minHeight: '40px',
+                              display: 'flex',
+                              alignItems: 'center'
+                            }}
+                          >
                             {user.address || 'Chưa cập nhật'}
                           </Typography>
                         )}
@@ -340,7 +364,15 @@ const ParentProfile: React.FC = () => {
                             type="email"
                           />
                         ) : (
-                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                          <Typography 
+                            variant="body1" 
+                            sx={{ 
+                              fontWeight: 500,
+                              minHeight: '40px',
+                              display: 'flex',
+                              alignItems: 'center'
+                            }}
+                          >
                             {user.email}
                           </Typography>
                         )}
@@ -360,7 +392,15 @@ const ParentProfile: React.FC = () => {
                             size="small"
                           />
                         ) : (
-                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                          <Typography 
+                            variant="body1" 
+                            sx={{ 
+                              fontWeight: 500,
+                              minHeight: '40px',
+                              display: 'flex',
+                              alignItems: 'center'
+                            }}
+                          >
                             {user.phone || 'Chưa cập nhật'}
                           </Typography>
                         )}
@@ -383,7 +423,15 @@ const ParentProfile: React.FC = () => {
                             </Select>
                           </FormControl>
                         ) : (
-                          <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                          <Typography 
+                            variant="body1" 
+                            sx={{ 
+                              fontWeight: 500,
+                              minHeight: '40px',
+                              display: 'flex',
+                              alignItems: 'center'
+                            }}
+                          >
                             {userFormData.gender === 'male' ? 'Nam' : userFormData.gender === 'female' ? 'Nữ' : 'Khác'}
                           </Typography>
                         )}

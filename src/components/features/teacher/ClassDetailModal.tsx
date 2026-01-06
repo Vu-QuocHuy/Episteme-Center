@@ -413,15 +413,15 @@ const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
                                     sx={{ minWidth: 100 }}
                                   />
                                   {(selectedClassDetail?.status !== 'closed' && selectedClassDetail?.status !== 'completed') && (
-                                    <Tooltip title={student.isActive ? 'Đang học - Click để đánh dấu nghỉ giữa chừng' : 'Nghỉ giữa chừng - Click để đánh dấu đang học'}>
-                                      <Switch
-                                        checked={student.isActive ?? true}
-                                        onChange={() => handleToggleStudentStatus(student.id, student.isActive ?? true)}
-                                        disabled={updatingStatus[student.id]}
-                                        color="primary"
-                                        size="small"
-                                      />
-                                    </Tooltip>
+                                  <Tooltip title={student.isActive ? 'Đang học - Click để đánh dấu nghỉ giữa chừng' : 'Nghỉ giữa chừng - Click để đánh dấu đang học'}>
+                                    <Switch
+                                      checked={student.isActive ?? true}
+                                      onChange={() => handleToggleStudentStatus(student.id, student.isActive ?? true)}
+                                      disabled={updatingStatus[student.id]}
+                                      color="primary"
+                                  size="small"
+                                />
+                                  </Tooltip>
                                   )}
                                 </Box>
                               </TableCell>

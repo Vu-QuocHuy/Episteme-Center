@@ -470,4 +470,3 @@ const TestimonialsManagement: React.FC = () => {
 };
 
 export default TestimonialsManagement;
- 

@@ -107,7 +107,7 @@ const Footer: React.FC = () => {
                     Địa chỉ
                   </Typography>
                   <Typography variant="body2" sx={{ color: '#ccc', fontSize: '0.875rem', lineHeight: 1.6 }}>
-                    {settings.address}
+                    {settings.address || 'Chưa cập nhật'}
                   </Typography>
                 </Box>
               </Box>
@@ -132,7 +132,7 @@ const Footer: React.FC = () => {
                     Điện thoại
                   </Typography>
                   <Link
-                    href={`tel:${settings.phone.replace(/\s/g, '')}`}
+                    href={settings.phone ? `tel:${settings.phone.replace(/\s/g, '')}` : undefined}
                     sx={{
                       color: '#ccc',
                       textDecoration: 'none',
@@ -141,7 +141,7 @@ const Footer: React.FC = () => {
                       display: 'block'
                     }}
                   >
-                    {settings.phone}
+                    {settings.phone || 'Chưa cập nhật'}
                   </Link>
                 </Box>
               </Box>
@@ -166,7 +166,7 @@ const Footer: React.FC = () => {
                     Email
                   </Typography>
                   <Link
-                    href={`mailto:${settings.email}`}
+                    href={settings.email ? `mailto:${settings.email}` : undefined}
                     sx={{
                       color: '#ccc',
                       textDecoration: 'none',
@@ -176,7 +176,7 @@ const Footer: React.FC = () => {
                       wordBreak: 'break-word'
                     }}
                   >
-                    {settings.email}
+                    {settings.email || 'Chưa cập nhật'}
                   </Link>
                 </Box>
               </Box>
