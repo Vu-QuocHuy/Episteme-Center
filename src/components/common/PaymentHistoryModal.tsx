@@ -470,13 +470,13 @@ const PaymentHistoryModal: React.FC<PaymentHistoryModalProps> = ({
                             </Typography>
                           </Box>
                         </Grid>
-                         <Grid item xs={12} md={6}>
+                        <Grid item xs={12} md={6}>
                            <Box>
                              <Typography variant="subtitle2" color="textSecondary" gutterBottom sx={{ fontWeight: 600 }}>
                                Số buổi học: {(paymentData as any).totalLessons || 0} buổi
                              </Typography>
                            </Box>
-                         </Grid>
+                        </Grid>
                         <Grid item xs={12} md={6}>
                           <Box>
                             <Typography variant="subtitle2" color="textSecondary" gutterBottom sx={{ fontWeight: 600 }}>
@@ -507,12 +507,12 @@ const PaymentHistoryModal: React.FC<PaymentHistoryModalProps> = ({
                         </Grid>
                         <Grid item xs={12} md={6}>
                           <Box>
-                            <Typography variant="subtitle2" color="textSecondary" gutterBottom sx={{ fontWeight: 600 }}>
+                          <Typography variant="subtitle2" color="textSecondary" gutterBottom sx={{ fontWeight: 600 }}>
                               Còn lại: {formatCurrency(paymentDetails.remainingAmount || 0)}
                             </Typography>
                           </Box>
                         </Grid>
-                        <Grid item xs={12}>
+                        <Grid item xs={12} md={6}>
                           <Box>
                             <Typography variant="subtitle2" color="textSecondary" sx={{ fontWeight: 600, mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
                               Trạng thái:
@@ -820,8 +820,8 @@ const PaymentHistoryModal: React.FC<PaymentHistoryModalProps> = ({
                   <Grid container spacing={2}>
                     <Grid item xs={12} md={4}>
                       <Box>
-                        <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
-                          Tổng giao dịch: <Typography variant="h6" component="span" sx={{ fontWeight: 600, color: '#667eea' }}>
+                        <Typography variant="body1" color="textSecondary" sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                          Tổng giao dịch: <Typography variant="body1" component="span" sx={{ fontWeight: 600 }}>
                             {paymentHistory.length}
                           </Typography>
                         </Typography>
@@ -829,8 +829,8 @@ const PaymentHistoryModal: React.FC<PaymentHistoryModalProps> = ({
                     </Grid>
                     <Grid item xs={12} md={4}>
                       <Box>
-                        <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
-                          Tổng đã thanh toán: <Typography variant="h6" component="span" sx={{ fontWeight: 600, color: 'success.main' }}>
+                        <Typography variant="body1" color="textSecondary" sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                          Tổng đã thanh toán: <Typography variant="body1" component="span" sx={{ fontWeight: 600 }}>
                             {formatCurrency(
                               paymentHistory.reduce((sum, t) => sum + Number(t.amount || 0), 0)
                             )}
@@ -840,8 +840,8 @@ const PaymentHistoryModal: React.FC<PaymentHistoryModalProps> = ({
                     </Grid>
                     <Grid item xs={12} md={4}>
                       <Box>
-                        <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
-                          Giao dịch thành công: <Typography variant="h6" component="span" sx={{ fontWeight: 600, color: 'success.main' }}>
+                        <Typography variant="body1" color="textSecondary" sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                          Giao dịch thành công: <Typography variant="body1" component="span" sx={{ fontWeight: 600}}>
                             {paymentHistory.length}
                           </Typography>
                         </Typography>

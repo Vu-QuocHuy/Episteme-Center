@@ -1,7 +1,7 @@
 import React from 'react';
 import { useFooterSettings } from '../../hooks/useFooterSettings';
 import { Box, Container, Grid, Typography, Link, IconButton, Divider } from '@mui/material';
-import { Facebook as FacebookIcon, Twitter as TwitterIcon, Instagram as InstagramIcon, YouTube as YouTubeIcon,
+import { Facebook as FacebookIcon, YouTube as YouTubeIcon,
     Phone as PhoneIcon, Email as EmailIcon, LocationOn as LocationIcon } from '@mui/icons-material';
 import { COLORS } from '../../utils/colors';
 

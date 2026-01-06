@@ -68,8 +68,7 @@ const TeacherTable: React.FC<TeacherTableProps> = ({
               <TableCell sx={{ color: 'black', fontWeight: 'bold' }}>Email</TableCell>
               <TableCell sx={{ color: 'black', fontWeight: 'bold' }}>Số điện thoại</TableCell>
               <TableCell sx={{ color: 'black', fontWeight: 'bold' }}>Lương/buổi</TableCell>
-              <TableCell sx={{ color: 'black', fontWeight: 'bold' }}>Bằng cấp</TableCell>
-              <TableCell sx={{ color: 'black', fontWeight: 'bold' }}>Chuyên môn</TableCell>
+              <TableCell sx={{ color: 'black', fontWeight: 'bold' }}>Giới tính</TableCell>
               <TableCell sx={{ color: 'black', fontWeight: 'bold' }}>Trạng thái</TableCell>
               <TableCell sx={{ color: 'black', fontWeight: 'bold' }}>Thao tác</TableCell>
             </TableRow>
@@ -98,34 +97,9 @@ const TeacherTable: React.FC<TeacherTableProps> = ({
                   </Typography>
                 </TableCell>
                 <TableCell>
-                  {teacher.qualifications?.length > 0 ? (
-                    <Box>
-                      {teacher.qualifications.map((q, idx) => (
-                        <Typography key={idx} variant="body2" sx={{ display: 'block' }}>
-                          {q}
-                        </Typography>
-                      ))}
-                    </Box>
-                  ) : (
-                    <Typography variant="body2">
-                      {teacher.experience ? `${teacher.experience} năm kinh nghiệm` : 'Chưa cập nhật'}
-                    </Typography>
-                  )}
-                </TableCell>
-                <TableCell>
-                  {teacher.specializations?.length > 0 ? (
-                    <Box>
-                      {teacher.specializations.map((s, idx) => (
-                        <Typography key={idx} variant="body2" sx={{ display: 'block' }}>
-                          {s}
-                        </Typography>
-                      ))}
-                    </Box>
-                  ) : (
-                    <Typography variant="body2">
-                      {teacher.specialization || 'Không xác định'}
-                    </Typography>
-                  )}
+                  <Typography variant="body2">
+                    {teacher.gender === 'male' ? 'Nam' : teacher.gender === 'female' ? 'Nữ' : 'Không xác định'}
+                  </Typography>
                 </TableCell>
                 <TableCell>
                   <Box
@@ -176,7 +150,7 @@ const TeacherTable: React.FC<TeacherTableProps> = ({
             ))}
             {(!teachers || !Array.isArray(teachers) || teachers.length === 0) && (
               <TableRow>
-                <TableCell colSpan={8} align="center" sx={{ py: 3, color: 'text.primary' }}>
+                <TableCell colSpan={7} align="center" sx={{ py: 3, color: 'text.primary' }}>
                   <Typography variant="body2" color="text.secondary">
                     Không có dữ liệu giáo viên
                   </Typography>

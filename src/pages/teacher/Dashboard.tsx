@@ -211,12 +211,12 @@ const Dashboard = () => {
         {/* Content Sections */}
         <Grid container spacing={4}>
           {/* Active Classes */}
-          <Grid item xs={12} md={6}>
-              <Paper sx={{ p: 4, borderRadius: 3, boxShadow: '0 6px 24px rgba(0,0,0,0.12)', bgcolor: '#fff', border: '1px solid #e0e0e0', mb: 3 }}>
+          <Grid item xs={12}>
+              <Paper sx={{ p: 4, borderRadius: 1, boxShadow: '0 6px 24px rgba(0,0,0,0.12)', bgcolor: '#fff', border: '1px solid #e0e0e0', mb: 3 }}>
                 <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, mb: 3 }}>
                 Lớp học đang dạy
               </Typography>
-                <Box mt={2} bgcolor="#f5f6fa" borderRadius={2} border="1px solid #e0e0e0" p={2}>
+                <Box mt={2} bgcolor="#f5f6fa" borderRadius={1} border="1px solid #e0e0e0" p={2}>
                   {dashboardData.activeClasses.length > 0 ? (
                     <TableContainer sx={commonStyles.tableContainer}>
                       <Table size="small">
@@ -277,40 +277,54 @@ const Dashboard = () => {
             </Grid>
 
           {/* Recent Salary */}
-          <Grid item xs={12} md={6}>
-              <Paper sx={{ p: 4, borderRadius: 3, boxShadow: '0 6px 24px rgba(0,0,0,0.12)', bgcolor: '#fff', border: '1px solid #e0e0e0', mb: 3 }}>
-                <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, mb: 3 }}>
-                  Lương tháng gần đây
+          <Grid item xs={12}>
+            <Paper sx={{ p: 4, borderRadius: 1, boxShadow: '0 6px 24px rgba(0,0,0,0.12)', bgcolor: '#fff', border: '1px solid #e0e0e0', mb: 3 }}>
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, mb: 3 }}>
+                Lương tháng gần đây
+              </Typography>
+              {dashboardData.recentlySalary && Object.keys(dashboardData.recentlySalary).length > 0 ? (
+                <Box mt={2} bgcolor="#f5f6fa" borderRadius={1} border="1px solid #e0e0e0" p={2}>
+                  <TableContainer>
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell sx={{ fontWeight: 'bold' }}>Tháng/Năm</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold' }}>Tổng buổi</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold' }}>Lương/buổi</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold' }}>Tổng lương</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold' }}>Đã thanh toán</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        <TableRow>
+                          <TableCell>
+                            {formatMonthYear(dashboardData.recentlySalary.month, dashboardData.recentlySalary.year)}
+                          </TableCell>
+                          <TableCell>
+                            {dashboardData.recentlySalary.totalLessons || 0}
+                          </TableCell>
+                          <TableCell>
+                            {formatCurrency(dashboardData.recentlySalary.salaryPerLesson)}
+                          </TableCell>
+                          <TableCell>
+                            {formatCurrency(
+                              (dashboardData.recentlySalary.totalLessons || 0) *
+                              (dashboardData.recentlySalary.salaryPerLesson || 0)
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {formatCurrency(dashboardData.recentlySalary.paidAmount)}
+                          </TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Box>
+              ) : (
+                <Typography color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
+                  Chưa có thông tin lương gần đây
                 </Typography>
-                {dashboardData.recentlySalary && Object.keys(dashboardData.recentlySalary).length > 0 ? (
-                  <Box mt={2} bgcolor="#f5f6fa" borderRadius={2} border="1px solid #e0e0e0" p={2}>
-                    <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} gap={3} justifyContent="space-between" alignItems="flex-start">
-                      <Box flex={1}>
-                        <Typography variant="subtitle1" sx={{ mb: 1 }}>
-                          <strong>Tháng/Năm:</strong> {formatMonthYear(dashboardData.recentlySalary.month, dashboardData.recentlySalary.year)}
-                        </Typography>
-                        <Typography variant="subtitle1" sx={{ mb: 1 }}>
-                          <strong>Tổng buổi:</strong> <span style={{ color: 'text.secondary', fontWeight: 600 }}>{dashboardData.recentlySalary.totalLessons || 0}</span>
-                        </Typography>
-                        <Typography variant="subtitle1" sx={{ mb: 1 }}>
-                          <strong>Lương/buổi:</strong> <span style={{ color: 'text.secondary', fontWeight: 600 }}>{formatCurrency(dashboardData.recentlySalary.salaryPerLesson)}</span>
-                        </Typography>
-                      </Box>
-                      <Box flex={1}>
-                        <Typography variant="subtitle1" sx={{ mb: 1 }}>
-                          <strong>Tổng lương:</strong> <span style={{ color: 'text.secondary', fontWeight: 600 }}>{formatCurrency((dashboardData.recentlySalary.totalLessons || 0) * (dashboardData.recentlySalary.salaryPerLesson || 0))}</span>
-                        </Typography>
-                        <Typography variant="subtitle1" sx={{ mb: 1 }}>
-                          <strong>Đã thanh toán:</strong> <span style={{ color: 'text.secondary', fontWeight: 600 }}>{formatCurrency(dashboardData.recentlySalary.paidAmount)}</span>
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </Box>
-                ) : (
-                  <Typography color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
-                    Chưa có thông tin lương gần đây
-                  </Typography>
-                )}
+              )}
             </Paper>
           </Grid>
         </Grid>

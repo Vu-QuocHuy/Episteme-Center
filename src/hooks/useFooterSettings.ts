@@ -41,7 +41,7 @@ export const useFooterSettings = () => {
         setError(null);
         const response = await getFooterSettingsAPI();
         // Backend wrap response trong { statusCode, message, data }
-        const settingsData = response.data?.data || response.data;
+        const settingsData = (response as any).data?.data || (response as any).data;
         if (settingsData) {
           setFooterSettings(settingsData);
           setHasData(true); // Có dữ liệu từ API
@@ -53,7 +53,7 @@ export const useFooterSettings = () => {
         console.error('Error loading footer settings:', error);
         // Nếu lỗi 404 thì chưa có data, giữ default values
         if (error?.response?.status !== 404) {
-          setError('Failed to load footer settings');
+        setError('Failed to load footer settings');
         }
         setFooterSettings(emptySettings);
         setHasData(false);

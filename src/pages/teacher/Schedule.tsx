@@ -140,7 +140,7 @@ const Schedule: React.FC = () => {
     <DashboardLayout role="teacher">
       <ScheduleCalendar
         lessons={lessons}
-        title="Lịch dạy của tôi"
+        title="Lịch dạy"
         userType="teacher"
       />
     </DashboardLayout>

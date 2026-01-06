@@ -319,39 +319,48 @@ const StudentViewDialog: React.FC<StudentViewDialogProps> = ({
                     <Grid container spacing={2}>
                         {studentData.classes.map((cls, index) => (
                         <Grid item xs={12} md={4} key={String(cls.class?.id || cls.classId?.id || cls.classId || `view-class-${index}`)}>
-                          <Box sx={{
-                            p: 2,
-                            borderRadius: 2,
-                            background: cls.status === 'active'
-                              ? 'linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%)'
-                              : 'linear-gradient(135deg, #fff3e0 0%, #ffcc02 100%)',
-                            border: `2px solid ${cls.status === 'active' ? '#4caf50' : '#ff9800'}`,
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                          }}>
-                            <Typography variant="subtitle2" sx={{
-                              fontWeight: 600,
-                              mb: 1,
-                              color: cls.status === 'active' ? '#2e7d32' : '#e65100'
-                            }}>
+                          <Box
+                            sx={{
+                              p: 2,
+                              borderRadius: 2,
+                              backgroundColor: '#fff',
+                              border: '1px solid #ff9800',
+                              boxShadow: '0 1px 6px rgba(25,118,210,0.15)'
+                            }}
+                          >
+                            <Typography
+                              variant="subtitle2"
+                              sx={{
+                                fontWeight: 600,
+                                mb: 1,
+                                color: '#333'
+                              }}
+                            >
                                 {cls.class?.name || cls.classId?.name || cls.name || `${cls.class?.grade || cls.classId?.grade || ''}.${cls.class?.section || cls.classId?.section || ''}`}
                             </Typography>
-                            <Typography variant="body2" sx={{
-                              fontWeight: 500,
-                              color: cls.status === 'active' ? '#2e7d32' : '#e65100',
-                              mb: 1
-                            }}>
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                fontWeight: 500,
+                                color: cls.status === 'active' ? 'success.main' : 'text.secondary',
+                                mb: 1
+                              }}
+                            >
                               {cls.status === 'active' ? 'Đang học' : 'Đã nghỉ'}
                             </Typography>
                               {(cls.discountPercent || cls.discount) && (
-                              <Typography variant="caption" sx={{
-                                display: 'inline-block',
-                                px: 1,
-                                py: 0.5,
-                                borderRadius: 1,
-                                bgcolor: 'rgba(102, 126, 234, 0.1)',
-                                color: '#667eea',
-                                fontWeight: 600
-                              }}>
+                              <Typography
+                                variant="caption"
+                                sx={{
+                                  display: 'inline-block',
+                                  px: 1,
+                                  py: 0.5,
+                                  borderRadius: 1,
+                                  bgcolor: 'rgba(0,0,0,0.04)',
+                                  color: 'text.secondary',
+                                  fontWeight: 500
+                                }}
+                              >
                                   Giảm {cls.discountPercent || cls.discount}%
                               </Typography>
                             )}

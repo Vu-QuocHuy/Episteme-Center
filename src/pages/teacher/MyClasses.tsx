@@ -300,9 +300,7 @@ const MyClasses: React.FC = () => {
       <Box sx={commonStyles.pageContainer}>
         <Box sx={commonStyles.contentContainer}>
           <Box sx={commonStyles.pageHeader}>
-            <Typography sx={commonStyles.pageTitle}>
-          Lớp học của tôi
-        </Typography>
+            <Typography sx={commonStyles.pageTitle}>Quản lý lớp dạy</Typography>
           </Box>
 
           {/* Stat Cards */}

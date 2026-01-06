@@ -286,27 +286,26 @@ const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
                           Thông tin cơ bản
                         </Typography>
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                          <Box>
-                            <Typography variant="body2" color="text.secondary">Tên lớp</Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>Tên lớp:</Typography>
                             <Typography variant="body1" fontWeight="medium">{selectedClassDetail.name}</Typography>
                           </Box>
-                          <Box>
-                            <Typography variant="body2" color="text.secondary">Khối - Phần</Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>Khối - Phần:</Typography>
                             <Typography variant="body1" fontWeight="medium">
                               Khối {selectedClassDetail.grade} - Phần {selectedClassDetail.section}
                             </Typography>
                           </Box>
-                          <Box>
-                            <Typography variant="body2" color="text.secondary">Trạng thái</Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>Trạng thái:</Typography>
                             <Chip
                               label={getStatusLabel(selectedClassDetail.status)}
                               color={getStatusColor(selectedClassDetail.status)}
                               size="small"
-                              sx={{ mt: 0.5 }}
                             />
                           </Box>
-                          <Box>
-                            <Typography variant="body2" color="text.secondary">Số lượng học sinh</Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>Số lượng học sinh:</Typography>
                             <Typography variant="body1" fontWeight="medium">
                               {selectedClassDetail.currentStudents || 0} học sinh
                             </Typography>
@@ -322,29 +321,22 @@ const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
                             Lịch học
                           </Typography>
                           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                            <Box>
-                              <Typography variant="body2" color="text.secondary">Ngày học trong tuần</Typography>
-                              <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
-                                {selectedClassDetail.schedule.dayOfWeeks?.map(day => (
-                                  <Chip
-                                    key={day}
-                                    label={['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'][day]}
-                                    color="primary"
-                                    size="small"
-                                  />
-                                ))}
-                              </Box>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>Ngày học trong tuần:</Typography>
+                              <Typography variant="body1" fontWeight="medium">
+                                {selectedClassDetail.schedule.dayOfWeeks?.map(day => ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'][day]).join(', ') || 'Chưa có lịch'}
+                              </Typography>
                             </Box>
                             {selectedClassDetail.schedule.startTime && selectedClassDetail.schedule.endTime && (
-                              <Box>
-                                <Typography variant="body2" color="text.secondary">Giờ học</Typography>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>Giờ học:</Typography>
                                 <Typography variant="body1" fontWeight="medium">
                                   {selectedClassDetail.schedule.startTime} - {selectedClassDetail.schedule.endTime}
                                 </Typography>
                               </Box>
                             )}
                             <Box>
-                              <Typography variant="body2" color="text.secondary">Thời gian học</Typography>
+                              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>Thời gian học</Typography>
                               <Typography variant="body1" fontWeight="medium">
                                 {selectedClassDetail.schedule.startDate && selectedClassDetail.schedule.endDate
                                   ? `${formatDate(selectedClassDetail.schedule.startDate)} - ${formatDate(selectedClassDetail.schedule.endDate)}`
@@ -413,22 +405,24 @@ const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
                                 <Typography variant="body2">{student.phone || 'Không có'}</Typography>
                               </TableCell>
                               <TableCell sx={{ width: '200px' }}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'space-between' }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: selectedClassDetail?.status === 'closed' || selectedClassDetail?.status === 'completed' ? 'flex-start' : 'space-between' }}>
                                 <Chip
                                     label={student.isActive ? 'Đang học' : 'Nghỉ giữa chừng'}
                                     color={student.isActive ? 'success' : 'default'}
                                     size="small"
                                     sx={{ minWidth: 100 }}
                                   />
-                                  <Tooltip title={student.isActive ? 'Đang học - Click để đánh dấu nghỉ giữa chừng' : 'Nghỉ giữa chừng - Click để đánh dấu đang học'}>
-                                    <Switch
-                                      checked={student.isActive ?? true}
-                                      onChange={() => handleToggleStudentStatus(student.id, student.isActive ?? true)}
-                                      disabled={updatingStatus[student.id]}
-                                      color="primary"
-                                  size="small"
-                                />
-                                  </Tooltip>
+                                  {(selectedClassDetail?.status !== 'closed' && selectedClassDetail?.status !== 'completed') && (
+                                    <Tooltip title={student.isActive ? 'Đang học - Click để đánh dấu nghỉ giữa chừng' : 'Nghỉ giữa chừng - Click để đánh dấu đang học'}>
+                                      <Switch
+                                        checked={student.isActive ?? true}
+                                        onChange={() => handleToggleStudentStatus(student.id, student.isActive ?? true)}
+                                        disabled={updatingStatus[student.id]}
+                                        color="primary"
+                                        size="small"
+                                      />
+                                    </Tooltip>
+                                  )}
                                 </Box>
                               </TableCell>
                             </TableRow>

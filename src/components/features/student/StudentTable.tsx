@@ -74,7 +74,7 @@ const StudentTable: React.FC<StudentTableProps> = ({
               <TableCell sx={{ color: 'black', fontWeight: 'bold' }}>Email</TableCell>
               <TableCell sx={{ color: 'black', fontWeight: 'bold' }}>Số điện thoại</TableCell>
               <TableCell sx={{ color: 'black', fontWeight: 'bold' }}>Phụ huynh</TableCell>
-              <TableCell sx={{ color: 'black', fontWeight: 'bold' }}>Lớp học</TableCell>
+              <TableCell sx={{ color: 'black', fontWeight: 'bold' }}>Năm sinh</TableCell>
               <TableCell sx={{ color: 'black', fontWeight: 'bold' }}>Giới tính</TableCell>
               <TableCell sx={{ color: 'black', fontWeight: 'bold' }}>Thao tác</TableCell>
             </TableRow>
@@ -112,22 +112,11 @@ const StudentTable: React.FC<StudentTableProps> = ({
                   </Typography>
                 </TableCell>
                 <TableCell>
-                  {Array.isArray(student.classes) && student.classes.length > 0 ? (
-                    <Box>
-                      {student.classes.map((cls: any, idx: number) => {
-                        const className = cls.class?.name || cls.classId?.name || `Lớp ${cls.class?.grade || cls.classId?.grade || ''}.${cls.class?.section || cls.classId?.section || ''}`;
-                        const status = cls.status === 'active' ? 'Đang học' : 'Đã nghỉ';
-                        const discount = cls.discountPercent ? ` (Giảm ${cls.discountPercent}%)` : '';
-                        return (
-                          <Typography key={idx} variant="body2" sx={{ display: 'block' }}>
-                            {`${className}${discount} - ${status}`}
-                          </Typography>
-                        );
-                      })}
-                    </Box>
-                  ) : (
-                    <Typography variant="body2">Chưa đăng ký lớp</Typography>
-                  )}
+                  <Typography variant="body2">
+                    {student.dayOfBirth
+                      ? new Date(student.dayOfBirth).toLocaleDateString('vi-VN')
+                      : 'Chưa cập nhật'}
+                  </Typography>
                 </TableCell>
                 <TableCell>
                   <Typography variant="body2">

@@ -26,6 +26,7 @@ import { commonStyles } from '../../utils/styles';
 import StatCard from '../../components/common/StatCard';
 import { getParentDashboardAPI } from '../../services/dashboard';
 import { getStudentScheduleAPI } from '../../services/students';
+import { getParentByIdAPI } from '../../services/parents';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -66,23 +67,32 @@ const Dashboard = () => {
       const parentDashboardRes = await getParentDashboardAPI(parentId);
       const dash = (parentDashboardRes as any)?.data?.data || (parentDashboardRes as any)?.data || {};
 
-      // Fetch schedules for each child in payment list (if available)
-      const studentPayments: any[] = dash.studentPayments || [];
-      const schedulesPromises = studentPayments.map(async (studentPayment: any) => {
+      // Get full children list from parent detail API
+      const parentDetailRes = await getParentByIdAPI(String(parentId));
+      const parentPayload = (parentDetailRes as any)?.data?.data ?? (parentDetailRes as any)?.data ?? {};
+      const students: Array<{ id: string; name?: string; email?: string }> =
+        Array.isArray(parentPayload?.students) ? parentPayload.students : [];
+
+      // Fetch schedules for each child
+      const schedulesPromises = students.map(async (stu: any) => {
         try {
-          const scheduleRes = await getStudentScheduleAPI(studentPayment.studentId);
+          const scheduleRes = await getStudentScheduleAPI(String(stu.id));
           const scheduleData = (scheduleRes as any)?.data?.data || (scheduleRes as any)?.data || {};
           // Normalize to array of schedules; support both array and object shapes
           const schedules = (scheduleData as any).schedules || (Array.isArray(scheduleData) ? scheduleData : []);
           const totalActiveClasses = (scheduleData as any).totalActiveClasses || 0;
           return {
-            ...studentPayment,
+            studentId: stu.id,
+            studentName: stu.name || parentPayload?.name,
+            studentEmail: stu.email || parentPayload?.email,
             schedules,
             totalActiveClasses,
           };
         } catch (err) {
           return {
-            ...studentPayment,
+            studentId: stu.id,
+            studentName: stu.name || parentPayload?.name,
+            studentEmail: stu.email || parentPayload?.email,
             schedules: [],
             totalActiveClasses: 0,
           };
@@ -95,7 +105,7 @@ const Dashboard = () => {
       // Calculate statistics from dashboard data
       const paymentInfo = dash.paymentInfo || {};
       const calculatedStats = {
-        totalChildren: dash.totalChildren || childrenWithSchedules.length || 0,
+        totalChildren: dash.totalChildren || students.length || childrenWithSchedules.length || 0,
         totalClasses: childrenWithSchedules.reduce((total: number, child: any) => total + (child.totalActiveClasses || 0), 0),
         totalFees: paymentInfo.totalRevenue || 0,
         paidFees: paymentInfo.totalPaidAmount || 0,
@@ -245,7 +255,10 @@ const Dashboard = () => {
                               </TableCell>
                               <TableCell>
                                 <Typography variant="body2">
-                                  {scheduleItem.teacher?.name || 'Chưa phân công'}
+                                  {scheduleItem.teacher?.name
+                                    || scheduleItem.class?.teacher?.name
+                                    || scheduleItem.class?.teacher
+                                    || 'Chưa phân công'}
                                 </Typography>
                               </TableCell>
                               <TableCell>

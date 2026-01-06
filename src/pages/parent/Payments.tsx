@@ -163,6 +163,9 @@ const Payments: React.FC = () => {
       case 'paid':
       case 'đã thanh toán':
         return 'success';
+      case 'partial':
+      case 'thanh toán một phần':
+        return 'warning';
       case 'pending':
       case 'chờ thanh toán':
         return 'warning';
@@ -179,6 +182,9 @@ const Payments: React.FC = () => {
       case 'paid':
       case 'đã thanh toán':
         return 'Đã thanh toán';
+      case 'partial':
+      case 'thanh toán một phần':
+        return 'Thanh toán một phần';
       case 'pending':
       case 'chờ thanh toán':
         return 'Chờ thanh toán';
@@ -235,7 +241,7 @@ const Payments: React.FC = () => {
 
   const handlePayment = (invoice: PaymentTransaction) => {
     setSelectedInvoice(invoice);
-    setPaymentAmount(String(invoice.remainingAmount || 0));
+    setPaymentAmount('');
     setPaymentError('');
     setQrCodeUrl('');
     setPaymentDialogOpen(true);
@@ -370,9 +376,11 @@ const Payments: React.FC = () => {
                   <Box display="flex" alignItems="center">
                     <ReceiptIcon color="primary" sx={{ mr: 2, fontSize: 40 }} />
                     <Box>
-                      <Typography variant="h4">{summary.totalInvoices}</Typography>
                       <Typography variant="body2" color="textSecondary">
                         Tổng hóa đơn
+                      </Typography>
+                      <Typography variant="h4">
+                        {summary.totalInvoices}
                       </Typography>
                     </Box>
                   </Box>
@@ -385,9 +393,11 @@ const Payments: React.FC = () => {
                   <Box display="flex" alignItems="center">
                     <PaymentIcon color="success" sx={{ mr: 2, fontSize: 40 }} />
                     <Box>
-                      <Typography variant="h4">{formatCurrency(summary.totalPaid)}</Typography>
                       <Typography variant="body2" color="textSecondary">
                         Đã thanh toán
+                      </Typography>
+                      <Typography variant="h4">
+                        {formatCurrency(summary.totalPaid)}
                       </Typography>
                     </Box>
                   </Box>
@@ -400,9 +410,11 @@ const Payments: React.FC = () => {
                   <Box display="flex" alignItems="center">
                     <MoneyOffIcon color="error" sx={{ mr: 2, fontSize: 40 }} />
                     <Box>
-                      <Typography variant="h4">{formatCurrency(summary.totalUnpaid)}</Typography>
                       <Typography variant="body2" color="textSecondary">
                         Chưa thanh toán
+                      </Typography>
+                      <Typography variant="h4">
+                        {formatCurrency(summary.totalUnpaid)}
                       </Typography>
                     </Box>
                   </Box>
@@ -415,9 +427,11 @@ const Payments: React.FC = () => {
                   <Box display="flex" alignItems="center">
                     <DiscountIcon color="warning" sx={{ mr: 2, fontSize: 40 }} />
                     <Box>
-                      <Typography variant="h4">{formatCurrency(summary.totalDiscount)}</Typography>
                       <Typography variant="body2" color="textSecondary">
                         Tổng giảm giá
+                      </Typography>
+                      <Typography variant="h4">
+                        {formatCurrency(summary.totalDiscount)}
                       </Typography>
                     </Box>
                   </Box>
@@ -490,18 +504,9 @@ const Payments: React.FC = () => {
                         <TableCell align="center"><Typography variant="body2" sx={{ fontWeight: 500 }}>{`${invoice.attendedLessons} buổi`}</Typography></TableCell>
                         <TableCell align="center"><Typography variant="body2" sx={{ fontWeight: 500 }}>{formatCurrency(invoice.originalAmount)}</Typography></TableCell>
                         <TableCell align="center">
-                          {invoice.discountAmount > 0 ? (
-                            <Chip
-                              label={`-${formatCurrency(invoice.discountAmount)}`}
-                              color="success"
-                              size="small"
-                              variant="outlined"
-                            />
-                          ) : (
-                            <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.secondary' }}>
-                              {formatCurrency(0)}
-                            </Typography>
-                          )}
+                          <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                            {formatCurrency(invoice.discountAmount > 0 ? invoice.discountAmount : 0)}
+                          </Typography>
                         </TableCell>
                         <TableCell align="center" sx={{ fontWeight: 'bold' }}><Typography variant="body2" sx={{ fontWeight: 500 }}>{formatCurrency(invoice.finalAmount)}</Typography></TableCell>
                         <TableCell align="center"><Typography variant="body2" sx={{ fontWeight: 500 }}>{formatCurrency(invoice.paidAmount)}</Typography></TableCell>
@@ -639,7 +644,7 @@ const Payments: React.FC = () => {
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5, color: 'text.secondary', fontSize: 12 }}>
                       <PaidIcon fontSize="small" /> Đã thanh toán
                     </Box>
-                    <Box sx={{ fontWeight: 700, fontSize: 18, color: 'success.main' }}>
+                    <Box sx={{ fontWeight: 700, fontSize: 18 }}>
                       {formatCurrency(selectedInvoice.paidAmount || 0)}
                     </Box>
                   </Paper>
@@ -649,7 +654,7 @@ const Payments: React.FC = () => {
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5, color: 'text.secondary', fontSize: 12 }}>
                       <WalletIcon fontSize="small" /> Còn lại
                     </Box>
-                    <Box sx={{ fontWeight: 700, fontSize: 18, color: 'error.main' }}>
+                    <Box sx={{ fontWeight: 700, fontSize: 18 }}>
                       {formatCurrency(selectedInvoice.remainingAmount || 0)}
                     </Box>
                   </Paper>
@@ -726,7 +731,7 @@ const Payments: React.FC = () => {
                 sx={{
                   p: 3,
                   bgcolor: 'white',
-                  borderRadius: 3,
+                  borderRadius: 2,
                   boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
                   animation: 'fadeIn 0.5s ease-in',
                   '@keyframes fadeIn': {

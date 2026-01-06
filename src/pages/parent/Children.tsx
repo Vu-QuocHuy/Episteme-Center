@@ -41,20 +41,15 @@ interface Child {
   email?: string;
   phone?: string;
   dateOfBirth?: string;
+  address?: string;
+  gender?: string;
   grade?: string;
   section?: string;
   totalClasses: number;
   activeClasses: number;
   completedClasses: number;
-  attendanceRate: number;
+  attendanceRate?: number;
   classes: ChildClass[];
-  attendanceStats?: {
-    totalSessions: number;
-    presentSessions: number;
-    absentSessions: number;
-    lateSessions: number;
-  };
-  detailedAttendance?: any[];
 }
 
 interface ChildrenData {
@@ -135,44 +130,6 @@ const Children: React.FC = () => {
           const activeCount = classes.filter((c: any) => c.isActive === true).length;
           const completedCount = classes.filter((c: any) => c.isActive === false).length;
 
-          // Fetch attendance/session data for this student
-          let attendanceStats = {
-            totalSessions: 0,
-            presentSessions: 0,
-            absentSessions: 0,
-            lateSessions: 0,
-          };
-          let detailedAttendance: any[] = [];
-          let attendanceRate = 0;
-
-          try {
-            const sessionRes = await getSessionsByStudentAPI(String(s.id));
-            const sessionData: any = (sessionRes as any)?.data?.data || (sessionRes as any)?.data || sessionRes || {};
-
-            // Extract attendance stats
-            if (sessionData.attendanceStats) {
-              attendanceStats = {
-                totalSessions: sessionData.attendanceStats.totalSessions || 0,
-                presentSessions: sessionData.attendanceStats.presentSessions || 0,
-                absentSessions: sessionData.attendanceStats.absentSessions || 0,
-                lateSessions: sessionData.attendanceStats.lateSessions || 0,
-              };
-
-              // Calculate attendance rate (present + late = participated, only absent = not participated)
-              if (attendanceStats.totalSessions > 0) {
-                attendanceRate = Math.round(((attendanceStats.presentSessions + attendanceStats.lateSessions) / attendanceStats.totalSessions) * 100);
-              }
-            }
-
-            // Extract detailed attendance
-            if (sessionData.detailedAttendance) {
-              detailedAttendance = sessionData.detailedAttendance;
-            }
-          } catch (err) {
-            // eslint-disable-next-line no-console
-            console.warn('[Children] GET /sessions/:studentId failed for', s.id, err);
-          }
-
           return {
             id: s.id,
             studentId: s.id,
@@ -180,13 +137,12 @@ const Children: React.FC = () => {
             email: s.email || payload.email,
             phone: s.phone || payload.phone,
             dateOfBirth: payload.dayOfBirth,
+            address: payload.address,
+            gender: payload.gender,
             totalClasses: classCount,
             activeClasses: activeCount,
             completedClasses: completedCount,
-            attendanceRate: attendanceRate,
             classes: classes,
-            attendanceStats: attendanceStats,
-            detailedAttendance: detailedAttendance,
           } as Child;
         } catch {
           // eslint-disable-next-line no-console
@@ -197,10 +153,11 @@ const Children: React.FC = () => {
             name: s.name,
             email: s.email,
             phone: s.phone,
+            address: (s as any).address,
+            gender: (s as any).gender,
             totalClasses: 0,
             activeClasses: 0,
             completedClasses: 0,
-            attendanceRate: 0,
             classes: [],
           } as Child;
         }
@@ -224,6 +181,15 @@ const Children: React.FC = () => {
     return new Date(dateString).toLocaleDateString('vi-VN');
   };
 
+  const getGenderLabel = (gender?: string): string => {
+    if (!gender) return 'Chưa cập nhật';
+    const g = gender.toString().toLowerCase();
+    if (g === 'male' || g === 'nam') return 'Nam';
+    if (g === 'female' || g === 'nữ' || g === 'nu') return 'Nữ';
+    if (g === 'other' || g === 'khác') return 'Khác';
+    return gender;
+  };
+
   const getStatusColor = (status: any): 'success' | 'warning' | 'error' | 'default' => {
     if (!status) return 'default';
     const s = String(status).toLowerCase();
@@ -236,9 +202,6 @@ const Children: React.FC = () => {
         return 'warning';
       case 'closed':
       case 'đã kết thúc':
-        return 'error';
-      case 'completed':
-      case 'hoàn thành':
         return 'error';
       case 'pending':
       case 'chờ':
@@ -277,58 +240,47 @@ const Children: React.FC = () => {
     setChildDetailsOpen(true);
     setDetailLoading(true);
     try {
-      // 1) Use pre-loaded attendance data from child object
-      if (child.attendanceStats && child.detailedAttendance) {
-        // Use existing attendance data
-        const attendanceRate = child.attendanceRate || 0;
+      // Luôn gọi API thống kê điểm danh khi mở dialog chi tiết
+      try {
+        const att = await getSessionsByStudentAPI(String((child as any).studentId || child.id));
+        const payload: any = (att as any)?.data?.data || (att as any)?.data || att || {};
+        const sessionsList: any[] = Array.isArray(payload?.detailedAttendance)
+          ? payload.detailedAttendance
+          : Array.isArray(payload?.result)
+            ? payload.result
+            : Array.isArray(payload)
+              ? payload
+              : Array.isArray(payload?.sessions)
+                ? payload.sessions
+                : [];
+
+        const stats = payload.attendanceStats || {
+          totalSessions: sessionsList.length,
+          presentSessions: sessionsList.filter((s: any) => String(s?.status || '').toLowerCase() === 'present').length,
+          absentSessions: sessionsList.filter((s: any) => String(s?.status || '').toLowerCase() === 'absent').length,
+          lateSessions: sessionsList.filter((s: any) => String(s?.status || '').toLowerCase() === 'late').length,
+        };
+
+        const attendanceRate = stats.totalSessions > 0
+          ? Math.round(((stats.presentSessions + stats.lateSessions) / stats.totalSessions) * 100)
+          : 0;
+
         setAttendanceData({
-          totalSessions: child.attendanceStats.totalSessions,
-          presentSessions: child.attendanceStats.presentSessions,
-          absentSessions: child.attendanceStats.absentSessions,
-          lateSessions: child.attendanceStats.lateSessions,
-          attendanceRate: attendanceRate,
-          sessions: child.detailedAttendance || []
+          ...stats,
+          attendanceRate,
+          sessions: sessionsList
         });
-      } else {
-        // Fallback: fetch if not available (shouldn't happen normally)
-        try {
-          const att = await getSessionsByStudentAPI(String((child as any).studentId || child.id));
-          const payload: any = (att as any)?.data?.data || (att as any)?.data || att || {};
-          const sessionsList: any[] = Array.isArray(payload?.detailedAttendance) ? payload.detailedAttendance
-            : Array.isArray(payload?.result) ? payload.result
-            : Array.isArray(payload) ? payload
-            : Array.isArray(payload?.sessions) ? payload.sessions
-            : [];
-
-          const stats = payload.attendanceStats || {
-            totalSessions: sessionsList.length,
-            presentSessions: sessionsList.filter((s: any) => String(s?.status || '').toLowerCase() === 'present').length,
-            absentSessions: sessionsList.filter((s: any) => String(s?.status || '').toLowerCase() === 'absent').length,
-            lateSessions: sessionsList.filter((s: any) => String(s?.status || '').toLowerCase() === 'late').length,
-          };
-
-          // Calculate attendance rate (present + late = participated, only absent = not participated)
-          const attendanceRate = stats.totalSessions > 0
-            ? Math.round(((stats.presentSessions + stats.lateSessions) / stats.totalSessions) * 100)
-            : 0;
-
-          setAttendanceData({
-            ...stats,
-            attendanceRate,
-            sessions: sessionsList
-          });
-        } catch (e) {
-          // eslint-disable-next-line no-console
-          console.warn('getSessionsByStudentAPI failed or returned no sessions', e);
-          setAttendanceData({
-            totalSessions: 0,
-            presentSessions: 0,
-            absentSessions: 0,
-            lateSessions: 0,
-            attendanceRate: 0,
-            sessions: []
-          });
-        }
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.warn('getSessionsByStudentAPI failed or returned no sessions', e);
+        setAttendanceData({
+          totalSessions: 0,
+          presentSessions: 0,
+          absentSessions: 0,
+          lateSessions: 0,
+          attendanceRate: 0,
+          sessions: []
+        });
       }
 
       // 2) Use class IDs from student detail
@@ -404,9 +356,11 @@ const Children: React.FC = () => {
                 <Box display="flex" alignItems="center">
                   <FamilyIcon color="primary" sx={{ mr: 2, fontSize: 40 }} />
                   <Box>
-                    <Typography variant="h4">{childrenData.totalChildren}</Typography>
                     <Typography variant="body2" color="textSecondary">
                       Tổng số con
+                    </Typography>
+                    <Typography variant="h4">
+                      {childrenData.totalChildren}
                     </Typography>
                   </Box>
                 </Box>
@@ -419,9 +373,11 @@ const Children: React.FC = () => {
                 <Box display="flex" alignItems="center">
                   <SchoolIcon color="success" sx={{ mr: 2, fontSize: 40 }} />
                   <Box>
-                    <Typography variant="h4">{childrenData.totalClasses}</Typography>
                     <Typography variant="body2" color="textSecondary">
                       Tổng lớp học
+                    </Typography>
+                    <Typography variant="h4">
+                      {childrenData.totalClasses}
                     </Typography>
                   </Box>
                 </Box>
@@ -434,9 +390,11 @@ const Children: React.FC = () => {
                 <Box display="flex" alignItems="center">
                   <TrendingUpIcon color="info" sx={{ mr: 2, fontSize: 40 }} />
                   <Box>
-                    <Typography variant="h4">{childrenData.activeClasses}</Typography>
                     <Typography variant="body2" color="textSecondary">
                       Lớp đang học
+                    </Typography>
+                    <Typography variant="h4">
+                      {childrenData.activeClasses}
                     </Typography>
                   </Box>
                 </Box>
@@ -449,9 +407,11 @@ const Children: React.FC = () => {
                 <Box display="flex" alignItems="center">
                   <ClassIcon sx={{ mr: 2, fontSize: 40, color: 'text.secondary' }} />
                   <Box>
-                    <Typography variant="h4">{childrenData.completedClasses}</Typography>
                     <Typography variant="body2" color="textSecondary">
                       Lớp đã kết thúc
+                    </Typography>
+                    <Typography variant="h4">
+                      {childrenData.completedClasses}
                     </Typography>
                   </Box>
                 </Box>
@@ -476,6 +436,36 @@ const Children: React.FC = () => {
                       </Box>
                     </Box>
                     <Box />
+                  </Box>
+
+                  <Box
+                    sx={{
+                      mb: 2,
+                      p: 1.5,
+                      borderRadius: 1,
+                      bgcolor: 'rgba(0,0,0,0.02)',
+                    }}
+                  >
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                      Thông tin học sinh
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      Số điện thoại: {child.phone || 'Chưa có số điện thoại'}
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      Email: {child.email || 'Chưa có email'}
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      {child.dateOfBirth
+                        ? `Năm sinh: ${new Date(child.dateOfBirth).getFullYear()}`
+                        : 'Năm sinh: Chưa cập nhật'}
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      Địa chỉ: {child.address || 'Chưa cập nhật'}
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      Giới tính: {getGenderLabel(child.gender)}
+                    </Typography>
                   </Box>
 
                   <Grid container spacing={2} mb={2}>
@@ -510,61 +500,6 @@ const Children: React.FC = () => {
                       </Box>
                     </Grid>
                   </Grid>
-
-                  {child.attendanceStats && child.attendanceStats.totalSessions > 0 && (
-                    <Box sx={{
-                      bgcolor: 'rgba(0, 0, 0, 0.02)',
-                      p: 1.5,
-                      borderRadius: 1,
-                      mb: 2
-                    }}>
-                      <Typography variant="caption" color="textSecondary" gutterBottom display="block">
-                        Chi tiết điểm danh
-                      </Typography>
-                      <Grid container spacing={1}>
-                        <Grid item xs={3}>
-                          <Box textAlign="center">
-                            <Typography variant="caption" color="textSecondary" display="block" gutterBottom>
-                              Tổng
-                            </Typography>
-                            <Typography variant="h6" fontWeight={700}>
-                              {child.attendanceStats.totalSessions}
-                            </Typography>
-                          </Box>
-                        </Grid>
-                        <Grid item xs={3}>
-                          <Box textAlign="center">
-                            <Typography variant="caption" color="textSecondary" display="block" gutterBottom>
-                              Có mặt
-                            </Typography>
-                            <Typography variant="h6" fontWeight={700} color="success.main">
-                              {child.attendanceStats.presentSessions}
-                            </Typography>
-                          </Box>
-                        </Grid>
-                        <Grid item xs={3}>
-                          <Box textAlign="center">
-                            <Typography variant="caption" color="textSecondary" display="block" gutterBottom>
-                              Vắng
-                            </Typography>
-                            <Typography variant="h6" fontWeight={700} color="error.main">
-                              {child.attendanceStats.absentSessions}
-                            </Typography>
-                          </Box>
-                        </Grid>
-                        <Grid item xs={3}>
-                          <Box textAlign="center">
-                            <Typography variant="caption" color="textSecondary" display="block" gutterBottom>
-                              Muộn
-                            </Typography>
-                            <Typography variant="h6" fontWeight={700} color="warning.main">
-                              {child.attendanceStats.lateSessions}
-                            </Typography>
-                          </Box>
-                        </Grid>
-                      </Grid>
-                    </Box>
-                  )}
 
                   <Box display="flex" justifyContent="space-between" alignItems="center">
                     <Button
