@@ -164,7 +164,8 @@ const AdvertisementSlider: React.FC<AdvertisementSliderProps> = ({
                   left: 0,
                   width: '100%',
                   height: '100%',
-                  objectFit: 'cover'
+                  objectFit: 'cover',
+                  objectPosition: 'center center' // Crop đều cả trên và dưới
                 }}
               />
               <Box sx={{
@@ -207,13 +208,13 @@ const AdvertisementSlider: React.FC<AdvertisementSliderProps> = ({
                 >
                   {ad.content || ad.description}
                 </Typography>
-                {onRegisterClick && (ad as any).class?.id && (
+                {onRegisterClick && (
                   <Button
                     variant="contained"
                     size="large"
                     onClick={(e) => {
                       e.stopPropagation();
-                      onRegisterClick((ad as any).class?.id || null, ad.title);
+                      onRegisterClick((ad as any).class?.id || (ad as any).classId || null, ad.title);
                     }}
                     sx={{
                       bgcolor: 'error.main',

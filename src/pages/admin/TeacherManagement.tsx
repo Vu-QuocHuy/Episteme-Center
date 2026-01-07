@@ -194,8 +194,8 @@ const TeacherManagement: React.FC = () => {
       <Box sx={commonStyles.pageContainer}>
         <Box sx={commonStyles.contentContainer}>
           <Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-              <Typography variant="h5" component="h1">
+            <Box sx={commonStyles.pageHeader}>
+              <Typography sx={commonStyles.pageTitle}>
                 Quản lý giáo viên
               </Typography>
               <Button

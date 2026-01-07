@@ -28,6 +28,12 @@ export const getPublicTeachersAPI = (params?: ApiParams) => {
   });
 };
 
+// Public API to get teacher by id without authentication
+export const getPublicTeacherByIdAPI = (id: string) =>
+  axiosInstance.get(`/teachers/public/${id}`, {
+    headers: { 'x-lang': 'vi' }
+  });
+
 export const getTeacherByIdAPI = (id: string) =>
   axiosInstance.get(API_CONFIG.ENDPOINTS.TEACHERS.GET_BY_ID(id));
 

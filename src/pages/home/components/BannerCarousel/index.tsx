@@ -117,7 +117,7 @@ const BannerCarousel: React.FC = () => {
 
   return (
     <>
-      <Box sx={{ position: 'relative', mb: 4 }}>
+      <Box sx={{ position: 'relative', mb: 4, pt: 0 }}>
         <AdvertisementSlider
           ads={advertisements}
           autoPlay={bannerConfig.autoPlay}

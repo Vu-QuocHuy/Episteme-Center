@@ -1,15 +1,9 @@
 import React, { useState } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
   TextField,
   IconButton,
-  Typography,
   Box,
-  Alert,
   InputAdornment,
   CircularProgress,
 } from '@mui/material';
@@ -21,6 +15,7 @@ import {
 import { changePasswordAPI } from '../../services/auth';
 import { validateChangePassword, type ChangePasswordData, type ChangePasswordErrors } from '../../validations/commonValidation';
 import NotificationSnackbar from './NotificationSnackbar';
+import BaseDialog from './BaseDialog';
 
 interface ChangePasswordDialogProps {
   open: boolean;
@@ -145,77 +140,53 @@ const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
 
   return (
     <>
-    <Dialog
-      open={open}
-      onClose={handleClose}
-      maxWidth="sm"
-      fullWidth
-      PaperProps={{
-        sx: {
-          borderRadius: 3,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+      <BaseDialog
+        open={open}
+        onClose={handleClose}
+        title="Đổi mật khẩu"
+        subtitle="Vui lòng nhập thông tin để đổi mật khẩu"
+        icon={<LockIcon sx={{ fontSize: 28, color: 'white' }} />}
+        maxWidth="xs"
+        fullWidth
+        loading={loading}
+        error={error}
+        showCloseButton={!loading}
+        contentPadding={3}
+        actions={
+          <Box sx={{ display: 'flex', gap: 2, width: '100%', justifyContent: 'flex-end' }}>
+            <Button
+              onClick={handleClose}
+              disabled={loading}
+              variant="outlined"
+              sx={{
+                borderRadius: 2,
+                px: 3,
+                py: 1,
+              }}
+            >
+              Hủy
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              disabled={loading}
+              variant="contained"
+              startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <LockIcon />}
+              sx={{
+                borderRadius: 2,
+                px: 3,
+                py: 1,
+              }}
+            >
+              {loading ? 'Đang xử lý...' : 'Đổi mật khẩu'}
+            </Button>
+          </Box>
         }
-      }}
-    >
-      <DialogTitle
-        sx={{
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white',
-          py: 3,
-          px: 4,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between'
-        }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Box
-            sx={{
-              bgcolor: 'rgba(255,255,255,0.2)',
-              borderRadius: '50%',
-              p: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-          >
-            <LockIcon sx={{ fontSize: 24, color: 'white' }} />
-          </Box>
-          <Box>
-            <Typography variant="h5" sx={{ fontWeight: 600, mb: 0.5 }}>
-              Đổi mật khẩu
-            </Typography>
-            <Typography variant="body2" sx={{ opacity: 0.9 }}>
-              Vui lòng nhập thông tin để đổi mật khẩu
-            </Typography>
-          </Box>
-        </Box>
-        {/* Đã có nút Hủy ở footer nên không cần nút đóng (X) trên header */}
-      </DialogTitle>
-
-      <DialogContent
-        sx={{
-          px: 4,
-          pt: 3,
-          pb: 4,
-          bgcolor: '#f9fafb',
-        }}
-      >
-        {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {error}
-          </Alert>
-        )}
-
         <Box
           sx={{
             display: 'flex',
             flexDirection: 'column',
             gap: 2.5,
-            bgcolor: 'white',
-            borderRadius: 2,
-            p: 3,
-            boxShadow: '0 1px 3px rgba(15, 23, 42, 0.08)',
           }}
         >
           <TextField
@@ -290,52 +261,14 @@ const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
             }}
           />
         </Box>
-      </DialogContent>
+      </BaseDialog>
 
-      <DialogActions sx={{ p: 3, bgcolor: '#f8f9fa', gap: 2 }}>
-        <Button
-          onClick={handleClose}
-          disabled={loading}
-          sx={{
-            borderRadius: 2,
-            px: 3,
-            py: 1,
-            borderColor: '#64748b',
-            color: '#64748b',
-            '&:hover': {
-              borderColor: '#475569',
-              bgcolor: '#f1f5f9'
-            }
-          }}
-        >
-          Hủy
-        </Button>
-        <Button
-          onClick={handleSubmit}
-          disabled={loading}
-          variant="contained"
-          startIcon={loading ? <CircularProgress size={20} /> : <LockIcon />}
-          sx={{
-            borderRadius: 2,
-            px: 3,
-            py: 1,
-            bgcolor: '#3b82f6',
-            '&:hover': {
-              bgcolor: '#2563eb'
-            }
-          }}
-        >
-          {loading ? 'Đang xử lý...' : 'Đổi mật khẩu'}
-        </Button>
-      </DialogActions>
-    </Dialog>
-
-    <NotificationSnackbar
-      open={snackbar.open}
-      onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
-      message={snackbar.message}
-      severity={snackbar.severity}
-    />
+      <NotificationSnackbar
+        open={snackbar.open}
+        onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+        message={snackbar.message}
+        severity={snackbar.severity}
+      />
     </>
   );
 };

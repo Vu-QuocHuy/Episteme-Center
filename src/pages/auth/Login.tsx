@@ -42,7 +42,6 @@ const Login: React.FC = () => {
     values,
     errors,
     handleChange,
-    handleBlur,
     isSubmitting,
     setIsSubmitting,
     setValue,
@@ -227,7 +226,6 @@ const Login: React.FC = () => {
                 autoFocus
                 value={values.email}
                 onChange={handleChange}
-                onBlur={handleBlur}
                 error={!!errors.email}
                 helperText={errors.email}
                 InputProps={{
@@ -239,7 +237,7 @@ const Login: React.FC = () => {
                 }}
                 sx={{
                   '& .MuiOutlinedInput-root': {
-                    borderRadius: 1,
+                    borderRadius: 2,
                     backgroundColor: 'white',
                     '&.Mui-focused fieldset': {
                       borderColor: '#764ba2',
@@ -283,7 +281,6 @@ const Login: React.FC = () => {
                 autoComplete="current-password"
                 value={values.password}
                 onChange={handleChange}
-                onBlur={handleBlur}
                 error={!!errors.password}
                 helperText={errors.password}
                 InputProps={{
@@ -306,7 +303,7 @@ const Login: React.FC = () => {
                 }}
                 sx={{
                   '& .MuiOutlinedInput-root': {
-                    borderRadius: 1,
+                    borderRadius: 2,
                     backgroundColor: 'white',
                     '&.Mui-focused fieldset': {
                       borderColor: '#764ba2',

@@ -17,7 +17,7 @@ import { useNavigate } from 'react-router-dom';
 import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
-import { getTypicalTeachersAPI } from '../../../services/teachers';
+import { getPublicTeachersAPI } from '../../../services/teachers';
 import { Teacher } from '../../../types';
 
 const FeaturedTeachersHome = () => {
@@ -27,22 +27,19 @@ const FeaturedTeachersHome = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-
-
-  // Fetch typical teachers from API
+  // Fetch teachers from public API
   useEffect(() => {
     const fetchTeachers = async () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await getTypicalTeachersAPI(); // Get typical teachers
+        const response = await getPublicTeachersAPI({ page: 1, limit: 100 });
 
         // Handle different response formats
         let teachersData = [];
         if (response.data?.data?.result) {
           teachersData = response.data.data.result;
         } else if (response.data?.data && Array.isArray(response.data.data)) {
-          // Handle case where response.data.data is an array directly
           teachersData = response.data.data;
         } else if (response.data && typeof response.data === 'object') {
           teachersData = (response.data as any).result || (response.data as any).teachers || [];
@@ -53,13 +50,10 @@ const FeaturedTeachersHome = () => {
         // Filter active teachers only
         const activeTeachers = teachersData.filter((teacher: any) => teacher.isActive !== false);
 
-        // Filter typical teachers only
-        const typicalTeachers = activeTeachers.filter((teacher: any) => teacher.typical === true);
-
-        setTeachers(typicalTeachers);
+        setTeachers(activeTeachers);
       } catch (err) {
-        console.error('Error fetching typical teachers:', err);
-        setError('Không thể tải dữ liệu giáo viên tiêu biểu');
+        console.error('Error fetching teachers:', err);
+        setError('Không thể tải dữ liệu giáo viên');
         setTeachers([]);
       } finally {
         setLoading(false);
@@ -83,8 +77,7 @@ const FeaturedTeachersHome = () => {
 
   const handleTeacherClick = (teacher: Teacher) => {
     const slug = createSlug(teacher.name);
-    // Pass a hint so detail page will use typical-teacher endpoint first
-    navigate(`/gioi-thieu/doi-ngu-giang-vien/${slug}`, { state: { teacherId: teacher.id, isTypical: true } });
+    navigate(`/gioi-thieu/doi-ngu-giang-vien/${slug}`, { state: { teacherId: teacher.id } });
   };
 
   const handlePrevClick = () => {

@@ -123,15 +123,13 @@ const ClassRegistrationModal: React.FC<ClassRegistrationModalProps> = ({
       return;
     }
 
-    if (!classId) {
-      setError('Không tìm thấy thông tin lớp học');
-      return;
-    }
-
     setSubmitting(true);
     setError(null);
 
     try {
+      // Nếu không có classId, dùng UUID mặc định cho đăng ký tư vấn chung
+      const registrationClassId = classId || '00000000-0000-0000-0000-000000000000';
+      
       await createRegistrationAPI({
         name: form.name.trim(),
         email: form.email.trim(),
@@ -139,7 +137,7 @@ const ClassRegistrationModal: React.FC<ClassRegistrationModalProps> = ({
         gender: form.gender,
         address: form.address.trim(),
         note: form.note.trim(),
-        classId: classId,
+        classId: registrationClassId,
         processed: false
       });
 
@@ -195,10 +193,10 @@ const ClassRegistrationModal: React.FC<ClassRegistrationModalProps> = ({
     <BaseDialog
       open={open}
       onClose={onClose}
-      title="Đăng ký tư vấn"
+      title={classId ? "Đăng ký lớp học" : "Đăng ký tư vấn"}
       icon={<SchoolIcon sx={{ fontSize: 24, color: 'white' }} />}
       maxWidth="md"
-      loading={loading}
+      loading={loading && !!classId}
       contentPadding={0}
       error={error}
       PaperProps={{
@@ -213,19 +211,20 @@ const ClassRegistrationModal: React.FC<ClassRegistrationModalProps> = ({
           </Box>
         ) : (
           <Grid container sx={{ minHeight: 350 }}>
-            {/* Left side - Class Info */}
-            <Grid item xs={12} md={7} sx={{
-              bgcolor: 'linear-gradient(to bottom, #f8f9fa 0%, #e9ecef 100%)',
-              p: 3,
-              borderRight: { md: '1px solid', borderColor: 'divider' }
-            }}>
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="h6" fontWeight={700}>
-                  📚 Thông tin lớp học
-                </Typography>
-              </Box>
+            {/* Left side - Class Info or Consultation Info */}
+            {classId ? (
+              <Grid item xs={12} md={7} sx={{
+                bgcolor: 'linear-gradient(to bottom, #f8f9fa 0%, #e9ecef 100%)',
+                p: 3,
+                borderRight: { md: '1px solid', borderColor: 'divider' }
+              }}>
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="h6" fontWeight={700}>
+                    📚 Thông tin lớp học
+                  </Typography>
+                </Box>
 
-              {classInfo ? (
+                {classInfo ? (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                   {/* Tên lớp */}
                   <Box sx={{
@@ -381,10 +380,27 @@ const ClassRegistrationModal: React.FC<ClassRegistrationModalProps> = ({
                   Không có thông tin lớp học
                 </Typography>
               )}
-            </Grid>
+              </Grid>
+            ) : (
+              <Grid item xs={12} md={7} sx={{
+                bgcolor: 'linear-gradient(to bottom, #f8f9fa 0%, #e9ecef 100%)',
+                p: 3,
+                borderRight: { md: '1px solid', borderColor: 'divider' }
+              }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 2 }}>
+                  <SchoolIcon sx={{ fontSize: 64, color: 'primary.main', opacity: 0.3 }} />
+                  <Typography variant="h6" fontWeight={700} color="primary.main">
+                    Đăng ký tư vấn miễn phí
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ maxWidth: 400 }}>
+                    Để lại thông tin của bạn, chúng tôi sẽ liên hệ tư vấn về các khóa học phù hợp nhất với nhu cầu của bạn.
+                  </Typography>
+                </Box>
+              </Grid>
+            )}
 
             {/* Right side - Registration Form */}
-            <Grid item xs={12} md={5} sx={{ p: 2.5, bgcolor: 'background.paper' }}>
+            <Grid item xs={12} md={classId ? 5 : 12} sx={{ p: 2.5, bgcolor: 'background.paper' }}>
               <Box sx={{ mb: 2 }}>
                 <Typography variant="h6" fontWeight={700} sx={{ mb: 0.5 }}>
                   ✍️ Đăng ký tư vấn

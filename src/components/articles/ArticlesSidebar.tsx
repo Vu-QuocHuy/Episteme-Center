@@ -5,6 +5,7 @@ import {
   Card,
   CardContent,
   CardActionArea,
+  CardMedia,
   CircularProgress,
   Divider
 } from '@mui/material';
@@ -18,6 +19,8 @@ interface Article {
   menuId: string;
   order?: number;
   isActive?: boolean;
+  file?: string;
+  publicId?: string;
   createdAt: string;
 }
 
@@ -102,28 +105,51 @@ const ArticlesSidebar: React.FC<ArticlesSidebarProps> = ({
           key={article.id}
           sx={{
             mb: 2,
+            overflow: 'hidden',
             '&:hover': {
-              boxShadow: 3
+              boxShadow: 3,
+              transform: 'translateY(-2px)',
+              transition: 'all 0.3s ease'
             }
           }}
         >
           <CardActionArea
             onClick={() => {
-              // Navigate to article detail or menu page
-              // You can customize this based on your routing needs
               navigate(`/bai-viet/${article.id}`);
             }}
+            sx={{ display: 'flex', alignItems: 'stretch', flexDirection: { xs: 'column', sm: 'row' } }}
           >
-            <CardContent>
+            {/* Article Image */}
+            {article.file && (
+              <CardMedia
+                component="img"
+                image={article.file}
+                alt={article.title}
+                sx={{
+                  width: { xs: '100%', sm: 200 },
+                  height: { xs: 200, sm: 'auto' },
+                  objectFit: 'cover',
+                  flexShrink: 0
+                }}
+              />
+            )}
+            
+            {/* Article Content */}
+            <CardContent sx={{ flex: 1, p: 2 }}>
               <Typography
                 variant="subtitle1"
                 sx={{
                   fontWeight: 'bold',
                   mb: 1,
                   color: 'primary.main',
+                  fontSize: { xs: '1rem', sm: '1.1rem' },
                   '&:hover': {
                     textDecoration: 'underline'
-                  }
+                  },
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden'
                 }}
               >
                 {article.title}
@@ -134,15 +160,17 @@ const ArticlesSidebar: React.FC<ArticlesSidebarProps> = ({
                   color="text.secondary"
                   sx={{
                     display: '-webkit-box',
-                    WebkitLineClamp: 2,
+                    WebkitLineClamp: 3,
                     WebkitBoxOrient: 'vertical',
-                    overflow: 'hidden'
+                    overflow: 'hidden',
+                    mb: 1,
+                    lineHeight: 1.6
                   }}
                 >
-                  {truncateContent(article.content)}
+                  {truncateContent(article.content, 150)}
                 </Typography>
               )}
-              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                 {new Date(article.createdAt).toLocaleDateString('vi-VN')}
               </Typography>
             </CardContent>

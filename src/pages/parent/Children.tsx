@@ -438,35 +438,50 @@ const Children: React.FC = () => {
                     <Box />
                   </Box>
 
-                  <Box
-                    sx={{
-                      mb: 2,
-                      p: 1.5,
-                      borderRadius: 1,
-                      bgcolor: 'rgba(0,0,0,0.02)',
-                    }}
-                  >
-                    <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
-                      Thông tin học sinh
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      Số điện thoại: {child.phone || 'Chưa có số điện thoại'}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      Email: {child.email || 'Chưa có email'}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      {child.dateOfBirth
-                        ? `Năm sinh: ${new Date(child.dateOfBirth).getFullYear()}`
-                        : 'Năm sinh: Chưa cập nhật'}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      Địa chỉ: {child.address || 'Chưa cập nhật'}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      Giới tính: {getGenderLabel(child.gender)}
-                    </Typography>
-                  </Box>
+                  <Grid container spacing={2} sx={{ mb: 2 }}>
+                    <Grid item xs={6}>
+                      <Box>
+                        <Typography variant="body2" color="textSecondary" sx={{ mb: 0.5 }}>
+                          Số điện thoại
+                        </Typography>
+                        <Typography variant="body1">
+                          {child.phone || 'Chưa có số điện thoại'}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Box>
+                        <Typography variant="body2" color="textSecondary" sx={{ mb: 0.5 }}>
+                          Email
+                        </Typography>
+                        <Typography variant="body1">
+                          {child.email || 'Chưa có email'}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Box>
+                        <Typography variant="body2" color="textSecondary" sx={{ mb: 0.5 }}>
+                          Năm sinh
+                        </Typography>
+                        <Typography variant="body1">
+                          {child.dateOfBirth
+                            ? new Date(child.dateOfBirth).getFullYear()
+                            : 'Chưa cập nhật'}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Box>
+                        <Typography variant="body2" color="textSecondary" sx={{ mb: 0.5 }}>
+                          Giới tính
+                        </Typography>
+                        <Typography variant="body1">
+                          {getGenderLabel(child.gender)}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                  </Grid>
 
                   <Grid container spacing={2} mb={2}>
                     <Grid item xs={4}>

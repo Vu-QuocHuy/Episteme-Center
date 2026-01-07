@@ -87,9 +87,19 @@ const FooterSettings: React.FC = () => {
       // Sử dụng POST nếu chưa có data, PATCH nếu đã có
       try {
         if (hasData) {
-      await updateFooterSettingsAPI(settings);
+          await updateFooterSettingsAPI(settings);
         } else {
-          await createFooterSettingsAPI(settings);
+          // Lần đầu tạo, thử create
+          try {
+            await createFooterSettingsAPI(settings);
+          } catch (createError: any) {
+            // Nếu create fail vì đã tồn tại (409 Conflict hoặc 400), thử update
+            if (createError?.response?.status === 409 || createError?.response?.status === 400) {
+              await updateFooterSettingsAPI(settings);
+            } else {
+              throw createError;
+            }
+          }
         }
       } catch (error: any) {
         // Nếu update fail vì chưa có data, thử create
@@ -155,7 +165,7 @@ const FooterSettings: React.FC = () => {
           <Grid container spacing={3}>
             {/* Thông tin cơ bản */}
             <Grid item xs={12}>
-              <Typography variant="h6" sx={{ fontWeight: 600, color: 'primary.main' }}>
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
                 Thông tin cơ bản
               </Typography>
             </Grid>
@@ -167,7 +177,6 @@ const FooterSettings: React.FC = () => {
                 value={settings.companyName}
                 onChange={handleChange('companyName')}
                 required
-                helperText="Tên hiển thị trong footer"
               />
             </Grid>
 
@@ -179,7 +188,6 @@ const FooterSettings: React.FC = () => {
                 value={settings.email}
                 onChange={handleChange('email')}
                 required
-                helperText="Email liên hệ"
               />
             </Grid>
 
@@ -190,7 +198,6 @@ const FooterSettings: React.FC = () => {
                 value={settings.phone}
                 onChange={handleChange('phone')}
                 required
-                helperText="Số điện thoại liên hệ"
               />
             </Grid>
 
@@ -201,7 +208,6 @@ const FooterSettings: React.FC = () => {
                 value={settings.address}
                 onChange={handleChange('address')}
                 required
-                helperText="Địa chỉ trung tâm"
               />
             </Grid>
 
@@ -213,13 +219,12 @@ const FooterSettings: React.FC = () => {
                 rows={3}
                 value={settings.description}
                 onChange={handleChange('description')}
-                helperText="Mô tả ngắn về trung tâm (tùy chọn)"
               />
             </Grid>
 
             {/* Social Media */}
             <Grid item xs={12} sx={{ mt: 3 }}>
-              <Typography variant="h6" sx={{ fontWeight: 600, color: 'primary.main' }}>
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
                 Mạng xã hội (Tùy chọn)
               </Typography>
             </Grid>
@@ -231,7 +236,6 @@ const FooterSettings: React.FC = () => {
                 value={settings.facebookUrl}
                 onChange={handleChange('facebookUrl')}
                 placeholder="https://facebook.com/..."
-                helperText="Link trang Facebook"
               />
             </Grid>
 
@@ -242,7 +246,6 @@ const FooterSettings: React.FC = () => {
                 value={settings.youtubeUrl}
                 onChange={handleChange('youtubeUrl')}
                 placeholder="https://youtube.com/..."
-                helperText="Link kênh YouTube"
               />
             </Grid>
 
@@ -253,13 +256,12 @@ const FooterSettings: React.FC = () => {
                 value={settings.zaloUrl}
                 onChange={handleChange('zaloUrl')}
                 placeholder="https://zalo.me/..."
-                helperText="Link Zalo"
               />
             </Grid>
 
             {/* Google Map Section */}
             <Grid item xs={12} sx={{ mt: 3 }}>
-              <Typography variant="h6" sx={{ fontWeight: 600, color: 'primary.main' }}>
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
                 Google Map
               </Typography>
             </Grid>
@@ -274,27 +276,7 @@ const FooterSettings: React.FC = () => {
                 multiline
                 rows={3}
                 error={settings.mapEmbedUrl ? !settings.mapEmbedUrl.includes('google.com/maps/embed') : false}
-                helperText={
-                  settings.mapEmbedUrl && !settings.mapEmbedUrl.includes('google.com/maps/embed')
-                    ? '⚠️ URL không hợp lệ! Phải là URL Embed (chứa "google.com/maps/embed")'
-                    : 'Paste toàn bộ thẻ iframe từ Google Maps, hệ thống sẽ tự động trích xuất URL'
-                }
               />
-            </Grid>
-
-            {/* Hướng dẫn */}
-            <Grid item xs={12}>
-              <Paper sx={{ p: 2, bgcolor: '#f5f5f5', border: '1px solid #ddd' }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                  📍 Cách lấy Google Maps Embed:
-                </Typography>
-                <Box component="ol" sx={{ pl: 2, m: 0, fontSize: '0.875rem' }}>
-                  <li>Vào <a href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer" style={{ color: '#1976d2', fontWeight: 600 }}>Google Maps</a></li>
-                  <li>Tìm địa chỉ → Click "Share" → Tab "Embed a map"</li>
-                  <li>Copy toàn bộ thẻ <code>&lt;iframe&gt;...&lt;/iframe&gt;</code></li>
-                  <li>Paste vào ô phía trên</li>
-                </Box>
-              </Paper>
             </Grid>
 
             {/* Save Button */}

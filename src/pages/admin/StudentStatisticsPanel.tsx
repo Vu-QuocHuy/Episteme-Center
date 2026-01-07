@@ -18,6 +18,7 @@ interface SummaryData {
   totalNewEnrollments: number;
   totalCompletions: number;
   netChange: number;
+  totalStudentsAtEndOfYear: number;
   period: { startDate: string; endDate: string; };
 }
 
@@ -37,7 +38,7 @@ const StudentStatisticsPanel: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
   const [summaryData, setSummaryData] = useState<SummaryData>({
-    totalNewEnrollments: 0, totalCompletions: 0, netChange: 0,
+    totalNewEnrollments: 0, totalCompletions: 0, netChange: 0, totalStudentsAtEndOfYear: 0,
     period: { startDate: '', endDate: '' }
   });
   const [error, setError] = useState<string>('');
@@ -114,6 +115,7 @@ const StudentStatisticsPanel: React.FC = () => {
         totalNewEnrollments: apiData.summary?.totalIncrease || 0,
         totalCompletions: apiData.summary?.totalDecrease || 0,
         netChange: apiData.summary?.netChange || 0,
+        totalStudentsAtEndOfYear: apiData.totalStudentsAtEndOfYear || 0,
         period: apiData.summary?.period || { startDate: '', endDate: '' }
       });
 
@@ -131,54 +133,6 @@ const StudentStatisticsPanel: React.FC = () => {
     fetchMonthlyData();
   }, [selectedYear]);
 
-  const now = new Date();
-  const currentMonth = now.getMonth() + 1;
-  const isCurrentYear = selectedYear === now.getFullYear();
-  
-  // Chỉ tính tăng trưởng cho năm hiện tại và tháng hiện tại
-  let growthPercent: number | null = null;
-  
-  if (isCurrentYear) {
-    const currentMonthData = monthlyData.find(m => m.month === currentMonth && m.year === selectedYear);
-    const prevMonthData = monthlyData.find(m => m.month === currentMonth - 1 && m.year === selectedYear);
-    
-    if (currentMonthData) {
-      if (currentMonth > 1 && prevMonthData) {
-        // Có tháng trước trong cùng năm
-        const prev = prevMonthData.students || 0;
-        const curr = currentMonthData.students || 0;
-        if (prev > 0) {
-          growthPercent = ((curr - prev) / prev) * 100;
-        } else if (curr > 0) {
-          growthPercent = 100;
-        } else {
-          growthPercent = 0;
-        }
-      } else if (currentMonth === 1) {
-        // Tháng 1: tính dựa trên netChange (vì không có tháng trước trong cùng năm)
-        const netChange = currentMonthData.netChange || 0;
-        const studentsAtStart = (currentMonthData.students || 0) - netChange;
-        if (studentsAtStart > 0) {
-          growthPercent = (netChange / studentsAtStart) * 100;
-        } else if (netChange > 0) {
-          growthPercent = 100;
-        } else {
-          growthPercent = 0;
-        }
-      } else {
-        // Các trường hợp khác: tính dựa trên netChange
-        const netChange = currentMonthData.netChange || 0;
-        const studentsAtStart = (currentMonthData.students || 0) - netChange;
-        if (studentsAtStart > 0) {
-          growthPercent = (netChange / studentsAtStart) * 100;
-        } else if (netChange > 0) {
-          growthPercent = 100;
-        } else {
-          growthPercent = 0;
-        }
-      }
-    }
-  }
 
   return (
     <Box>
@@ -243,14 +197,9 @@ const StudentStatisticsPanel: React.FC = () => {
         <Grid item xs={12} md={3}>
           <Card>
             <CardContent>
-              <Typography color="textSecondary" gutterBottom>Tăng trưởng tháng này</Typography>
-              <Typography
-                variant="h5"
-                color={growthPercent === null ? 'text.disabled' : growthPercent >= 0 ? 'success.main' : 'error.main'}
-                fontWeight="bold"
-              >
-                {loading ? <CircularProgress size={20} /> :
-                  growthPercent === null ? 'N/A' : `${growthPercent > 0 ? '+' : ''}${growthPercent.toFixed(1)}%`}
+              <Typography color="textSecondary" gutterBottom>Tổng số học sinh cuối năm</Typography>
+              <Typography variant="h5" color="info.main" fontWeight="bold">
+                {loading ? <CircularProgress size={20} /> : summaryData.totalStudentsAtEndOfYear}
               </Typography>
             </CardContent>
           </Card>

@@ -67,6 +67,7 @@ import AllTeachersPage from './pages/AllTeachersPage';
 import CoursesPage from './pages/CoursesPage';
 import SchedulePage from './pages/SchedulePage';
 import TestimonialsPage from './pages/TestimonialsPage';
+import ArticleDetailPage from './pages/ArticleDetailPage';
 
 const AppContent: React.FC = () => {
   const { user } = useAuth();
@@ -107,6 +108,9 @@ const AppContent: React.FC = () => {
 
           {/* Testimonials Page - Student feedback */}
           <Route path="/cam-nhan-hoc-vien" element={<TestimonialsPage />} />
+
+          {/* Article Detail Page - Must be before dynamic routes */}
+          <Route path="/bai-viet/:id" element={<ArticleDetailPage />} />
 
           {/* Public teacher page - must be before /teacher/* protected route */}
           <Route path="/teacher" element={<AllTeachersPage />} />

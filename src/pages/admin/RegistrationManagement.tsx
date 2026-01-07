@@ -69,12 +69,10 @@ const RegistrationManagement: React.FC = () => {
 
   // Filter states
   const [nameFilter, setNameFilter] = useState<string>('');
-  const [emailFilter, setEmailFilter] = useState<string>('');
   const [processedFilter, setProcessedFilter] = useState<string>('');
 
   // Debounced filter states
   const [debouncedName, setDebouncedName] = useState<string>('');
-  const [debouncedEmail, setDebouncedEmail] = useState<string>('');
 
   const [viewDialog, setViewDialog] = useState<{ open: boolean; data: RegistrationItem | null }>({ open: false, data: null });
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; id: string | null }>({ open: false, id: null });
@@ -92,14 +90,6 @@ const RegistrationManagement: React.FC = () => {
     return () => clearTimeout(timer);
   }, [nameFilter]);
 
-  // Debounce email filter
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedEmail(emailFilter);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [emailFilter]);
-
   const fetchData = useCallback(async (pageNum: number = 1) => {
     setLoading(true);
     try {
@@ -108,10 +98,6 @@ const RegistrationManagement: React.FC = () => {
 
       if (debouncedName && debouncedName.trim() !== '') {
         filterOptions.name = debouncedName.trim();
-      }
-
-      if (debouncedEmail && debouncedEmail.trim() !== '') {
-        filterOptions.email = debouncedEmail.trim();
       }
 
       if (processedFilter && processedFilter !== '') {
@@ -153,19 +139,19 @@ const RegistrationManagement: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [debouncedName, debouncedEmail, processedFilter]);
+  }, [debouncedName, processedFilter]);
 
   // Fetch data when filters or page change
   useEffect(() => {
     fetchData(page);
-  }, [page, debouncedName, debouncedEmail, processedFilter, fetchData]);
+  }, [page, debouncedName, processedFilter, fetchData]);
 
   // Reset to page 1 when filters change
   useEffect(() => {
     if (page !== 1) {
       setPage(1);
     }
-  }, [debouncedName, debouncedEmail, processedFilter]);
+  }, [debouncedName, processedFilter]);
 
   const handleMarkAsProcessed = async (id: string) => {
     try {
@@ -218,8 +204,6 @@ const RegistrationManagement: React.FC = () => {
           <RegistrationFilters
             nameFilter={nameFilter}
             setNameFilter={setNameFilter}
-            emailFilter={emailFilter}
-            setEmailFilter={setEmailFilter}
             processedFilter={processedFilter}
             setProcessedFilter={setProcessedFilter}
           />

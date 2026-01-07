@@ -21,7 +21,7 @@ export interface PopupConfig {
 export const useBannerConfig = () => {
   // Default configurations - Fixed aspect ratios
   const [bannerConfig, setBannerConfig] = useState<BannerConfig>({
-    height: 650, // Increased height to prevent content overflow
+    height: 700, // Banner height
     autoPlay: true,
     interval: 8000,
     maxSlides: 5,
@@ -32,7 +32,7 @@ export const useBannerConfig = () => {
 
   const [popupConfig, setPopupConfig] = useState<PopupConfig>({
     width: 600, // 4:3 ratio
-    height: 450, // 4:3 ratio
+    height: 500, // 4:3 ratio
     showOnFirstVisit: true,
     showDelay: 2000,
     isActive: true

@@ -9,8 +9,7 @@ import {
   Paper,
   IconButton,
   Box,
-  Typography,
-  Button
+  Typography
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -84,7 +83,7 @@ const ParentTable: React.FC<ParentTableProps> = ({
               <TableCell sx={{ color: 'black', fontWeight: 'bold' }}>Số điện thoại</TableCell>
               <TableCell sx={{ color: 'black', fontWeight: 'bold' }}>Con</TableCell>
               <TableCell sx={{ color: 'black', fontWeight: 'bold' }}>Giới tính</TableCell>
-              <TableCell sx={{ color: 'black', fontWeight: 'bold' }}>Xem thông tin giáo viên</TableCell>
+              <TableCell sx={{ color: 'black', fontWeight: 'bold' }}>Ngày sinh</TableCell>
               <TableCell sx={{ color: 'black', fontWeight: 'bold' }}>Thao tác</TableCell>
             </TableRow>
           </TableHead>
@@ -134,19 +133,15 @@ const ParentTable: React.FC<ParentTableProps> = ({
                   </Typography>
                 </TableCell>
                 <TableCell>
-                  <Button
-                    variant="contained"
-                    size="small"
-                    sx={{
-                      backgroundColor: '#4caf50',
-                      color: 'white',
-                      '&:hover': {
-                        backgroundColor: '#45a049'
-                      }
-                    }}
-                  >
-                    Có
-                  </Button>
+                  <Typography variant="body2">
+                    {parent.dayOfBirth
+                      ? new Date(parent.dayOfBirth).toLocaleDateString('vi-VN', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit'
+                        })
+                      : 'Chưa cập nhật'}
+                  </Typography>
                 </TableCell>
                 <TableCell>
                   <Box sx={{ display: 'flex', gap: 1 }}>

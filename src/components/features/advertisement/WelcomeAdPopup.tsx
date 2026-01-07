@@ -1,5 +1,5 @@
 import React from 'react';
-import { Dialog, IconButton, Box, Card, CardMedia, Typography } from '@mui/material';
+import { Dialog, IconButton, Box, Card, CardMedia, Typography, Button } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
 import { Advertisement } from '../../../types';
 
@@ -9,9 +9,10 @@ interface WelcomeAdPopupProps {
   ads: Advertisement[];
   width?: number;
   height?: number;
+  onRegisterClick?: (classId: string | null, className: string) => void;
 }
 
-const WelcomeAdPopup: React.FC<WelcomeAdPopupProps> = ({ open, onClose, ads, width = 600, height = 450 }) => {
+const WelcomeAdPopup: React.FC<WelcomeAdPopupProps> = ({ open, onClose, ads, height = 450, onRegisterClick }) => {
   if (!ads || !Array.isArray(ads) || ads.length === 0) return null;
 
   // Chọn quảng cáo có priority nhỏ nhất, nếu cùng priority thì lấy createdAt sớm nhất
@@ -30,15 +31,14 @@ const WelcomeAdPopup: React.FC<WelcomeAdPopupProps> = ({ open, onClose, ads, wid
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth={false}
+      maxWidth="md"
       PaperProps={{
         sx: {
             borderRadius: 1,
             bgcolor: 'transparent',
             boxShadow: 'none',
             overflow: 'visible',
-            width: { xs: '90%', sm: width },
-            maxWidth: width,
+            width: { xs: '90%', sm: '100%' },
             border: 'none',
             ...(height ? { height } : { aspectRatio: '4/3' }),
         },
@@ -149,11 +149,42 @@ const WelcomeAdPopup: React.FC<WelcomeAdPopupProps> = ({ open, onClose, ads, wid
                   WebkitLineClamp: 2,
                   WebkitBoxOrient: 'vertical',
                   overflow: 'hidden',
+                  mb: onRegisterClick ? 2 : 0,
                 }}
               >
                 {welcomeAd.content || welcomeAd.description}
               </Typography>
             ) : null}
+            {onRegisterClick && (
+              <Button
+                variant="contained"
+                size="large"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRegisterClick((welcomeAd as any).class?.id || (welcomeAd as any).classId || null, welcomeAd.title);
+                }}
+                sx={{
+                  bgcolor: 'error.main',
+                  color: 'white',
+                  fontWeight: 700,
+                  px: 3,
+                  py: 1.5,
+                  borderRadius: 2,
+                  fontSize: { xs: '0.9rem', sm: '1rem' },
+                  boxShadow: '0 4px 15px rgba(211, 47, 47, 0.4)',
+                  '&:hover': {
+                    bgcolor: 'error.dark',
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 6px 20px rgba(211, 47, 47, 0.6)',
+                  },
+                  transition: 'all 0.3s ease',
+                  mt: 1,
+                  alignSelf: 'flex-start',
+                }}
+              >
+                ĐĂNG KÝ NGAY
+              </Button>
+            )}
           </Box>
         </Card>
       </Box>

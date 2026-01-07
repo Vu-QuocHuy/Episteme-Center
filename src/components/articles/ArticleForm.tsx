@@ -8,14 +8,16 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  CircularProgress
+  CircularProgress,
+  IconButton,
+  Paper
 } from '@mui/material';
 import { Editor } from '@tinymce/tinymce-react';
 import { createArticleAPI, updateArticleAPI, ArticleData } from '../../services/articles';
 import { uploadFileAPI } from '../../services/files';
 import { MenuItem as MenuItemType } from '../../types';
 import BaseDialog from '../common/BaseDialog';
-import { Edit as EditIcon, Add as AddIcon } from '@mui/icons-material';
+import { Edit as EditIcon, Add as AddIcon, CloudUpload as CloudUploadIcon, Delete as DeleteIcon } from '@mui/icons-material';
 
 interface ArticleFormProps {
   open: boolean;
@@ -28,6 +30,8 @@ interface ArticleFormProps {
     menuId: string;
     order?: number;
     isActive?: boolean;
+    file?: string;
+    publicId?: string;
   } | null;
   menuItems: MenuItemType[];
   defaultMenuId?: string;
@@ -49,6 +53,10 @@ const ArticleForm: React.FC<ArticleFormProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | undefined>(undefined);
+  const [uploadedPublicId, setUploadedPublicId] = useState<string | undefined>(undefined);
+  const [imageUploading, setImageUploading] = useState(false);
 
   useEffect(() => {
     if (article) {
@@ -57,12 +65,18 @@ const ArticleForm: React.FC<ArticleFormProps> = ({
       setMenuId(article.menuId);
       setOrder(article.order || 1);
       setIsActive(article.isActive ?? true);
+      setUploadedImageUrl(article.file);
+      setUploadedPublicId(article.publicId);
+      setThumbnailFile(null);
     } else {
       setTitle('');
       setContent('');
       setMenuId(defaultMenuId || '');
       setOrder(1);
       setIsActive(true);
+      setUploadedImageUrl(undefined);
+      setUploadedPublicId(undefined);
+      setThumbnailFile(null);
     }
     setError(null);
   }, [article, open, defaultMenuId]);
@@ -90,7 +104,9 @@ const ArticleForm: React.FC<ArticleFormProps> = ({
         content: content.trim(),
         menuId,
         order,
-        isActive
+        isActive,
+        file: uploadedImageUrl,
+        publicId: uploadedPublicId
       };
 
       if (article) {
@@ -119,6 +135,34 @@ const ArticleForm: React.FC<ArticleFormProps> = ({
     } finally {
       setUploading(false);
     }
+  };
+
+  const handleThumbnailChange = async (e: React.ChangeEvent<HTMLInputElement>): Promise<void> => {
+    const file = e.target.files?.[0] || null;
+    setThumbnailFile(file);
+    if (file) {
+      try {
+        setImageUploading(true);
+        const uploadRes = await uploadFileAPI(file);
+        setUploadedImageUrl(uploadRes.data.data.url);
+        setUploadedPublicId(uploadRes.data.data.public_id);
+      } catch (_err) {
+        setError('Tải ảnh thumbnail thất bại, vui lòng thử lại');
+        setUploadedImageUrl(undefined);
+        setUploadedPublicId(undefined);
+      } finally {
+        setImageUploading(false);
+      }
+    } else {
+      setUploadedImageUrl(undefined);
+      setUploadedPublicId(undefined);
+    }
+  };
+
+  const handleRemoveThumbnail = () => {
+    setThumbnailFile(null);
+    setUploadedImageUrl(undefined);
+    setUploadedPublicId(undefined);
   };
 
   // Render menu options recursively
@@ -219,6 +263,127 @@ const ArticleForm: React.FC<ArticleFormProps> = ({
                 <MenuItem value="inactive">Không hoạt động</MenuItem>
               </Select>
             </FormControl>
+          </Box>
+
+          {/* Thumbnail Image Upload */}
+          <Box sx={{ mt: 3 }}>
+            <Typography variant="subtitle2" gutterBottom>
+              Ảnh thumbnail:
+            </Typography>
+            <Paper
+              variant="outlined"
+              sx={{
+                p: 2,
+                border: '2px dashed',
+                borderColor: 'grey.300',
+                borderRadius: 2,
+                textAlign: 'center',
+                position: 'relative',
+                minHeight: 200,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                bgcolor: 'grey.50',
+                '&:hover': {
+                  borderColor: 'primary.main',
+                  bgcolor: 'grey.100'
+                }
+              }}
+            >
+              {imageUploading ? (
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                  <CircularProgress size={40} />
+                  <Typography variant="body2" color="text.secondary">
+                    Đang tải ảnh...
+                  </Typography>
+                </Box>
+              ) : thumbnailFile ? (
+                <Box sx={{ position: 'relative', width: '100%' }}>
+                  <img
+                    src={URL.createObjectURL(thumbnailFile)}
+                    alt="Thumbnail preview"
+                    style={{
+                      maxWidth: '100%',
+                      maxHeight: 300,
+                      width: 'auto',
+                      height: 'auto',
+                      objectFit: 'contain',
+                      borderRadius: 8
+                    }}
+                  />
+                  <IconButton
+                    onClick={handleRemoveThumbnail}
+                    sx={{
+                      position: 'absolute',
+                      top: 8,
+                      right: 8,
+                      bgcolor: 'error.main',
+                      color: 'white',
+                      '&:hover': { bgcolor: 'error.dark' }
+                    }}
+                    size="small"
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </Box>
+              ) : uploadedImageUrl ? (
+                <Box sx={{ position: 'relative', width: '100%' }}>
+                  <img
+                    src={uploadedImageUrl}
+                    alt="Current thumbnail"
+                    style={{
+                      maxWidth: '100%',
+                      maxHeight: 300,
+                      width: 'auto',
+                      height: 'auto',
+                      objectFit: 'contain',
+                      borderRadius: 8
+                    }}
+                  />
+                  <IconButton
+                    onClick={handleRemoveThumbnail}
+                    sx={{
+                      position: 'absolute',
+                      top: 8,
+                      right: 8,
+                      bgcolor: 'error.main',
+                      color: 'white',
+                      '&:hover': { bgcolor: 'error.dark' }
+                    }}
+                    size="small"
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </Box>
+              ) : (
+                <Box>
+                  <input
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    id="thumbnail-upload"
+                    type="file"
+                    onChange={handleThumbnailChange}
+                  />
+                  <label htmlFor="thumbnail-upload">
+                    <Button
+                      component="span"
+                      variant="outlined"
+                      startIcon={<CloudUploadIcon />}
+                      sx={{
+                        textTransform: 'none',
+                        px: 3,
+                        py: 1.5
+                      }}
+                    >
+                      Tải ảnh thumbnail
+                    </Button>
+                  </label>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                    (PNG, JPG, JPEG, WEBP - Tối đa 5MB)
+                  </Typography>
+                </Box>
+              )}
+            </Paper>
           </Box>
 
           <Box sx={{ mt: 2 }}>

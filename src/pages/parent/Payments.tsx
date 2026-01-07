@@ -8,7 +8,7 @@ import {
 } from '@mui/material';
 import {
   Payment as PaymentIcon,
-  Search as SearchIcon, Receipt as ReceiptIcon, MoneyOff as MoneyOffIcon, Discount as DiscountIcon,
+  Search as SearchIcon, Receipt as ReceiptIcon, MoneyOff as MoneyOffIcon,
   History as HistoryIcon,
   QrCode2 as QrCodeIcon,
   Cancel as CancelIcon,
@@ -201,6 +201,7 @@ const Payments: React.FC = () => {
     let totalPaid = 0;
     let totalUnpaid = 0;
     let totalDiscount = 0;
+    let totalAmount = 0;
     let unpaidInvoices = 0;
     let paidInvoices = 0;
     let partialInvoices = 0;
@@ -208,6 +209,7 @@ const Payments: React.FC = () => {
       totalPaid += inv.paidAmount || 0;
       totalUnpaid += inv.remainingAmount || 0;
       totalDiscount += inv.discountAmount || 0;
+      totalAmount += inv.finalAmount || 0;
       const st = String(inv.status || '').toLowerCase();
       if (st === 'paid') paidInvoices++;
       else if (st === 'partial') partialInvoices++;
@@ -217,6 +219,7 @@ const Payments: React.FC = () => {
       totalPaid,
       totalUnpaid,
       totalDiscount,
+      totalAmount,
       unpaidInvoices,
       paidInvoices,
       partialInvoices,
@@ -391,6 +394,23 @@ const Payments: React.FC = () => {
               <Card>
                 <CardContent>
                   <Box display="flex" alignItems="center">
+                    <AttachMoneyIcon color="warning" sx={{ mr: 2, fontSize: 40 }} />
+                    <Box>
+                      <Typography variant="body2" color="textSecondary">
+                        Tổng số tiền
+                      </Typography>
+                      <Typography variant="h4">
+                        {formatCurrency(summary.totalAmount)}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <Card>
+                <CardContent>
+                  <Box display="flex" alignItems="center">
                     <PaymentIcon color="success" sx={{ mr: 2, fontSize: 40 }} />
                     <Box>
                       <Typography variant="body2" color="textSecondary">
@@ -415,23 +435,6 @@ const Payments: React.FC = () => {
                       </Typography>
                       <Typography variant="h4">
                         {formatCurrency(summary.totalUnpaid)}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <Card>
-                <CardContent>
-                  <Box display="flex" alignItems="center">
-                    <DiscountIcon color="warning" sx={{ mr: 2, fontSize: 40 }} />
-                    <Box>
-                      <Typography variant="body2" color="textSecondary">
-                        Tổng giảm giá
-                      </Typography>
-                      <Typography variant="h4">
-                        {formatCurrency(summary.totalDiscount)}
                       </Typography>
                     </Box>
                   </Box>

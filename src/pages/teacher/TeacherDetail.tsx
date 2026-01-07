@@ -17,7 +17,7 @@ import {
   Email as EmailIcon,
   ArrowBack as ArrowBackIcon
 } from '@mui/icons-material';
-import { getTeacherByIdAPI, getTeacherBySlugAPI, getTypicalTeacherDetailAPI } from '../../services/teachers';
+import { getPublicTeacherByIdAPI, getTeacherBySlugAPI, getTypicalTeacherDetailAPI } from '../../services/teachers';
 import { Teacher } from '../../types';
 import PublicLayout from '../../components/layouts/PublicLayout';
 
@@ -43,13 +43,14 @@ const TeacherDetail: React.FC = () => {
           if (isTypical) {
             response = await getTypicalTeacherDetailAPI(teacherId);
           } else {
-            response = await getTeacherByIdAPI(teacherId);
+            // Use public API for teacher detail
+            response = await getPublicTeacherByIdAPI(teacherId);
           }
           setTeacher(response.data?.data || response.data);
         } catch (err) {
-          // Fallback to standard detail if typical endpoint fails
+          // Fallback to public API if typical endpoint fails
           try {
-            const fallback = await getTeacherByIdAPI(teacherId);
+            const fallback = await getPublicTeacherByIdAPI(teacherId);
             setTeacher(fallback.data?.data || fallback.data);
           } catch (innerErr) {
             console.error('Error fetching teacher detail:', innerErr);

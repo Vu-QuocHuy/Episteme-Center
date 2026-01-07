@@ -97,7 +97,7 @@ const ParentManagement: React.FC = () => {
         <Box sx={commonStyles.contentContainer}>
           <Box sx={commonStyles.pageHeader}>
             <Typography sx={commonStyles.pageTitle}>
-              Phụ huynh
+              Quản lý phụ huynh
             </Typography>
             <Button
               variant="contained"

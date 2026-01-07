@@ -3,11 +3,15 @@ import { useBannerConfig } from '../../../hooks/useBannerConfig';
 import WelcomeAdPopup from '../../../components/features/advertisement/WelcomeAdPopup';
 import { getHomePopupAPI } from '../../../services/advertisements';
 import { Advertisement } from '../../../types';
+import ClassRegistrationModal from '../../../components/features/home/ClassRegistrationModal';
 
 const HomeWelcomeAdPopup: React.FC = () => {
   const { popupConfig } = useBannerConfig();
   const [advertisements, setAdvertisements] = useState<Advertisement[]>([]);
   const [showPopup, setShowPopup] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
+  const [selectedClassName, setSelectedClassName] = useState<string>('');
 
   // Fetch advertisements
   useEffect(() => {
@@ -42,14 +46,30 @@ const HomeWelcomeAdPopup: React.FC = () => {
     return null;
   }
 
+  const handleRegisterClick = (classId: string | null, className: string) => {
+    setSelectedClassId(classId);
+    setSelectedClassName(className);
+    setModalOpen(true);
+    setShowPopup(false); // Đóng popup khi mở modal đăng ký
+  };
+
   return (
-    <WelcomeAdPopup
-      open={showPopup}
-      onClose={() => setShowPopup(false)}
-      ads={advertisements}
-      width={popupConfig.width}
-      height={popupConfig.height}
-    />
+    <>
+      <WelcomeAdPopup
+        open={showPopup}
+        onClose={() => setShowPopup(false)}
+        ads={advertisements}
+        width={popupConfig.width}
+        height={popupConfig.height}
+        onRegisterClick={handleRegisterClick}
+      />
+      <ClassRegistrationModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        classId={selectedClassId}
+        className={selectedClassName}
+      />
+    </>
   );
 };
 

@@ -27,8 +27,10 @@ const InteractiveHome: React.FC = () => {
       {/* Welcome Ad Popup */}
       <HomeWelcomeAdPopup />
 
-      {/* Banner Carousel Section */}
-      <BannerCarousel />
+      {/* Banner Carousel Section - Start right below header (72px) */}
+      <Box sx={{ mt: '-72px', pt: '72px' }}>
+        <BannerCarousel />
+      </Box>
 
       {/* Featured Teachers Section */}
       <Box id="teachers-section" sx={{ py: 8, bgcolor: 'grey.50' }}>

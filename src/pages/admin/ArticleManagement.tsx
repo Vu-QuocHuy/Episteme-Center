@@ -8,20 +8,13 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Card,
-  CardContent,
-  CardActions,
   Chip,
   Alert,
   Snackbar
 } from '@mui/material';
 import {
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  DragIndicator as DragIcon
+  Add as AddIcon
 } from '@mui/icons-material';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { getAllMenusAPI } from '../../services/menus';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
@@ -29,6 +22,7 @@ import { commonStyles } from '../../utils/styles';
 import { getAllArticlesAPI, updateArticleAPI, deleteArticleAPI } from '../../services/articles';
 import { MenuItem as MenuItemType } from '../../types';
 import ArticleForm from '../../components/articles/ArticleForm';
+import ArticleTable from '../../components/features/article/ArticleTable';
 
 interface Article {
   id: string;
@@ -116,43 +110,6 @@ const ArticleManagement: React.FC = () => {
     }
   };
 
-  // Handle drag and drop reordering
-  const handleDragEnd = async (result: any) => {
-    if (!result.destination) return;
-
-    const newArticles = Array.from(articles);
-    const [reorderedItem] = newArticles.splice(result.source.index, 1);
-    newArticles.splice(result.destination.index, 0, reorderedItem);
-
-    // Update order for all articles
-    const updatedArticles = newArticles.map((article, index) => ({
-      ...article,
-      order: index + 1
-    }));
-
-    setArticles(updatedArticles);
-
-    // Update order in backend
-    try {
-      for (let i = 0; i < updatedArticles.length; i++) {
-        await updateArticleAPI(updatedArticles[i].id, { order: i + 1 });
-      }
-      setNotification({
-        open: true,
-        message: 'Cập nhật thứ tự thành công!',
-        severity: 'success'
-      });
-    } catch (error) {
-      console.error('Error updating order:', error);
-      setNotification({
-        open: true,
-        message: 'Lỗi khi cập nhật thứ tự',
-        severity: 'error'
-      });
-      // Revert on error
-      fetchArticles(selectedMenu);
-    }
-  };
 
   // Handle delete article
   const handleDelete = async () => {
@@ -176,6 +133,15 @@ const ArticleManagement: React.FC = () => {
     } finally {
       setDeleteDialogOpen(false);
       setArticleToDelete(null);
+    }
+  };
+
+  // Handle delete button click from table
+  const handleDeleteClick = (articleId: string) => {
+    const article = articles.find(a => a.id === articleId);
+    if (article) {
+      setArticleToDelete(article);
+      setDeleteDialogOpen(true);
     }
   };
 
@@ -275,7 +241,7 @@ const ArticleManagement: React.FC = () => {
 
           {selectedMenu && (
             <>
-              {/* Article List - Full Width */}
+              {/* Article List - Table */}
               <Paper sx={{ p: 3, mb: 3 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                   <Typography variant="h6">
@@ -288,103 +254,17 @@ const ArticleManagement: React.FC = () => {
                   />
                 </Box>
 
-                  {loading ? (
-                    <Box sx={{ textAlign: 'center', py: 4 }}>
-                      <Typography>Đang tải...</Typography>
-                    </Box>
-                  ) : articles.length === 0 ? (
-                    <Box sx={{ textAlign: 'center', py: 4 }}>
-                      <Typography color="text.secondary">
-                        Chưa có bài viết nào cho menu này
-                      </Typography>
-                    </Box>
-                  ) : (
-                    <DragDropContext onDragEnd={handleDragEnd}>
-                      <Droppable droppableId="articles">
-                        {(provided) => (
-                          <div {...provided.droppableProps} ref={provided.innerRef}>
-                            {articles.map((article, index) => (
-                              <Draggable key={article.id} draggableId={article.id} index={index}>
-                                {(provided, snapshot) => (
-                                  <Card
-                                    ref={provided.innerRef}
-                                    {...provided.draggableProps}
-                                    sx={{
-                                      mb: 2,
-                                      p: 2,
-                                      opacity: snapshot.isDragging ? 0.8 : 1,
-                                      transform: snapshot.isDragging ? 'rotate(5deg)' : 'none'
-                                    }}
-                                  >
-                                    <CardContent>
-                                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                        <div {...provided.dragHandleProps}>
-                                          <DragIcon color="action" />
-                                        </div>
-                                        <Box sx={{ flex: 1 }}>
-                                          <Typography variant="h6" gutterBottom>
-                                            {article.title}
-                                          </Typography>
-                                          <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
-                                            <Chip
-                                              label={`Thứ tự: ${article.order}`}
-                                              size="small"
-                                              color="primary"
-                                              variant="outlined"
-                                            />
-                                            <Chip
-                                              label={article.isActive ? 'Hoạt động' : 'Không hoạt động'}
-                                              size="small"
-                                              color={article.isActive ? 'success' : 'default'}
-                                              variant={article.isActive ? 'filled' : 'outlined'}
-                                            />
-                                          </Box>
-                                          <Typography variant="body2" color="text.secondary">
-                                            Tạo: {new Date(article.createdAt).toLocaleDateString('vi-VN')}
-                                          </Typography>
-                                        </Box>
-                                      </Box>
-                                    </CardContent>
-                                    <CardActions>
-                                      <Button
-                                        size="small"
-                                        startIcon={<EditIcon />}
-                                        onClick={() => {
-                                          setEditingArticle(article);
-                                          setFormOpen(true);
-                                        }}
-                                      >
-                                        Chỉnh sửa
-                                      </Button>
-                                      <Button
-                                        size="small"
-                                        color={article.isActive ? 'warning' : 'success'}
-                                        onClick={() => handleToggleActive(article)}
-                                      >
-                                        {article.isActive ? 'Ẩn' : 'Hiện'}
-                                      </Button>
-                                      <Button
-                                        size="small"
-                                        color="error"
-                                        startIcon={<DeleteIcon />}
-                                        onClick={() => {
-                                          setArticleToDelete(article);
-                                          setDeleteDialogOpen(true);
-                                        }}
-                                      >
-                                        Xóa
-                                      </Button>
-                                    </CardActions>
-                                  </Card>
-                                )}
-                              </Draggable>
-                            ))}
-                            {provided.placeholder}
-                          </div>
-                        )}
-                      </Droppable>
-                    </DragDropContext>
-                )}
+                <ArticleTable
+                  articles={articles}
+                  onEdit={(article) => {
+                    setEditingArticle(article);
+                    setFormOpen(true);
+                  }}
+                  onDelete={handleDeleteClick}
+                  onToggleActive={handleToggleActive}
+                  menuItems={menuItems}
+                  loading={loading}
+                />
               </Paper>
             </>
           )}
