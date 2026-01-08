@@ -8,7 +8,3 @@ export { default as ClassDetailModal } from './ClassDetailModal';
 export { default as AttendanceModal } from './AttendanceModal';
 export { default as AttendanceHistoryModal } from './AttendanceHistoryModal';
 
-// Teacher dashboard components
-export { default as DashboardStats } from './DashboardStats';
-export { default as ActiveClassesList } from './ActiveClassesList';
-export { default as PaymentInfoPanel } from './PaymentInfoPanel';
