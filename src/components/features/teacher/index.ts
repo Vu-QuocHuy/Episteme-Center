@@ -2,6 +2,7 @@ export { default as TeacherForm } from './TeacherForm';
 export { default as TeacherTable } from './TeacherTable';
 export { default as TeacherFilters } from './TeacherFilters';
 export { default as TeacherViewDialog } from './TeacherViewDialog';
+export { default as TeacherSalaryTable } from './TeacherSalaryTable';
 
 // Teacher-specific modals
 export { default as ClassDetailModal } from './ClassDetailModal';

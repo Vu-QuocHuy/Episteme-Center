@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Box, TextField, MenuItem, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Pagination, IconButton, Tooltip, Button, CircularProgress, Grid, Paper, Divider, Typography, Card, CardContent } from '@mui/material';
-import { Download as DownloadIcon, Payment as PaymentIcon, History as HistoryIcon, Cancel as CancelIcon, Save as SaveIcon, AttachMoney as AttachMoneyIcon, Paid as PaidIcon, AccountBalanceWallet as WalletIcon } from '@mui/icons-material';
+import { Box, TextField, MenuItem, Button, CircularProgress, Grid, Paper, Divider, Typography, Card, CardContent } from '@mui/material';
+import { Download as DownloadIcon, Payment as PaymentIcon, Cancel as CancelIcon, Save as SaveIcon, AttachMoney as AttachMoneyIcon, Paid as PaidIcon, AccountBalanceWallet as WalletIcon } from '@mui/icons-material';
 import PaymentHistoryModal from '../../../components/common/PaymentHistoryModal';
 import { getAllPaymentsAPI, payStudentAPI, exportPaymentsReportAPI } from '../../../services/payments';
+import { StudentPaymentsTable } from '../../../components/features/payment';
 import * as XLSX from 'xlsx';
 import BaseDialog from '../../../components/common/BaseDialog';
 import DashboardLayout from '../../../components/layouts/DashboardLayout';
@@ -332,79 +333,14 @@ const StudentPayments: React.FC = () => {
             </Box>
           </Box>
 
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Học sinh</TableCell>
-                  <TableCell>Lớp</TableCell>
-                  <TableCell align="center">Tháng</TableCell>
-                  <TableCell align="center">Số buổi học</TableCell>
-                  <TableCell align="center">Số tiền gốc</TableCell>
-                  <TableCell align="center">Giảm giá</TableCell>
-                  <TableCell align="center">Số tiền cuối</TableCell>
-                  <TableCell align="center">Đã đóng</TableCell>
-                  <TableCell align="center">Còn thiếu</TableCell>
-                  <TableCell align="center">Trạng thái</TableCell>
-                  <TableCell align="center">Thao tác</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {payments.map((p) => (
-                  <TableRow key={p.id} hover>
-                    <TableCell>{p.student?.name || 'Chưa có tên'}</TableCell>
-                    <TableCell>{p.class?.name || 'Chưa có tên lớp'}</TableCell>
-                    <TableCell align="center">{p.month}/{p.year}</TableCell>
-                    <TableCell align="center">{p.totalLessons || 0}</TableCell>
-                    <TableCell align="center">{(p.totalAmount ?? 0).toLocaleString()} ₫</TableCell>
-                    <TableCell align="center">{(p.discountAmount ?? 0).toLocaleString()} ₫</TableCell>
-                    <TableCell align="center">{((p.totalAmount ?? 0) - (p.discountAmount ?? 0)).toLocaleString()} ₫</TableCell>
-                    <TableCell align="center">{(p.paidAmount ?? 0).toLocaleString()} ₫</TableCell>
-                    <TableCell align="center">{(((p.totalAmount ?? 0) - (p.discountAmount ?? 0)) - (p.paidAmount ?? 0)).toLocaleString()} ₫</TableCell>
-                    <TableCell align="center">
-                      <Box
-                        component="span"
-                        sx={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          px: 1.25,
-                          py: 0.25,
-                          borderRadius: 1,
-                          fontSize: '0.8125rem',
-                          fontWeight: 600,
-                          color: p.status === 'paid' ? '#2e7d32' : p.status === 'partial' ? '#f9a825' : '#c62828',
-                          border: `1px solid ${p.status === 'paid' ? '#2e7d32' : p.status === 'partial' ? '#f9a825' : '#c62828'}`,
-                          whiteSpace: 'nowrap'
-                        }}
-                      >
-                        {p.status === 'paid' ? 'Đã đóng đủ' : p.status === 'partial' ? 'Đóng một phần' : 'Chưa đóng'}
-                      </Box>
-                    </TableCell>
-                    <TableCell align="center">
-                      <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center', alignItems: 'center' }}>
-                        <Tooltip title="Lịch sử thanh toán">
-                          <IconButton onClick={() => onOpenHistory(p)}>
-                            <HistoryIcon />
-                          </IconButton>
-                        </Tooltip>
-                        {p.status !== 'paid' && (
-                          <Tooltip title="Thanh toán">
-                            <IconButton color="primary" onClick={() => onOpenPayDialog(p)}>
-                              <PaymentIcon />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-            <Pagination count={pagination.totalPages} page={pagination.page} onChange={(_, p) => onPageChange(p)} />
-          </Box>
+          <StudentPaymentsTable
+            payments={payments}
+            page={pagination.page}
+            totalPages={pagination.totalPages}
+            onOpenHistory={onOpenHistory}
+            onOpenPayDialog={onOpenPayDialog}
+            onPageChange={(_, p) => onPageChange(p)}
+          />
 
           {/* Payment History Modal */}
           {selectedPaymentForHistory && (

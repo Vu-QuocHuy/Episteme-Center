@@ -1,27 +1,15 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   Box,
-  Paper,
   Typography,
-  Table,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableBody,
-  TableContainer,
-  Chip,
-  IconButton,
-  Tooltip,
-  Button,
-  Grid,
-  Pagination,
   Divider,
-  Avatar
+  Avatar,
+  Grid,
+  Paper,
+  Button,
+  Chip
 } from '@mui/material';
 import {
-  CheckCircle as CheckIcon,
-  Visibility as ViewIcon,
-  Delete as DeleteIcon,
   Person as PersonIcon,
   Email as EmailIcon,
   Phone as PhoneIcon,
@@ -29,7 +17,9 @@ import {
   LocationOn as LocationIcon,
   Notes as NotesIcon,
   School as SchoolIcon,
-  Schedule as ScheduleIcon
+  Schedule as ScheduleIcon,
+  CheckCircle as CheckIcon,
+  Visibility as ViewIcon
 } from '@mui/icons-material';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
 import { commonStyles } from '../../utils/styles';
@@ -40,7 +30,7 @@ import {
   deleteRegistrationAPI
 } from '../../services/registrations';
 import NotificationSnackbar from '../../components/common/NotificationSnackbar';
-import RegistrationFilters from '../../components/features/registration/RegistrationFilters';
+import { RegistrationFilters, RegistrationTable } from '../../components/features/registration';
 import BaseDialog from '../../components/common/BaseDialog';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 
@@ -224,83 +214,16 @@ const RegistrationManagement: React.FC = () => {
             setProcessedFilter={setProcessedFilter}
           />
 
-          <Paper>
-            <TableContainer>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Họ tên</TableCell>
-                    <TableCell>Email</TableCell>
-                    <TableCell>Số điện thoại</TableCell>
-                    <TableCell>Lớp học</TableCell>
-                    <TableCell>Trạng thái</TableCell>
-                    <TableCell>Thời gian</TableCell>
-                    <TableCell width={180}>Hành động</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {loading ? (
-                    <TableRow>
-                      <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
-                        <Typography>Đang tải dữ liệu...</Typography>
-                      </TableCell>
-                    </TableRow>
-                  ) : rows.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
-                        <Typography>Không có dữ liệu</Typography>
-                      </TableCell>
-                    </TableRow>
-                  ) : rows.map((r) => (
-                    <TableRow key={r.id} hover>
-                      <TableCell>{r.name}</TableCell>
-                      <TableCell>{r.email || '-'}</TableCell>
-                      <TableCell>{r.phone}</TableCell>
-                      <TableCell>{r.class?.name || 'Tư vấn chung'}</TableCell>
-                      <TableCell>
-                        <Chip size="small" label={r.processed ? 'Đã xử lý' : 'Chưa xử lý'} color={r.processed ? 'success' : 'warning'} />
-                      </TableCell>
-                      <TableCell>{r.createdAt ? new Date(r.createdAt).toLocaleString('vi-VN') : '-'}</TableCell>
-                      <TableCell>
-                        <Tooltip title="Xem chi tiết">
-                          <IconButton size="small" color="info" onClick={() => handleView(r.id)}>
-                            <ViewIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Xóa">
-                          <IconButton size="small" color="error" onClick={() => setDeleteDialog({ open: true, id: r.id })}>
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                        {!r.processed && (
-                          <Tooltip title="Xác nhận xử lý">
-                            <IconButton size="small" color="success" onClick={() => handleMarkAsProcessed(r.id)}>
-                              <CheckIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
-                <Pagination
-                  count={totalPages}
-                  page={page}
-                  onChange={handlePageChange}
-                  size="large"
-                  color="primary"
-                  showFirstButton
-                  showLastButton
-                />
-              </Box>
-            )}
-          </Paper>
+          <RegistrationTable
+            rows={rows}
+            loading={loading}
+            page={page}
+            totalPages={totalPages}
+            onView={handleView}
+            onDelete={(id) => setDeleteDialog({ open: true, id })}
+            onMarkAsProcessed={handleMarkAsProcessed}
+            onPageChange={handlePageChange}
+          />
         </Box>
       </Box>
 
