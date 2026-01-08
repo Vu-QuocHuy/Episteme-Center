@@ -6,8 +6,6 @@ import ScheduleCalendar from '../../components/common/ScheduleCalendar';
 import { getTeacherScheduleAPI, TeacherScheduleClass } from '../../services/teachers';
 import { useAuth } from '../../contexts/AuthContext';
 
-
-
 interface Lesson {
   date: string;
   className: string;

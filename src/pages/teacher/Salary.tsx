@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
-  Box, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, CircularProgress, Grid, IconButton, Tooltip
+  Box, Typography, Paper, CircularProgress, Grid, Table, TableBody, TableCell, TableContainer, TableHead, TableRow
 } from '@mui/material';
 import { getTeacherPaymentsAPI, getTeacherPaymentByIdAPI } from '../../services/payments';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
@@ -9,9 +9,8 @@ import { commonStyles } from '../../utils/styles';
 import PaymentIcon from '@mui/icons-material/Payment';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import MoneyOffIcon from '@mui/icons-material/MoneyOff';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import HistoryIcon from '@mui/icons-material/History';
 import { useAuth } from '../../contexts/AuthContext';
+import { TeacherSalaryTable } from '../../components/features/teacher';
 import PaymentHistoryModal from '../../components/common/PaymentHistoryModal';
 import BaseDialog from '../../components/common/BaseDialog';
 
@@ -171,72 +170,11 @@ const Salary = () => {
               <CircularProgress />
             </Box>
           ) : (
-            <TableContainer sx={commonStyles.tableContainer}>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell align="center">Tháng/Năm</TableCell>
-                    <TableCell align="right">Số buổi</TableCell>
-                    <TableCell align="right">Lương/buổi</TableCell>
-                    <TableCell align="right">Tổng lương</TableCell>
-                    <TableCell align="right">Đã nhận</TableCell>
-                    <TableCell align="center">Trạng thái</TableCell>
-                    <TableCell align="center">Thao tác</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {payments.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={7} align="center">Không có dữ liệu lương</TableCell>
-                    </TableRow>
-                  ) : (
-                    payments.map((payment: any) => (
-                      <TableRow key={payment.id} hover sx={commonStyles.tableRow}>
-                        <TableCell align="center">{payment.month}/{payment.year}</TableCell>
-                        <TableCell align="right">
-                          {payment.classes && Array.isArray(payment.classes)
-                            ? payment.classes.reduce((sum: number, classItem: any) => sum + (classItem.totalLessons || 0), 0)
-                            : 0
-                          }
-                        </TableCell>
-                        <TableCell align="right">{(payment.teacher?.salaryPerLesson ?? 0).toLocaleString()} ₫</TableCell>
-                        <TableCell align="right">{(payment.totalAmount ?? 0).toLocaleString()} ₫</TableCell>
-                        <TableCell align="right">{(payment.paidAmount ?? 0).toLocaleString()} ₫</TableCell>
-                        <TableCell align="center">
-                          <Chip
-                            label={
-                              payment.status === 'paid' ? 'Đã nhận' :
-                              payment.status === 'partial' ? 'Nhận một phần' :
-                              payment.status === 'pending' ? 'Chờ nhận' :
-                              'Chưa nhận'
-                            }
-                            color={
-                              payment.status === 'paid' ? 'success' :
-                              payment.status === 'partial' ? 'warning' :
-                              payment.status === 'pending' ? 'info' :
-                              'error'
-                            }
-                            size="small"
-                          />
-                        </TableCell>
-                        <TableCell align="center">
-                          <Tooltip title="Xem chi tiết">
-                            <IconButton size="small" color="primary" onClick={() => handleViewDetail(payment)}>
-                              <VisibilityIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Lịch sử thanh toán">
-                            <IconButton size="small" color="info" onClick={() => handleViewHistory(payment)}>
-                              <HistoryIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
+            <TeacherSalaryTable
+              payments={payments}
+              onViewDetail={handleViewDetail}
+              onViewHistory={handleViewHistory}
+            />
           )}
         </Paper>
 

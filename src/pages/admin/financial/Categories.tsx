@@ -3,7 +3,7 @@ import { Box, Button, TextField, Table, TableBody, TableCell, TableContainer, Ta
 import BaseDialog from '../../../components/common/BaseDialog';
 import ConfirmDialog from '../../../components/common/ConfirmDialog';
 import { getAllTransactionCategoriesAPI, createTransactionCategoryAPI, getTransactionCategoryByIdAPI, updateTransactionCategoryAPI, deleteTransactionCategoryAPI } from '../../../services/transactions';
-import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import { Edit as EditIcon, Delete as DeleteIcon, Add as AddIcon } from '@mui/icons-material';
 
 const Categories: React.FC = () => {
   const [categories, setCategories] = React.useState<any[]>([]);
@@ -78,7 +78,13 @@ const Categories: React.FC = () => {
   return (
     <>
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 2 }}>
-        <Button variant="outlined" onClick={handleOpenCreateCategory} sx={{ borderRadius: 2 }}>Tạo danh mục</Button>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={handleOpenCreateCategory}
+        >
+          Thêm danh mục
+        </Button>
       </Box>
 
       <TableContainer component={Paper} elevation={1}>
@@ -156,7 +162,7 @@ const Categories: React.FC = () => {
       <BaseDialog
         open={openCategoryDialog}
         onClose={handleCloseCategoryDialog}
-        title="Tạo danh mục"
+        title="Thêm danh mục"
         subtitle="Nhập thông tin danh mục thu/chi"
         maxWidth="sm"
         fullWidth

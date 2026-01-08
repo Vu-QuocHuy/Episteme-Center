@@ -3,13 +3,6 @@ import {
   Box,
   Paper,
   Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  IconButton,
   TextField,
   InputAdornment,
   Grid,
@@ -19,10 +12,15 @@ import {
   LinearProgress,
   Tabs,
   Tab,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
 } from '@mui/material';
 import {
   Search as SearchIcon,
-  Visibility as ViewIcon,
   School as SchoolIcon,
   CheckCircle as CheckCircleIcon,
   Cancel as CancelIcon,
@@ -35,6 +33,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { getStudentScheduleAPI, getStudentDashboardAPI } from '../../services/students';
 import { getClassByIdAPI } from '../../services/classes';
 import { getSessionsByStudentAPI } from '../../services/sessions';
+import { StudentMyClassesTable } from '../../components/features/student';
 import StatCard from '../../components/common/StatCard';
 import BaseDialog from '../../components/common/BaseDialog';
 
@@ -446,73 +445,12 @@ const MyClasses = () => {
                   </Typography>
                 </Box>
               ) : (
-                <TableContainer component={Paper}>
-                  <Table>
-                    <TableHead>
-                      <TableRow sx={{ backgroundColor: `${COLORS.primary}` }}>
-                        <TableCell sx={{ color: 'black', fontWeight: 600 }}>Tên lớp</TableCell>
-                        <TableCell sx={{ color: 'black', fontWeight: 600 }}>Giáo viên</TableCell>
-                        <TableCell sx={{ color: 'black', fontWeight: 600 }}>Lịch học</TableCell>
-                        <TableCell sx={{ color: 'black', fontWeight: 600 }}>Phòng học</TableCell>
-                        <TableCell sx={{ color: 'black', fontWeight: 600 }}>Năm</TableCell>
-                        <TableCell sx={{ color: 'black', fontWeight: 600 }}>Ngày bắt đầu</TableCell>
-                        <TableCell sx={{ color: 'black', fontWeight: 600 }}>Ngày kết thúc</TableCell>
-                        <TableCell sx={{ color: 'black', fontWeight: 600 }}>Trạng thái</TableCell>
-                        <TableCell sx={{ color: 'black', fontWeight: 600 }}>Thao tác</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {filteredClasses.map((classItem) => (
-                        <TableRow key={classItem.id} hover>
-                          <TableCell>
-                            <Typography variant="body2" sx={{ fontWeight: 600, color: `${COLORS.primary}` }}>
-                              {classItem.name}
-                            </Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Typography variant="body2" sx={{ fontWeight: 500, color: '#2c3e50' }}>
-                              {classItem.teacher}
-                            </Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Typography variant="body2" sx={{ fontWeight: 600, color: `${COLORS.primary}` }}>
-                              {classItem.scheduleDays || 'Chưa có lịch'}
-                            </Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Typography variant="body2">{classItem.room}</Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Typography variant="body2">{classItem.year}</Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Typography variant="body2">{classItem.startDate ? new Date(classItem.startDate).toLocaleDateString('vi-VN') : ''}</Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Typography variant="body2">{classItem.endDate ? new Date(classItem.endDate).toLocaleDateString('vi-VN') : ''}</Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Chip
-                              label={getStatusLabel(classItem.status)}
-                              color={getStatusColor(classItem.status)}
-                              size="small"
-                              sx={{ fontWeight: 600 }}
-                            />
-                          </TableCell>
-                          <TableCell align="center">
-                            <IconButton
-                              onClick={() => handleOpenDialog(classItem)}
-                              color="primary"
-                              title="Xem chi tiết"
-                            >
-                              <ViewIcon />
-                            </IconButton>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
+                <StudentMyClassesTable
+                  classes={filteredClasses}
+                  getStatusColor={getStatusColor}
+                  getStatusLabel={getStatusLabel}
+                  onViewDetails={handleOpenDialog}
+                />
               )}
             </Grid>
           </Grid>

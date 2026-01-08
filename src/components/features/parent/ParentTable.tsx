@@ -134,12 +134,8 @@ const ParentTable: React.FC<ParentTableProps> = ({
                 </TableCell>
                 <TableCell>
                   <Typography variant="body2">
-                    {parent.dayOfBirth
-                      ? new Date(parent.dayOfBirth).toLocaleDateString('vi-VN', {
-                          year: 'numeric',
-                          month: '2-digit',
-                          day: '2-digit'
-                        })
+                    {parent.dayOfBirth 
+                      ? new Date(parent.dayOfBirth).toLocaleDateString('vi-VN')
                       : 'Chưa cập nhật'}
                   </Typography>
                 </TableCell>

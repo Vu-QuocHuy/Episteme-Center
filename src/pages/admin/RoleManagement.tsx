@@ -3,25 +3,9 @@ import {
     Box,
     Typography,
     Button,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
-    Paper,
     TextField,
-    IconButton,
     Chip,
-    CircularProgress,
-    Pagination,
     Alert,
-    Collapse,
-    List,
-    ListItem,
-    ListItemText,
-    Divider,
-    Badge,
     Switch,
     FormControlLabel,
     FormControl,
@@ -36,22 +20,23 @@ import {
     CardActions,
     MenuItem,
     Select,
-    InputLabel
+    InputLabel,
+    CircularProgress,
+    Badge
 } from '@mui/material';
 import {
     Add as AddIcon,
     Edit as EditIcon,
     Delete as DeleteIcon,
-    ExpandMore as ExpandMoreIcon,
-    ExpandLess as ExpandLessIcon,
-    Security as SecurityIcon,
     Key as KeyIcon,
-    AdminPanelSettings as AdminIcon
+    AdminPanelSettings as AdminIcon,
+    ExpandMore as ExpandMoreIcon
 } from '@mui/icons-material';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
 import { commonStyles } from '../../utils/styles';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import BaseDialog from '../../components/common/BaseDialog';
+import { RoleTable } from '../../components/features/role';
 import {
     getAllRolesAPI,
     createRoleAPI,
@@ -471,105 +456,6 @@ const RoleManagement: React.FC = () => {
         }
     }, [currentTab]);
 
-    // ============ RENDER FUNCTIONS ============
-    const renderPermissionsList = (permissions: Role['permissions']) => (
-        <List dense>
-            {permissions.map((permission, index) => (
-                <React.Fragment key={permission.id}>
-                    <ListItem>
-                        <ListItemText
-                            primary={
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <Chip
-                                        label={permission.method}
-                                        color={getMethodColor(permission.method) as any}
-                                        size="small"
-                                    />
-                                    <Typography component="span" fontFamily="monospace">
-                                        {permission.path}
-                                    </Typography>
-                                </Box>
-                            }
-                            secondary={
-                                <Box>
-                                    <Typography variant="body2" color="text.secondary">
-                                        {permission.description}
-                                    </Typography>
-                                    <Typography variant="caption" color="text.secondary">
-                                        Module: {permission.module} | Version: {permission.version}
-                                    </Typography>
-                                </Box>
-                            }
-                        />
-                    </ListItem>
-                    {index < permissions.length - 1 && <Divider />}
-                </React.Fragment>
-            ))}
-        </List>
-    );
-
-    const renderRoleRow = (role: Role) => (
-        <React.Fragment key={role.id}>
-            <TableRow>
-                <TableCell>{role.id}</TableCell>
-                <TableCell>
-                    <Chip label={role.name} color="primary" variant="outlined" />
-                </TableCell>
-                <TableCell>
-                    <Typography variant="body2" color="text.secondary">
-                        {role.description || '-'}
-                    </Typography>
-                </TableCell>
-                <TableCell>
-                    <Chip
-                        label={role.isActive ? 'Hoạt động' : 'Không hoạt động'}
-                        color={role.isActive ? 'success' : 'default'}
-                        size="small"
-                    />
-                </TableCell>
-                <TableCell>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Badge badgeContent={role.permissions.length} color="primary">
-                            <SecurityIcon />
-                        </Badge>
-                        <Button
-                            size="small"
-                            onClick={() => toggleExpandRow(role.id)}
-                            endIcon={expandedRows.has(role.id) ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                        >
-                            {expandedRows.has(role.id) ? 'Thu gọn' : 'Xem chi tiết'}
-                        </Button>
-                    </Box>
-                </TableCell>
-                <TableCell align="center">
-                    <IconButton onClick={() => handleEditRole(role)} color="primary" size="small">
-                        <EditIcon />
-                    </IconButton>
-                    <IconButton onClick={() => handleDeleteRole(role.id)} color="error" size="small">
-                        <DeleteIcon />
-                    </IconButton>
-                </TableCell>
-            </TableRow>
-            <TableRow>
-                <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
-                    <Collapse in={expandedRows.has(role.id)} timeout="auto" unmountOnExit>
-                        <Box sx={{ margin: 1 }}>
-                            <Typography variant="h6" gutterBottom>
-                                Quyền hạn ({role.permissions.length})
-                            </Typography>
-                            {role.permissions.length === 0 ? (
-                                <Typography color="text.secondary">
-                                    Không có quyền nào được gán
-                                </Typography>
-                            ) : (
-                                renderPermissionsList(role.permissions)
-                            )}
-                        </Box>
-                    </Collapse>
-                </TableCell>
-            </TableRow>
-        </React.Fragment>
-    );
 
     // ============ MAIN RENDER ============
     return (
@@ -624,56 +510,18 @@ const RoleManagement: React.FC = () => {
                             )}
 
                             {/* Data Table */}
-                            <TableContainer component={Paper}>
-                                <Table>
-                                    <TableHead>
-                                        <TableRow>
-                                            <TableCell>ID</TableCell>
-                                            <TableCell>Tên vai trò</TableCell>
-                                            <TableCell>Mô tả</TableCell>
-                                            <TableCell>Trạng thái</TableCell>
-                                            <TableCell>Quyền</TableCell>
-                                            <TableCell align="center">Hành động</TableCell>
-                                        </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                        {loading ? (
-                                            <TableRow>
-                                                <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
-                                                    <CircularProgress />
-                                                </TableCell>
-                                            </TableRow>
-                                        ) : roles.length === 0 ? (
-                                            <TableRow>
-                                                <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
-                                                    <Typography color="text.secondary">
-                                                        Không có dữ liệu
-                                                    </Typography>
-                                                </TableCell>
-                                            </TableRow>
-                                        ) : (
-                                            roles.map(renderRoleRow)
-                                        )}
-                                    </TableBody>
-                                </Table>
-                            </TableContainer>
-
-                            {/* Pagination */}
-                            {!loading && totalPages > 1 && (
-                                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-                                    <Pagination
-                                        count={totalPages}
-                                        page={page}
-                                        onChange={handlePageChange}
-                                        color="primary"
-                                    />
-                                </Box>
-                            )}
-
-                            {/* Footer Info */}
-                            <Typography variant="body2" color="text.secondary" sx={{ mt: 2, textAlign: 'center' }}>
-                                Hiển thị {roles.length} trên {totalItems} vai trò
-                            </Typography>
+                            <RoleTable
+                                roles={roles}
+                                loading={loading}
+                                page={page}
+                                totalPages={totalPages}
+                                totalItems={totalItems}
+                                expandedRows={expandedRows}
+                                onEdit={handleEditRole}
+                                onDelete={handleDeleteRole}
+                                onToggleExpand={toggleExpandRow}
+                                onPageChange={handlePageChange}
+                            />
 
                             {/* Create/Edit Dialog */}
                             <BaseDialog

@@ -1,15 +1,13 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
-  Box, Typography, Grid, Card, CardContent, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Chip, LinearProgress, Alert, Button,
+  Box, Typography, Grid, Card, CardContent, LinearProgress, Alert, Button,
   TextField,
-  Paper, Tabs, Tab, InputAdornment, IconButton,
-  CircularProgress, Tooltip,
+  Paper, Tabs, Tab, InputAdornment,
+  CircularProgress,
 } from '@mui/material';
 import {
   Payment as PaymentIcon,
-  Search as SearchIcon, Receipt as ReceiptIcon, MoneyOff as MoneyOffIcon,
-  History as HistoryIcon,
+  Search as SearchIcon, Receipt as ReceiptIcon, MoneyOff as MoneyOffIcon, Discount as DiscountIcon,
   QrCode2 as QrCodeIcon,
   Cancel as CancelIcon,
   AttachMoney as AttachMoneyIcon,
@@ -21,6 +19,7 @@ import DashboardLayout from '../../components/layouts/DashboardLayout';
 import { getParentByIdAPI } from '../../services/parents';
 import { getPaymentsByStudentAPI, getQRCodeAPI } from '../../services/payments';
 import { commonStyles } from '../../utils/styles';
+import { ParentPaymentsTable } from '../../components/features/parent';
 import PaymentHistoryModal from '../../components/common/PaymentHistoryModal';
 import NotificationSnackbar from '../../components/common/NotificationSnackbar';
 import BaseDialog from '../../components/common/BaseDialog';
@@ -475,92 +474,21 @@ const Payments: React.FC = () => {
               <Typography variant="h6" gutterBottom>
                 Danh sách hóa đơn
               </Typography>
-              <TableContainer>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell align="center" sx={{ fontWeight: 'bold' }}>Tên con</TableCell>
-                      <TableCell align="center" sx={{ fontWeight: 'bold' }}>Lớp học</TableCell>
-                      <TableCell align="center" sx={{ fontWeight: 'bold' }}>Tháng</TableCell>
-                      <TableCell align="center" sx={{ fontWeight: 'bold' }}>Số buổi học</TableCell>
-                      <TableCell align="center" sx={{ fontWeight: 'bold' }}>Tiền gốc</TableCell>
-                      <TableCell align="center" sx={{ fontWeight: 'bold' }}>Giảm giá</TableCell>
-                      <TableCell align="center" sx={{ fontWeight: 'bold' }}>Tiền cuối</TableCell>
-                      <TableCell align="center" sx={{ fontWeight: 'bold' }}>Đã thanh toán</TableCell>
-                      <TableCell align="center" sx={{ fontWeight: 'bold' }}>Còn lại</TableCell>
-                      <TableCell align="center" sx={{ fontWeight: 'bold' }}>Trạng thái</TableCell>
-                      <TableCell align="center" sx={{ fontWeight: 'bold' }}>Thao tác</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {filteredInvoices.map((invoice) => (
-                      <TableRow key={invoice.id} sx={commonStyles.tableRow}>
-                        <TableCell align="center">
-                          <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                            {invoice.childName}
-                          </Typography>
-                        </TableCell>
-                        <TableCell align="center">
-                          <Typography variant="body2" sx={{ fontWeight: 500 }}>{invoice.className}</Typography>
-                        </TableCell>
-                        <TableCell align="center">{invoice.month}</TableCell>
-                        <TableCell align="center"><Typography variant="body2" sx={{ fontWeight: 500 }}>{`${invoice.attendedLessons} buổi`}</Typography></TableCell>
-                        <TableCell align="center"><Typography variant="body2" sx={{ fontWeight: 500 }}>{formatCurrency(invoice.originalAmount)}</Typography></TableCell>
-                        <TableCell align="center">
-                          <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                            {formatCurrency(invoice.discountAmount > 0 ? invoice.discountAmount : 0)}
-                          </Typography>
-                        </TableCell>
-                        <TableCell align="center" sx={{ fontWeight: 'bold' }}><Typography variant="body2" sx={{ fontWeight: 500 }}>{formatCurrency(invoice.finalAmount)}</Typography></TableCell>
-                        <TableCell align="center"><Typography variant="body2" sx={{ fontWeight: 500 }}>{formatCurrency(invoice.paidAmount)}</Typography></TableCell>
-                        <TableCell align="center"><Typography variant="body2" sx={{ fontWeight: 500 }}>{formatCurrency(invoice.remainingAmount)}</Typography></TableCell>
-                        <TableCell align="center">
-                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, alignItems: 'center' }}>
-                            <Chip
-                              label={getStatusLabel(invoice.status)}
-                              color={getStatusColor(invoice.status)}
-                              size="small"
-                              variant="outlined"
-                            />
-                          </Box>
-                        </TableCell>
-                        <TableCell align="left">
-                          <Box sx={{ display: 'flex', gap: 1, justifyContent: 'left' }}>
-                            {invoice.status.toLowerCase() !== 'paid' && (
-                              <Button
-                                variant="contained"
-                                color="primary"
-                                size="small"
-                                onClick={() => handlePayment(invoice)}
-                              >
-                                Thanh toán
-                              </Button>
-                            )}
-                            {invoice.paymentHistory && invoice.paymentHistory.length > 0 && (
-                              <Tooltip title="Xem lịch sử thanh toán">
-                              <IconButton
-                                size="small"
-                                color="info"
-                                onClick={() => handleOpenPaymentHistory(invoice)}
-                              >
-                                <HistoryIcon />
-                              </IconButton>
-                              </Tooltip>
-                            )}
-                          </Box>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-
-              {filteredInvoices.length === 0 && (
+              {filteredInvoices.length === 0 ? (
                 <Box textAlign="center" py={4}>
                   <Typography variant="h6" color="textSecondary">
                     Không tìm thấy giao dịch thanh toán
                   </Typography>
                 </Box>
+              ) : (
+                <ParentPaymentsTable
+                  invoices={filteredInvoices}
+                  formatCurrency={formatCurrency}
+                  getStatusColor={getStatusColor}
+                  getStatusLabel={getStatusLabel}
+                  onPayment={handlePayment}
+                  onViewHistory={handleOpenPaymentHistory}
+                />
               )}
             </CardContent>
           </Card>

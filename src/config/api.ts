@@ -204,9 +204,6 @@ export interface ApiConfig {
   ENDPOINTS: ApiEndpoints;
 }
 
-// ✅ Centralized API Configuration - Chỉ cần sửa ở .env
-// - Development: Nếu USE_PROXY=true → dùng Vite proxy (/api)
-// - Production: Gọi trực tiếp đến VITE_API_BASE_URL
 const getBaseUrl = () => {
   const useProxy = import.meta.env.VITE_USE_PROXY === 'true';
   const apiUrl = import.meta.env.VITE_API_BASE_URL;
