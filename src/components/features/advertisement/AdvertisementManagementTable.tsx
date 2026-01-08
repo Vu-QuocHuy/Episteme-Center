@@ -164,9 +164,3 @@ const AdvertisementManagementTable: React.FC<AdvertisementManagementTableProps> 
 };
 
 export default AdvertisementManagementTable;
-
-
-
-
-
-

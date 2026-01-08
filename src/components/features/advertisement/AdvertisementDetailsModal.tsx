@@ -97,4 +97,3 @@ const AdvertisementDetailsModal: React.FC<AdvertisementDetailsModalProps> = ({
 };
 
 export default AdvertisementDetailsModal;
-
