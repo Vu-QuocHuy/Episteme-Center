@@ -3,7 +3,7 @@ import { Box, Button, TextField, Table, TableBody, TableCell, TableContainer, Ta
 import BaseDialog from '../../../components/common/BaseDialog';
 import ConfirmDialog from '../../../components/common/ConfirmDialog';
 import { getAllTransactionsAPI, createTransactionAPI, updateTransactionAPI, deleteTransactionAPI, getAllTransactionCategoriesAPI, exportTransactionsReportAPI } from '../../../services/transactions';
-import { Edit as EditIcon, Delete as DeleteIcon, Download as DownloadIcon } from '@mui/icons-material';
+import { Edit as EditIcon, Delete as DeleteIcon, Download as DownloadIcon, Add as AddIcon } from '@mui/icons-material';
 import * as XLSX from 'xlsx';
 
 export interface Transaction {
@@ -361,7 +361,13 @@ const Transactions: React.FC = () => {
       </Box>
 
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 2 }}>
-        <Button variant="outlined" onClick={handleOpenTransactionDialog} sx={{ borderRadius: 2 }}>Tạo hóa đơn</Button>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={handleOpenTransactionDialog}
+        >
+          Thêm hóa đơn
+        </Button>
       </Box>
 
       <TableContainer component={Paper} elevation={1}>
@@ -429,7 +435,7 @@ const Transactions: React.FC = () => {
       <BaseDialog
         open={openTransactionDialog}
         onClose={handleCloseTransactionDialog}
-        title="Tạo thu/chi khác"
+        title="Thêm thu/chi khác"
         subtitle="Nhập thông tin khoản thu/chi (tiền điện, nước, dịch vụ,...)"
         maxWidth="sm"
         fullWidth

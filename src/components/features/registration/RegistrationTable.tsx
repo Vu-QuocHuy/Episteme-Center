@@ -19,7 +19,6 @@ import {
   Delete as DeleteIcon,
   CheckCircle as CheckIcon
 } from '@mui/icons-material';
-import { useTheme } from '@mui/material/styles';
 
 interface RegistrationItem {
   id: string;
@@ -59,8 +58,6 @@ const RegistrationTable: React.FC<RegistrationTableProps> = ({
   onMarkAsProcessed,
   onPageChange
 }) => {
-  const theme = useTheme();
-
   return (
     <>
       <Paper>

@@ -9,8 +9,7 @@ import {
   Paper,
   IconButton,
   Box,
-  Typography,
-  Button
+  Typography
 } from '@mui/material';
 import {
   Edit as EditIcon,

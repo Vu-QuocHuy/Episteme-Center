@@ -19,7 +19,6 @@ import type { AuditLogItem } from '../../../services/audit';
 
 interface AuditLogTableProps {
   logs: AuditLogItem[];
-  loading?: boolean;
   page?: number;
   totalPages?: number;
   onViewDetail: (log: AuditLogItem) => void;
@@ -45,7 +44,6 @@ const formatDateTime = (iso?: string): string => {
 
 const AuditLogTable: React.FC<AuditLogTableProps> = ({
   logs,
-  loading = false,
   page = 1,
   totalPages = 1,
   onViewDetail,
