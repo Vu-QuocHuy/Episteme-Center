@@ -866,7 +866,6 @@ export interface Permission {
   description: string;
   method: string;
   path: string;
-  version: number;
 }
 
 export interface Role {
@@ -875,19 +874,24 @@ export interface Role {
   description?: string;
   permissions: Permission[];
   isActive: boolean;
+  isStaff: boolean;
+  isSystem: boolean;
 }
 
 export interface CreateRoleRequest {
   name: string;
+  isStaff: boolean;
+  isActive: boolean;
+  isSystem: boolean;
   description?: string;
-  // Accept both shapes depending on caller
   permissions?: number[];
-  permissionIds?: number[];
 }
 
 export interface UpdateRoleRequest {
   name?: string;
+  isActive?: boolean;
+  isStaff?: boolean;
+  isSystem?: boolean;
   description?: string;
   permissions?: number[];
-  permissionIds?: number[];
 }
