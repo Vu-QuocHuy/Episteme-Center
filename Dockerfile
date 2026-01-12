@@ -1,4 +1,4 @@
-FROM node:22-alpine AS development
+FROM node:22-alpine AS build
 
 WORKDIR /eng-center/client
 
@@ -11,10 +11,6 @@ RUN npm run build
 
 ENV CI=true
 ENV PORT=3000
-
-FROM development AS build
-
-RUN npm run build
 
 FROM nginx:alpine
 
