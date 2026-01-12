@@ -86,6 +86,7 @@ const TeacherPayments: React.FC = () => {
     paidAmount: 0,
     note: ''
   });
+  const [amountError, setAmountError] = React.useState<string>('');
 
   const fetchPayments = React.useCallback(async (page: number = 1) => {
     let params: any = { page, limit: 10 };
@@ -201,6 +202,7 @@ const TeacherPayments: React.FC = () => {
         paidAmount: 0,
         note: ''
       });
+      setAmountError('');
       setDialogOpen(true);
     } catch (e: any) {
       setError(e?.response?.data?.message || 'Không thể tải thông tin thanh toán');
@@ -214,22 +216,25 @@ const TeacherPayments: React.FC = () => {
     setEditingPayment(null);
     setError(null);
     setDialogSummary(null);
+    setAmountError('');
   };
 
   const handleSubmit = async () => {
     if (!editingPayment) return;
 
+    // Validate amount
     if (!formData.paidAmount || formData.paidAmount <= 0) {
-      setError('Vui lòng nhập số tiền thanh toán');
+      setAmountError('Vui lòng nhập số tiền thanh toán');
       return;
     }
     if (dialogSummary && formData.paidAmount > dialogSummary.remainingAmount) {
-      setError(`Số tiền tối đa có thể thanh toán: ${dialogSummary.remainingAmount.toLocaleString()} ₫`);
+      setAmountError(`Số tiền không được lớn hơn ${dialogSummary.remainingAmount.toLocaleString()} ₫`);
       return;
     }
 
     setLoading(true);
     setError(null);
+    setAmountError('');
 
     try {
       await updateTeacherPaymentAPI(editingPayment.id, {
@@ -519,11 +524,28 @@ const TeacherPayments: React.FC = () => {
                     fullWidth
                     label="Số tiền thanh toán"
                     type="number"
-                    value={formData.paidAmount}
-                    onChange={(e) => setFormData({ ...formData, paidAmount: Number(e.target.value) })}
+                    value={formData.paidAmount === 0 ? '' : formData.paidAmount}
+                    onChange={(e) => {
+                      const inputValue = e.target.value;
+                      const value = inputValue === '' ? 0 : Number(inputValue);
+                      setFormData({ ...formData, paidAmount: value });
+                      
+                      // Validate real-time
+                      if (inputValue === '') {
+                        setAmountError('');
+                      } else if (value <= 0) {
+                        setAmountError('Số tiền phải lớn hơn 0');
+                      } else if (dialogSummary && value > dialogSummary.remainingAmount) {
+                        setAmountError(`Số tiền không được lớn hơn ${dialogSummary.remainingAmount.toLocaleString()} ₫`);
+                      } else {
+                        setAmountError('');
+                      }
+                    }}
                     inputProps={{ min: 0 }}
                     InputProps={{ startAdornment: <InputAdornment position="start">₫</InputAdornment> }}
-                    helperText={dialogSummary ? `Tối đa: ${dialogSummary.remainingAmount.toLocaleString()} ₫` : undefined}
+                    error={!!amountError}
+                    helperText={amountError || (dialogSummary ? `Tối đa: ${dialogSummary.remainingAmount.toLocaleString()} ₫` : undefined)}
+                    required
                     sx={{
                       '& .MuiOutlinedInput-root': {
                         borderRadius: 2,

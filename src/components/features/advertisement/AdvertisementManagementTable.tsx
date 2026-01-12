@@ -68,9 +68,9 @@ const AdvertisementManagementTable: React.FC<AdvertisementManagementTableProps> 
         <TableHead>
           <TableRow>
             <TableCell>Hình ảnh</TableCell>
-            <TableCell>Tiêu đề</TableCell>
-            <TableCell>Mô tả</TableCell>
-            <TableCell>Kiểu hiển thị</TableCell>
+            <TableCell sx={{ minWidth: 150, maxWidth: 200 }}>Tiêu đề</TableCell>
+            <TableCell sx={{ minWidth: 200, maxWidth: 300 }}>Mô tả</TableCell>
+            <TableCell>Loại</TableCell>
             <TableCell>Độ ưu tiên</TableCell>
             <TableCell>Lớp</TableCell>
             <TableCell>Trạng thái</TableCell>
@@ -88,13 +88,35 @@ const AdvertisementManagementTable: React.FC<AdvertisementManagementTableProps> 
                   sx={{ width: 60, height: 40 }}
                 />
               </TableCell>
-              <TableCell>
-                <Typography variant="subtitle2" fontWeight="bold">
+              <TableCell sx={{ maxWidth: 200 }}>
+                <Typography 
+                  variant="subtitle2" 
+                  fontWeight="bold"
+                  sx={{
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    lineHeight: 1.4
+                  }}
+                >
                   {ad.title}
                 </Typography>
               </TableCell>
-              <TableCell>
-                <Typography variant="body2" color="textSecondary">
+              <TableCell sx={{ maxWidth: 300 }}>
+                <Typography 
+                  variant="body2" 
+                  color="textSecondary"
+                  sx={{
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    lineHeight: 1.4
+                  }}
+                >
                   {ad.description}
                 </Typography>
               </TableCell>

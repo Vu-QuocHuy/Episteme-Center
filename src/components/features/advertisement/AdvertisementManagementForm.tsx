@@ -75,7 +75,7 @@ const AdvertisementManagementForm: React.FC<AdvertisementManagementFormProps> = 
     description: '',
     image: null,
     type: 'banner',
-    priority: '1'
+    priority: ''
   });
   const [imageUploading, setImageUploading] = useState<boolean>(false);
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | undefined>(undefined);
@@ -117,7 +117,7 @@ const AdvertisementManagementForm: React.FC<AdvertisementManagementFormProps> = 
         description: advertisement.description || '',
         image: null,
         type: advertisement.type || 'banner',
-        priority: String(advertisement.priority || 1)
+        priority: advertisement.priority ? String(advertisement.priority) : ''
       });
       setUploadedImageUrl(advertisement.imageUrl);
       setUploadedPublicId(undefined);
@@ -129,7 +129,7 @@ const AdvertisementManagementForm: React.FC<AdvertisementManagementFormProps> = 
         description: '',
         image: null,
         type: 'banner',
-        priority: '1'
+        priority: ''
       });
       setUploadedImageUrl(undefined);
       setUploadedPublicId(undefined);
@@ -166,10 +166,17 @@ const AdvertisementManagementForm: React.FC<AdvertisementManagementFormProps> = 
     const errors: FormErrors = {};
     if (!formData.title) errors.title = 'Tiêu đề là bắt buộc';
     if (!formData.description) errors.description = 'Mô tả là bắt buộc';
-    const priorityNum = Number(formData.priority);
-    if (!formData.priority || formData.priority.trim() === '' || isNaN(priorityNum) || priorityNum < 1) {
-      errors.priority = 'Độ ưu tiên phải là số nguyên dương (>= 1)';
+    
+    // Validate priority: phải là số và lớn hơn 0
+    if (!formData.priority || formData.priority.trim() === '') {
+      errors.priority = 'Độ ưu tiên là bắt buộc';
+    } else {
+      const priorityNum = Number(formData.priority);
+      if (isNaN(priorityNum) || priorityNum <= 0) {
+        errors.priority = 'Độ ưu tiên phải là số lớn hơn 0';
+      }
     }
+    
     setFormErrors(errors);
     if (Object.keys(errors).length > 0) return;
 
@@ -189,7 +196,7 @@ const AdvertisementManagementForm: React.FC<AdvertisementManagementFormProps> = 
         title: formData.title,
         description: formData.description,
         type: formData.type,
-        priority: priorityNum,
+        priority: Number(formData.priority),
         imageUrl,
         publicId,
         classId: classId || undefined
@@ -201,7 +208,7 @@ const AdvertisementManagementForm: React.FC<AdvertisementManagementFormProps> = 
         description: '',
         image: null,
         type: 'banner',
-        priority: '1'
+        priority: ''
       });
       setUploadedImageUrl(undefined);
       setUploadedPublicId(undefined);
@@ -366,19 +373,17 @@ const AdvertisementManagementForm: React.FC<AdvertisementManagementFormProps> = 
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  type="text"
+                  type="number"
                   label="Độ ưu tiên *"
                   value={formData.priority}
                   onChange={(e) => {
-                    const value = e.target.value;
-                    if (value === '' || /^\d+$/.test(value)) {
-                      setFormData({ ...formData, priority: value });
+                    setFormData({ ...formData, priority: e.target.value });
+                    // Xóa lỗi khi user bắt đầu nhập lại
+                    if (formErrors.priority) {
+                      setFormErrors(prev => ({ ...prev, priority: undefined }));
                     }
                   }}
-                  inputProps={{
-                    inputMode: 'numeric',
-                    pattern: '[0-9]*'
-                  }}
+                  inputProps={{ min: 1 }}
                   sx={{
                     '& .MuiOutlinedInput-root': {
                       borderRadius: 2,
@@ -388,7 +393,8 @@ const AdvertisementManagementForm: React.FC<AdvertisementManagementFormProps> = 
                     },
                   }}
                   error={!!formErrors.priority}
-                  helperText={formErrors.priority || 'Nhập số nguyên dương (>= 1)'}
+                  helperText={formErrors.priority || 'Số nhỏ hơn sẽ hiển thị trước'}
+                  required
                 />
               </Grid>
               <Grid item xs={12} sm={6}>

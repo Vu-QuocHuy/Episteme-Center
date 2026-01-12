@@ -365,14 +365,14 @@ const AuditLog: React.FC = () => {
         ) : (
           <AuditLogTable
             logs={logs}
-            page={page}
+                  page={page}
             totalPages={totalPages}
             onViewDetail={handleViewDetail}
             onPageChange={(_e, value) => {
-              setPage(value);
-              fetchLogs(value, limit);
-            }}
-          />
+                    setPage(value);
+                    fetchLogs(value, limit);
+                  }}
+                />
         )}
 
           {/* Detail Dialog */}

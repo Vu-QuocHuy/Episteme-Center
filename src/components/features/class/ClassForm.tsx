@@ -83,6 +83,7 @@ const ClassForm: React.FC<ClassFormProps> = ({
   const [studentsInfo, setStudentsInfo] = useState<Array<any>>([]);
 
   const [activeTab, setActiveTab] = useState(0);
+  const [maxStudentError, setMaxStudentError] = useState<string>('');
 
   // Initialize form data when classItem changes
   useEffect(() => {
@@ -117,6 +118,7 @@ const ClassForm: React.FC<ClassFormProps> = ({
       setFormData(initialFormData);
     }
     setErrors({});
+    setMaxStudentError('');
   }, [classItem, open]);
 
   useEffect(() => {
@@ -172,6 +174,11 @@ const ClassForm: React.FC<ClassFormProps> = ({
         ...prev,
         [field]: value
       }));
+
+      // Clear custom error for max_student khi user nhập lại
+      if (field === 'max_student' && maxStudentError) {
+        setMaxStudentError('');
+      }
     }
 
     // Clear error for this field
@@ -190,6 +197,25 @@ const ClassForm: React.FC<ClassFormProps> = ({
 
   const handleSubmit = async () => {
     if (!validateForm()) {
+      return;
+    }
+
+    // Validate số học sinh tối đa
+    const currentMax = Number(formData.max_student) || 0;
+    const currentStudentsCount = Array.isArray(studentsInfo) ? studentsInfo.length : 0;
+
+    if (!currentMax || currentMax <= 0) {
+      setMaxStudentError('Số học sinh tối đa phải lớn hơn 0');
+      return;
+    }
+
+    if (currentMax > 100) {
+      setMaxStudentError('Số học sinh tối đa không được vượt quá 100');
+      return;
+    }
+
+    if (classItem && currentStudentsCount > 0 && currentMax < currentStudentsCount) {
+      setMaxStudentError(`Số học sinh tối đa không được nhỏ hơn số học sinh hiện tại (${currentStudentsCount})`);
       return;
     }
 
@@ -232,6 +258,7 @@ const ClassForm: React.FC<ClassFormProps> = ({
   const handleClose = () => {
     setFormData(initialFormData);
     setErrors({});
+    setMaxStudentError('');
     onClose();
   };
 
@@ -380,11 +407,21 @@ const ClassForm: React.FC<ClassFormProps> = ({
             fullWidth
             label="Số học sinh tối đa"
             type="number"
-            value={formData.max_student ?? 0}
-            onChange={(e) => handleInputChange('max_student', parseInt(e.target.value) || 30)}
-            error={!!errors.max_student}
-            helperText={errors.max_student}
-            InputProps={{ inputProps: { min: 1 } }}
+            value={formData.max_student === 0 ? '' : formData.max_student ?? ''}
+            onChange={(e) => {
+              const inputValue = e.target.value;
+              const numericValue = inputValue === '' ? 0 : Number(inputValue);
+              handleInputChange('max_student', numericValue);
+            }}
+            error={!!errors.max_student || !!maxStudentError}
+            helperText={
+              maxStudentError ||
+              errors.max_student ||
+              (classItem && Array.isArray(studentsInfo) && studentsInfo.length > 0
+                ? `Không nhỏ hơn số học sinh hiện tại (${studentsInfo.length})`
+                : 'Tối đa 100')
+            }
+            InputProps={{ inputProps: { min: 1, max: 100 } }}
             required
           />
 

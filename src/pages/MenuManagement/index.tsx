@@ -43,15 +43,16 @@ const MenuManagement: React.FC = () => {
     title: string;
     slug: string;
     parentId?: string;
-    order?: number;
+    order?: string;
     isActive?: boolean;
   }>({
     title: '',
     slug: '',
     parentId: undefined,
-    order: 1,
+    order: '',
     isActive: true,
   });
+  const [orderError, setOrderError] = useState<string>('');
   const [selectedParentMenu, setSelectedParentMenu] = useState<MenuItem | null>(null);
   const [notification, setNotification] = useState<{
     open: boolean;
@@ -113,10 +114,33 @@ const MenuManagement: React.FC = () => {
     }
   };
 
+  // Validate order
+  const validateOrder = (): boolean => {
+    if (!formData.order || formData.order.trim() === '') {
+      setOrderError('Thứ tự hiển thị là bắt buộc');
+      return false;
+    }
+    const orderNum = Number(formData.order);
+    if (isNaN(orderNum) || orderNum <= 0) {
+      setOrderError('Thứ tự hiển thị phải là số lớn hơn 0');
+      return false;
+    }
+    setOrderError('');
+    return true;
+  };
+
   // Create menu item
   const handleCreate = async () => {
+    if (!validateOrder()) {
+      return;
+    }
+
     try {
-      await createMenuAPI(formData);
+      const payload = {
+        ...formData,
+        order: Number(formData.order),
+      };
+      await createMenuAPI(payload);
       setNotification({
         open: true,
         message: 'Tạo menu thành công',
@@ -138,8 +162,16 @@ const MenuManagement: React.FC = () => {
   const handleUpdate = async () => {
     if (!currentItem) return;
 
+    if (!validateOrder()) {
+      return;
+    }
+
     try {
-      await updateMenuAPI(currentItem.id, formData);
+      const payload = {
+        ...formData,
+        order: Number(formData.order),
+      };
+      await updateMenuAPI(currentItem.id, payload);
       setNotification({
         open: true,
         message: 'Cập nhật menu thành công',
@@ -207,9 +239,10 @@ const MenuManagement: React.FC = () => {
         title: item.title,
         slug: item.slug || '',
         parentId: undefined, // Menu chính không có parentId
-        order: item.order || 1,
+        order: item.order ? String(item.order) : '',
         isActive: item.isActive,
       });
+      setOrderError('');
     } else {
       // Tạo menu mới
       setCurrentItem(null);
@@ -218,9 +251,10 @@ const MenuManagement: React.FC = () => {
         title: '',
         slug: '',
         parentId: parentMenu?.id || undefined, // Set parentId nếu có parentMenu
-        order: 1,
+        order: '',
         isActive: true,
       });
+      setOrderError('');
     }
     setDialogOpen(true);
   };
@@ -235,9 +269,10 @@ const MenuManagement: React.FC = () => {
         title: '',
         slug: '',
         parentId: undefined,
-        order: 1,
+        order: '',
         isActive: true,
       });
+      setOrderError('');
     }, 100);
   };
 
@@ -248,6 +283,19 @@ const MenuManagement: React.FC = () => {
 
   // Handle form input changes
   const handleInputChange = (field: keyof MenuData, value: any) => {
+    // Xử lý order đặc biệt - giữ string
+    if (field === 'order') {
+      setFormData(prev => ({
+        ...prev,
+        [field]: value,
+      }));
+      // Xóa lỗi khi user bắt đầu nhập lại
+      if (orderError) {
+        setOrderError('');
+      }
+      return;
+    }
+
     setFormData(prev => ({
       ...prev,
       [field]: value,
@@ -462,9 +510,11 @@ const MenuManagement: React.FC = () => {
                 label="Thứ tự hiển thị"
                 type="number"
                 value={formData.order}
-                onChange={(e) => handleInputChange('order', Number(e.target.value))}
-                helperText="Số nhỏ hơn sẽ hiển thị trước"
+                onChange={(e) => handleInputChange('order', e.target.value)}
+                error={!!orderError}
+                helperText={orderError || 'Số nhỏ hơn sẽ hiển thị trước'}
                 inputProps={{ min: 1 }}
+                required
               />
             </Grid>
             <Grid item xs={12} md={6}>
