@@ -22,6 +22,7 @@ import BaseDialog from '../../components/common/BaseDialog';
 import { getSessionsByStudentAPI } from '../../services/sessions';
 import { commonStyles } from '../../utils/styles';
 import StatCard from '../../components/common/StatCard';
+import { getStudentStatus } from '../../utils/studentHelpers';
 
 interface ChildClass {
   id?: string;
@@ -188,51 +189,6 @@ const Children: React.FC = () => {
     if (g === 'female' || g === 'nữ' || g === 'nu') return 'Nữ';
     if (g === 'other' || g === 'khác') return 'Khác';
     return gender;
-  };
-
-  const getStatusColor = (status: any): 'success' | 'warning' | 'error' | 'default' => {
-    if (!status) return 'default';
-    const s = String(status).toLowerCase();
-    switch (s) {
-      case 'active':
-      case 'đang học':
-        return 'success';
-      case 'upcoming':
-      case 'sắp khai giảng':
-        return 'warning';
-      case 'closed':
-      case 'đã kết thúc':
-        return 'error';
-      case 'pending':
-      case 'chờ':
-        return 'warning';
-      default:
-        return 'default';
-    }
-  };
-
-  const getStatusLabel = (status: any): string => {
-    if (!status) return 'Không rõ';
-    const s = String(status).toLowerCase();
-    switch (s) {
-      case 'active':
-      case 'đang học':
-        return 'Đang học';
-      case 'upcoming':
-      case 'sắp khai giảng':
-        return 'Sắp khai giảng';
-      case 'closed':
-      case 'đã kết thúc':
-        return 'Đã kết thúc';
-      case 'completed':
-      case 'hoàn thành':
-        return 'Hoàn thành';
-      case 'pending':
-      case 'chờ':
-        return 'Chờ';
-      default:
-        return String(status);
-    }
   };
 
   const handleViewChildDetails = async (child: Child): Promise<void> => {
@@ -589,12 +545,27 @@ const Children: React.FC = () => {
                               <Box display="flex" alignItems="center" gap={2}>
                                 <Typography variant="h6" sx={{ fontWeight: 700 }}>
                                   Lớp {classData.name || 'Không xác định'}
-                    </Typography>
-                                <Chip
-                                  label={getStatusLabel(classData.status)}
-                                  color={getStatusColor(classData.status)}
-                                  size="small"
-                                />
+                                </Typography>
+                                {(() => {
+                                  const enrollment = (selectedChild as any)?.classes?.find((c: any) =>
+                                    (c.id === classId || c.classId === classId)
+                                  );
+                                  const statusConfig = getStudentStatus(
+                                    classData.status,
+                                    enrollment?.isActive === true
+                                  );
+                                  return (
+                                    <Chip
+                                      label={statusConfig.label}
+                                      size="small"
+                                      sx={{
+                                        bgcolor: statusConfig.bgColor,
+                                        color: statusConfig.color,
+                                        fontWeight: 600,
+                                      }}
+                                    />
+                                  );
+                                })()}
                                 <Chip
                                   label={`Khối ${classData.grade || 'N/A'}`}
                                   variant="outlined"

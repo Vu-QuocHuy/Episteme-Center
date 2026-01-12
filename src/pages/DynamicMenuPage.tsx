@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Box, Typography, Container, CircularProgress, Alert, Grid, Paper } from '@mui/material';
-import { getArticlesByMenuIdAPI } from '../services/articles';
+import { Box, Typography, Container, CircularProgress, Alert } from '@mui/material';
 import { MenuItem } from '../types';
 import { useMenuItems } from '../hooks/features/useMenuItems';
 import PublicLayout from '../components/layouts/PublicLayout';
-import ArticlesSidebar from '../components/articles/ArticlesSidebar';
 import AllTeachersPage from './AllTeachersPage';
+import TestimonialsPage from './TestimonialsPage';
+import SchedulePage from './SchedulePage';
+import ArticleListTemplate from '../components/templates/ArticleListTemplate';
 
 
 const DynamicMenuPage: React.FC = () => {
@@ -17,38 +18,55 @@ const DynamicMenuPage: React.FC = () => {
   const [menuItem, setMenuItem] = useState<MenuItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [articles, setArticles] = useState<any[]>([]);
-  // We render all articles stacked; no selection needed
 
   // Combine slug from params - support both /:slug and /:parentSlug/:childSlug
   const fullSlug = childSlug ? `${parentSlug}/${childSlug}` : slug;
 
   console.log('🔍 DynamicMenuPage - fullSlug:', fullSlug, 'slug:', slug, 'parentSlug:', parentSlug, 'childSlug:', childSlug);
 
-  // Check if this is a teacher page FIRST - before any loading/effects
-  // This allows teacher page to render immediately without waiting for menuItems
+  // Check if this is a special page FIRST - before any loading/effects
   const normalizedSlug = fullSlug?.toLowerCase().trim().replace(/^\//, '');
   console.log('🔍 DynamicMenuPage - normalizedSlug:', normalizedSlug);
   
+  // Check for special pages
   const isTeacherPage = normalizedSlug === 'teacher' || 
+    normalizedSlug === 'giao-vien' ||
+    normalizedSlug === 'doi-ngu-giang-vien' ||
+    normalizedSlug === 'gioi-thieu/doi-ngu-giang-vien' ||
     normalizedSlug?.endsWith('/teacher') ||
+    normalizedSlug?.endsWith('/giao-vien') ||
+    normalizedSlug?.endsWith('/doi-ngu-giang-vien') ||
     normalizedSlug?.startsWith('teacher/') ||
-    (menuItem && (
-      menuItem.slug?.toLowerCase().trim().replace(/^\//, '') === 'teacher' ||
-      menuItem.slug?.toLowerCase().includes('teacher') ||
-      menuItem.title?.toLowerCase().includes('giáo viên') ||
-      menuItem.title?.toLowerCase().includes('giao vien')
-    ));
+    normalizedSlug?.startsWith('giao-vien/') ||
+    normalizedSlug?.startsWith('doi-ngu-giang-vien/');
 
-  console.log('🔍 DynamicMenuPage - isTeacherPage:', isTeacherPage, 'menuItem:', menuItem);
+  const isTestimonialsPage = normalizedSlug === 'cam-nhan-hoc-vien' ||
+    normalizedSlug?.includes('cam-nhan') ||
+    normalizedSlug?.includes('testimonial');
 
-  // If this is a teacher page, render AllTeachersPage immediately
+  const isSchedulePage = normalizedSlug === 'lich-khai-giang' ||
+    normalizedSlug?.includes('lich-khai-giang') ||
+    normalizedSlug?.includes('schedule');
+
+  console.log('🔍 DynamicMenuPage - Special pages:', { isTeacherPage, isTestimonialsPage, isSchedulePage });
+
+  // Render special pages immediately
   if (isTeacherPage) {
     console.log('✅ Rendering AllTeachersPage');
     return <AllTeachersPage />;
   }
+
+  if (isTestimonialsPage) {
+    console.log('✅ Rendering TestimonialsPage');
+    return <TestimonialsPage />;
+  }
+
+  if (isSchedulePage) {
+    console.log('✅ Rendering SchedulePage');
+    return <SchedulePage />;
+  }
   
-  console.log('❌ Not a teacher page, continuing with normal flow');
+  console.log('❌ Not a special page, continuing with normal flow');
 
   useEffect(() => {
     const fetchMenuItem = async () => {
@@ -69,25 +87,6 @@ const DynamicMenuPage: React.FC = () => {
         if (foundMenuItem) {
           setMenuItem(foundMenuItem);
           setError(null); // Clear any previous error
-
-          // Fetch articles for this menu using menuId
-          try {
-            const articlesResponse = await getArticlesByMenuIdAPI(foundMenuItem.id);
-            if (articlesResponse.data?.data?.result) {
-              // ✅ Sort articles by order, then by createdAt
-              const sortedArticles = articlesResponse.data.data.result
-                .filter((article: any) => article.isActive !== false) // Only active articles
-                .sort((a: any, b: any) => {
-                  if (a.order !== b.order) {
-                    return (a.order || 999) - (b.order || 999); // Articles without order go last
-                  }
-                  return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-                });
-              setArticles(sortedArticles);
-          }
-        } catch (articleError) {
-          console.log('No articles found for this menu, using mock content');
-          }
         } else {
           // ✅ menuItems đã load nhưng không tìm thấy → Đây mới là lỗi thật
           setError('Không tìm thấy trang này');
@@ -144,8 +143,8 @@ const DynamicMenuPage: React.FC = () => {
   }
 
   // Only show error if: has explicit error OR (menuItems loaded but menuItem not found)
-  // But skip error if we're still loading or if it's a teacher page
-  if ((error || (!menuItem && menuItems.length > 0)) && !isTeacherPage) {
+  // But skip error if we're still loading or if it's a special page
+  if ((error || (!menuItem && menuItems.length > 0)) && !isTeacherPage && !isTestimonialsPage && !isSchedulePage) {
     return (
       <PublicLayout>
       <Container maxWidth="lg" sx={{ py: 8 }}>
@@ -163,49 +162,13 @@ const DynamicMenuPage: React.FC = () => {
     );
   }
 
-  // Otherwise, render normal content with articles
+  // Render ArticleListTemplate for regular menu pages
   return (
     <PublicLayout>
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Grid container spacing={4}>
-          {/* Main Content - 8 columns */}
-          <Grid item xs={12} md={8}>
-            <Paper sx={{ p: 4 }}>
-              {menuItem && (
-                <Typography variant="h4" gutterBottom sx={{ mb: 3, fontWeight: 'bold' }}>
-                  {menuItem.title}
-                </Typography>
-              )}
-              {articles.length > 0 ? (
-                <Box>
-                  {articles.map((article, index) => (
-                    <Box key={article.id || index} sx={{ mb: index < articles.length - 1 ? 4 : 0 }}>
-                      {index > 0 && <Box sx={{ borderTop: '1px solid #e0e0e0', pt: 4, mt: 4 }} />}
-                      <div dangerouslySetInnerHTML={{ __html: article.content }} />
-                    </Box>
-                  ))}
-                </Box>
-              ) : (
-                <Typography color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
-                  Chưa có nội dung cho trang này
-                </Typography>
-              )}
-            </Paper>
-          </Grid>
-
-          {/* Sidebar - 4 columns */}
-          <Grid item xs={12} md={4}>
-            <Box sx={{ position: 'sticky', top: 100 }}>
-              <ArticlesSidebar
-                menuId={menuItem?.id}
-                limit={5}
-                title="Bài viết liên quan"
-                showContent={true}
-              />
-            </Box>
-          </Grid>
-        </Grid>
-      </Container>
+      <ArticleListTemplate 
+        menuId={menuItem?.id} 
+        title={menuItem?.title}
+      />
     </PublicLayout>
   );
 };

@@ -165,12 +165,6 @@ const AllTeachersPage = () => {
     return qualifications.join(', ');
   };
 
-  // Helper function to format specializations
-  const formatSpecializations = (specializations: string[]) => {
-    if (!specializations || specializations.length === 0) return 'Chưa có thông tin';
-    return specializations.join(', ');
-  };
-
   // Determine which teachers to display
   const displayedTeachers = showAll ? teachers : teachers.slice(0, INITIAL_DISPLAY_COUNT);
   const hasMore = teachers.length > INITIAL_DISPLAY_COUNT;
@@ -242,7 +236,7 @@ const AllTeachersPage = () => {
                   height: '100%',
                   display: 'flex',
                   flexDirection: 'column',
-                  borderRadius: 3,
+                  borderRadius: 1,
                   overflow: 'hidden',
                   transition: 'all 0.3s ease',
                   cursor: 'pointer',
@@ -304,15 +298,6 @@ const AllTeachersPage = () => {
                     }}
                   >
                     {teacher.name}
-                  </Typography>
-
-                  <Typography
-                    variant="body2"
-                    color="primary"
-                    gutterBottom
-                    sx={{ fontWeight: 600, mb: 1.5 }}
-                  >
-                    {formatSpecializations(teacher.specializations)}
                   </Typography>
 
                   <Typography

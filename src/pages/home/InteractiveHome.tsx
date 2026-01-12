@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  Box, Container, Grid, Typography,
+  Box, Container,
 } from '@mui/material';
 
 
@@ -11,7 +11,7 @@ import FeedbackHome from '../../components/features/home/FeedbackHome';
 import FeaturedTeachersHome from '../../components/features/home/FeaturedTeachersHome';
 import HomeWelcomeAdPopup from './components/WelcomeAdPopup';
 import PublicLayout from '../../components/layouts/PublicLayout';
-import ArticlesSidebar from '../../components/articles/ArticlesSidebar';
+import ArticlesHome from '../../components/features/home/ArticlesHome';
 
 const InteractiveHome: React.FC = () => {
 
@@ -49,27 +49,7 @@ const InteractiveHome: React.FC = () => {
       {/* Articles Section */}
       <Box id="articles-section" sx={{ py: 8, bgcolor: 'grey.50' }}>
         <Container maxWidth="lg">
-          <Grid container spacing={4}>
-            <Grid item xs={12} md={8}>
-              <Typography variant="h4" sx={{ mb: 4, fontWeight: 'bold' }}>
-                Bài viết mới nhất
-              </Typography>
-              <ArticlesSidebar
-                limit={10}
-                title=""
-                showContent={true}
-              />
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <Box sx={{ position: 'sticky', top: 100 }}>
-                <ArticlesSidebar
-                  limit={5}
-                  title="Bài viết nổi bật"
-                  showContent={false}
-                />
-              </Box>
-            </Grid>
-          </Grid>
+          <ArticlesHome />
         </Container>
       </Box>
     </PublicLayout>

@@ -46,7 +46,7 @@ const StudentPayments: React.FC = () => {
   const [payments, setPayments] = React.useState<StudentPayment[]>([]);
   const [pagination, setPagination] = React.useState<{ page: number; totalPages: number }>({ page: 1, totalPages: 1 });
   const [periodType, setPeriodType] = React.useState<string>('year');
-  const [selectedYear, setSelectedYear] = React.useState<number>(new Date().getFullYear());
+  const [selectedYear, setSelectedYear] = React.useState<number | null>(null);
   const [selectedMonth, setSelectedMonth] = React.useState<number>(new Date().getMonth() + 1);
   const [selectedQuarter, setSelectedQuarter] = React.useState<number>(1);
   const [customStart, setCustomStart] = React.useState<string>(new Date().toISOString().split('T')[0].substring(0, 8) + '01');
@@ -61,6 +61,7 @@ const StudentPayments: React.FC = () => {
   const [studentPaymentForm, setStudentPaymentForm] = React.useState<{ amount: string; method: string; note: string }>({ amount: '', method: 'cash', note: '' });
   const [studentPaymentLoading, setStudentPaymentLoading] = React.useState<boolean>(false);
   const [exportLoading, setExportLoading] = React.useState<boolean>(false);
+  const [amountError, setAmountError] = React.useState<string>('');
 
   const [totalStatistics, setTotalStatistics] = useState<TotalStatistics>({
     totalStudentFees: 0,
@@ -74,15 +75,15 @@ const StudentPayments: React.FC = () => {
     if (paymentStatus !== 'all') filters.status = paymentStatus;
     if (periodType === 'month') {
       filters.month = selectedMonth;
-      filters.year = selectedYear;
+      if (selectedYear) filters.year = selectedYear;
     } else if (periodType === 'quarter') {
       const getQuarterMonths = (q: number) => q === 1 ? { startMonth: 1, endMonth: 3 } : q === 2 ? { startMonth: 4, endMonth: 6 } : q === 3 ? { startMonth: 7, endMonth: 9 } : { startMonth: 10, endMonth: 12 };
       const { startMonth, endMonth } = getQuarterMonths(selectedQuarter);
       filters.startMonth = startMonth;
       filters.endMonth = endMonth;
-      filters.year = selectedYear;
+      if (selectedYear) filters.year = selectedYear;
     } else if (periodType === 'year') {
-      filters.year = selectedYear;
+      if (selectedYear) filters.year = selectedYear;
     } else if (periodType === 'custom') {
       const year = new Date(customStart).getFullYear();
       const startMonth = new Date(customStart).getMonth() + 1;
@@ -127,15 +128,15 @@ const StudentPayments: React.FC = () => {
       if (paymentStatus !== 'all') filters.status = paymentStatus;
       if (periodType === 'month') {
         filters.month = selectedMonth;
-        filters.year = selectedYear;
+        if (selectedYear) filters.year = selectedYear;
       } else if (periodType === 'quarter') {
         const getQuarterMonths = (q: number) => q === 1 ? { startMonth: 1, endMonth: 3 } : q === 2 ? { startMonth: 4, endMonth: 6 } : q === 3 ? { startMonth: 7, endMonth: 9 } : { startMonth: 10, endMonth: 12 };
         const { startMonth, endMonth } = getQuarterMonths(selectedQuarter);
         filters.startMonth = startMonth;
         filters.endMonth = endMonth;
-        filters.year = selectedYear;
+        if (selectedYear) filters.year = selectedYear;
       } else if (periodType === 'year') {
-        filters.year = selectedYear;
+        if (selectedYear) filters.year = selectedYear;
       } else if (periodType === 'custom') {
         const year = new Date(customStart).getFullYear();
         const startMonth = new Date(customStart).getMonth() + 1;
@@ -205,10 +206,20 @@ const StudentPayments: React.FC = () => {
   const onOpenPayDialog = (payment: any) => {
     const remainingAmount = (payment.totalAmount || 0) - (payment.discountAmount || 0) - (payment.paidAmount || 0);
     setSelectedPayment(payment);
-    setStudentPaymentForm({ amount: remainingAmount.toString(), method: 'cash', note: '' });
+    setStudentPaymentForm({
+      amount: remainingAmount > 0 ? remainingAmount.toString() : '',
+      method: 'cash',
+      note: ''
+    });
+    setAmountError('');
     setOpenPayDialog(true);
   };
-  const onClosePayDialog = () => { setOpenPayDialog(false); setSelectedPayment(null); setStudentPaymentForm({ amount: '', method: 'cash', note: '' }); };
+  const onClosePayDialog = () => {
+    setOpenPayDialog(false);
+    setSelectedPayment(null);
+    setStudentPaymentForm({ amount: '', method: 'cash', note: '' });
+    setAmountError('');
+  };
 
   // Calculate summary for student payment
   const getPaymentSummary = () => {
@@ -220,14 +231,37 @@ const StudentPayments: React.FC = () => {
   };
 
   const handleChangeStudentPaymentField = (key: 'amount' | 'method' | 'note', value: string) => {
+    if (key === 'amount') {
+      setStudentPaymentForm(prev => ({ ...prev, amount: value }));
+      // Xóa lỗi khi người dùng nhập lại, validation chi tiết xử lý tại onChange TextField
+      if (amountError) {
+        setAmountError('');
+      }
+      return;
+    }
     setStudentPaymentForm(prev => ({ ...prev, [key]: value }));
   };
   const handleSubmitStudentPayment = async (): Promise<void> => {
-    if (!selectedPayment || !studentPaymentForm.amount) return;
+    if (!selectedPayment) return;
+
+    const summary = getPaymentSummary();
+    const remainingAmount = summary?.remainingAmount ?? 0;
+    const amountNum = Number(studentPaymentForm.amount);
+
+    if (!studentPaymentForm.amount || Number.isNaN(amountNum) || amountNum <= 0) {
+      setAmountError('Vui lòng nhập số tiền thanh toán lớn hơn 0');
+      return;
+    }
+
+    if (remainingAmount > 0 && amountNum > remainingAmount) {
+      setAmountError(`Số tiền không được lớn hơn ${remainingAmount.toLocaleString()} ₫`);
+      return;
+    }
+
     setStudentPaymentLoading(true);
     try {
       await payStudentAPI((selectedPayment as any).id, {
-        amount: Number(studentPaymentForm.amount),
+        amount: amountNum,
         method: studentPaymentForm.method,
         note: studentPaymentForm.note
       });
@@ -290,13 +324,15 @@ const StudentPayments: React.FC = () => {
               <MenuItem value="custom">Tùy chọn</MenuItem>
             </TextField>
             {periodType === 'year' && (
-              <TextField select label="Năm" value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} sx={{ minWidth: 120 }}>
+              <TextField select label="Năm" value={selectedYear || 'all'} onChange={(e) => setSelectedYear(e.target.value === 'all' ? null : Number(e.target.value))} sx={{ minWidth: 120 }}>
+                <MenuItem value="all">Tất cả</MenuItem>
                 {years.map((y) => (<MenuItem key={y} value={y}>{y}</MenuItem>))}
               </TextField>
             )}
             {periodType === 'month' && (
               <>
-                <TextField select label="Năm" value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} sx={{ minWidth: 120 }}>
+                <TextField select label="Năm" value={selectedYear || 'all'} onChange={(e) => setSelectedYear(e.target.value === 'all' ? null : Number(e.target.value))} sx={{ minWidth: 120 }}>
+                  <MenuItem value="all">Tất cả</MenuItem>
                   {years.map((y) => (<MenuItem key={y} value={y}>{y}</MenuItem>))}
                 </TextField>
                 <TextField select label="Tháng" value={selectedMonth} onChange={(e) => setSelectedMonth(Number(e.target.value))} sx={{ minWidth: 120 }}>
@@ -306,7 +342,8 @@ const StudentPayments: React.FC = () => {
             )}
             {periodType === 'quarter' && (
               <>
-                <TextField select label="Năm" value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} sx={{ minWidth: 120 }}>
+                <TextField select label="Năm" value={selectedYear || 'all'} onChange={(e) => setSelectedYear(e.target.value === 'all' ? null : Number(e.target.value))} sx={{ minWidth: 120 }}>
+                  <MenuItem value="all">Tất cả</MenuItem>
                   {years.map((y) => (<MenuItem key={y} value={y}>{y}</MenuItem>))}
                 </TextField>
                 <TextField select label="Quý" value={selectedQuarter} onChange={(e) => setSelectedQuarter(Number(e.target.value))} sx={{ minWidth: 120 }}>
@@ -462,8 +499,32 @@ const StudentPayments: React.FC = () => {
                       type="number"
                       fullWidth
                       value={studentPaymentForm.amount}
-                      onChange={(e) => handleChangeStudentPaymentField('amount', e.target.value)}
+                      onChange={(e) => {
+                        const inputValue = e.target.value;
+                        handleChangeStudentPaymentField('amount', inputValue);
+
+                        const summary = getPaymentSummary();
+                        const remainingAmount = summary?.remainingAmount ?? 0;
+                        const numericValue = inputValue === '' ? 0 : Number(inputValue);
+
+                        if (inputValue === '') {
+                          setAmountError('');
+                        } else if (Number.isNaN(numericValue) || numericValue <= 0) {
+                          setAmountError('Số tiền phải lớn hơn 0');
+                        } else if (remainingAmount > 0 && numericValue > remainingAmount) {
+                          setAmountError(`Số tiền không được lớn hơn ${remainingAmount.toLocaleString()} ₫`);
+                        } else {
+                          setAmountError('');
+                        }
+                      }}
                       inputProps={{ min: 0 }}
+                      error={!!amountError}
+                      helperText={
+                        amountError ||
+                        (getPaymentSummary()
+                          ? `Tối đa: ${getPaymentSummary()!.remainingAmount.toLocaleString()} ₫`
+                          : undefined)
+                      }
                       required
                       sx={{
                         '& .MuiOutlinedInput-root': {

@@ -81,6 +81,7 @@ const AdvertisementManagementForm: React.FC<AdvertisementManagementFormProps> = 
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | undefined>(undefined);
   const [uploadedPublicId, setUploadedPublicId] = useState<string | undefined>(undefined);
   const [classId, setClassId] = useState<string>('');
+  const [selectedClass, setSelectedClass] = useState<{ id: string; name: string; grade?: number; section?: number; year?: number } | null>(null);
   const [formErrors, setFormErrors] = useState<FormErrors>({});
 
   // Lazy search hook for class selection
@@ -122,6 +123,16 @@ const AdvertisementManagementForm: React.FC<AdvertisementManagementFormProps> = 
       setUploadedImageUrl(advertisement.imageUrl);
       setUploadedPublicId(undefined);
       setClassId(advertisement.class?.id || '');
+      const fallbackSelected = advertisement.class
+        ? {
+            id: advertisement.class.id,
+            name: advertisement.class.name,
+            grade: advertisement.class.grade,
+            section: advertisement.class.section,
+            year: advertisement.class.year
+          }
+        : null;
+      setSelectedClass(fallbackSelected);
       setClassSearch(advertisement.class?.name || '');
     } else {
       setFormData({
@@ -134,10 +145,23 @@ const AdvertisementManagementForm: React.FC<AdvertisementManagementFormProps> = 
       setUploadedImageUrl(undefined);
       setUploadedPublicId(undefined);
       setClassId('');
+      setSelectedClass(null);
       setClassSearch('');
     }
     setFormErrors({});
   }, [advertisement, open, setClassSearch]);
+
+  // Ensure selected class stays in sync when options are loaded or updated
+  useEffect(() => {
+    if (!classId) {
+      setSelectedClass(null);
+      return;
+    }
+    const matched = classOptions.find((c) => c.id === classId);
+    if (matched) {
+      setSelectedClass(matched);
+    }
+  }, [classOptions, classId]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>): Promise<void> => {
     const file = e.target.files?.[0] || null;
@@ -213,6 +237,7 @@ const AdvertisementManagementForm: React.FC<AdvertisementManagementFormProps> = 
       setUploadedImageUrl(undefined);
       setUploadedPublicId(undefined);
       setClassId('');
+      setSelectedClass(null);
       resetClassSearch();
       onClose();
     } catch (error) {
@@ -221,6 +246,8 @@ const AdvertisementManagementForm: React.FC<AdvertisementManagementFormProps> = 
   };
 
   const handleClose = (): void => {
+    setSelectedClass(null);
+    setClassId('');
     resetClassSearch();
     onClose();
   };
@@ -402,8 +429,11 @@ const AdvertisementManagementForm: React.FC<AdvertisementManagementFormProps> = 
                   loading={classLoading}
                   options={classOptions}
                   getOptionLabel={(o) => o?.name || ''}
-                  value={classOptions.find((c) => c.id === classId) || null}
-                  onChange={(_, val) => setClassId(val?.id || '')}
+                  value={selectedClass}
+                  onChange={(_, val) => {
+                    setSelectedClass(val);
+                    setClassId(val?.id || '');
+                  }}
                   inputValue={classSearch}
                   onInputChange={(_, val) => setClassSearch(val)}
                   ListboxProps={{

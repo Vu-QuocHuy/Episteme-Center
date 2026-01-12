@@ -27,6 +27,7 @@ import StatCard from '../../components/common/StatCard';
 import { getParentDashboardAPI } from '../../services/dashboard';
 import { getStudentScheduleAPI } from '../../services/students';
 import { getParentByIdAPI } from '../../services/parents';
+import { getStudentStatus } from '../../utils/studentHelpers';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -282,31 +283,23 @@ const Dashboard = () => {
                                 </Typography>
                               </TableCell>
                               <TableCell>
-                                <Chip
-                                  label={
+                                {(() => {
+                                  const statusConfig = getStudentStatus(
+                                    scheduleItem.class?.status,
                                     scheduleItem.isActive === true
-                                      ? 'Đang học'
-                                      : scheduleItem.isActive === false
-                                        ? 'Ngừng học'
-                                        : scheduleItem.class?.status === 'active'
-                                      ? 'Đang học'
-                                      : scheduleItem.class?.status === 'completed'
-                                        ? 'Đã hoàn thành'
-                                        : scheduleItem.class?.status || 'N/A'
-                                  }
-                                  color={
-                                    scheduleItem.isActive === true
-                                      ? 'success'
-                                      : scheduleItem.isActive === false
-                                        ? 'error'
-                                        : scheduleItem.class?.status === 'active'
-                                      ? 'success'
-                                      : scheduleItem.class?.status === 'completed'
-                                        ? 'default'
-                                        : 'default'
-                                  }
-                                  size="small"
-                                />
+                                  );
+                                  return (
+                                    <Chip
+                                      label={statusConfig.label}
+                                      size="small"
+                                      sx={{
+                                        bgcolor: statusConfig.bgColor,
+                                        color: statusConfig.color,
+                                        fontWeight: 600,
+                                      }}
+                                    />
+                                  );
+                                })()}
                               </TableCell>
                             </TableRow>
                           ))}

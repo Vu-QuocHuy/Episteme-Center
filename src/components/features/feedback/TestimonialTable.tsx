@@ -109,7 +109,7 @@ const TestimonialTable: React.FC<TestimonialTableProps> = ({
                     variant="body2"
                     color="text.secondary"
                     sx={{
-                      maxWidth: 300,
+                      maxWidth: 500,
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       display: '-webkit-box',

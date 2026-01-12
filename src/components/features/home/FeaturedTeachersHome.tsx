@@ -88,18 +88,6 @@ const FeaturedTeachersHome = () => {
     sliderRef.current?.slickNext();
   };
 
-  // Helper function to format qualifications
-  const formatQualifications = (qualifications: string[]) => {
-    if (!qualifications || qualifications.length === 0) return 'Chưa có thông tin';
-    return qualifications.join(', ');
-  };
-
-  // Helper function to format specializations
-  const formatSpecializations = (specializations: string[]) => {
-    if (!specializations || specializations.length === 0) return 'Chưa có thông tin';
-    return specializations.join(', ');
-  };
-
   // Slider settings
   const sliderSettings = {
     dots: false,
@@ -169,7 +157,7 @@ const FeaturedTeachersHome = () => {
           fontSize: { xs: '1.5rem', sm: '2rem', md: '2.125rem' }
         }}
       >
-        Giáo viên tiêu biểu
+        Đội ngũ giáo viên
       </Typography>
 
       {/* Navigation Arrows */}
@@ -226,7 +214,7 @@ const FeaturedTeachersHome = () => {
                 <Card
                   onClick={() => handleTeacherClick(teacher)}
                   sx={{
-                    height: '100%',
+                    height: 550,
                     display: 'flex',
                     flexDirection: 'column',
                     borderRadius: 3,
@@ -275,46 +263,32 @@ const FeaturedTeachersHome = () => {
                       </Box>
                     )}
                   </Box>
-                  <CardContent sx={{ p: 3, flexGrow: 1 }}>
+                  <CardContent sx={{ p: 3, flexGrow: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                     <Typography
                       gutterBottom
                       variant="h5"
                       component="h2"
-                      sx={{ fontWeight: 'bold', color: '#000' }}
+                      sx={{ fontWeight: 'bold', color: '#000', mb: 2 }}
                     >
                       {teacher.name}
                     </Typography>
-                    <Typography
-                      variant="subtitle1"
-                      color="primary"
-                      gutterBottom
-                      sx={{ fontWeight: 600, mb: 2 }}
-                    >
-                      {formatSpecializations(teacher.specializations)}
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      paragraph
-                      sx={{ mb: 1, fontWeight: 500 }}
-                    >
-                      Bằng cấp: {formatQualifications(teacher.qualifications)}
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      paragraph
-                      sx={{ mb: 2, fontWeight: 500 }}
-                    >
-                      Địa chỉ: {teacher.address}
-                    </Typography>
-                    <Typography
-                      variant="body1"
-                      paragraph
-                      sx={{ lineHeight: 1.6, color: '#555', mb: 2 }}
-                    >
-                      {teacher.description || 'Chưa có mô tả'}
-                    </Typography>
+                    <Box sx={{ flexGrow: 1, overflow: 'hidden', mb: 2 }}>
+                      <Typography
+                        variant="body1"
+                        sx={{ 
+                          lineHeight: 1.6, 
+                          color: '#555',
+                          overflow: 'hidden',
+                          display: '-webkit-box',
+                          WebkitLineClamp: 3,
+                          WebkitBoxOrient: 'vertical',
+                          textOverflow: 'ellipsis',
+                          wordBreak: 'break-word'
+                        }}
+                      >
+                        {teacher.description || 'Chưa có mô tả'}
+                      </Typography>
+                    </Box>
                     <Button
                       variant="outlined"
                       size="small"
@@ -323,6 +297,7 @@ const FeaturedTeachersHome = () => {
                         borderRadius: 2,
                         textTransform: 'none',
                         fontWeight: 600,
+                        flexShrink: 0,
                         '&:hover': {
                           backgroundColor: 'primary.main',
                           color: 'white'

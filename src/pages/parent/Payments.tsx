@@ -7,7 +7,7 @@ import {
 } from '@mui/material';
 import {
   Payment as PaymentIcon,
-  Search as SearchIcon, Receipt as ReceiptIcon, MoneyOff as MoneyOffIcon, Discount as DiscountIcon,
+  Search as SearchIcon, Receipt as ReceiptIcon, MoneyOff as MoneyOffIcon,
   QrCode2 as QrCodeIcon,
   Cancel as CancelIcon,
   AttachMoney as AttachMoneyIcon,

@@ -63,7 +63,7 @@ const TeacherPayments: React.FC = () => {
     remainingAmount: 0
   });
   const [periodType, setPeriodType] = React.useState<string>('year');
-  const [selectedYear, setSelectedYear] = React.useState<number>(new Date().getFullYear());
+  const [selectedYear, setSelectedYear] = React.useState<number | null>(null);
   const [selectedMonth, setSelectedMonth] = React.useState<number>(new Date().getMonth() + 1);
   const [selectedQuarter, setSelectedQuarter] = React.useState<number>(1);
   const [customStart, setCustomStart] = React.useState<string>(new Date().toISOString().split('T')[0].substring(0, 8) + '01');
@@ -91,12 +91,18 @@ const TeacherPayments: React.FC = () => {
   const fetchPayments = React.useCallback(async (page: number = 1) => {
     let params: any = { page, limit: 10 };
     if (paymentStatus !== 'all') params = { ...params, status: paymentStatus };
-    if (periodType === 'month') params = { ...params, year: selectedYear, month: selectedMonth };
+    if (periodType === 'month') {
+      if (selectedYear) params = { ...params, year: selectedYear, month: selectedMonth };
+      else params = { ...params, month: selectedMonth };
+    }
     else if (periodType === 'quarter') {
       const getQuarterMonths = (q: number) => q === 1 ? { startMonth: 1, endMonth: 3 } : q === 2 ? { startMonth: 4, endMonth: 6 } : q === 3 ? { startMonth: 7, endMonth: 9 } : { startMonth: 10, endMonth: 12 };
       const { startMonth, endMonth } = getQuarterMonths(selectedQuarter);
-      params = { ...params, year: selectedYear, startMonth, endMonth };
-    } else if (periodType === 'year') params = { ...params, year: selectedYear };
+      if (selectedYear) params = { ...params, year: selectedYear, startMonth, endMonth };
+      else params = { ...params, startMonth, endMonth };
+    } else if (periodType === 'year') {
+      if (selectedYear) params = { ...params, year: selectedYear };
+    }
     else if (periodType === 'custom') {
       const year = new Date(customStart).getFullYear();
       const startMonth = new Date(customStart).getMonth() + 1;
@@ -125,15 +131,15 @@ const TeacherPayments: React.FC = () => {
       if (paymentStatus !== 'all') filters.status = paymentStatus;
       if (periodType === 'month') {
         filters.month = selectedMonth;
-        filters.year = selectedYear;
+        if (selectedYear) filters.year = selectedYear;
       } else if (periodType === 'quarter') {
         const getQuarterMonths = (q: number) => q === 1 ? { startMonth: 1, endMonth: 3 } : q === 2 ? { startMonth: 4, endMonth: 6 } : q === 3 ? { startMonth: 7, endMonth: 9 } : { startMonth: 10, endMonth: 12 };
         const { startMonth, endMonth } = getQuarterMonths(selectedQuarter);
         filters.startMonth = startMonth;
         filters.endMonth = endMonth;
-        filters.year = selectedYear;
+        if (selectedYear) filters.year = selectedYear;
       } else if (periodType === 'year') {
-        filters.year = selectedYear;
+        if (selectedYear) filters.year = selectedYear;
       } else if (periodType === 'custom') {
         const year = new Date(customStart).getFullYear();
         const startMonth = new Date(customStart).getMonth() + 1;
@@ -362,7 +368,8 @@ const TeacherPayments: React.FC = () => {
               <MenuItem value="custom">Tùy chọn</MenuItem>
             </TextField>
             {periodType === 'year' && (
-              <TextField select label="Năm" value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} sx={{ minWidth: 120 }}>
+              <TextField select label="Năm" value={selectedYear || 'all'} onChange={(e) => setSelectedYear(e.target.value === 'all' ? null : Number(e.target.value))} sx={{ minWidth: 120 }}>
+                <MenuItem value="all">Tất cả</MenuItem>
                 {years.map((y) => (
                   <MenuItem key={y} value={y}>{y}</MenuItem>
                 ))}
@@ -370,7 +377,8 @@ const TeacherPayments: React.FC = () => {
             )}
             {periodType === 'month' && (
               <>
-                <TextField select label="Năm" value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} sx={{ minWidth: 120 }}>
+                <TextField select label="Năm" value={selectedYear || 'all'} onChange={(e) => setSelectedYear(e.target.value === 'all' ? null : Number(e.target.value))} sx={{ minWidth: 120 }}>
+                  <MenuItem value="all">Tất cả</MenuItem>
                   {years.map((y) => (<MenuItem key={y} value={y}>{y}</MenuItem>))}
                 </TextField>
                 <TextField select label="Tháng" value={selectedMonth} onChange={(e) => setSelectedMonth(Number(e.target.value))} sx={{ minWidth: 120 }}>
@@ -380,7 +388,8 @@ const TeacherPayments: React.FC = () => {
             )}
             {periodType === 'quarter' && (
               <>
-                <TextField select label="Năm" value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} sx={{ minWidth: 120 }}>
+                <TextField select label="Năm" value={selectedYear || 'all'} onChange={(e) => setSelectedYear(e.target.value === 'all' ? null : Number(e.target.value))} sx={{ minWidth: 120 }}>
+                  <MenuItem value="all">Tất cả</MenuItem>
                   {years.map((y) => (<MenuItem key={y} value={y}>{y}</MenuItem>))}
                 </TextField>
                 <TextField select label="Quý" value={selectedQuarter} onChange={(e) => setSelectedQuarter(Number(e.target.value))} sx={{ minWidth: 120 }}>

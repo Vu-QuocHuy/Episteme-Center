@@ -3,7 +3,6 @@ import {
   Box,
   Typography,
   Divider,
-  Avatar,
   Grid,
   Paper,
   Button,
@@ -11,8 +10,6 @@ import {
 } from '@mui/material';
 import {
   Person as PersonIcon,
-  Email as EmailIcon,
-  Phone as PhoneIcon,
   Wc as GenderIcon,
   LocationOn as LocationIcon,
   Notes as NotesIcon,
@@ -245,7 +242,7 @@ const RegistrationManagement: React.FC = () => {
                   }
                 }}
               >
-                ✓ Đánh dấu đã xử lý
+              Đánh dấu đã xử lý
               </Button>
             )}
             <Button
@@ -271,47 +268,7 @@ const RegistrationManagement: React.FC = () => {
       >
         {viewDialog.data && (
           <Box>
-              {/* Header Section with Avatar */}
-              <Box sx={{
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                p: 3,
-                color: 'white',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 3
-              }}>
-                <Avatar sx={{
-                  width: 80,
-                  height: 80,
-                  bgcolor: 'white',
-                  color: 'primary.main',
-                  fontSize: 32,
-                  fontWeight: 700,
-                  border: '4px solid rgba(255,255,255,0.3)'
-                }}>
-                  {viewDialog.data.name.charAt(0).toUpperCase()}
-                </Avatar>
-                <Box sx={{ flex: 1 }}>
-                  <Typography variant="h5" fontWeight={700} gutterBottom>
-                    {viewDialog.data.name}
-                  </Typography>
-                  <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
-                    <Chip
-                      size="small"
-                      label={viewDialog.data.processed ? 'Đã xử lý' : 'Chưa xử lý'}
-                      sx={{
-                        bgcolor: viewDialog.data.processed ? 'rgba(76, 175, 80, 0.9)' : 'rgba(255, 152, 0, 0.9)',
-                        color: 'white',
-                        fontWeight: 600
-                      }}
-                    />
-                    <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <ScheduleIcon sx={{ fontSize: 16 }} />
-                      {viewDialog.data.createdAt ? new Date(viewDialog.data.createdAt).toLocaleString('vi-VN') : '-'}
-                    </Typography>
-                  </Box>
-                </Box>
-              </Box>
+              
 
               {/* Content Sections */}
               <Box sx={{ p: 3, bgcolor: '#f8f9fa' }}>
@@ -329,8 +286,8 @@ const RegistrationManagement: React.FC = () => {
                     }
                   }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5 }}>
-                      <PersonIcon sx={{ color: 'primary.main', fontSize: 24 }} />
-                      <Typography variant="h6" fontWeight={700} sx={{ color: 'primary.main' }}>
+                      <PersonIcon sx={{ color: '#000000', fontSize: 24 }} />
+                      <Typography variant="h6" fontWeight={700} sx={{ color: '#000000' }}>
                         Thông tin cá nhân
                       </Typography>
                     </Box>
@@ -347,7 +304,7 @@ const RegistrationManagement: React.FC = () => {
                             <PersonIcon sx={{ fontSize: 16 }} />
                             Họ và tên
                           </Typography>
-                          <Typography variant="body1" fontWeight={600}>
+                          <Typography variant="body1" fontWeight={600} sx={{ color: '#000000' }}>
                             {viewDialog.data.name}
                           </Typography>
                         </Box>
@@ -363,46 +320,23 @@ const RegistrationManagement: React.FC = () => {
                             <GenderIcon sx={{ fontSize: 16 }} />
                             Giới tính
                           </Typography>
-                          <Typography variant="body1" fontWeight={600}>
-                            {viewDialog.data.gender === 'male' ? '👨 Nam' : viewDialog.data.gender === 'female' ? '👩 Nữ' : '-'}
+                          <Typography variant="body1" fontWeight={600} sx={{ color: '#000000' }}>
+                            {viewDialog.data.gender === 'male' ? 'Nam' : viewDialog.data.gender === 'female' ? '👩 Nữ' : '-'}
                           </Typography>
                         </Box>
                       </Grid>
-                    </Grid>
-                  </Paper>
-
-                  {/* Thông tin liên hệ */}
-                  <Paper elevation={2} sx={{
-                    p: 3,
-                    borderRadius: 2,
-                    background: 'linear-gradient(to right, #ffffff 0%, #f8f9fa 100%)',
-                    border: '1px solid #e3f2fd',
-                    transition: 'all 0.3s ease',
-                    '&:hover': {
-                      boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-                      transform: 'translateY(-2px)'
-                    }
-                  }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5 }}>
-                      <PhoneIcon sx={{ color: '#f50057', fontSize: 24 }} />
-                      <Typography variant="h6" fontWeight={700} sx={{ color: '#f50057' }}>
-                        Thông tin liên hệ
-                      </Typography>
-                    </Box>
-                    <Divider sx={{ mb: 2.5 }} />
-                    <Grid container spacing={3}>
                       <Grid item xs={12} sm={6}>
                         <Box sx={{
                           p: 2,
                           borderRadius: 1.5,
-                          bgcolor: 'rgba(245, 0, 87, 0.05)',
-                          border: '1px solid rgba(245, 0, 87, 0.1)'
+                          bgcolor: 'rgba(103, 126, 234, 0.05)',
+                          border: '1px solid rgba(103, 126, 234, 0.1)'
                         }}>
                           <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
-                            <EmailIcon sx={{ fontSize: 16 }} />
+                            
                             Email
                           </Typography>
-                          <Typography variant="body1" fontWeight={600} sx={{ wordBreak: 'break-word' }}>
+                          <Typography variant="body1" fontWeight={600} sx={{ wordBreak: 'break-word', color: '#000000' }}>
                             {viewDialog.data.email || '-'}
                           </Typography>
                         </Box>
@@ -411,15 +345,15 @@ const RegistrationManagement: React.FC = () => {
                         <Box sx={{
                           p: 2,
                           borderRadius: 1.5,
-                          bgcolor: 'rgba(245, 0, 87, 0.05)',
-                          border: '1px solid rgba(245, 0, 87, 0.1)'
+                          bgcolor: 'rgba(103, 126, 234, 0.05)',
+                          border: '1px solid rgba(103, 126, 234, 0.1)'
                         }}>
                           <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
-                            <PhoneIcon sx={{ fontSize: 16 }} />
+                            
                             Số điện thoại
                           </Typography>
-                          <Typography variant="body1" fontWeight={600}>
-                            📞 {viewDialog.data.phone}
+                          <Typography variant="body1" fontWeight={600} sx={{ color: '#000000' }}>
+                            {viewDialog.data.phone}
                           </Typography>
                         </Box>
                       </Grid>
@@ -427,15 +361,15 @@ const RegistrationManagement: React.FC = () => {
                         <Box sx={{
                           p: 2,
                           borderRadius: 1.5,
-                          bgcolor: 'rgba(245, 0, 87, 0.05)',
-                          border: '1px solid rgba(245, 0, 87, 0.1)'
+                          bgcolor: 'rgba(103, 126, 234, 0.05)',
+                          border: '1px solid rgba(103, 126, 234, 0.1)'
                         }}>
                           <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
                             <LocationIcon sx={{ fontSize: 16 }} />
                             Địa chỉ
                           </Typography>
-                          <Typography variant="body1" fontWeight={600}>
-                            📍 {viewDialog.data.address || '-'}
+                          <Typography variant="body1" fontWeight={600} sx={{ color: '#000000' }}>
+                            {viewDialog.data.address || '-'}
                           </Typography>
                         </Box>
                       </Grid>
@@ -455,8 +389,8 @@ const RegistrationManagement: React.FC = () => {
                     }
                   }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5 }}>
-                      <SchoolIcon sx={{ color: '#ff9800', fontSize: 24 }} />
-                      <Typography variant="h6" fontWeight={700} sx={{ color: '#ff9800' }}>
+                      <SchoolIcon sx={{ color: '#000000', fontSize: 24 }} />
+                      <Typography variant="h6" fontWeight={700} sx={{ color: '#000000' }}>
                         Thông tin đăng ký
                       </Typography>
                     </Box>
@@ -473,8 +407,8 @@ const RegistrationManagement: React.FC = () => {
                             <SchoolIcon sx={{ fontSize: 16 }} />
                             Lớp học
                           </Typography>
-                          <Typography variant="body1" fontWeight={600}>
-                            🎓 {viewDialog.data.class?.name || 'Tư vấn chung'}
+                          <Typography variant="body1" fontWeight={600} sx={{ color: '#000000' }}>
+                            {viewDialog.data.class?.name || 'Tư vấn chung'}
                           </Typography>
                         </Box>
                       </Grid>
@@ -482,29 +416,22 @@ const RegistrationManagement: React.FC = () => {
                         <Box sx={{
                           p: 2,
                           borderRadius: 1.5,
-                          bgcolor: viewDialog.data.processed
-                            ? 'rgba(76, 175, 80, 0.1)'
-                            : 'rgba(255, 152, 0, 0.1)',
-                          border: viewDialog.data.processed
-                            ? '2px solid rgba(76, 175, 80, 0.3)'
-                            : '2px solid rgba(255, 152, 0, 0.3)'
+                          bgcolor: 'rgba(76, 175, 80, 0.03)',
+                          border: '1px solid rgba(76, 175, 80, 0.15)'
                         }}>
-                          <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
-                            <CheckIcon sx={{ fontSize: 16 }} />
-                            Trạng thái xử lý
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}
+                          >
+                            <ScheduleIcon sx={{ fontSize: 16 }} />
+                            Thời gian đăng ký
                           </Typography>
-                          <Chip
-                            size="medium"
-                            icon={viewDialog.data.processed ? <CheckIcon /> : undefined}
-                            label={viewDialog.data.processed ? 'Đã xử lý' : 'Chưa xử lý'}
-                            sx={{
-                              bgcolor: viewDialog.data.processed ? '#4caf50' : '#ff9800',
-                              color: 'white',
-                              fontWeight: 700,
-                              fontSize: '0.875rem',
-                              px: 1
-                            }}
-                          />
+                          <Typography variant="body2" fontWeight={600} sx={{ color: '#000000' }}>
+                            {viewDialog.data.createdAt
+                              ? new Date(viewDialog.data.createdAt).toLocaleString('vi-VN')
+                              : '-'}
+                          </Typography>
                         </Box>
                       </Grid>
                       <Grid item xs={12}>
@@ -533,6 +460,35 @@ const RegistrationManagement: React.FC = () => {
                               {viewDialog.data.note || 'Không có ghi chú'}
                             </Typography>
                           </Paper>
+                        </Box>
+                      </Grid>
+                      <Grid item xs={12}>
+                        <Box sx={{
+                          p: 2,
+                          borderRadius: 1.5,
+                          bgcolor: viewDialog.data.processed
+                            ? 'rgba(76, 175, 80, 0.1)'
+                            : 'rgba(255, 152, 0, 0.1)',
+                          border: viewDialog.data.processed
+                            ? '2px solid rgba(76, 175, 80, 0.3)'
+                            : '2px solid rgba(255, 152, 0, 0.3)'
+                        }}>
+                          <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+                            <CheckIcon sx={{ fontSize: 16 }} />
+                            Trạng thái xử lý
+                          </Typography>
+                          <Chip
+                            size="medium"
+                            icon={viewDialog.data.processed ? <CheckIcon /> : undefined}
+                            label={viewDialog.data.processed ? 'Đã xử lý' : 'Chưa xử lý'}
+                            sx={{
+                              bgcolor: viewDialog.data.processed ? '#4caf50' : '#ff9800',
+                              color: 'white',
+                              fontWeight: 700,
+                              fontSize: '0.875rem',
+                              px: 1
+                            }}
+                          />
                         </Box>
                       </Grid>
                     </Grid>

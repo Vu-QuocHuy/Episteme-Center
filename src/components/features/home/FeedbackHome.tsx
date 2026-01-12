@@ -135,12 +135,11 @@ const FeedbackCard = ({ feedback }: { feedback: Feedback }) => (
       sx={{
         border: "2px solid #e53935",
         borderRadius: 4,
-        minHeight: 340,
+        height: 510,
         pt: `${AVATAR_SIZE / 2 + AVATAR_MARGIN}px`, // đủ lớn để không bị che
-        pb: 2,
         px: 2,
         boxShadow: "0 2px 8px rgba(229,57,53,0.08)",
-        overflow: "visible",
+        overflow: "hidden",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -149,11 +148,26 @@ const FeedbackCard = ({ feedback }: { feedback: Feedback }) => (
         position: "relative"
       }}
     >
-      <CardContent sx={{ width: "100%", p: 0 }}>
-        <Typography variant="body1" sx={{ mb: 2, minHeight: 100, textAlign: "justify", fontSize: '1.1rem', lineHeight: 1.6 }}>
-          {feedback.description}
-        </Typography>
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mt: 2 }}>
+      <CardContent sx={{ width: "100%", p: 0, pb: 1, display: 'flex', flexDirection: 'column', flexGrow: 1, height: '100%' }}>
+        <Box sx={{ flexGrow: 1, overflow: 'hidden', mb: 1 }}>
+          <Typography 
+            variant="body1" 
+            sx={{ 
+              textAlign: "justify", 
+              fontSize: '1.1rem', 
+              lineHeight: 1.6,
+              overflow: 'hidden',
+              display: '-webkit-box',
+              WebkitLineClamp: 13,
+              WebkitBoxOrient: 'vertical',
+              textOverflow: 'ellipsis',
+              wordBreak: 'break-word'
+            }}
+          >
+            {feedback.description}
+          </Typography>
+        </Box>
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mt: 'auto', flexShrink: 0 }}>
           <Typography variant="h6" sx={{ color: "#e53935", fontWeight: "bold" }}>
             {feedback.name}
           </Typography>

@@ -61,3 +61,39 @@ export const getClassStatusColor = (status: string): 'success' | 'warning' => {
 export const getClassStatusLabel = (status: string): string => {
   return status === 'active' ? 'Đang học' : 'Đã nghỉ';
 };
+
+// Helper to derive student-class status (for parent views)
+export const getStudentStatus = (classStatus: string | undefined, isActive: boolean) => {
+  if (classStatus === 'upcoming') {
+    return {
+      label: 'Sắp tới',
+      color: '#3B82F6',
+      bgColor: '#EFF6FF',
+      icon: 'time-outline' as const,
+    };
+  }
+  if (!isActive) {
+    return {
+      label: 'Đã nghỉ',
+      color: '#EF4444',
+      bgColor: '#FEF2F2',
+      icon: 'close-circle' as const,
+    };
+  }
+  if (classStatus === 'closed' || classStatus === 'completed') {
+    return {
+      label: 'Hoàn thành',
+      color: '#10B981',
+      bgColor: '#ECFDF5',
+      icon: 'checkmark-done-circle' as const,
+    };
+  }
+  // Default: classStatus === 'active' && isActive
+  return {
+    label: 'Đang học',
+    color: '#F59E0B',
+    bgColor: '#FFFBEB',
+    icon: 'school' as const,
+  };
+};
+

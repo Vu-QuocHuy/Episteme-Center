@@ -4,12 +4,10 @@ import {
   Box,
   Container,
   Typography,
-  Avatar,
   Divider,
   Paper,
   Grid,
   Skeleton,
-  Chip,
   Button
 } from '@mui/material';
 import {
@@ -28,6 +26,11 @@ const TeacherDetail: React.FC = () => {
   const [teacher, setTeacher] = useState<Teacher | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Scroll to top when component mounts or slug/teacherId changes
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [slug, location.state?.teacherId]);
 
   useEffect(() => {
     const fetchTeacher = async () => {
@@ -162,30 +165,39 @@ const TeacherDetail: React.FC = () => {
             {/* Profile Picture */}
             <Box sx={{ mb: 3 }}>
               {teacher.avatar ? (
-                <Avatar
+                <Box
+                  component="img"
                   src={teacher.avatar}
                   alt={teacher.name}
                   sx={{
                     width: 300,
-                    height: 300,
+                    height: 400,
                     mx: 'auto',
                     mb: 2,
-                    fontSize: '4rem'
+                    borderRadius: 1,
+                    objectFit: 'cover',
+                    display: 'block'
                   }}
                 />
               ) : (
-                <Avatar
+                <Box
                   sx={{
                     width: 300,
-                    height: 300,
+                    height: 400,
                     mx: 'auto',
                     mb: 2,
                     fontSize: '4rem',
-                    bgcolor: 'primary.main'
+                    bgcolor: 'primary.main',
+                    borderRadius: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white',
+                    fontWeight: 'bold'
                   }}
                 >
                   {teacher.name.charAt(0).toUpperCase()}
-                </Avatar>
+                </Box>
               )}
             </Box>
 
@@ -195,7 +207,7 @@ const TeacherDetail: React.FC = () => {
               component="h1"
               sx={{
                 fontWeight: 'bold',
-                color: 'primary.main',
+                color: '#000000',
                 mb: 2,
                 textTransform: 'uppercase'
               }}
@@ -205,14 +217,12 @@ const TeacherDetail: React.FC = () => {
 
                          {/* Contact Information */}
              <Box sx={{ textAlign: 'left' }}>
-               <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
-                 Giảng viên tiếng Anh
-               </Typography>
+              
 
                {teacher.phone && (
                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                    <PhoneIcon sx={{ mr: 1, color: 'text.secondary' }} />
-                   <Typography variant="body2" color="text.secondary">
+                   <Typography variant="body2" sx={{ color: '#000000' }}>
                      {teacher.phone}
                    </Typography>
                  </Box>
@@ -221,7 +231,7 @@ const TeacherDetail: React.FC = () => {
                {teacher.email && (
                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                    <EmailIcon sx={{ mr: 1, color: 'text.secondary' }} />
-                   <Typography variant="body2" color="text.secondary">
+                   <Typography variant="body2" sx={{ color: '#000000' }}>
                      {teacher.email}
                    </Typography>
                  </Box>
@@ -233,130 +243,6 @@ const TeacherDetail: React.FC = () => {
         {/* Right Column - Details */}
         <Grid item xs={12} md={8}>
           <Paper elevation={2} sx={{ p: 4 }}>
-                                       {/* Qualifications Section */}
-              <Box sx={{ mb: 4 }}>
-                <Typography
-                  variant="h5"
-                  component="h2"
-                  sx={{
-                    fontWeight: 'bold',
-                    textTransform: 'uppercase',
-                    mb: 2,
-                    position: 'relative',
-                    '&::after': {
-                      content: '""',
-                      position: 'absolute',
-                      bottom: -8,
-                      left: 0,
-                      width: 60,
-                      height: 3,
-                      bgcolor: 'error.main'
-                    }
-                  }}
-                >
-                  Bằng cấp
-                </Typography>
-
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                  {formatQualifications(teacher.qualifications || []).map((qualification, index) => (
-                    <Chip
-                      key={index}
-                      label={qualification}
-                      variant="outlined"
-                      color="primary"
-                      sx={{ fontWeight: 500 }}
-                    />
-                  ))}
-                  {formatQualifications(teacher.qualifications || []).length === 0 && (
-                    <Typography variant="body2" color="text.secondary" fontStyle="italic">
-                      Chưa có thông tin bằng cấp
-                    </Typography>
-                  )}
-                </Box>
-              </Box>
-
-              <Divider sx={{ my: 3 }} />
-
-              {/* Specializations Section */}
-              <Box sx={{ mb: 4 }}>
-                <Typography
-                  variant="h5"
-                  component="h2"
-                  sx={{
-                    fontWeight: 'bold',
-                    textTransform: 'uppercase',
-                    mb: 2,
-                    position: 'relative',
-                    '&::after': {
-                      content: '""',
-                      position: 'absolute',
-                      bottom: -8,
-                      left: 0,
-                      width: 60,
-                      height: 3,
-                      bgcolor: 'error.main'
-                    }
-                  }}
-                >
-                  Chuyên môn
-                </Typography>
-
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                  {formatSpecializations(teacher.specializations || []).map((specialization, index) => (
-                    <Chip
-                      key={index}
-                      label={specialization}
-                      variant="outlined"
-                      color="secondary"
-                      sx={{ fontWeight: 500 }}
-                    />
-                  ))}
-                  {formatSpecializations(teacher.specializations || []).length === 0 && (
-                    <Typography variant="body2" color="text.secondary" fontStyle="italic">
-                      Chưa có thông tin chuyên môn
-                    </Typography>
-                  )}
-                </Box>
-              </Box>
-
-              <Divider sx={{ my: 3 }} />
-
-              {/* Work Experience Section */}
-              <Box sx={{ mb: 4 }}>
-                <Typography
-                  variant="h5"
-                  component="h2"
-                  sx={{
-                    fontWeight: 'bold',
-                    textTransform: 'uppercase',
-                    mb: 2,
-                    position: 'relative',
-                    '&::after': {
-                      content: '""',
-                      position: 'absolute',
-                      bottom: -8,
-                      left: 0,
-                      width: 60,
-                      height: 3,
-                      bgcolor: 'error.main'
-                    }
-                  }}
-                >
-                  Kinh nghiệm làm việc
-                </Typography>
-                {teacher.workExperience ? (
-                  <Typography variant="body1" sx={{ lineHeight: 1.8 }}>
-                    {teacher.workExperience}
-                  </Typography>
-                ) : (
-                  <Typography variant="body2" color="text.secondary" fontStyle="italic">
-                    Chưa có thông tin kinh nghiệm làm việc
-                  </Typography>
-                )}
-              </Box>
-
-              <Divider sx={{ my: 3 }} />
-
               {/* Introduction Section */}
               <Box sx={{ mb: 4 }}>
                 <Typography
@@ -366,6 +252,7 @@ const TeacherDetail: React.FC = () => {
                     fontWeight: 'bold',
                     textTransform: 'uppercase',
                     mb: 2,
+                    color: '#000000',
                     position: 'relative',
                     '&::after': {
                       content: '""',
@@ -381,12 +268,125 @@ const TeacherDetail: React.FC = () => {
                   Lời giới thiệu
                 </Typography>
                 {teacher.introduction ? (
-                  <Typography variant="body1" sx={{ lineHeight: 1.8 }}>
+                  <Typography variant="body1" sx={{ lineHeight: 1.8, color: '#000000' }}>
                     {teacher.introduction}
                   </Typography>
                 ) : (
                   <Typography variant="body2" color="text.secondary" fontStyle="italic">
                     Chưa có lời giới thiệu
+                  </Typography>
+                )}
+              </Box>
+
+              <Divider sx={{ my: 3 }} />
+
+              {/* Work Experience Section */}
+              <Box sx={{ mb: 4 }}>
+                <Typography
+                  variant="h5"
+                  component="h2"
+                  sx={{
+                    fontWeight: 'bold',
+                    textTransform: 'uppercase',
+                    mb: 2,
+                    color: '#000000',
+                    position: 'relative',
+                    '&::after': {
+                      content: '""',
+                      position: 'absolute',
+                      bottom: -8,
+                      left: 0,
+                      width: 60,
+                      height: 3,
+                      bgcolor: 'error.main'
+                    }
+                  }}
+                >
+                  Kinh nghiệm làm việc
+                </Typography>
+                {teacher.workExperience ? (
+                  <Typography variant="body1" sx={{ lineHeight: 1.8, color: '#000000' }}>
+                    {teacher.workExperience}
+                  </Typography>
+                ) : (
+                  <Typography variant="body2" color="text.secondary" fontStyle="italic">
+                    Chưa có thông tin kinh nghiệm làm việc
+                  </Typography>
+                )}
+              </Box>
+
+              <Divider sx={{ my: 3 }} />
+
+              {/* Qualifications Section */}
+              <Box sx={{ mb: 4 }}>
+                <Typography
+                  variant="h5"
+                  component="h2"
+                  sx={{
+                    fontWeight: 'bold',
+                    textTransform: 'uppercase',
+                    mb: 2,
+                    color: '#000000',
+                    position: 'relative',
+                    '&::after': {
+                      content: '""',
+                      position: 'absolute',
+                      bottom: -8,
+                      left: 0,
+                      width: 60,
+                      height: 3,
+                      bgcolor: 'error.main'
+                    }
+                  }}
+                >
+                  Bằng cấp
+                </Typography>
+
+                {formatQualifications(teacher.qualifications || []).length > 0 ? (
+                  <Typography variant="body1" sx={{ lineHeight: 1.8, color: '#000000' }}>
+                    {formatQualifications(teacher.qualifications || []).join(', ')}
+                  </Typography>
+                ) : (
+                  <Typography variant="body2" color="text.secondary" fontStyle="italic">
+                    Chưa có thông tin bằng cấp
+                  </Typography>
+                )}
+              </Box>
+
+              <Divider sx={{ my: 3 }} />
+
+              {/* Specializations Section */}
+              <Box sx={{ mb: 4 }}>
+                <Typography
+                  variant="h5"
+                  component="h2"
+                  sx={{
+                    fontWeight: 'bold',
+                    textTransform: 'uppercase',
+                    mb: 2,
+                    color: '#000000',
+                    position: 'relative',
+                    '&::after': {
+                      content: '""',
+                      position: 'absolute',
+                      bottom: -8,
+                      left: 0,
+                      width: 60,
+                      height: 3,
+                      bgcolor: 'error.main'
+                    }
+                  }}
+                >
+                  Chuyên môn
+                </Typography>
+
+                {formatSpecializations(teacher.specializations || []).length > 0 ? (
+                  <Typography variant="body1" sx={{ lineHeight: 1.8, color: '#000000' }}>
+                    {formatSpecializations(teacher.specializations || []).join(', ')}
+                  </Typography>
+                ) : (
+                  <Typography variant="body2" color="text.secondary" fontStyle="italic">
+                    Chưa có thông tin chuyên môn
                   </Typography>
                 )}
               </Box>
@@ -402,6 +402,7 @@ const TeacherDetail: React.FC = () => {
                     fontWeight: 'bold',
                     textTransform: 'uppercase',
                     mb: 2,
+                    color: '#000000',
                     position: 'relative',
                     '&::after': {
                       content: '""',
@@ -417,7 +418,7 @@ const TeacherDetail: React.FC = () => {
                   Mô tả
                 </Typography>
                 {teacher.description ? (
-                  <Typography variant="body1" sx={{ lineHeight: 1.8 }}>
+                  <Typography variant="body1" sx={{ lineHeight: 1.8, color: '#000000' }}>
                     {teacher.description}
                   </Typography>
                 ) : (

@@ -11,22 +11,9 @@ export const createRegistrationAPI = (data: {
   classId: string;
 }) => axiosInstance.post(`/registrations`, data);
 
-// Helper function to format filters with quotes for strings, without for boolean/number
+// Helper function to format filters as JSON string
 const formatFiltersString = (filters: Record<string, any>): string => {
-  const parts = Object.entries(filters).map(([key, value]) => {
-    if (typeof value === 'string') {
-      // Add quotes for string values: {"name":"Nguyễn"}
-      return `"${key}":"${value}"`;
-    } else if (typeof value === 'boolean') {
-      // No quotes for boolean: {processed:false}
-      return `${key}:${value}`;
-    } else if (typeof value === 'number') {
-      // No quotes for number
-      return `${key}:${value}`;
-    }
-    return `${key}:${value}`;
-  });
-  return `{${parts.join(',')}}`;
+  return JSON.stringify(filters);
 };
 
 export const getAllRegistrationsAPI = (params?: {

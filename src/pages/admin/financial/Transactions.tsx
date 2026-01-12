@@ -28,7 +28,7 @@ const Transactions: React.FC = () => {
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
   const quarters = [1, 2, 3, 4];
   const [periodType, setPeriodType] = React.useState<string>('year');
-  const [selectedYear, setSelectedYear] = React.useState<number>(new Date().getFullYear());
+  const [selectedYear, setSelectedYear] = React.useState<number | null>(null);
   const [selectedMonth, setSelectedMonth] = React.useState<number>(new Date().getMonth() + 1);
   const [selectedQuarter, setSelectedQuarter] = React.useState<number>(1);
   const [customStart, setCustomStart] = React.useState<string>(new Date().toISOString().split('T')[0].substring(0, 8) + '01');
@@ -59,22 +59,28 @@ const Transactions: React.FC = () => {
     };
 
     if (periodType === 'year') {
-      startDate = toMDY(selectedYear, 1, 1);
-      endDate = toMDY(selectedYear, 12, 31);
+      if (selectedYear) {
+        startDate = toMDY(selectedYear, 1, 1);
+        endDate = toMDY(selectedYear, 12, 31);
+      }
     } else if (periodType === 'month') {
-      const year = selectedYear;
-      const month = selectedMonth;
-      const lastDay = new Date(year, month, 0).getDate();
-      startDate = toMDY(year, month, 1);
-      endDate = toMDY(year, month, lastDay);
+      if (selectedYear) {
+        const year = selectedYear;
+        const month = selectedMonth;
+        const lastDay = new Date(year, month, 0).getDate();
+        startDate = toMDY(year, month, 1);
+        endDate = toMDY(year, month, lastDay);
+      }
     } else if (periodType === 'quarter') {
-      const q = selectedQuarter;
-      const year = selectedYear;
-      const startMonth = q === 1 ? 1 : q === 2 ? 4 : q === 3 ? 7 : 10;
-      const endMonth = q === 1 ? 3 : q === 2 ? 6 : q === 3 ? 9 : 12;
-      const lastDay = new Date(year, endMonth, 0).getDate();
-      startDate = toMDY(year, startMonth, 1);
-      endDate = toMDY(year, endMonth, lastDay);
+      if (selectedYear) {
+        const q = selectedQuarter;
+        const year = selectedYear;
+        const startMonth = q === 1 ? 1 : q === 2 ? 4 : q === 3 ? 7 : 10;
+        const endMonth = q === 1 ? 3 : q === 2 ? 6 : q === 3 ? 9 : 12;
+        const lastDay = new Date(year, endMonth, 0).getDate();
+        startDate = toMDY(year, startMonth, 1);
+        endDate = toMDY(year, endMonth, lastDay);
+      }
     } else if (periodType === 'custom') {
       if (customStart) {
         const [y, m, d] = customStart.split('-').map(Number);
@@ -147,18 +153,24 @@ const Transactions: React.FC = () => {
       return `${mm}/${dd}/${y}`;
     };
     if (periodType === 'year') {
-      startDate = toMDY(selectedYear, 1, 1);
-      endDate = toMDY(selectedYear, 12, 31);
+      if (selectedYear) {
+        startDate = toMDY(selectedYear, 1, 1);
+        endDate = toMDY(selectedYear, 12, 31);
+      }
     } else if (periodType === 'month') {
-      const lastDay = new Date(selectedYear, selectedMonth, 0).getDate();
-      startDate = toMDY(selectedYear, selectedMonth, 1);
-      endDate = toMDY(selectedYear, selectedMonth, lastDay);
+      if (selectedYear) {
+        const lastDay = new Date(selectedYear, selectedMonth, 0).getDate();
+        startDate = toMDY(selectedYear, selectedMonth, 1);
+        endDate = toMDY(selectedYear, selectedMonth, lastDay);
+      }
     } else if (periodType === 'quarter') {
-      const startMonth = selectedQuarter === 1 ? 1 : selectedQuarter === 2 ? 4 : selectedQuarter === 3 ? 7 : 10;
-      const endMonth = selectedQuarter === 1 ? 3 : selectedQuarter === 2 ? 6 : selectedQuarter === 3 ? 9 : 12;
-      const lastDay = new Date(selectedYear, endMonth, 0).getDate();
-      startDate = toMDY(selectedYear, startMonth, 1);
-      endDate = toMDY(selectedYear, endMonth, lastDay);
+      if (selectedYear) {
+        const startMonth = selectedQuarter === 1 ? 1 : selectedQuarter === 2 ? 4 : selectedQuarter === 3 ? 7 : 10;
+        const endMonth = selectedQuarter === 1 ? 3 : selectedQuarter === 2 ? 6 : selectedQuarter === 3 ? 9 : 12;
+        const lastDay = new Date(selectedYear, endMonth, 0).getDate();
+        startDate = toMDY(selectedYear, startMonth, 1);
+        endDate = toMDY(selectedYear, endMonth, lastDay);
+      }
     } else if (periodType === 'custom') {
       if (customStart) {
         const [y, m, d] = customStart.split('-').map(Number);
@@ -324,13 +336,15 @@ const Transactions: React.FC = () => {
             <MenuItem value="custom">Tùy chọn</MenuItem>
           </TextField>
           {periodType === 'year' && (
-            <TextField select label="Năm" value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} sx={{ minWidth: 120 }}>
+            <TextField select label="Năm" value={selectedYear || 'all'} onChange={(e) => setSelectedYear(e.target.value === 'all' ? null : Number(e.target.value))} sx={{ minWidth: 120 }}>
+              <MenuItem value="all">Tất cả</MenuItem>
               {years.map((y) => (<MenuItem key={y} value={y}>{y}</MenuItem>))}
             </TextField>
           )}
           {periodType === 'month' && (
             <>
-              <TextField select label="Năm" value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} sx={{ minWidth: 120 }}>
+              <TextField select label="Năm" value={selectedYear || 'all'} onChange={(e) => setSelectedYear(e.target.value === 'all' ? null : Number(e.target.value))} sx={{ minWidth: 120 }}>
+                <MenuItem value="all">Tất cả</MenuItem>
                 {years.map((y) => (<MenuItem key={y} value={y}>{y}</MenuItem>))}
               </TextField>
               <TextField select label="Tháng" value={selectedMonth} onChange={(e) => setSelectedMonth(Number(e.target.value))} sx={{ minWidth: 120 }}>
@@ -340,7 +354,8 @@ const Transactions: React.FC = () => {
           )}
           {periodType === 'quarter' && (
             <>
-              <TextField select label="Năm" value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} sx={{ minWidth: 120 }}>
+              <TextField select label="Năm" value={selectedYear || 'all'} onChange={(e) => setSelectedYear(e.target.value === 'all' ? null : Number(e.target.value))} sx={{ minWidth: 120 }}>
+                <MenuItem value="all">Tất cả</MenuItem>
                 {years.map((y) => (<MenuItem key={y} value={y}>{y}</MenuItem>))}
               </TextField>
               <TextField select label="Quý" value={selectedQuarter} onChange={(e) => setSelectedQuarter(Number(e.target.value))} sx={{ minWidth: 120 }}>
