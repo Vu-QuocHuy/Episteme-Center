@@ -13,7 +13,7 @@ export interface User extends BaseEntity {
   dayOfBirth?: string;
   gender?: 'male' | 'female';
   address?: string;
-  role: 'admin' | 'teacher' | 'student' | 'parent';
+  role: 'admin' | 'staff' | 'teacher' | 'student' | 'parent';
   avatar?: string;
   username?: string;
   // Role-specific IDs
@@ -87,6 +87,22 @@ export interface Student extends BaseEntity {
   level?: string;
   schoolName?: string;
   isActive?: boolean;
+}
+
+// Staff Types (Nhân viên)
+export interface Staff extends BaseEntity {
+  name: string;
+  email: string;
+  gender: 'male' | 'female';
+  dayOfBirth: string;
+  address: string;
+  phone: string;
+  avatar?: string | null;
+  publicId?: string;
+  role: Role;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string;
 }
 
 // Parent Types
