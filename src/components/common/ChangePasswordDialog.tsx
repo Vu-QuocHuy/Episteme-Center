@@ -141,13 +141,13 @@ const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
   return (
     <>
       <BaseDialog
-        open={open}
-        onClose={handleClose}
+      open={open}
+      onClose={handleClose}
         title="Đổi mật khẩu"
         subtitle="Vui lòng nhập thông tin để đổi mật khẩu"
         icon={<LockIcon sx={{ fontSize: 28, color: 'white' }} />}
         maxWidth="xs"
-        fullWidth
+      fullWidth
         loading={loading}
         error={error}
         showCloseButton={!loading}
@@ -158,12 +158,12 @@ const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
               onClick={handleClose}
               disabled={loading}
               variant="outlined"
-              sx={{
+        sx={{
                 borderRadius: 2,
                 px: 3,
                 py: 1,
-              }}
-            >
+        }}
+      >
               Hủy
             </Button>
             <Button
@@ -171,12 +171,12 @@ const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
               disabled={loading}
               variant="contained"
               startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <LockIcon />}
-              sx={{
+            sx={{
                 borderRadius: 2,
                 px: 3,
                 py: 1,
-              }}
-            >
+            }}
+          >
               {loading ? 'Đang xử lý...' : 'Đổi mật khẩu'}
             </Button>
           </Box>
@@ -263,12 +263,12 @@ const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
         </Box>
       </BaseDialog>
 
-      <NotificationSnackbar
-        open={snackbar.open}
-        onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
-        message={snackbar.message}
-        severity={snackbar.severity}
-      />
+    <NotificationSnackbar
+      open={snackbar.open}
+      onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+      message={snackbar.message}
+      severity={snackbar.severity}
+    />
     </>
   );
 };

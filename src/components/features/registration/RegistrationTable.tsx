@@ -62,7 +62,7 @@ const RegistrationTable: React.FC<RegistrationTableProps> = ({
     <>
       <Paper>
         <TableContainer>
-          <Table size="small">
+          <Table>
             <TableHead>
               <TableRow>
                 <TableCell>Họ tên</TableCell>

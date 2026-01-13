@@ -55,12 +55,12 @@ const HomeWelcomeAdPopup: React.FC = () => {
 
   return (
     <>
-      <WelcomeAdPopup
-        open={showPopup}
-        onClose={() => setShowPopup(false)}
-        ads={advertisements}
-        width={popupConfig.width}
-        height={popupConfig.height}
+    <WelcomeAdPopup
+      open={showPopup}
+      onClose={() => setShowPopup(false)}
+      ads={advertisements}
+      width={popupConfig.width}
+      height={popupConfig.height}
         onRegisterClick={handleRegisterClick}
       />
       <ClassRegistrationModal

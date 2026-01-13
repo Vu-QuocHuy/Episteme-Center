@@ -312,7 +312,6 @@ const MyClasses = () => {
     return 'Không xác định';
   };
 
-  // (removed unused helpers)
 
   return (
     <DashboardLayout role="student">

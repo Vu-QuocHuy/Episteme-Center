@@ -87,7 +87,8 @@ const TeacherForm: React.FC<TeacherFormProps> = ({
   const [errors, setErrors] = useState<FormErrors>({});
 
   useEffect(() => {
-    if (teacher) {
+    // Chỉ coi là chế độ chỉnh sửa khi có teacher và có id
+    if (teacher && (teacher as any)?.id) {
       setFormData({
         name: teacher.name || (teacher as any)?.userId?.name || '',
         email: teacher.email || (teacher as any)?.userId?.email || '',
@@ -203,7 +204,7 @@ const TeacherForm: React.FC<TeacherFormProps> = ({
     <BaseDialog
       open={open}
       onClose={handleClose}
-      title={teacher ? 'Chỉnh sửa thông tin giáo viên' : 'Thêm giáo viên mới'}
+      title={teacher && (teacher as any)?.id ? 'Chỉnh sửa thông tin giáo viên' : 'Thêm giáo viên mới'}
       subtitle="Cập nhật thông tin giáo viên"
       icon={teacher ? <EditIcon sx={{ fontSize: 28, color: 'white' }} /> : <AddIcon sx={{ fontSize: 28, color: 'white' }} />}
       maxWidth="md"
@@ -238,7 +239,7 @@ const TeacherForm: React.FC<TeacherFormProps> = ({
               }
             }}
           >
-            {loading ? 'Đang lưu...' : (teacher ? 'Cập nhật' : 'Tạo mới')}
+            {loading ? 'Đang lưu...' : (teacher && (teacher as any)?.id ? 'Cập nhật' : 'Tạo mới')}
           </Button>
         </>
       }
@@ -275,7 +276,7 @@ const TeacherForm: React.FC<TeacherFormProps> = ({
                     required
                   />
                 </Grid>
-                {!teacher && (
+                {!(teacher && (teacher as any)?.id) && (
                   <Grid item xs={12} md={6}>
                     <TextField
                       fullWidth
@@ -346,6 +347,20 @@ const TeacherForm: React.FC<TeacherFormProps> = ({
                     placeholder="200000"
                   />
                 </Grid>
+                {teacher && (teacher as any)?.id && (
+                  <Grid item xs={12} md={6}>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={formData.isActive}
+                          onChange={(e) => handleInputChange('isActive', e.target.checked)}
+                          color="primary"
+                        />
+                      }
+                      label="Trạng thái hoạt động"
+                    />
+                  </Grid>
+                )}
                 <Grid item xs={12}>
                   <TextField
                     fullWidth
@@ -392,7 +407,7 @@ const TeacherForm: React.FC<TeacherFormProps> = ({
                     value={formData.qualifications}
                     onChange={(e) => handleInputChange('qualifications', e.target.value)}
                         error={!!errors.qualifications}
-                    helperText={errors.qualifications || "Nhập bằng cấp, phân cách bằng dấu phẩy (VD: Bachelor of Arts, CELTA)"}
+                    helperText={errors.qualifications}
                     placeholder="Bachelor of Arts, CELTA"
                   />
                 </Grid>
@@ -403,32 +418,8 @@ const TeacherForm: React.FC<TeacherFormProps> = ({
                     value={formData.specializations}
                     onChange={(e) => handleInputChange('specializations', e.target.value)}
                     error={!!errors.specializations}
-                    helperText={errors.specializations || "Nhập chuyên môn, phân cách bằng dấu phẩy (VD: Business English, Speaking)"}
+                    helperText={errors.specializations}
                     placeholder="Business English, Speaking"
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={formData.isActive}
-                        onChange={(e) => handleInputChange('isActive', e.target.checked)}
-                        color="primary"
-                      />
-                    }
-                    label="Trạng thái hoạt động"
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={formData.typical}
-                        onChange={(e) => handleInputChange('typical', e.target.checked)}
-                        color="primary"
-                      />
-                    }
-                    label="Giáo viên tiêu biểu"
                   />
                 </Grid>
               </Grid>

@@ -60,8 +60,9 @@ const StaffManagement: React.FC = () => {
 
   const handleCloseDialog = (): void => {
     setOpenDialog(false);
+    setTimeout(() => {
     setSelectedStaff(null);
-    fetchStaffs(); // Refresh list
+    }, 100);
   };
 
   const handleOpenViewDialog = async (staff: Staff): Promise<void> => {

@@ -213,18 +213,18 @@ const ClassRegistrationModal: React.FC<ClassRegistrationModalProps> = ({
           <Grid container sx={{ minHeight: 350 }}>
             {/* Left side - Class Info or Consultation Info */}
             {classId ? (
-              <Grid item xs={12} md={7} sx={{
-                bgcolor: 'linear-gradient(to bottom, #f8f9fa 0%, #e9ecef 100%)',
-                p: 3,
-                borderRight: { md: '1px solid', borderColor: 'divider' }
-              }}>
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="h6" fontWeight={700}>
-                    📚 Thông tin lớp học
-                  </Typography>
-                </Box>
+            <Grid item xs={12} md={7} sx={{
+              bgcolor: 'linear-gradient(to bottom, #f8f9fa 0%, #e9ecef 100%)',
+              p: 3,
+              borderRight: { md: '1px solid', borderColor: 'divider' }
+            }}>
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="h6" fontWeight={700}>
+                  📚 Thông tin lớp học
+                </Typography>
+              </Box>
 
-                {classInfo ? (
+              {classInfo ? (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                   {/* Tên lớp */}
                   <Box sx={{
@@ -380,7 +380,7 @@ const ClassRegistrationModal: React.FC<ClassRegistrationModalProps> = ({
                   Không có thông tin lớp học
                 </Typography>
               )}
-              </Grid>
+            </Grid>
             ) : (
               <Grid item xs={12} md={7} sx={{
                 bgcolor: 'linear-gradient(to bottom, #f8f9fa 0%, #e9ecef 100%)',

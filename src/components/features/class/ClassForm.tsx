@@ -330,7 +330,6 @@ const ClassForm: React.FC<ClassFormProps> = ({
             value={formData.schedule?.time_slots?.start_time ?? ''}
             onChange={(e) => handleInputChange('schedule.time_slots.start_time', e.target.value)}
             error={!!errors.start_time}
-            helperText={errors.start_time || "Chọn giờ bắt đầu (định dạng 24 giờ)"}
             required
             InputLabelProps={{ shrink: true }}
             inputProps={{
@@ -395,7 +394,6 @@ const ClassForm: React.FC<ClassFormProps> = ({
             value={formData.schedule?.time_slots?.end_time ?? ''}
             onChange={(e) => handleInputChange('schedule.time_slots.end_time', e.target.value)}
             error={!!errors.end_time}
-            helperText={errors.end_time || "Chọn giờ kết thúc (định dạng 24 giờ)"}
             required
             InputLabelProps={{ shrink: true }}
             inputProps={{
@@ -414,13 +412,6 @@ const ClassForm: React.FC<ClassFormProps> = ({
               handleInputChange('max_student', numericValue);
             }}
             error={!!errors.max_student || !!maxStudentError}
-            helperText={
-              maxStudentError ||
-              errors.max_student ||
-              (classItem && Array.isArray(studentsInfo) && studentsInfo.length > 0
-                ? `Không nhỏ hơn số học sinh hiện tại (${studentsInfo.length})`
-                : 'Tối đa 100')
-            }
             InputProps={{ inputProps: { min: 1, max: 100 } }}
             required
           />

@@ -63,11 +63,14 @@ const StaffForm: React.FC<StaffFormProps> = ({
 
   useEffect(() => {
     if (open) {
-      if (staff) {
+      if (staff && staff.id) {
         setFormData(staff);
       } else {
         resetForm();
       }
+    } else {
+      // Reset form when dialog closes
+      resetForm();
     }
   }, [open, staff, setFormData, resetForm]);
 
@@ -169,7 +172,6 @@ const StaffForm: React.FC<StaffFormProps> = ({
               onChange={handleChange}
               placeholder="DD/MM/YYYY"
               error={!!formErrors.dayOfBirth}
-              helperText={formErrors.dayOfBirth || 'Định dạng: DD/MM/YYYY'}
             />
           </Grid>
 

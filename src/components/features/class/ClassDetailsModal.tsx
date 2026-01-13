@@ -75,12 +75,11 @@ const ClassDetailsModal: React.FC<ClassDetailsModalProps> = ({
               <Box display="flex" flexDirection="column" gap={2}>
                 <Box>
                   <Typography variant="subtitle2" color="text.secondary">Số lượng học sinh</Typography>
-                  <Typography variant="h6" fontWeight={700} color="primary.main">{studentCount}/{maxStudents || 0}</Typography>
-                  <Typography variant="caption" color="text.secondary">Tối đa {maxStudents || 0} học sinh</Typography>
+                  <Typography variant="body1">{studentCount}/{maxStudents || 0}</Typography>
                 </Box>
                 <Box>
                   <Typography variant="subtitle2" color="text.secondary">Học phí mỗi buổi</Typography>
-                  <Typography variant="h6" fontWeight={800} sx={{ color: '#6a1b9a' }}>{formatClassCurrency(classItem.feePerLesson)}</Typography>
+                  <Typography variant="body1">{formatClassCurrency(classItem.feePerLesson)}</Typography>
                 </Box>
                 <Box>
                   <Typography variant="subtitle2" color="text.secondary">Thời gian học</Typography>

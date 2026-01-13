@@ -35,9 +35,3 @@ const ClassScheduleModal: React.FC<ClassScheduleModalProps> = ({
 };
 
 export default ClassScheduleModal;
-
-
-
-
-
-

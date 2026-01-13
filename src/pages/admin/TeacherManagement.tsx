@@ -214,7 +214,6 @@ const TeacherManagement: React.FC = () => {
                 <StatCard
                   title="Tổng giáo viên"
                   value={summary.totalTeachers}
-                  icon={<AddIcon sx={{ fontSize: 40 }} />}
                   color="primary"
                 />
               </Grid>
@@ -222,7 +221,6 @@ const TeacherManagement: React.FC = () => {
                 <StatCard
                   title="Đang hoạt động"
                   value={summary.activeTeachers}
-                  icon={<AddIcon sx={{ fontSize: 40 }} />}
                   color="success"
                 />
               </Grid>
@@ -230,7 +228,6 @@ const TeacherManagement: React.FC = () => {
                 <StatCard
                   title="Ngừng hoạt động"
                   value={summary.inactiveTeachers}
-                  icon={<AddIcon sx={{ fontSize: 40 }} />}
                   color="error"
                 />
               </Grid>
@@ -241,7 +238,6 @@ const TeacherManagement: React.FC = () => {
                     style: 'currency',
                     currency: 'VND'
                   }).format(summary.totalSalary)}
-                  icon={<AddIcon sx={{ fontSize: 40 }} />}
                   color="warning"
                 />
               </Grid>
