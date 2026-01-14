@@ -406,44 +406,106 @@ const PaymentHistoryModal: React.FC<PaymentHistoryModalProps> = ({
                   borderRadius: 2,
                   boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
                 }}>
-                  <Grid container spacing={2}>
+                  <Grid container spacing={3}>
                     {(paymentData.teacherId || paymentData.teacher) ? (
                       <>
                         <Grid item xs={12} md={6}>
                           <Box>
-                            <Typography variant="subtitle2" color="textSecondary" gutterBottom sx={{ fontWeight: 600 }}>
-                              Giáo viên: {paymentData.teacher?.name || paymentData.teacherId?.userId?.name || paymentData.teacherId?.name}
-                            </Typography>
-                            <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 500, color: '#2c3e50' }}>
-                              Email: {paymentData.teacher?.email || paymentData.teacherId?.userId?.email || paymentData.teacherId?.email || '-'}
-                            </Typography>
-                            <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 500, color: '#2c3e50' }}>
-                              SĐT: {paymentData.teacher?.phone || paymentData.teacherId?.userId?.phone || paymentData.teacherId?.phone || '-'}
-                            </Typography>
-                            <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 500, color: '#2c3e50' }}>
-                              Tháng/Năm: {paymentData.month}/{paymentData.year}
-                            </Typography>
-                            <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 600, mt: 1 }}>
-                              Trạng thái: <Chip label={getPaymentStatusInfo(paymentData).label} color={getPaymentStatusInfo(paymentData).color} size="small" variant="outlined" />
-                            </Typography>
+                            <Box sx={{ mb: 1.5 }}>
+                              <Typography variant="subtitle2" color="textSecondary" sx={{ fontWeight: 600, mb: 0.5 }}>
+                                Giáo viên
+                              </Typography>
+                              <Typography variant="body1" sx={{ fontWeight: 500, color: '#2c3e50' }}>
+                                {paymentData.teacher?.name ||
+                                  paymentData.teacherId?.userId?.name ||
+                                  paymentData.teacherId?.name ||
+                                  '-'}
+                              </Typography>
+                            </Box>
+                            <Box sx={{ mb: 1.5 }}>
+                              <Typography variant="subtitle2" color="textSecondary" sx={{ fontWeight: 600, mb: 0.5 }}>
+                                Email
+                              </Typography>
+                              <Typography variant="body1" sx={{ fontWeight: 500, color: '#2c3e50' }}>
+                                {paymentData.teacher?.email ||
+                                  paymentData.teacherId?.userId?.email ||
+                                  paymentData.teacherId?.email ||
+                                  '-'}
+                              </Typography>
+                            </Box>
+                            <Box sx={{ mb: 1.5 }}>
+                              <Typography variant="subtitle2" color="textSecondary" sx={{ fontWeight: 600, mb: 0.5 }}>
+                                Số điện thoại
+                              </Typography>
+                              <Typography variant="body1" sx={{ fontWeight: 500, color: '#2c3e50' }}>
+                                {paymentData.teacher?.phone ||
+                                  paymentData.teacherId?.userId?.phone ||
+                                  paymentData.teacherId?.phone ||
+                                  '-'}
+                              </Typography>
+                            </Box>
+                            <Box sx={{ mb: 1.5 }}>
+                              <Typography variant="subtitle2" color="textSecondary" sx={{ fontWeight: 600, mb: 0.5 }}>
+                                Tháng/Năm
+                              </Typography>
+                              <Typography variant="body1" sx={{ fontWeight: 500, color: '#2c3e50' }}>
+                                {paymentData.month}/{paymentData.year}
+                              </Typography>
+                            </Box>
+                            <Box sx={{ mt: 0.5 }}>
+                              <Typography variant="subtitle2" color="textSecondary" sx={{ fontWeight: 600, mb: 0.5 }}>
+                                Trạng thái thanh toán
+                              </Typography>
+                              <Chip
+                                label={getPaymentStatusInfo(paymentData).label}
+                                color={getPaymentStatusInfo(paymentData).color}
+                                size="small"
+                                variant="outlined"
+                                sx={{ fontWeight: 600 }}
+                              />
+                            </Box>
                           </Box>
                         </Grid>
                         <Grid item xs={12} md={6}>
                           <Box>
-                            <Typography variant="subtitle2" color="textSecondary" gutterBottom sx={{ fontWeight: 600 }}>
-                              Số buổi: {paymentData.classes && Array.isArray(paymentData.classes)
-                                ? paymentData.classes.reduce((sum, cls) => sum + (cls.totalLessons || 0), 0)
-                                : paymentData.totalLessons || '-'}
-                            </Typography>
-                            <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 500, color: '#2c3e50' }}>
-                              Lương/buổi: {formatCurrency(paymentData.teacher?.salaryPerLesson || paymentData.salaryPerLesson || 0)}
-                            </Typography>
-                            <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 500, color: '#2c3e50' }}>
-                              Tổng lương: {formatCurrency(paymentData.totalAmount || 0)}
-                            </Typography>
-                            <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 500, color: '#2c3e50' }}>
-                              Đã thanh toán: {formatCurrency(paymentData.paidAmount || 0)}
-                            </Typography>
+                            <Box sx={{ mb: 1.5 }}>
+                              <Typography variant="subtitle2" color="textSecondary" sx={{ fontWeight: 600, mb: 0.5 }}>
+                                Số buổi
+                              </Typography>
+                              <Typography variant="body1" sx={{ fontWeight: 500, color: '#2c3e50' }}>
+                                {paymentData.classes && Array.isArray(paymentData.classes)
+                                  ? paymentData.classes.reduce((sum, cls) => sum + (cls.totalLessons || 0), 0)
+                                  : paymentData.totalLessons || '-'}
+                              </Typography>
+                            </Box>
+                            <Box sx={{ mb: 1.5 }}>
+                              <Typography variant="subtitle2" color="textSecondary" sx={{ fontWeight: 600, mb: 0.5 }}>
+                                Lương/buổi
+                              </Typography>
+                              <Typography variant="body1" sx={{ fontWeight: 500, color: '#2c3e50' }}>
+                                {formatCurrency(
+                                  paymentData.teacher?.salaryPerLesson ||
+                                    paymentData.salaryPerLesson ||
+                                    0
+                                )}
+                              </Typography>
+                            </Box>
+                            <Box sx={{ mb: 1.5 }}>
+                              <Typography variant="subtitle2" color="textSecondary" sx={{ fontWeight: 600, mb: 0.5 }}>
+                                Tổng lương
+                              </Typography>
+                              <Typography variant="body1" sx={{ fontWeight: 500, color: '#2c3e50' }}>
+                                {formatCurrency(paymentData.totalAmount || 0)}
+                              </Typography>
+                            </Box>
+                            <Box>
+                              <Typography variant="subtitle2" color="textSecondary" sx={{ fontWeight: 600, mb: 0.5 }}>
+                                Đã thanh toán
+                              </Typography>
+                              <Typography variant="body1" sx={{ fontWeight: 500, color: '#2c3e50' }}>
+                                {formatCurrency(paymentData.paidAmount || 0)}
+                              </Typography>
+                            </Box>
                           </Box>
                         </Grid>
                       </>

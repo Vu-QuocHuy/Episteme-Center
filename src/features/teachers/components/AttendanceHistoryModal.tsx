@@ -165,29 +165,7 @@ const AttendanceHistoryModal: React.FC<AttendanceHistoryModalProps> = ({
               overflow: 'hidden',
               boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
             }}>
-              <Box sx={{
-                p: 3,
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                color: 'white'
-              }}>
-                <Typography variant="h6" sx={{
-                  fontWeight: 600,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1
-                }}>
-                  <Box sx={{
-                    width: 4,
-                    height: 20,
-                    bgcolor: 'white',
-                    borderRadius: 2
-                  }} />
-                  Lịch sử điểm danh chi tiết
-                </Typography>
-                <Typography variant="body2" sx={{ opacity: 0.9, mt: 0.5 }}>
-                  Thống kê điểm danh theo từng buổi học
-                </Typography>
-              </Box>
+              
           <TableContainer>
             <Table>
               <TableHead>
