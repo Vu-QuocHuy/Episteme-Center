@@ -15,14 +15,13 @@ import {
   AccountBalanceWallet as WalletIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
-import DashboardLayout from '../../components/layouts/DashboardLayout';
-import { getParentByIdAPI } from '../../services/parents';
-import { getPaymentsByStudentAPI, getQRCodeAPI } from '../../services/payments';
-import { commonStyles } from '../../utils/styles';
-import { ParentPaymentsTable } from '../../components/features/parent';
-import PaymentHistoryModal from '../../components/common/PaymentHistoryModal';
-import NotificationSnackbar from '../../components/common/NotificationSnackbar';
-import BaseDialog from '../../components/common/BaseDialog';
+import DashboardLayout from '@shared/components/layouts/DashboardLayout';
+import { getParentByIdAPI } from '@features/parents';
+import { getPaymentsByStudentAPI, getQRCodeAPI } from '@features/payments';
+import { commonStyles } from '@shared/utils';
+import { ParentPaymentsTable } from '@features/parents';
+import { PaymentHistoryModal, NotificationSnackbar } from '@shared/components';
+import { BaseDialog } from '@shared/components';
 
 interface PaymentTransaction {
   id: string;

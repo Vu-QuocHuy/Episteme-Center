@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Box, CircularProgress, Alert } from '@mui/material';
 import dayjs from 'dayjs';
 import { useAuth } from '../../contexts/AuthContext';
-import { getStudentScheduleAPI, StudentScheduleClass } from '../../services/students';
-import ScheduleCalendar from '../../components/common/ScheduleCalendar';
-import { Lesson } from '../../types';
-import DashboardLayout from '../../components/layouts/DashboardLayout';
+import { getStudentScheduleAPI, type StudentScheduleClass } from '@features/students';
+import { ScheduleCalendar } from '@shared/components';
+import { Lesson } from '@shared/types';
+import DashboardLayout from '@shared/components/layouts/DashboardLayout';
 
 const Schedule: React.FC = () => {
   const { user } = useAuth();

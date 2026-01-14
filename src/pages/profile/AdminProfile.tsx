@@ -21,11 +21,11 @@ import {
   Lock as LockIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
-import { updateUserAPI } from '../../services/users';
-import { validateUserUpdate } from '../../validations/commonValidation';
-import { commonStyles } from '../../utils/styles';
-import DashboardLayout from '../../components/layouts/DashboardLayout';
-import { AvatarUpload, ChangePasswordDialog } from '../../components/common';
+import { updateUserAPI } from '@shared/services';
+import { validateUserUpdate } from '@shared/validations/common';
+import { commonStyles } from '@shared/utils';
+import DashboardLayout from '@shared/components/layouts/DashboardLayout';
+import { AvatarUpload, ChangePasswordDialog } from '@shared/components';
 
 interface UserUpdateData {
   name: string;

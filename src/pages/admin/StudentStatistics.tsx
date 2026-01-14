@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box } from '@mui/material';
-import DashboardLayout from '../../components/layouts/DashboardLayout';
-import { commonStyles } from '../../utils/styles';
+import DashboardLayout from '@shared/components/layouts/DashboardLayout';
+import { commonStyles } from '@shared/utils';
 import StudentStatisticsPanel from './StudentStatisticsPanel';
 
 const StudentStatistics: React.FC = () => {

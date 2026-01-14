@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, Paper, Grid, TextField, MenuItem, Card, CardContent, CircularProgress } from '@mui/material';
-import { commonStyles } from '../../utils/styles';
+import { commonStyles } from '@shared/utils';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, LineChart, Line } from 'recharts';
-import { getStudentStatisticsAPI } from '../../services/students';
+import { getStudentStatisticsAPI } from '@features/students';
 
 interface MonthlyData {
   year: number;

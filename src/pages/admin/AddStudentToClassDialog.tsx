@@ -12,10 +12,9 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { Search as SearchIcon } from '@mui/icons-material';
-import { getAllStudentsAPI } from '../../services/students';
-import { enrollStudentAPI, getStudentsInClassAPI } from '../../services/classes';
-import NotificationSnackbar from '../../components/common/NotificationSnackbar';
-import BaseDialog from '../../components/common/BaseDialog';
+import { getAllStudentsAPI } from '@features/students';
+import { enrollStudentAPI, getStudentsInClassAPI } from '@features/classes';
+import { NotificationSnackbar, BaseDialog } from '@shared/components';
 
 interface Student {
   id: string;

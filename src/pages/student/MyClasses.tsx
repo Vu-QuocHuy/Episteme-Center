@@ -26,16 +26,15 @@ import {
   Cancel as CancelIcon,
   Schedule as ScheduleIcon,
 } from '@mui/icons-material';
-import { COLORS } from "../../utils/colors";
-import DashboardLayout from '../../components/layouts/DashboardLayout';
-import { commonStyles } from '../../utils/styles';
+import { COLORS } from "@shared/utils";
+import DashboardLayout from '@shared/components/layouts/DashboardLayout';
+import { commonStyles } from '@shared/utils';
 import { useAuth } from '../../contexts/AuthContext';
-import { getStudentScheduleAPI, getStudentDashboardAPI } from '../../services/students';
-import { getClassByIdAPI } from '../../services/classes';
-import { getSessionsByStudentAPI } from '../../services/sessions';
-import { StudentMyClassesTable } from '../../components/features/student';
-import StatCard from '../../components/common/StatCard';
-import BaseDialog from '../../components/common/BaseDialog';
+import { getStudentScheduleAPI, getStudentDashboardAPI } from '@features/students';
+import { getClassByIdAPI } from '@features/classes';
+import { getSessionsByStudentAPI } from '@shared/services';
+import { StudentMyClassesTable } from '@features/students';
+import { StatCard, BaseDialog } from '@shared/components';
 
 const MyClasses = () => {
   const { user } = useAuth();

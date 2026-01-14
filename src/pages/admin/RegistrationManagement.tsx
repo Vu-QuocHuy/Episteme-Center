@@ -5,17 +5,16 @@ import {
 } from '@mui/material';
 import {
 } from '@mui/icons-material';
-import DashboardLayout from '../../components/layouts/DashboardLayout';
-import { commonStyles } from '../../utils/styles';
+import DashboardLayout from '@shared/components/layouts/DashboardLayout';
+import { commonStyles } from '@shared/utils';
 import {
   getAllRegistrationsAPI,
   getRegistrationByIdAPI,
   updateRegistrationAPI,
   deleteRegistrationAPI
-} from '../../services/registrations';
-import NotificationSnackbar from '../../components/common/NotificationSnackbar';
-import { RegistrationFilters, RegistrationTable, RegistrationViewDialog } from '../../components/features/registration';
-import ConfirmDialog from '../../components/common/ConfirmDialog';
+} from '@features/registrations';
+import { NotificationSnackbar, ConfirmDialog } from '@shared/components';
+import { RegistrationFilters, RegistrationTable, RegistrationViewDialog } from '@features/registrations';
 
 interface RegistrationItem {
   id: string;
@@ -184,7 +183,7 @@ const RegistrationManagement: React.FC = () => {
           <RegistrationTable
             rows={rows}
             loading={loading}
-            page={page}
+                  page={page}
             totalPages={totalPages}
             onView={handleView}
             onDelete={(id) => setDeleteDialog({ open: true, id })}
@@ -200,7 +199,7 @@ const RegistrationManagement: React.FC = () => {
         registration={viewDialog.data as any}
         onMarkAsProcessed={(id) => {
           handleMarkAsProcessed(id);
-          setViewDialog({ open: false, data: null });
+                  setViewDialog({ open: false, data: null });
         }}
       />
       {/* Delete Confirmation Dialog */}

@@ -1,15 +1,13 @@
 import React, { useState, useCallback } from 'react';
 import { Box, Typography, Button, Paper, TextField, Grid, Pagination } from '@mui/material';
 import { Add as AddIcon, Search as SearchIcon } from '@mui/icons-material';
-import { commonStyles } from '../../utils/styles';
-import DashboardLayout from '../../components/layouts/DashboardLayout';
-import ConfirmDialog from '../../components/common/ConfirmDialog';
-import NotificationSnackbar from '../../components/common/NotificationSnackbar';
-import ClassTable from '../../components/features/class/ClassTable';
-import ClassForm from '../../components/features/class/ClassForm';
-import { useClassManagement } from '../../hooks/features/useClassManagement';
-import { Class } from '../../types';
-import { createClassAPI, updateClassAPI, deleteClassAPI } from '../../services/classes';
+import { commonStyles } from '@shared/utils';
+import DashboardLayout from '@shared/components/layouts/DashboardLayout';
+import { ConfirmDialog, NotificationSnackbar } from '@shared/components';
+import { ClassTable, ClassForm } from '@features/classes';
+import { useClassManagement } from '@features/classes';
+import { Class } from '@shared/types';
+import { createClassAPI, updateClassAPI, deleteClassAPI } from '@features/classes';
 
 interface SnackbarState {
   open: boolean;

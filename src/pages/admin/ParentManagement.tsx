@@ -1,16 +1,12 @@
 import React, { useState, useCallback } from 'react';
 import { Box, Typography, Button, Pagination } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
-import { commonStyles } from '../../utils/styles';
-import DashboardLayout from '../../components/layouts/DashboardLayout';
-import ConfirmDialog from '../../components/common/ConfirmDialog';
-import NotificationSnackbar from '../../components/common/NotificationSnackbar';
-import { useParentManagement } from '../../hooks/features/useParentManagement';
-import ParentTable from '../../components/features/parent/ParentTable';
-import ParentFilters from '../../components/features/parent/ParentFilters';
-import ParentViewDialog from '../../components/features/parent/ParentViewDialog';
-import ParentForm from '../../components/features/parent/ParentForm';
-import { Parent } from '../../types';
+import { commonStyles } from '@shared/utils';
+import DashboardLayout from '@shared/components/layouts/DashboardLayout';
+import { ConfirmDialog, NotificationSnackbar } from '@shared/components';
+import { useParentManagement } from '@features/parents';
+import { ParentTable, ParentFilters, ParentViewDialog, ParentForm } from '@features/parents';
+import { Parent } from '@shared/types';
 
 interface SnackbarState {
   open: boolean;

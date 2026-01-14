@@ -18,10 +18,9 @@ import {
     Security as SecurityIcon,
     VpnKey as VpnKeyIcon,
 } from '@mui/icons-material';
-import DashboardLayout from '../../components/layouts/DashboardLayout';
-import { commonStyles } from '../../utils/styles';
-import { useRoleManagement } from '../../hooks/useRoleManagement';
-import { usePermissionManagement } from '../../hooks/usePermissionManagement';
+import DashboardLayout from '@shared/components/layouts/DashboardLayout';
+import { commonStyles } from '@shared/utils';
+import { useRoleManagement, usePermissionManagement } from '@features/roles';
 import {
     RoleTable,
     RoleFilters,
@@ -30,7 +29,7 @@ import {
     PermissionTable,
     PermissionFilters,
     PermissionFormDialog,
-} from '../../components/features/roles';
+} from '@features/roles';
 
 interface TabPanelProps {
     children?: React.ReactNode;

@@ -7,20 +7,18 @@ import {
   Box
 } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
-import DashboardLayout from '../../components/layouts/DashboardLayout';
-import { commonStyles } from '../../utils/styles';
+import DashboardLayout from '@shared/components/layouts/DashboardLayout';
+import { commonStyles } from '@shared/utils';
 import {
   getAdvertisementsAPI,
   createAdvertisementAPI,
   updateAdvertisementAPI,
   deleteAdvertisementAPI,
   getAdvertisementByIdAPI,
-} from '../../services/advertisements';
-import { deleteFileAPI } from '../../services/files';
-import NotificationSnackbar from '../../components/common/NotificationSnackbar';
-import ConfirmDialog from '../../components/common/ConfirmDialog';
-import AdvertisementManagementForm from '../../components/features/advertisement/AdvertisementManagementForm';
-import AdvertisementManagementTable from '../../components/features/advertisement/AdvertisementManagementTable';
+} from '@features/advertisements';
+import { deleteFileAPI } from '@shared/services';
+import { NotificationSnackbar, ConfirmDialog } from '@shared/components';
+import { AdvertisementManagementForm, AdvertisementManagementTable } from '@features/advertisements';
 
 interface Advertisement {
   id: string;

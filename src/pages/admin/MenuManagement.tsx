@@ -21,19 +21,17 @@ import {
   ExpandMore as ExpandMoreIcon,
   SubdirectoryArrowRight as SubMenuIcon,
 } from '@mui/icons-material';
-import DashboardLayout from '../../components/layouts/DashboardLayout';
+import DashboardLayout from '@shared/components/layouts/DashboardLayout';
 import {
   createMenuAPI,
   getAllMenusAPI,
   updateMenuAPI,
   deleteMenuAPI,
-} from '../../services/menus';
-import type { MenuData } from '../../services/menus';
-import { MenuItem } from '../../types';
-import NotificationSnackbar from '../../components/common/NotificationSnackbar';
-import ConfirmDialog from '../../components/common/ConfirmDialog';
-import BaseDialog from '../../components/common/BaseDialog';
-import { commonStyles } from '../../utils/styles';
+} from '@features/menus';
+import type { MenuData } from '@features/menus';
+import { MenuItem } from '@shared/types';
+import { NotificationSnackbar, ConfirmDialog, BaseDialog } from '@shared/components';
+import { commonStyles } from '@shared/utils';
 
 const MenuManagement: React.FC = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);

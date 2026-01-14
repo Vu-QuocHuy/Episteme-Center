@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useBannerConfig } from '../../../hooks/useBannerConfig';
-import WelcomeAdPopup from '../../../components/features/advertisement/WelcomeAdPopup';
-import { getHomePopupAPI } from '../../../services/advertisements';
-import { Advertisement } from '../../../types';
-import ClassRegistrationModal from '../../../components/features/home/ClassRegistrationModal';
+import { useBannerConfig } from '@features/advertisements';
+import { WelcomeAdPopup } from '@features/advertisements';
+import { getHomePopupAPI } from '@features/advertisements';
+import type { Advertisement } from '@shared/types';
+import { ClassRegistrationModal } from '@features/home';
 
 const HomeWelcomeAdPopup: React.FC = () => {
   const { popupConfig } = useBannerConfig();

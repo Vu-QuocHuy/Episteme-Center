@@ -2,17 +2,16 @@ import { useEffect, useState } from 'react';
 import {
   Box, Typography, Paper, CircularProgress, Grid, Table, TableBody, TableCell, TableContainer, TableHead, TableRow
 } from '@mui/material';
-import { getTeacherPaymentsAPI, getTeacherPaymentByIdAPI } from '../../services/payments';
-import DashboardLayout from '../../components/layouts/DashboardLayout';
-import StatCard from '../../components/common/StatCard';
-import { commonStyles } from '../../utils/styles';
+import { getTeacherPaymentsAPI, getTeacherPaymentByIdAPI } from '@features/payments';
+import DashboardLayout from '@shared/components/layouts/DashboardLayout';
+import { StatCard } from '@shared/components';
+import { commonStyles } from '@shared/utils';
 import PaymentIcon from '@mui/icons-material/Payment';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import MoneyOffIcon from '@mui/icons-material/MoneyOff';
 import { useAuth } from '../../contexts/AuthContext';
-import { TeacherSalaryTable } from '../../components/features/teacher';
-import PaymentHistoryModal from '../../components/common/PaymentHistoryModal';
-import BaseDialog from '../../components/common/BaseDialog';
+import { TeacherSalaryTable } from '@features/teachers';
+import { PaymentHistoryModal, BaseDialog } from '@shared/components';
 
 const Salary = () => {
   const { user } = useAuth();

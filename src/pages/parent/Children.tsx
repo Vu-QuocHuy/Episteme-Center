@@ -14,15 +14,15 @@ import {
     ExpandMore as ExpandMoreIcon, ExpandLess as ExpandLessIcon, MeetingRoom as RoomIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
-import DashboardLayout from '../../components/layouts/DashboardLayout';
-import { getParentByIdAPI } from '../../services/parents';
-import { getClassByIdAPI } from '../../services/classes';
-import { getStudentByIdAPI } from '../../services/students';
-import BaseDialog from '../../components/common/BaseDialog';
-import { getSessionsByStudentAPI } from '../../services/sessions';
-import { commonStyles } from '../../utils/styles';
-import StatCard from '../../components/common/StatCard';
-import { getStudentStatus } from '../../utils/studentHelpers';
+import DashboardLayout from '@shared/components/layouts/DashboardLayout';
+import { getParentByIdAPI } from '@features/parents';
+import { getClassByIdAPI } from '@features/classes';
+import { getStudentByIdAPI } from '@features/students';
+import { BaseDialog } from '@shared/components';
+import { getSessionsByStudentAPI } from '@shared/services';
+import { commonStyles } from '@shared/utils';
+import { StatCard } from '@shared/components';
+import { getStudentStatus } from '@features/students';
 
 interface ChildClass {
   id?: string;

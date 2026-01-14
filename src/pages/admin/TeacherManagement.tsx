@@ -9,23 +9,17 @@ import {
 import {
   Add as AddIcon,
 } from '@mui/icons-material';
-import { COLORS } from "../../utils/colors";
-import DashboardLayout from '../../components/layouts/DashboardLayout';
-import { commonStyles } from '../../utils/styles';
-import StatCard from '../../components/common/StatCard';
-import ConfirmDialog from '../../components/common/ConfirmDialog';
-import NotificationSnackbar from '../../components/common/NotificationSnackbar';
+import { COLORS } from "@shared/utils";
+import DashboardLayout from '@shared/components/layouts/DashboardLayout';
+import { commonStyles } from '@shared/utils';
+import { StatCard, ConfirmDialog, NotificationSnackbar } from '@shared/components';
 
 // Custom hooks
-import { Teacher } from '../../types';
-import { useTeacherManagement } from '../../hooks/features/useTeacherManagement';
-import { useTeacherForm } from '../../hooks/features/useTeacherForm';
+import { Teacher } from '@shared/types';
+import { useTeacherManagement, useTeacherForm } from '@features/teachers';
 
 // Components
-import TeacherForm from '../../components/features/teacher/TeacherForm';
-import TeacherTable from '../../components/features/teacher/TeacherTable';
-import TeacherFilters from '../../components/features/teacher/TeacherFilters';
-import TeacherViewDialog from '../../components/features/teacher/TeacherViewDialog';
+import { TeacherForm, TeacherTable, TeacherFilters, TeacherViewDialog } from '@features/teachers';
 
 // Utils
 
