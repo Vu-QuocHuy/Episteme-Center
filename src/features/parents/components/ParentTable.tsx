@@ -27,10 +27,6 @@ interface ParentTableProps {
   loading?: boolean;
 }
 
-
-
-
-
 const ParentTable: React.FC<ParentTableProps> = ({
   parents,
   onEdit,
@@ -39,10 +35,6 @@ const ParentTable: React.FC<ParentTableProps> = ({
   loading = false
 }) => {
   const theme = useTheme();
-
-
-
-
 
   if (loading) {
     return (

@@ -262,8 +262,6 @@ const ClassForm: React.FC<ClassFormProps> = ({
     onClose();
   };
 
-
-
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
   };
@@ -500,8 +498,6 @@ const ClassForm: React.FC<ClassFormProps> = ({
       </Grid>
     </Grid>
   );
-
-  // Removed unused renderTeachersTab and renderStudentsTab
 
   return (
     <BaseDialog

@@ -168,4 +168,3 @@ const ClassDetailsModal: React.FC<ClassDetailsModalProps> = ({
 };
 
 export default ClassDetailsModal;
-

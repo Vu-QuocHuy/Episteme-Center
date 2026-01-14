@@ -146,4 +146,3 @@ const ParentPaymentsTable: React.FC<ParentPaymentsTableProps> = ({
 };
 
 export default ParentPaymentsTable;
-
