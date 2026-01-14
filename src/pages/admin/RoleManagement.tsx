@@ -8,10 +8,6 @@ import {
     Pagination,
     Snackbar,
     Alert,
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
 } from '@mui/material';
 import {
     Add as AddIcon,
@@ -19,6 +15,7 @@ import {
     VpnKey as VpnKeyIcon,
 } from '@mui/icons-material';
 import DashboardLayout from '@shared/components/layouts/DashboardLayout';
+import { BaseDialog } from '@shared/components';
 import { commonStyles } from '@shared/utils';
 import { useRoleManagement, usePermissionManagement } from '@features/roles';
 import {
@@ -271,38 +268,39 @@ const RoleManagement: React.FC = () => {
                     />
 
                     {/* Role Delete Confirmation Dialog */}
-                    <Dialog
+                    <BaseDialog
                         open={roleManagement.deleteDialogOpen}
                         onClose={roleManagement.handleCloseDeleteDialog}
+                        title="Xác nhận xóa vai trò"
                         maxWidth="xs"
                         fullWidth
+                        loading={roleManagement.formLoading}
+                        actions={(
+                            <>
+                                <Button
+                                    onClick={roleManagement.handleCloseDeleteDialog}
+                                    disabled={roleManagement.formLoading}
+                                >
+                                    Hủy
+                                </Button>
+                                <Button
+                                    onClick={handleRoleDelete}
+                                    color="error"
+                                    variant="contained"
+                                    disabled={roleManagement.formLoading}
+                                >
+                                    Xóa
+                                </Button>
+                            </>
+                        )}
                     >
-                        <DialogTitle>Xác nhận xóa</DialogTitle>
-                        <DialogContent>
-                            <Typography>
-                                Bạn có chắc chắn muốn xóa vai trò <strong>{roleManagement.selectedRole?.name}</strong>?
-                            </Typography>
-                            <Typography variant="body2" color="error" sx={{ mt: 1 }}>
-                                Hành động này không thể hoàn tác.
-                            </Typography>
-                        </DialogContent>
-                        <DialogActions>
-                            <Button
-                                onClick={roleManagement.handleCloseDeleteDialog}
-                                disabled={roleManagement.formLoading}
-                            >
-                                Hủy
-                            </Button>
-                            <Button
-                                onClick={handleRoleDelete}
-                                color="error"
-                                variant="contained"
-                                disabled={roleManagement.formLoading}
-                            >
-                                Xóa
-                            </Button>
-                        </DialogActions>
-                    </Dialog>
+                        <Typography>
+                            Bạn có chắc chắn muốn xóa vai trò <strong>{roleManagement.selectedRole?.name}</strong>?
+                        </Typography>
+                        <Typography variant="body2" color="error" sx={{ mt: 1 }}>
+                            Hành động này không thể hoàn tác.
+                        </Typography>
+                    </BaseDialog>
 
                     {/* Permission Form Dialog */}
                     <PermissionFormDialog
@@ -315,38 +313,39 @@ const RoleManagement: React.FC = () => {
                     />
 
                     {/* Permission Delete Confirmation Dialog */}
-                    <Dialog
+                    <BaseDialog
                         open={permissionManagement.deleteDialogOpen}
                         onClose={permissionManagement.handleCloseDeleteDialog}
+                        title="Xác nhận xóa quyền"
                         maxWidth="xs"
                         fullWidth
+                        loading={permissionManagement.formLoading}
+                        actions={(
+                            <>
+                                <Button
+                                    onClick={permissionManagement.handleCloseDeleteDialog}
+                                    disabled={permissionManagement.formLoading}
+                                >
+                                    Hủy
+                                </Button>
+                                <Button
+                                    onClick={handlePermissionDelete}
+                                    color="error"
+                                    variant="contained"
+                                    disabled={permissionManagement.formLoading}
+                                >
+                                    Xóa
+                                </Button>
+                            </>
+                        )}
                     >
-                        <DialogTitle>Xác nhận xóa</DialogTitle>
-                        <DialogContent>
-                            <Typography>
-                                Bạn có chắc chắn muốn xóa quyền <strong>{permissionManagement.selectedPermission?.path}</strong>?
-                            </Typography>
-                            <Typography variant="body2" color="error" sx={{ mt: 1 }}>
-                                Hành động này không thể hoàn tác.
-                            </Typography>
-                        </DialogContent>
-                        <DialogActions>
-                            <Button
-                                onClick={permissionManagement.handleCloseDeleteDialog}
-                                disabled={permissionManagement.formLoading}
-                            >
-                                Hủy
-                            </Button>
-                            <Button
-                                onClick={handlePermissionDelete}
-                                color="error"
-                                variant="contained"
-                                disabled={permissionManagement.formLoading}
-                            >
-                                Xóa
-                            </Button>
-                        </DialogActions>
-                    </Dialog>
+                        <Typography>
+                            Bạn có chắc chắn muốn xóa quyền <strong>{permissionManagement.selectedPermission?.path}</strong>?
+                        </Typography>
+                        <Typography variant="body2" color="error" sx={{ mt: 1 }}>
+                            Hành động này không thể hoàn tác.
+                        </Typography>
+                    </BaseDialog>
 
                     {/* Snackbar */}
                     <Snackbar

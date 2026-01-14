@@ -1,9 +1,5 @@
 import React, { useState, useEffect, memo, useMemo } from 'react';
 import {
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
     Button,
     TextField,
     FormControlLabel,
@@ -17,14 +13,13 @@ import {
     AccordionDetails,
     CircularProgress,
     Chip,
-    IconButton,
 } from '@mui/material';
 import {
     ExpandMore as ExpandMoreIcon,
-    Close as CloseIcon,
 } from '@mui/icons-material';
 import type { Role, Permission } from '@shared/types';
 import type { CreateRoleRequest } from '../types';
+import { BaseDialog } from '@shared/components';
 
 interface RoleFormDialogProps {
     open: boolean;
@@ -160,24 +155,32 @@ const RoleFormDialog: React.FC<RoleFormDialogProps> = memo(({
     };
 
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-            <DialogTitle sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                borderBottom: '1px solid',
-                borderColor: 'divider',
-            }}>
-                <Typography variant="h6" fontWeight={600}>
-                    {role ? 'Chỉnh sửa vai trò' : 'Thêm vai trò mới'}
-                </Typography>
-                <IconButton onClick={onClose} size="small">
-                    <CloseIcon />
-                </IconButton>
-            </DialogTitle>
-
-            <DialogContent sx={{ pt: 3 }}>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, mt: 2 }}>
+        <BaseDialog
+            open={open}
+            onClose={onClose}
+            title={role ? 'Chỉnh sửa vai trò' : 'Thêm vai trò mới'}
+            maxWidth="md"
+            fullWidth
+            loading={loading}
+            contentPadding={0}
+            actions={(
+                <>
+                    <Button onClick={onClose} variant="outlined" disabled={loading}>
+                        Hủy
+                    </Button>
+                    <Button
+                        onClick={handleSubmit}
+                        variant="contained"
+                        disabled={loading}
+                        startIcon={loading ? <CircularProgress size={16} /> : null}
+                    >
+                        {role ? 'Cập nhật' : 'Tạo mới'}
+                    </Button>
+                </>
+            )}
+        >
+            <Box sx={{ p: 4, pt: 3 }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
                     <TextField
                         label="Tên vai trò"
                         value={formData.name}
@@ -318,22 +321,8 @@ const RoleFormDialog: React.FC<RoleFormDialogProps> = memo(({
                         )}
                     </Box>
                 </Box>
-            </DialogContent>
-
-            <DialogActions sx={{ px: 3, py: 2, borderTop: '1px solid', borderColor: 'divider' }}>
-                <Button onClick={onClose} variant="outlined" disabled={loading}>
-                    Hủy
-                </Button>
-                <Button
-                    onClick={handleSubmit}
-                    variant="contained"
-                    disabled={loading}
-                    startIcon={loading ? <CircularProgress size={16} /> : null}
-                >
-                    {role ? 'Cập nhật' : 'Tạo mới'}
-                </Button>
-            </DialogActions>
-        </Dialog>
+            </Box>
+        </BaseDialog>
     );
 });
 

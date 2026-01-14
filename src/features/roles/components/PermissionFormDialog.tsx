@@ -1,9 +1,5 @@
 import React, { useState, useEffect, memo } from 'react';
 import {
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
     Button,
     TextField,
     FormControl,
@@ -11,13 +7,11 @@ import {
     Select,
     MenuItem,
     Box,
-    Typography,
-    CircularProgress,
-    IconButton,
+    CircularProgress
 } from '@mui/material';
-import { Close as CloseIcon } from '@mui/icons-material';
 import type { Permission } from '@shared/types';
 import type { CreatePermissionRequest } from '@features/roles';
+import { BaseDialog } from '@shared/components';
 
 interface PermissionFormDialogProps {
     open: boolean;
@@ -111,23 +105,31 @@ const PermissionFormDialog: React.FC<PermissionFormDialogProps> = memo(({
     };
 
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-            <DialogTitle sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                borderBottom: '1px solid',
-                borderColor: 'divider',
-            }}>
-                <Typography variant="h6" fontWeight={600}>
-                    {permission ? 'Chỉnh sửa quyền' : 'Thêm quyền mới'}
-                </Typography>
-                <IconButton onClick={onClose} size="small">
-                    <CloseIcon />
-                </IconButton>
-            </DialogTitle>
-
-            <DialogContent sx={{ pt: 3 }}>
+        <BaseDialog
+            open={open}
+            onClose={onClose}
+            title={permission ? 'Chỉnh sửa quyền' : 'Thêm quyền mới'}
+            maxWidth="sm"
+            fullWidth
+            loading={loading}
+            contentPadding={0}
+            actions={(
+                <>
+                    <Button onClick={onClose} variant="outlined" disabled={loading}>
+                        Hủy
+                    </Button>
+                    <Button
+                        onClick={handleSubmit}
+                        variant="contained"
+                        disabled={loading}
+                        startIcon={loading ? <CircularProgress size={16} /> : null}
+                    >
+                        {permission ? 'Cập nhật' : 'Tạo mới'}
+                    </Button>
+                </>
+            )}
+        >
+            <Box sx={{ p: 4, pt: 3 }}>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
                     <TextField
                         label="Module"
@@ -177,22 +179,8 @@ const PermissionFormDialog: React.FC<PermissionFormDialogProps> = memo(({
                         size="small"
                     />
                 </Box>
-            </DialogContent>
-
-            <DialogActions sx={{ px: 3, py: 2, borderTop: '1px solid', borderColor: 'divider' }}>
-                <Button onClick={onClose} variant="outlined" disabled={loading}>
-                    Hủy
-                </Button>
-                <Button
-                    onClick={handleSubmit}
-                    variant="contained"
-                    disabled={loading}
-                    startIcon={loading ? <CircularProgress size={16} /> : null}
-                >
-                    {permission ? 'Cập nhật' : 'Tạo mới'}
-                </Button>
-            </DialogActions>
-        </Dialog>
+            </Box>
+        </BaseDialog>
     );
 });
 

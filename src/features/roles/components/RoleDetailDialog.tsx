@@ -1,27 +1,22 @@
 import React, { memo, useMemo } from 'react';
 import {
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
     Button,
     Box,
     Typography,
     Chip,
     Grid,
-    IconButton,
     Accordion,
     AccordionSummary,
     AccordionDetails,
 } from '@mui/material';
 import {
-    Close as CloseIcon,
     ExpandMore as ExpandMoreIcon,
     CheckCircle as CheckCircleIcon,
     Cancel as CancelIcon,
     AdminPanelSettings as AdminIcon,
 } from '@mui/icons-material';
 import type { Role, Permission } from '@shared/types';
+import { BaseDialog } from '@shared/components';
 
 interface RoleDetailDialogProps {
     open: boolean;
@@ -52,27 +47,32 @@ const RoleDetailDialog: React.FC<RoleDetailDialogProps> = memo(({
     if (!role) return null;
 
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-            <DialogTitle sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                borderBottom: '1px solid',
-                borderColor: 'divider',
-                pb: 2
-            }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <AdminIcon color="primary" />
-                    <Typography variant="h6" fontWeight={600}>
-                        Chi tiết vai trò
-                    </Typography>
-                </Box>
-                <IconButton onClick={onClose} size="small">
-                    <CloseIcon />
-                </IconButton>
-            </DialogTitle>
-
-            <DialogContent sx={{ pt: 3 }}>
+        <BaseDialog
+            open={open}
+            onClose={onClose}
+            title="Chi tiết vai trò"
+            maxWidth="md"
+            fullWidth
+            contentPadding={0}
+            actions={(
+                <>
+                    <Button onClick={onClose} variant="outlined">
+                        Đóng
+                    </Button>
+                    <Button
+                        onClick={() => {
+                            onClose();
+                            onEdit(role);
+                        }}
+                        variant="contained"
+                        startIcon={<AdminIcon />}
+                    >
+                        Chỉnh sửa
+                    </Button>
+                </>
+            )}
+        >
+            <Box sx={{ p: 4, pt: 3 }}>
                 <Grid container spacing={3}>
                     {/* Basic Info */}
                     <Grid item xs={12}>
@@ -176,24 +176,8 @@ const RoleDetailDialog: React.FC<RoleDetailDialogProps> = memo(({
                         </Box>
                     </Grid>
                 </Grid>
-            </DialogContent>
-
-            <DialogActions sx={{ px: 3, py: 2, borderTop: '1px solid', borderColor: 'divider' }}>
-                <Button onClick={onClose} variant="outlined">
-                    Đóng
-                </Button>
-                <Button
-                    onClick={() => {
-                        onClose();
-                        onEdit(role);
-                    }}
-                    variant="contained"
-                    startIcon={<AdminIcon />}
-                >
-                    Chỉnh sửa
-                </Button>
-            </DialogActions>
-        </Dialog>
+            </Box>
+        </BaseDialog>
     );
 });
 
