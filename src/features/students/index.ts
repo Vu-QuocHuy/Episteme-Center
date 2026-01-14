@@ -11,6 +11,7 @@ export * from './services/students.api';
 // Hooks
 export * from './hooks/useStudentManagement';
 export * from './hooks/useStudentForm';
+export * from './hooks/useStudentMyClasses';
 
 // Utils
 export * from './utils/helpers';

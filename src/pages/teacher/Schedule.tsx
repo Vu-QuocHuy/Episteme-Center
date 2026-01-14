@@ -75,7 +75,6 @@ const Schedule: React.FC = () => {
                   formattedLessons.push(lesson);
                 }
 
-                // Chuyển đến ngày tiếp theo
                 currentDate = currentDate.add(1, 'day');
               }
             }

@@ -212,8 +212,6 @@ const MyClasses: React.FC = () => {
     }
   };
 
-  // Removed checkTodaySessions prefetch function
-
   // Handlers for modals
   const handleOpenDetail = (classItem: ClassData): void => {
     setSelectedClass(classItem);
