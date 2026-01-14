@@ -180,8 +180,18 @@ export const useParentChildren = (user: any | null): UseParentChildrenReturn => 
             // eslint-disable-next-line no-console
             console.log('[Children] Mapped classes for', s.id, classes);
             const classCount = classes.length;
-            const activeCount = classes.filter((c: any) => c.isActive === true).length;
-            const completedCount = classes.filter((c: any) => c.isActive === false).length;
+            // Logic mới: Lớp đang học = isActive === true và status là 'active' | 'upcoming' | ''
+            const activeCount = classes.filter((c: any) => {
+              const status = (c.status || '').toLowerCase();
+              const isActive = c.isActive === true;
+              return isActive && (status === 'active' || status === 'upcoming' || !status);
+            }).length;
+            // Logic mới: Lớp đã học = status là 'closed' | 'completed' hoặc isActive === false
+            const completedCount = classes.filter((c: any) => {
+              const status = (c.status || '').toLowerCase();
+              const isActive = c.isActive === true;
+              return status === 'closed' || status === 'completed' || !isActive;
+            }).length;
 
             return {
               id: s.id,
