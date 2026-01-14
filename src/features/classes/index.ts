@@ -4,6 +4,7 @@ export { default as ClassForm } from './components/ClassForm';
 export { default as ClassDetailsModal } from './components/ClassDetailsModal';
 export { default as ClassScheduleModal } from './components/ClassScheduleModal';
 export { default as ClassStudentsModal } from './components/ClassStudentsModal';
+export { default as AddStudentToClassDialog } from './components/AddStudentToClassDialog';
 
 // Services
 export * from './services/classes.api';

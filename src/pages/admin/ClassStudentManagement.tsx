@@ -13,7 +13,7 @@ import {
   IconButton,
 } from '@mui/material';
 import { Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
-import AddStudentToClassDialog from './AddStudentToClassDialog';
+import AddStudentToClassDialog from '../../features/classes/components/AddStudentToClassDialog';
 import { removeStudentFromClassAPI, getStudentsInClassAPI } from '@features/classes';
 import { NotificationSnackbar, ConfirmDialog } from '@shared/components';
 

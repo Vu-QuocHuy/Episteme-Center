@@ -17,4 +17,3 @@ const StudentStatistics: React.FC = () => {
 };
 
 export default StudentStatistics;
-
