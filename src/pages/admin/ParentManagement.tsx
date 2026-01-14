@@ -57,8 +57,6 @@ const ParentManagement: React.FC = () => {
     }, 100);
   }, []);
 
-
-
   const handleOpenDeleteDialog = useCallback((parent: Parent): void => {
     setParentToDelete(parent);
     setOpenDeleteDialog(true);
@@ -81,10 +79,6 @@ const ParentManagement: React.FC = () => {
       setSnackbar({ open: true, message: result.message, severity: 'error' });
     }
   }, [parentToDelete, deleteParent, handleCloseDeleteDialog]);
-
-
-
-
 
   return (
     <DashboardLayout role="admin">
@@ -137,8 +131,6 @@ const ParentManagement: React.FC = () => {
         </Box>
       </Box>
 
-
-
       <ConfirmDialog
         open={openDeleteDialog}
         onClose={handleCloseDeleteDialog}
@@ -148,7 +140,7 @@ const ParentManagement: React.FC = () => {
         loading={loading}
       />
 
-             <NotificationSnackbar
+      <NotificationSnackbar
          open={snackbar.open}
          onClose={() => setSnackbar({ ...snackbar, open: false })}
          message={snackbar.message}
@@ -177,7 +169,6 @@ const ParentManagement: React.FC = () => {
           }
         }}
         onSubmit={(result) => {
-          // Refresh danh sách phụ huynh
           fetchParents();
 
           // Show notification

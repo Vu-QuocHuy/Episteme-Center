@@ -237,7 +237,6 @@ const AdvertisementManagement: React.FC = () => {
     setAdToDelete(null);
   };
 
-
   return (
     <DashboardLayout role="admin">
       <Box sx={commonStyles.pageContainer}>

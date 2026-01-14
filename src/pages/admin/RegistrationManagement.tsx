@@ -168,8 +168,10 @@ const RegistrationManagement: React.FC = () => {
     <DashboardLayout role="admin">
       <Box sx={commonStyles.pageContainer}>
         <Box sx={commonStyles.contentContainer}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-            <Typography variant="h5" fontWeight={700}>Quản lý đăng ký tư vấn</Typography>
+          <Box sx={commonStyles.pageHeader}>
+            <Typography sx={commonStyles.pageTitle}>
+              Quản lý đăng ký tư vấn
+            </Typography>
           </Box>
 
           {/* Filters */}

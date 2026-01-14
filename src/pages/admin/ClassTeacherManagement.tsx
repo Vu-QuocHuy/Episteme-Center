@@ -107,10 +107,7 @@ const ClassTeacherManagement: React.FC<ClassTeacherManagementProps> = ({
 
     updateCurrentTeacher();
   }, [classData, allTeachers]);
-
-  // Debounce search input for teacher
-
-
+  
   useEffect(() => {
     const fetchTeachers = async (): Promise<void> => {
       try {

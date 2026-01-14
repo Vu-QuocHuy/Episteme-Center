@@ -16,8 +16,6 @@ import { uploadFileAPI, deleteFileAPI } from '@shared/services';
 import { Feedback, CreateFeedbackRequest } from '@shared/types';
 
 const TestimonialsManagement: React.FC = () => {
-
-  // State
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [loading, setLoading] = useState(true);
   const [openDialog, setOpenDialog] = useState(false);

@@ -39,22 +39,13 @@ const StudentManagement: React.FC = () => {
   } = useStudentManagement();
 
   const {
-    // form,
-    // classEdits,
-    // formErrors,
-    // formLoading,
-    // formError,
-    // handleChange,
-    // handleClassEditChange,
     setFormData,
     resetForm,
-    // handleSubmit,
   } = useStudentForm();
 
   // Dialog handlers
   const handleOpenDialog = async (student: Student | null = null): Promise<void> => {
     if (student?.id) {
-      // Set selectedStudent trước khi mở dialog để header hiển thị đúng ngay từ đầu
       setSelectedStudent(student);
       setFormData(student || undefined);
       setOpenDialog(true);

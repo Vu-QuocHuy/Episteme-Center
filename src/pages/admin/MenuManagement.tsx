@@ -225,9 +225,6 @@ const MenuManagement: React.FC = () => {
     setMenuToDelete(null);
   };
 
-  // Toggle visibility
-  // Note: toggle visibility is currently unused in UI
-
   // Open dialog for create/edit
   const handleOpenDialog = (item?: MenuItem, parentMenu?: MenuItem) => {
     if (item) {
@@ -316,7 +313,6 @@ const MenuManagement: React.FC = () => {
       }));
     }
   };
-
 
   // Render menu items recursively
   const renderMenuItems = (items: MenuItem[], level: number = 0) => {

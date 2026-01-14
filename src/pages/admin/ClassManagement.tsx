@@ -217,15 +217,9 @@ const ClassManagement: React.FC = () => {
               const classItem = classes.find(c => c.id === classId);
               if (classItem) handleOpenDeleteDialog(classItem);
             }}
-            onViewDetails={(_classItem) => {
-              // Handle view details
-            }}
-            onViewStudents={(_classItem) => {
-              // Handle view students
-            }}
-            onViewSchedule={(_classItem) => {
-              // Handle view schedule
-            }}
+            onViewDetails={(_classItem) => {}}
+            onViewStudents={(_classItem) => {}}
+            onViewSchedule={(_classItem) => {}}
           />
 
           {/* Pagination */}
